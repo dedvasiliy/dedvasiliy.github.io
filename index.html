@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Склад v59 - Fix Date</title>
+    <style>
+        :root {
+            --bg: #f8fafc; --card: #ffffff; --primary: #4f46e5;
+            --primary-grad: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --success: #10b981; --danger: #ef4444; --text-main: #1e293b; --text-sub: #64748b;
+        }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 10px; padding-bottom: 100px; color: var(--text-main); }
+        .category-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; background: rgba(248,250,252,0.9); backdrop-filter: blur(10px); padding: 10px 0; }
+        .btn-cat { padding: 12px 2px; border: none; border-radius: 12px; background: var(--card); color: var(--text-sub); font-size: 10px; font-weight: 800; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .btn-cat.active { background: var(--primary-grad); color: #fff; box-shadow: 0 8px 15px rgba(79,70,229,0.3); }
+        
+        .section { background: var(--card); border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
+        .simple-table { width: 100%; border-collapse: collapse; }
+        .simple-table td { padding: 16px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        
+        .qty-box { background: #f0fdf4; padding: 8px 12px; border-radius: 10px; text-align: right; min-width: 60px; display: inline-block; cursor: pointer; border: 1px solid #dcfce7; }
+        .qty-val { font-size: 18px; font-weight: 800; color: var(--success); }
+        
+        .resource-tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--primary); padding: 5px 10px; border-radius: 8px; margin-top: 8px; display: none; text-align: center; }
+        
+        .report-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 12px; border-left: 5px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; }
+        .card-title { font-size: 16px; font-weight: 800; }
+        .card-date { font-size: 11px; color: #8e8e93; position: absolute; top: 18px; right: 18px; }
+
+        .size-grid { display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .btn-size { padding: 12px; border-radius: 12px; border: 2px solid var(--success); background: #fff; color: var(--success); font-weight: 800; font-size: 11px; }
+        .admin-fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary-grad); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; border: none; z-index: 1000; box-shadow: 0 8px 20px rgba(79,70,229,0.4); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #fff; width: 90%; max-width: 340px; padding: 25px; border-radius: 25px; text-align: center; max-height: 85vh; overflow-y: auto; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #f1f5f9; border-radius: 12px; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .btn-main { background: var(--primary-grad); color: #fff; border: none; padding: 16px; border-radius: 15px; width: 100%; font-weight: 800; font-size: 15px; margin-top: 10px; }
+
+        .critical-row { background: #fff1f2 !important; }
+        .critical-row .qty-box { background: #fee2e2; border-color: #fecaca; }
+        .critical-row .qty-val { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <div class="category-menu">
+        <button id="tab-Пакеты" class="btn-cat" onclick="setCategory('Пакеты')">Пакеты</button>
+        <button id="tab-Пленка" class="btn-cat" onclick="setCategory('Пленка')">Пленка</button>
+        <button id="tab-Скотч" class="btn-cat" onclick="setCategory('Скотч')">Скотч</button>
+        <button id="tab-Фасовка" class="btn-cat" onclick="setCategory('Фасовка')">Фасовка</button>
+    </div>
+
+    <div id="grid-Фасовка" class="size-grid" style="grid-template-columns: 1fr;">
+        <button class="btn-size" style="background:var(--primary-grad); color:#fff; border:none;" onclick="openFasovkaModal()">➕ НОВАЯ СМЕНА ФАСОВКИ</button>
+    </div>
+    
+    <div id="grid-Пленка" class="size-grid"><div id="plenkaBtnsContainer" style="display: contents;"></div></div>
+    <div id="grid-Пакеты" class="size-grid">
+        <button class="btn-size" onclick="openSimpleModal('300×400', 'шт')">300×400</button>
+        <button class="btn-size" onclick="openSimpleModal('370×500', 'шт')">370×500</button>
+        <button class="btn-size" onclick="openSimpleModal('400×500', 'шт')">400×500</button>
+        <button class="btn-size" onclick="openSimpleModal('420×550', 'шт')">420×550</button>
+    </div>
+    <div id="grid-Скотч" class="size-grid"><button class="btn-size" onclick="openSimpleModal('Скотч 360г', 'рул')">Скотч 360г</button></div>
+
+    <div id="mainDisplay"></div>
+    <button class="admin-fab" onclick="handleAdminFab()">⚙️</button>
+
+    <div id="authModal" class="modal"><div class="modal-content"><h2>Админ</h2><input type="email" id="email" placeholder="Email"><input type="password" id="password" placeholder="Пароль"><button class="btn-main" onclick="login()">ВОЙТИ</button></div></div>
+    <div id="adminMenuModal" class="modal"><div class="modal-content"><h2>Управление</h2><button class="btn-main" style="background:var(--danger)" onclick="logout()">ВЫЙТИ</button><button onclick="toggleModal('adminMenuModal', false)" style="background:none;border:none;margin-top:10px;color:var(--text-sub)">ЗАКРЫТЬ</button></div></div>
+    
+    <div id="editSimpleModal" class="modal"><div class="modal-content">
+        <h2 id="editSimpleTitle"></h2>
+        <input type="number" id="editSimpleInput" inputmode="decimal">
+        <button class="btn-main" onclick="updateSimple()">ОБНОВИТЬ</button>
+        <button class="btn-main" style="background:var(--danger)" onclick="deleteSimpleItem()">УДАЛИТЬ ПОЗИЦИЮ</button>
+        <button onclick="closeModals()" style="background:none;border:none;margin-top:10px;color:var(--text-sub)">ОТМЕНА</button>
+    </div></div>
+
+    <div id="fullFasovkaModal" class="modal"><div class="modal-content">
+        <h2 id="fasovkaModalTitle">Смена</h2>
+        <button class="btn-main" style="background:#f0f2f5; color:var(--primary)" onclick="toggleModal('productModal', true)"><span id="btnProdLabel">Выбрать продукт</span></button>
+        <button class="btn-main" style="background:#f0f2f5; color:var(--success)" onclick="toggleModal('sizeModal', true)"><span id="btnSizeLabel">Размер пакета</span></button>
+        <input type="number" id="f_prihod" placeholder="Сырье (кг)" inputmode="decimal">
+        <input type="number" id="f_vyhod" placeholder="Выход (шт)" inputmode="decimal">
+        <input type="number" id="f_vzial" placeholder="Пленка взял (кг)" inputmode="decimal">
+        <input type="number" id="f_ostatok" placeholder="Пленка ост (кг)" inputmode="decimal">
+        <button class="btn-main" onclick="saveFasovka()">СОХРАНИТЬ</button>
+        <button id="btnDeleteFasovka" class="btn-main" style="background:var(--danger); display:none" onclick="deleteFasovka()">УДАЛИТЬ</button>
+    </div></div>
+
+    <div id="productModal" class="modal"><div class="modal-content"><h2>Продукт</h2><div id="fullProdList" style="display:grid;grid-template-columns:1fr 1fr;gap:5px"></div></div></div>
+    <div id="sizeModal" class="modal"><div class="modal-content"><h2>Размер</h2><div id="fullSizeList" style="display:grid;grid-template-columns:1fr 1fr;gap:5px"></div></div></div>
+    <div id="simpleQtyModal" class="modal"><div class="modal-content"><h2 id="simpleItemLabel"></h2><input type="number" id="simpleQtyInput" inputmode="decimal"><button class="btn-main" onclick="saveSimple()">ДОБАВИТЬ</button></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q", databaseURL: "https://myproductionapp-bd872-default-rtdb.firebaseio.com", projectId: "myproductionapp-bd872", appId: "1:606510957266:web:5a91f5bdadae4aa330e30b" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.database();
+
+    const plenkaList = ["Арнаутка", "Артек", "Ячка", "Пшеничка", "Кукуруза", "Горох", "Манка", "Хлопья", "Гречка", "Рис дл", "Рис кр", "Рис пр", "Перловка", "Пшоно", "Кук.мука", "Басмати г", "Басмати к", "Кутя", "Кус кус", "Нут", "Чечевица", "Булгур"];
+    const paketyList = ["300×400", "370×500", "400×500", "420×550"];
+
+    let curCat = 'Пакеты', selProdName = '', selPaketSize = '', editingId = null, editName = '', editTotal = 0, existingDate = null;
+
+    function init() {
+        const prodDiv = document.getElementById('fullProdList'), sizeDiv = document.getElementById('fullSizeList'), plenkaBtnsCont = document.getElementById('plenkaBtnsContainer');
+        plenkaBtnsCont.innerHTML = ''; prodDiv.innerHTML = ''; sizeDiv.innerHTML = '';
+        plenkaList.forEach(p => {
+            prodDiv.innerHTML += `<div style="padding:10px;background:#f8f9fa;border-radius:10px;font-size:12px;font-weight:bold" onclick="selectProduct('${p}')">${p}</div>`;
+            plenkaBtnsCont.innerHTML += `<button class="btn-size" onclick="openSimpleModal('${p}', 'кг')">${p}</button>`;
+        });
+        paketyList.forEach(s => sizeDiv.innerHTML += `<div style="padding:10px;background:#f8f9fa;border-radius:10px;font-size:12px;font-weight:bold" onclick="selectSize('${s}')">${s}</div>`);
+        setCategory('Пакеты');
+    }
+
+    function setCategory(c) { curCat = c; document.querySelectorAll('.btn-cat').forEach(b => b.classList.toggle('active', b.id === 'tab-'+c)); updateUI(); load(); }
+    function handleAdminFab() { if (auth.currentUser) toggleModal('adminMenuModal', true); else toggleModal('authModal', true); }
+    function updateUI() { const isAuth = !!auth.currentUser; document.querySelectorAll('.size-grid').forEach(g => g.style.display = (isAuth && g.id === 'grid-'+curCat) ? 'grid' : 'none'); }
+
+    function load() {
+        db.ref('inventory').on('value', snap => {
+            const all = snap.val() || {}, cont = document.getElementById('mainDisplay');
+            cont.innerHTML = "";
+            if (curCat === 'Фасовка') {
+                const data = all['Фасовка'] || {};
+                Object.entries(data).sort((a,b) => b[1].date.localeCompare(a[1].date)).forEach(([id, v]) => {
+                    cont.innerHTML += `<div class="report-card" onclick="editFasovka('${id}')"><span class="card-date">${new Date(v.date).toLocaleDateString()}</span><div class="card-title">${v.name}</div><div style="font-size:16px;font-weight:800;color:var(--success);margin:8px 0">${v.prihod}кг | ${v.vyhod}шт</div><div style="font-size:12px;color:var(--text-sub)">${v.size} | Расход: ${(v.vzial-v.ostatok).toFixed(2)}кг</div></div>`;
+                });
+            } else {
+                const data = all[curCat] || {}, fasovka = all['Фасовка'] || {}, totals = {};
+                Object.values(data).forEach(v => totals[v.size] = (totals[v.size] || 0) + v.amount);
+                let html = '<div class="section"><table class="simple-table">';
+                Object.keys(totals).sort().forEach(k => {
+                    let val = totals[k], isCrit = (curCat==='Пакеты'&&val<3000)||(curCat==='Пленка'&&val<60)||(curCat==='Скотч'&&val<30);
+                    let resText = "Нажми для прогноза";
+                    if (curCat === 'Пакеты') resText = `Ресурс: ~${Math.floor(val / 0.103).toLocaleString()} шт.`;
+                    else if (curCat === 'Скотч') resText = `Ресурс: ~${Math.floor((val * 360) / 0.12).toLocaleString()} шт.`;
+                    else if (curCat === 'Пленка') {
+                        let tKgs = 0, tPcs = 0;
+                        Object.values(fasovka).forEach(f => { if (f.name === k && f.vyhod > 0) { tKgs += ((f.vzial || 0) - (f.ostatok || 0)); tPcs += f.vyhod; } });
+                        resText = tPcs > 0 ? `Ресурс: ~${Math.floor(val / (tKgs / tPcs)).toLocaleString()} шт.` : "Нет данных";
+                    }
+                    let cleanId = k.replace(/\s+/g, '');
+                    html += `<tr class="${isCrit?'critical-row':''}">
+                                <td onclick="toggleResource('${cleanId}')">
+                                    <div style="font-weight:bold">${k}</div>
+                                    <div id="res-${cleanId}" class="resource-tag">${resText}</div>
+                                </td>
+                                <td style="text-align:right">
+                                    <div class="qty-box" onclick="handleEditClick('${k}', ${val})">
+                                        <span class="qty-val">${Number(val.toFixed(2))}</span>
+                                    </div>
+                                </td>
+                             </tr>`;
+                });
+                cont.innerHTML = html + '</table></div>';
+            }
+        });
+    }
+
+    function handleEditClick(name, total) {
+        if(!auth.currentUser) return;
+        editName = name; editTotal = total;
+        document.getElementById('editSimpleTitle').innerText = name;
+        document.getElementById('editSimpleInput').value = total.toFixed(2);
+        toggleModal('editSimpleModal', true);
+    }
+
+    function toggleResource(id) { const el = document.getElementById('res-' + id); if(el) el.style.display = (el.style.display === 'block') ? 'none' : 'block'; }
+    function toggleModal(id, s) { document.getElementById(id).style.display = s ? 'flex' : 'none'; }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+    
+    function updateSimple() { let newVal = parseFloat(document.getElementById('editSimpleInput').value); db.ref('inventory/'+curCat).push({ size: editName, amount: newVal - editTotal, date: new Date().toISOString() }); closeModals(); }
+    async function deleteSimpleItem() { if(confirm(`Удалить записи по "${editName}"?`)) { const snap = await db.ref('inventory/' + curCat).once('value'); snap.forEach(child => { if(child.val().size === editName) child.ref.remove(); }); closeModals(); } }
+
+    function openSimpleModal(n, u) { editName = n; document.getElementById('simpleItemLabel').innerText = n; toggleModal('simpleQtyModal', true); }
+    function saveSimple() { db.ref('inventory/'+curCat).push({ size: editName, amount: parseFloat(document.getElementById('simpleQtyInput').value), date: new Date().toISOString() }); closeModals(); }
+    
+    function openFasovkaModal() { editingId = null; existingDate = null; toggleModal('fullFasovkaModal', true); }
+    
+    function editFasovka(id) { 
+        if(!auth.currentUser) return; 
+        editingId = id; 
+        db.ref('inventory/Фасовка/'+id).once('value', s => { 
+            const v = s.val(); 
+            selProdName = v.name; selPaketSize = v.size; 
+            existingDate = v.date; // СОХРАНЯЕМ СТАРУЮ ДАТУ
+            document.getElementById('btnProdLabel').innerText = v.name; 
+            document.getElementById('btnSizeLabel').innerText = v.size; 
+            ['f_prihod','f_vyhod','f_vzial','f_ostatok'].forEach(f => document.getElementById(f).value = v[f.split('_')[1]]); 
+            document.getElementById('btnDeleteFasovka').style.display = "block"; 
+            toggleModal('fullFasovkaModal', true); 
+        }); 
+    }
+
+    async function saveFasovka() { 
+        const vy = parseFloat(document.getElementById('f_vyhod').value)||0, vz = parseFloat(document.getElementById('f_vzial').value)||0, os = parseFloat(document.getElementById('f_ostatok').value)||0, pr = parseFloat(document.getElementById('f_prihod').value)||0;
+        // Используем старую дату или создаем новую для новой записи
+        const ts = existingDate || new Date().toISOString();
+        
+        if(editingId) { for(let cat of ['Пакеты','Пленка','Скотч']) { const s = await db.ref('inventory/'+cat).once('value'); s.forEach(c => { if(c.val().linkedId === editingId) c.ref.remove(); }); } }
+        const ref = editingId ? db.ref('inventory/Фасовка/'+editingId) : db.ref('inventory/Фасовка').push(), id = editingId || ref.key;
+        
+        await ref.set({ name: selProdName, prihod: pr, vyhod: vy, vzial: vz, ostatok: os, size: selPaketSize, date: ts });
+        a
+        if(vy > 0) { 
+            db.ref('inventory/Пакеты').push({ size: selPaketSize, amount: -(vy*0.103), date: ts, linkedId: id }); 
+            db.ref('inventory/Скотч').push({ size: 'Скотч 360г', amount: -((vy*0.12)/360), date: ts, linkedId: id }); 
+        }
+        if((vz-os)>0) db.ref('inventory/Пленка').push({ size: selProdName, amount: -(vz-os), date: ts, linkedId: id });
+        closeModals(); 
+    }
+
+    function deleteFasovka() { if(confirm('Удалить?')) { db.ref('inventory/Фасовка/'+editingId).remove(); closeModals(); } }
+    function selectProduct(p) { selProdName = p; document.getElementById('btnProdLabel').innerText = p; toggleModal('productModal', false); }
+    function selectSize(s) { selPaketSize = s; document.getElementById('btnSizeLabel').innerText = s; toggleModal('sizeModal', false); }
+    function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value).then(() => { closeModals(); updateUI(); }); }
+    function logout() { auth.signOut().then(() => { closeModals(); updateUI(); }); }
+    init(); auth.onAuthStateChanged(updateUI);
+</script>
+</body>
+</html>
+
