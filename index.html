@@ -401,46 +401,4 @@
     
     function openFasovkaModal() { editingId = null; existingDate = null; toggleModal('fullFasovkaModal', true); }
     
-    function editFasovka(id) { 
-        if(!auth.currentUser) return; 
-        editingId = id; 
-        db.ref('inventory/Фасовка/'+id).once('value', s => { 
-            const v = s.val(); 
-            selProdName = v.name; selPaketSize = v.size; 
-            existingDate = v.date; // СОХРАНЯЕМ СТАРУЮ ДАТУ
-            document.getElementById('btnProdLabel').innerText = v.name; 
-            document.getElementById('btnSizeLabel').innerText = v.size; 
-            ['f_prihod','f_vyhod','f_vzial','f_ostatok'].forEach(f => document.getElementById(f).value = v[f.split('_')[1]]); 
-            document.getElementById('btnDeleteFasovka').style.display = "block"; 
-            toggleModal('fullFasovkaModal', true); 
-        }); 
-    }
-
-    async function saveFasovka() { 
-        const vy = parseFloat(document.getElementById('f_vyhod').value)||0, vz = parseFloat(document.getElementById('f_vzial').value)||0, os = parseFloat(document.getElementById('f_ostatok').value)||0, pr = parseFloat(document.getElementById('f_prihod').value)||0;
-        // Используем старую дату или создаем новую для новой записи
-        const ts = existingDate || new Date().toISOString();
-        
-        if(editingId) { for(let cat of ['Пакеты','Пленка','Скотч']) { const s = await db.ref('inventory/'+cat).once('value'); s.forEach(c => { if(c.val().linkedId === editingId) c.ref.remove(); }); } }
-        const ref = editingId ? db.ref('inventory/Фасовка/'+editingId) : db.ref('inventory/Фасовка').push(), id = editingId || ref.key;
-        
-        await ref.set({ name: selProdName, prihod: pr, vyhod: vy, vzial: vz, ostatok: os, size: selPaketSize, date: ts });
-        a
-        if(vy > 0) { 
-            db.ref('inventory/Пакеты').push({ size: selPaketSize, amount: -(vy*0.103), date: ts, linkedId: id }); 
-            db.ref('inventory/Скотч').push({ size: 'Скотч 360г', amount: -((vy*0.12)/360), date: ts, linkedId: id }); 
-        }
-        if((vz-os)>0) db.ref('inventory/Пленка').push({ size: selProdName, amount: -(vz-os), date: ts, linkedId: id });
-        closeModals(); 
-    }
-
-    function deleteFasovka() { if(confirm('Удалить?')) { db.ref('inventory/Фасовка/'+editingId).remove(); closeModals(); } }
-    function selectProduct(p) { selProdName = p; document.getElementById('btnProdLabel').innerText = p; toggleModal('productModal', false); }
-    function selectSize(s) { selPaketSize = s; document.getElementById('btnSizeLabel').innerText = s; toggleModal('sizeModal', false); }
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value).then(() => { closeModals(); updateUI(); }); }
-    function logout() { auth.signOut().then(() => { closeModals(); updateUI(); }); }
-    init(); auth.onAuthStateChanged(updateUI);
-</script>
-</body>
-</html>
 
