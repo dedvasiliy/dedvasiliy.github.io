@@ -3,46 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Склад v83 - Fixed Auth</title>
+    <title>Склад v92 - Speed</title>
     <style>
         :root {
             --bg: #f8fafc; --card: #ffffff; --primary: #4f46e5;
             --success: #10b981; --danger: #ef4444; --text-main: #1e293b; --text-sub: #64748b;
         }
-        
-        /* Скрываем админ-панели по умолчанию */
         .size-grid, .qty-badge, #logoutForm, .admin-only { display: none !important; }
-        
-        /* Включаем элементы только если у body есть класс .auth-ok */
         body.auth-ok .size-grid.active { display: grid !important; }
         body.auth-ok .qty-badge { display: inline-block !important; }
         body.auth-ok #logoutForm { display: block !important; }
         body.auth-ok .admin-only { display: block !important; }
-        
-        /* Текст для гостей (виден только когда НЕТ .auth-ok) */
         .qty-guest { display: inline-block; font-weight: 800; color: var(--success); }
         body.auth-ok .qty-guest { display: none !important; }
-
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; padding-bottom: 100px; }
-        .category-menu { display: flex; gap: 5px; margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; background: var(--bg); padding: 5px 0; }
-        .btn-cat { flex: 1; padding: 12px 2px; border: none; border-radius: 10px; background: var(--card); font-size: 11px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .category-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; position: sticky; top: 0; z-index: 1000; background: var(--bg); padding: 5px 0; }
+        .btn-cat { padding: 12px 2px; border: none; border-radius: 10px; background: var(--card); font-size: 11px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .btn-cat.active { background: var(--primary); color: #fff; }
-        
         .size-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .btn-action { padding: 14px; border-radius: 12px; border: 2px solid var(--success); background: #fff; color: var(--success); font-weight: 800; cursor: pointer; }
-        
+        .btn-action { padding: 14px; border-radius: 12px; border: 2px solid var(--success); background: #fff; color: var(--success); font-weight: 800; }
         .main-card { background: var(--card); border-radius: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table td { padding: 14px; border-bottom: 1px solid #f1f5f9; }
-        
-        .qty-badge { background: #f0fdf4; padding: 8px 12px; border-radius: 10px; font-weight: 800; color: var(--success); border: 1px solid #dcfce7; cursor: pointer; }
+        .qty-badge { background: #f0fdf4; padding: 8px 12px; border-radius: 10px; font-weight: 800; color: var(--success); border: 1px solid #dcfce7; }
         .crit-bg { background: #fff1f2 !important; }
-        .crit-text { color: var(--danger) !important; border-color: #fecaca !important; }
-        
+        .crit-text { color: var(--danger) !important; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 5000; align-items: flex-start; justify-content: center; padding-top: 20px; overflow-y: auto; }
         .modal-box { background: #fff; width: 90%; max-width: 360px; padding: 25px; border-radius: 25px; text-align: center; }
         input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 18px; text-align: center; box-sizing: border-box; }
-        .btn-push { background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 14px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .btn-push { background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 14px; width: 100%; font-weight: 800; margin-top: 10px; }
+        .group-fas { background: #f1f5f9; border-radius: 12px; padding: 10px; margin-top: 8px; font-size: 13px; text-align: left; }
+        .group-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding: 6px 0; }
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; border: none; z-index: 4000; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
@@ -53,11 +44,11 @@
         <button id="t-Пленка" class="btn-cat" onclick="setCategory('Пленка')">Пленка</button>
         <button id="t-Скотч" class="btn-cat" onclick="setCategory('Скотч')">Скотч</button>
         <button id="t-Фасовка" class="btn-cat" onclick="setCategory('Фасовка')">Фасовка</button>
+        <button id="t-History" class="btn-cat" onclick="setCategory('History')">История</button>
+        <button class="btn-cat" style="visibility:hidden"></button>
     </div>
 
-    <div id="g-Фасовка" class="size-grid">
-        <button class="btn-action" style="grid-column: 1/3; background: var(--primary); color: #fff; border: none;" onclick="openFasovkaModal()">➕ НОВАЯ СМЕНА</button>
-    </div>
+    <div id="g-Фасовка" class="size-grid"><button class="btn-action" style="grid-column: 1/3; background: var(--primary); color: #fff; border: none;" onclick="openFasovkaModal()">➕ НОВАЯ СМЕНА</button></div>
     <div id="g-Пленка" class="size-grid"><div id="plenkaCont" style="display: contents;"></div></div>
     <div id="g-Пакеты" class="size-grid">
         <button class="btn-action" onclick="openSimpleModal('300×400')">300×400</button>
@@ -68,26 +59,12 @@
     <div id="g-Скотч" class="size-grid"><button class="btn-action" onclick="openSimpleModal('Скотч 360г')">Скотч 360г</button></div>
 
     <div id="display">Загрузка данных...</div>
-    
     <button class="fab" onclick="handleFab()">⚙️</button>
 
-    <div id="modalAuth" class="modal"><div class="modal-box">
-        <h2>Доступ</h2>
-        <div id="loginForm">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="pass" placeholder="Пароль">
-            <button class="btn-push" onclick="doLogin()">ВОЙТИ</button>
-        </div>
-        <div id="logoutForm">
-            <p style="color:var(--success); font-weight:bold;">Админ-режим активен</p>
-            <button class="btn-push" style="background:var(--danger)" onclick="doLogout()">ВЫЙТИ ИЗ СИСТЕМЫ</button>
-        </div>
-        <button style="background:none; border:none; margin-top:15px; color:var(--text-sub); cursor:pointer;" onclick="closeAll()">ЗАКРЫТЬ</button>
-    </div></div>
-
-    <div id="modalSimple" class="modal"><div class="modal-box"><h2 id="simpleLabel"></h2><input type="number" id="simpleVal" inputmode="decimal"><button id="btnSimpleConfirm" class="btn-push" onclick="requestConfirm()">ДОБАВИТЬ</button><button style="background:none; border:none; margin-top:15px; color:var(--text-sub); cursor:pointer;" onclick="closeAll()">ОТМЕНА</button></div></div>
-    <div id="modalEdit" class="modal"><div class="modal-box"><h2 id="editLabel"></h2><input type="number" id="editVal" inputmode="decimal"><button class="btn-push" onclick="saveEdit()">ОБНОВИТЬ</button><button class="btn-push" style="background:var(--danger)" onclick="deleteLine()">УДАЛИТЬ ВСЁ</button><button style="background:none; border:none; margin-top:15px; color:var(--text-sub); cursor:pointer;" onclick="closeAll()">ОТМЕНА</button></div></div>
-    <div id="modalFas" class="modal"><div class="modal-box"><h2>Смена</h2><button class="btn-push" style="background:#f1f5f9; color:#333" onclick="openSub('modalListProd')"><span id="l-prod">Выбрать продукт</span></button><button class="btn-push" style="background:#f1f5f9; color:#333" onclick="openSub('modalListSize')"><span id="l-size">Размер пакета</span></button><input type="number" id="f1" placeholder="Сырье (кг)" inputmode="decimal"><input type="number" id="f2" placeholder="Выход (шт)" inputmode="decimal"><input type="number" id="f3" placeholder="Взял (кг)" inputmode="decimal"><input type="number" id="f4" placeholder="Остаток (кг)" inputmode="decimal"><button class="btn-push" onclick="saveFasovka()">СОХРАНИТЬ</button><button id="btnDelFas" class="btn-push" style="background:var(--danger); display:none" onclick="delFasovka()">УДАЛИТЬ</button><button style="background:none; border:none; margin-top:15px; color:var(--text-sub); cursor:pointer;" onclick="closeAll()">ОТМЕНА</button></div></div>
+    <div id="modalAuth" class="modal"><div class="modal-box"><h2>Доступ</h2><div id="loginForm"><input type="email" id="email" placeholder="Email"><input type="password" id="pass" placeholder="Пароль"><button class="btn-push" onclick="doLogin()">ВОЙТИ</button></div><div id="logoutForm"><p style="color:var(--success); font-weight:bold;">Админ</p><button class="btn-push" style="background:var(--danger)" onclick="doLogout()">ВЫЙТИ</button></div><button style="background:none;border:none;margin-top:15px;color:var(--text-sub)" onclick="closeAll()">ЗАКРЫТЬ</button></div></div>
+    <div id="modalSimple" class="modal"><div class="modal-box"><h2 id="simpleLabel"></h2><input type="number" id="simpleVal" inputmode="decimal"><button id="btnSimpleConfirm" class="btn-push" onclick="requestConfirm()">ДОБАВИТЬ</button><button style="background:none;border:none;margin-top:15px;color:var(--text-sub)" onclick="closeAll()">ОТМЕНА</button></div></div>
+    <div id="modalEdit" class="modal"><div class="modal-box"><h2 id="editLabel"></h2><input type="number" id="editVal" inputmode="decimal"><button class="btn-push" onclick="saveEdit()">ОБНОВИТЬ</button><button class="btn-push" style="background:var(--danger)" onclick="deleteLine()">УДАЛИТЬ ВСЁ</button><button style="background:none;border:none;margin-top:15px;color:var(--text-sub)" onclick="closeAll()">ОТМЕНА</button></div></div>
+    <div id="modalFas" class="modal"><div class="modal-box"><h2>Смена</h2><button class="btn-push" style="background:#f1f5f9;color:#333" onclick="openSub('modalListProd')"><span id="l-prod">Продукт</span></button><button class="btn-push" style="background:#f1f5f9;color:#333" onclick="openSub('modalListSize')"><span id="l-size">Размер</span></button><input type="number" id="f1" placeholder="Сырье (кг)"><input type="number" id="f2" placeholder="Выход (шт)"><input type="number" id="f3" placeholder="Взял (кг)"><input type="number" id="f4" placeholder="Остаток (кг)"><button class="btn-push" onclick="saveFasovka()">СОХРАНИТЬ</button><button id="btnDelFas" class="btn-push" style="background:var(--danger);display:none" onclick="delFasovka()">УДАЛИТЬ</button><button style="background:none;border:none;margin-top:15px;color:var(--text-sub)" onclick="closeAll()">ОТМЕНА</button></div></div>
     <div id="modalListProd" class="modal"><div class="modal-box"><h3>Продукты</h3><div id="listP" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div></div></div>
     <div id="modalListSize" class="modal"><div class="modal-box"><h3>Размеры</h3><div id="listS" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div></div></div>
 
@@ -102,12 +79,10 @@
 
         const PL = ["Арнаутка", "Артек", "Ячка", "Пшеничка", "Кукуруза", "Горох", "Манка", "Хлопья", "Гречка", "Рис дл", "Рис кр", "Рис пр", "Перловка", "Пшоно", "Кук.мука", "Басмати г", "Басмати к", "Кутя", "Кус кус", "Нут", "Чечевица", "Булгур"];
         const SZ = ["300×400", "370×500", "400×500", "420×550"];
-
-        let curCat = 'Пакеты', selP = '', selS = '', edId = null, edDate = null, isConf = false, sName = '', edTot = 0;
+        let curCat = 'Пакеты', selP = '', selS = '', edId = null, isConf = false, sName = '', edTot = 0;
 
         function init() {
             const pDiv = document.getElementById('listP'), sDiv = document.getElementById('listS'), cDiv = document.getElementById('plenkaCont');
-            pDiv.innerHTML = ''; sDiv.innerHTML = ''; cDiv.innerHTML = '';
             PL.forEach(p => {
                 pDiv.innerHTML += `<div style="padding:10px;background:#f8fafc;border-radius:10px;font-size:12px;font-weight:bold" onclick="setP('${p}')">${p}</div>`;
                 cDiv.innerHTML += `<button class="btn-action" onclick="openSimpleModal('${p}')">${p}</button>`;
@@ -119,98 +94,138 @@
         function setCategory(c) { 
             curCat = c; 
             document.querySelectorAll('.btn-cat').forEach(b => b.classList.toggle('active', b.id === 't-'+c)); 
-            document.querySelectorAll('.size-grid').forEach(g => {
-                g.classList.remove('active');
-                if(g.id === 'g-'+c) g.classList.add('active');
-            });
+            document.querySelectorAll('.size-grid').forEach(g => { g.classList.remove('active'); if(g.id === 'g-'+c) g.classList.add('active'); });
             load(); 
         }
 
         function load() {
+            // Отключаем старый слушатель перед включением нового для скорости
+            db.ref('inventory').off();
             db.ref('inventory').on('value', snap => {
-                const all = snap.val() || {}, cont = document.getElementById('display'), fasData = all['Фасовка'] || {};
-                cont.innerHTML = "";
-                if (curCat === 'Фасовка') {
-                    Object.entries(fasData).sort((a,b) => b[1].date.localeCompare(a[1].date)).forEach(([id, v]) => {
-                        cont.innerHTML += `<div style="background:white; border-radius:15px; padding:15px; margin-bottom:10px; border-left:5px solid var(--primary); cursor:pointer;" onclick="editFasovka('${id}')"><div style="font-size:10px;color:#999;float:right">${new Date(v.date).toLocaleDateString()}</div><div style="font-weight:bold">${v.name}</div><div style="color:var(--success);font-weight:bold;margin:5px 0">${v.prihod}кг | ${v.vyhod}шт</div><div style="font-size:12px;color:#666">${v.size} | Расход пленки: ${(v.vzial-v.ostatok).toFixed(2)}кг</div></div>`;
-                    });
+                const all = snap.val() || {}, cont = document.getElementById('display');
+                if (curCat === 'History') {
+                    renderHistory(all);
+                } else if (curCat === 'Фасовка') {
+                    renderFasovka(all['Фасовка'] || {});
                 } else {
-                    const data = all[curCat] || {};
-                    const totals = {};
-                    Object.values(data).forEach(v => { totals[v.size] = (totals[v.size] || 0) + v.amount; });
-                    let h = '<div class="main-card"><table class="data-table">';
-                    Object.keys(totals).sort().forEach(k => {
-                        let v = totals[k], resCount = 0, showRes = false;
-                        if (curCat === 'Пакеты') { resCount = Math.floor(v / 0.103); showRes = true; } 
-                        else if (curCat === 'Пленка') {
-                            let lastR = Object.values(fasData).reverse().find(f => f.name === k && f.vyhod > 0);
-                            if (lastR) { let used = lastR.vzial - lastR.ostatok; if (used > 0) { resCount = Math.floor(v / (used / lastR.vyhod)); showRes = true; } }
-                        } else if (curCat === 'Скотч') { resCount = Math.floor(v / 0.00033); showRes = true; }
-                        let crit = (curCat==='Пакеты'&&v<3000)||(curCat==='Пленка'&&v<60)||(curCat==='Скотч'&&v<30);
-                        h += `<tr class="${crit?'crit-bg':''}"><td><b>${k}</b>${showRes?`<div style="font-size:10px;color:var(--primary)">Ресурс: ~${resCount.toLocaleString()} шт.</div>`:''}</td><td align="right"><div class="qty-guest ${crit?'crit-text':''}">${v.toFixed(2)}</div><div class="qty-badge ${crit?'crit-text':''}" onclick="openEdit('${k}',${v})">${v.toFixed(2)}</div></td></tr>`;
-                    });
-                    cont.innerHTML = h + '</table></div>';
+                    renderStock(all[curCat] || {});
                 }
             });
         }
 
-        // ИСПРАВЛЕННАЯ ФУНКЦИЯ FAB
+        function renderStock(data) {
+            const totals = {};
+            Object.values(data).forEach(v => { if(v.size) totals[v.size] = (totals[v.size] || 0) + v.amount; });
+            let h = '<div class="main-card"><table class="data-table">';
+            Object.keys(totals).sort().forEach(k => {
+                let v = totals[k];
+                let isCrit = (curCat==='Пакеты' && v<3000) || (curCat==='Пленка' && v<60) || (curCat==='Скотч' && v<30);
+                h += `<tr class="${isCrit?'crit-bg':''}"><td><b class="${isCrit?'crit-text':''}">${k}</b></td><td align="right"><div class="qty-guest ${isCrit?'crit-text':''}">${v.toFixed(2)}</div><div class="qty-badge ${isCrit?'crit-text':''}" onclick="openEdit('${k}',${v})">${v.toFixed(2)}</div></td></tr>`;
+            });
+            document.getElementById('display').innerHTML = h + '</table></div>';
+        }
+
+        function renderFasovka(data) {
+            let h = "";
+            Object.entries(data).sort((a,b) => b[1].date.localeCompare(a[1].date)).forEach(([id, v]) => {
+                const user = v.author ? v.author.split('@')[0] : 'гость';
+                const rashod = (parseFloat(v.vzial || 0) - parseFloat(v.ostatok || 0)).toFixed(2);
+                h += `<div style="background:white;border-radius:15px;padding:15px;margin-bottom:10px;border-left:5px solid var(--primary)" onclick="editFasovka('${id}')">
+                    <div style="font-size:10px;color:#999;float:right">${user} | ${new Date(v.date).toLocaleDateString('ru-RU')}</div>
+                    <b>${v.name}</b><div style="color:var(--success);font-weight:800;margin:5px 0">${v.prihod}кг | ${v.vyhod}шт</div>
+                    <div style="font-size:12px;color:#666">${v.size} | <b style="color:var(--danger)">Расход: ${rashod}кг</b></div></div>`;
+            });
+            document.getElementById('display').innerHTML = h || "Нет записей";
+        }
+
+        function renderHistory(all) {
+            let combined = {};
+            ['Пакеты', 'Пленка', 'Скотч'].forEach(cat => {
+                if (all[cat]) Object.entries(all[cat]).forEach(([id, val]) => {
+                    if (!val.date) return;
+                    const key = val.linkedId || 's_' + id;
+                    if (!combined[key]) combined[key] = { date: val.date, author: val.author, isFas: !!val.linkedId, items: [] };
+                    combined[key].items.push({ ...val, cat });
+                });
+            });
+            const sorted = Object.values(combined).sort((a,b) => new Date(b.date) - new Date(a.date));
+            let h = '<div class="main-card"><table class="data-table">';
+            sorted.forEach(g => {
+                const dt = new Date(g.date).toLocaleString('ru-RU');
+                const user = g.author ? g.author.split('@')[0] : 'гость';
+                h += `<tr><td><div style="font-size:10px;color:#999">${dt} | Автор: ${user}</div>${g.isFas?'<b style="color:var(--primary)">🏭 Фасовка</b><div class="group-fas">':''}`;
+                g.items.forEach(i => {
+                    if(g.isFas) h += `<div class="group-item"><span>${i.cat}: ${i.size}</span><span style="color:var(--danger)">${i.amount.toFixed(2)}</span></div>`;
+                    else h += `<b>${i.cat}</b>: ${i.size}</td><td align="right" style="color:${i.amount>0?'var(--success)':'var(--danger)'};font-weight:800">${i.amount>0?'+':''}${i.amount.toFixed(2)}`;
+                });
+                h += g.isFas ? `</div></td><td></td></tr>` : `</td></tr>`;
+            });
+            document.getElementById('display').innerHTML = h + '</table></div>';
+        }
+
         function handleFab() { openSub('modalAuth'); }
-        
         function openSub(id) { document.getElementById(id).style.display = 'flex'; }
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); isConf = false; }
-        
+        function getAuthor() { return auth.currentUser ? auth.currentUser.email : "гость"; }
+
         function openSimpleModal(n) { if(!auth.currentUser) return; sName = n; document.getElementById('simpleLabel').innerText = n; document.getElementById('simpleVal').value = ""; openSub('modalSimple'); }
         function requestConfirm() {
-            const btn = document.getElementById('btnSimpleConfirm'), val = parseFloat(document.getElementById('simpleVal').value);
-            if(!val) return;
-            if(!isConf) { isConf = true; btn.innerText = "УВЕРЕНЫ?"; } 
-            else { db.ref('inventory/'+curCat).push({ size: sName, amount: val, date: new Date().toISOString() }); closeAll(); }
+            const v = parseFloat(document.getElementById('simpleVal').value);
+            if(!v) return;
+            if(!isConf) { isConf = true; document.getElementById('btnSimpleConfirm').innerText = "УВЕРЕНЫ?"; } 
+            else { db.ref('inventory/'+curCat).push({ size: sName, amount: v, date: new Date().toISOString(), author: getAuthor() }); closeAll(); }
         }
         function openEdit(n, c) { if(!auth.currentUser) return; sName = n; edTot = c; document.getElementById('editLabel').innerText = n; document.getElementById('editVal').value = c.toFixed(2); openSub('modalEdit'); }
-        function saveEdit() { const v = parseFloat(document.getElementById('editVal').value); if(isNaN(v)) return; db.ref('inventory/'+curCat).push({ size: sName, amount: v - edTot, date: new Date().toISOString() }); closeAll(); }
-        async function deleteLine() { if(confirm("Удалить все записи по этому товару?")) { const s = await db.ref('inventory/'+curCat).once('value'); s.forEach(c => { if(c.val().size===sName) c.ref.remove(); }); closeAll(); } }
+        function saveEdit() { const v = parseFloat(document.getElementById('editVal').value); if(isNaN(v)) return; db.ref('inventory/'+curCat).push({ size: sName, amount: v - edTot, date: new Date().toISOString(), author: getAuthor() }); closeAll(); }
+        async function deleteLine() { if(confirm("Удалить всё?")) { const s = await db.ref('inventory/'+curCat).once('value'); s.forEach(c => { if(c.val().size===sName) c.ref.remove(); }); closeAll(); } }
         
-        function openFasovkaModal() { if(!auth.currentUser) return; edId = null; edDate = null; selP = ""; selS = ""; document.getElementById('btnDelFas').style.display = "none"; ['f1','f2','f3','f4'].forEach(i => document.getElementById(i).value = ""); document.getElementById('l-prod').innerText = "Выбрать продукт"; document.getElementById('l-size').innerText = "Размер пакета"; openSub('modalFas'); }
-        function editFasovka(id) { if(!auth.currentUser) return; edId = id; db.ref('inventory/Фасовка/'+id).once('value', s => { const v = s.val(); edDate = v.date; selP = v.name; selS = v.size; document.getElementById('l-prod').innerText = v.name; document.getElementById('l-size').innerText = v.size; document.getElementById('f1').value = v.prihod; document.getElementById('f2').value = v.vyhod; document.getElementById('f3').value = v.vzial; document.getElementById('f4').value = v.ostatok; document.getElementById('btnDelFas').style.display = "block"; openSub('modalFas'); }); }
+        function openFasovkaModal() { if(!auth.currentUser) return; edId = null; document.getElementById('btnDelFas').style.display = 'none'; ['f1','f2','f3','f4'].forEach(i => document.getElementById(i).value = ""); openSub('modalFas'); }
+        function editFasovka(id) { 
+            if(!auth.currentUser) return; edId = id; 
+            db.ref('inventory/Фасовка/'+id).once('value', s => { 
+                const v = s.val(); selP = v.name; selS = v.size;
+                document.getElementById('l-prod').innerText = v.name; document.getElementById('l-size').innerText = v.size;
+                document.getElementById('f1').value = v.prihod; document.getElementById('f2').value = v.vyhod;
+                document.getElementById('f3').value = v.vzial; document.getElementById('f4').value = v.ostatok;
+                document.getElementById('btnDelFas').style.display = 'block'; openSub('modalFas'); 
+            }); 
+        }
+        
         async function saveFasovka() { 
             const v1=parseFloat(document.getElementById('f1').value)||0, v2=parseFloat(document.getElementById('f2').value)||0, v3=parseFloat(document.getElementById('f3').value)||0, v4=parseFloat(document.getElementById('f4').value)||0; 
-            if(!selP || !selS || !confirm("Сохранить изменения в базе?")) return; 
-            const ts = edDate || new Date().toISOString(); 
+            if(!selP || !selS) return alert("Выберите всё!"); 
+            const ts = new Date().toISOString(), mail = getAuthor(); 
             if(edId) { for(let c of ['Пакеты','Пленка','Скотч']) { const snap = await db.ref('inventory/'+c).once('value'); snap.forEach(x => { if(x.val().linkedId === edId) x.ref.remove(); }); } } 
             const ref = edId ? db.ref('inventory/Фасовка/'+edId) : db.ref('inventory/Фасовка').push(); 
             const nId = edId || ref.key;
-            await ref.set({ name: selP, prihod: v1, vyhod: v2, vzial: v3, ostatok: v4, size: selS, date: ts }); 
-            if(v2 > 0) { db.ref('inventory/Пакеты').push({ size: selS, amount: -(v2*0.103), date: ts, linkedId: nId }); db.ref('inventory/Скотч').push({ size: 'Скотч 360г', amount: -((v2*0.12)/360), date: ts, linkedId: nId }); } 
-            if((v3-v4)>0) db.ref('inventory/Пленка').push({ size: selP, amount: -(v3-v4), date: ts, linkedId: nId }); 
+            await ref.set({ name: selP, prihod: v1, vyhod: v2, vzial: v3, ostatok: v4, size: selS, date: ts, author: mail }); 
+            if(v2 > 0) { 
+                db.ref('inventory/Пакеты').push({ size: selS, amount: -(v2*0.103), date: ts, linkedId: nId, author: mail }); 
+                db.ref('inventory/Скотч').push({ size: 'Скотч 360г', amount: -((v2*0.12)/360), date: ts, linkedId: nId, author: mail }); 
+            } 
+            if((v3-v4) !== 0) db.ref('inventory/Пленка').push({ size: selP, amount: -(v3-v4), date: ts, linkedId: nId, author: mail }); 
             closeAll(); 
         }
-        async function delFasovka() { if(!confirm("Удалить эту смену?")) return; for(let c of ['Пакеты','Пленка','Скотч']) { const snap = await db.ref('inventory/'+c).once('value'); snap.forEach(x => { if(x.val().linkedId === edId) x.ref.remove(); }); } db.ref('inventory/Фасовка/'+edId).remove(); closeAll(); }
-        
+
+        async function delFasovka() {
+            if(!edId || !confirm("Удалить?")) return;
+            for(let c of ['Пакеты','Пленка','Скотч']) {
+                const snap = await db.ref('inventory/'+c).once('value');
+                snap.forEach(x => { if(x.val().linkedId === edId) x.ref.remove(); });
+            }
+            await db.ref('inventory/Фасовка/'+edId).remove();
+            closeAll();
+        }
+
         function setP(p) { selP = p; document.getElementById('l-prod').innerText = p; document.getElementById('modalListProd').style.display='none'; }
         function setS(s) { selS = s; document.getElementById('l-size').innerText = s; document.getElementById('modalListSize').style.display='none'; }
+        function doLogin() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value).catch(e => alert(e.message)); closeAll(); }
+        function doLogout() { auth.signOut().then(() => location.reload()); }
         
-        function doLogin() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value).then(() => { closeAll(); }).catch(e => alert("Ошибка входа: " + e.message)); }
-        function doLogout() { auth.signOut().then(() => { location.reload(); }); }
-
         init(); 
-
-        // ИСПРАВЛЕННЫЙ МОНИТОРИНГ СТАТУСА
         auth.onAuthStateChanged((u) => { 
-            const body = document.getElementById('appBody');
-            const loginF = document.getElementById('loginForm');
-            const logoutF = document.getElementById('logoutForm');
-            
-            if(u) {
-                body.classList.add('auth-ok');
-                if(loginF) loginF.style.display = 'none';
-                if(logoutF) logoutF.style.display = 'block';
-            } else {
-                body.classList.remove('auth-ok');
-                if(loginF) loginF.style.display = 'block';
-                if(logoutF) logoutF.style.display = 'none';
-            }
-            load(); 
+            const b = document.getElementById('appBody');
+            if(u) b.classList.add('auth-ok'); else b.classList.remove('auth-ok');
         });
     </script>
 </body>
