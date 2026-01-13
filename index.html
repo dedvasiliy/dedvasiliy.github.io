@@ -133,7 +133,7 @@
                 h += `<div style="background:white;border-radius:15px;padding:15px;margin-bottom:10px;border-left:5px solid var(--primary)" onclick="editFasovka('${id}')">
                     <div style="font-size:10px;color:#999;float:right">${user} | ${new Date(v.date).toLocaleDateString('ru-RU')}</div>
                     <b>${v.name}</b><div style="color:var(--success);font-weight:800;margin:5px 0">${v.prihod}кг | ${v.vyhod}шт</div>
-                    <div style="font-size:12px;color:#666">${v.size} | <b style="color:var(--danger)">Расход: ${rashod}кг</b></div></div>`;
+                    <div style="font-size:12px;color:#666">пакеты: ${v.size} | <b style="color:var(--danger)">Расход пленки: ${rashod}кг</b></div></div>`;
             });
             document.getElementById('display').innerHTML = h || "Нет записей";
         }
