@@ -7,46 +7,42 @@
     
     <link rel="icon" type="image/png" href="https://i.ibb.co/Lz8ky3YJ/file-00000000ff1471f4b6d9f9d2c686ef67.png">
     <link rel="apple-touch-icon" href="https://i.ibb.co/Lz8ky3YJ/file-00000000ff1471f4b6d9f9d2c686ef67.png">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Склад v118">
-    <meta name="theme-color" content="#5c67f2">
-
     <link rel="manifest" href="data:application/manifest+json,{'name':'Склад v118','short_name':'Склад','start_url':'.','display':'standalone','background_color':'#f4f7f9','theme_color':'#5c67f2','icons':[{'src':'https://i.ibb.co/Lz8ky3YJ/file-00000000ff1471f4b6d9f9d2c686ef67.png','sizes':'512x512','type':'image/png'}]}">
 
     <style>
         :root { --bg: #f4f7f9; --card: #ffffff; --primary: #5c67f2; --success: #27ae60; --danger: #eb5757; --text: #2c3e50; --sub: #95a5a6; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; padding-bottom: 90px; }
         .menu { display: grid; grid-template-columns: repeat(5, 1fr) 45px; gap: 4px; margin-bottom: 15px; position: sticky; top: 0; background: var(--bg); padding: 5px 0; z-index: 100; }
-        .btn-cat { border: none; border-radius: 10px; padding: 10px 2px; font-weight: 700; font-size: 10px; background: var(--card); color: var(--sub); }
+        .btn-cat { border: none; border-radius: 10px; padding: 10px 2px; font-weight: 700; font-size: 10px; background: var(--card); color: var(--sub); cursor: pointer; }
         .btn-cat.active { background: var(--primary); color: white; }
-        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.03); }
+        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f8f9fa; }
         .qty { font-size: 19px; font-weight: 900; }
         .qty-ok { color: var(--success); }
-        .qty-alarm { color: #ff0000; animation: blink-danger 0.8s infinite; text-shadow: 0 0 5px rgba(235, 87, 87, 0.3); }
+        .qty-alarm { color: #ff0000; animation: blink-danger 0.8s infinite; }
         @keyframes blink-danger { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .btn-hist-small { background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 10px; font-size: 16px; margin-left: 10px; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 15px; }
         .modal-box { background: white; width: 100%; max-width: 380px; border-radius: 24px; position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; background: #fff; }
-        .modal-body { overflow-y: auto; flex-grow: 1; padding: 0 20px 20px 20px; text-align: left; }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .modal-body { overflow-y: auto; padding: 0 20px 20px 20px; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; box-sizing: border-box; }
         .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; font-size: 16px; font-weight: 700; border-radius: 14px; margin-top: 10px; }
-        .btn-close-x { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-close-x { background: #f1f5f9; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .admin-only { display: none !important; }
         body.auth-ok .admin-only { display: block !important; }
         .info-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 5px; margin-right: 5px; text-transform: lowercase; }
         .tag-auto { background: #e0e7ff; color: #4338ca; }
         .tag-man { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-        .note-text { font-size: 11px; color: var(--primary); font-weight: 700; }
-        .user-badge { font-size: 10px; color: var(--sub); text-align: center; margin-bottom: 10px; }
+        .user-badge { font-size: 10px; color: var(--sub); text-align: center; margin-bottom: 10px; padding-top: 5px; }
     </style>
 </head>
 <body id="app">
-    <div id="userStatus" class="user-badge">Вход не выполнен</div>
+    <div id="userStatus" class="user-badge">Загрузка данных...</div>
+    
     <div class="menu">
         <button class="btn-cat active" onclick="setCat('Пакеты', this)">Пакеты</button>
         <button class="btn-cat" onclick="setCat('Пленка', this)">Пленка</button>
@@ -55,14 +51,13 @@
         <button class="btn-cat" onclick="setCat('History', this)">Журнал</button>
         <button class="btn-cat" onclick="openModal('auth')" id="btnSettings">⚙️</button>
     </div>
+
     <div id="actions" class="admin-only"></div>
-    <div id="content">Загрузка данных...</div>
+    <div id="content">Ожидание авторизации...</div>
+
     <div id="modal" class="modal">
         <div class="modal-box">
-            <div class="modal-header">
-                <h3 id="modalTitle" style="margin:0"></h3>
-                <button class="btn-close-x" onclick="closeModal()">✕</button>
-            </div>
+            <div class="modal-header"><h3 id="modalTitle" style="margin:0"></h3><button class="btn-close-x" onclick="closeModal()">✕</button></div>
             <div id="modalBody" class="modal-body"></div>
         </div>
     </div>
@@ -74,23 +69,20 @@
     <script>
         const config = { apiKey: "AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q", databaseURL: "https://myproductionapp-bd872-default-rtdb.firebaseio.com", projectId: "myproductionapp-bd872" };
         firebase.initializeApp(config);
-        const db = firebase.database();
-        const auth = firebase.auth();
+        const db = firebase.database(), auth = firebase.auth();
 
-        let currentCat = 'Пакеты', isAdmin = false, currentUserEmail = 'guest', activeId = null, originalTime = null, cachedData = {};
+        let currentCat = 'Пакеты', isAdmin = false, currentUserEmail = '', activeId = null, originalTime = null, cachedData = {};
         const products = ["Арнаутка", "Артек", "Ячка", "Пшеничка", "Кукуруза", "Горох", "Манка", "Хлопья", "Гречка", "Рис дл", "Рис кр", "Рис пр", "Перловка", "Пшоно", "Кук.мука", "Басмати г", "Басмати к", "Кутя", "Кус кус", "Нут", "Чечевица", "Булгур"];
         const sizes = ["300×400", "370×500", "400×500", "420×550"];
 
         auth.onAuthStateChanged(user => {
             const statusDiv = document.getElementById('userStatus');
             if (user) {
-                isAdmin = true;
-                currentUserEmail = user.email;
+                isAdmin = true; currentUserEmail = user.email;
                 document.body.classList.add('auth-ok');
                 statusDiv.innerText = "Пользователь: " + user.email;
             } else {
-                isAdmin = false;
-                currentUserEmail = 'guest';
+                isAdmin = false; currentUserEmail = '';
                 document.body.classList.remove('auth-ok');
                 statusDiv.innerText = "Вход не выполнен";
             }
@@ -100,7 +92,7 @@
         function formatSafeDate(dStr) {
             if(!dStr) return '--.--.----';
             const clean = dStr.split('T')[0].split('-');
-            return clean.length < 3 ? dStr : `${clean[2]}.${clean[1]}.${clean[0]}`;
+            return `${clean[2]}.${clean[1]}.${clean[0]}`;
         }
 
         function getStatusClass(val, cat) {
@@ -119,9 +111,9 @@
 
         function renderActions() {
             const div = document.getElementById('actions');
-            div.innerHTML = (currentCat === 'Фасовка') 
-                ? `<button class="btn-main" onclick="openModal('fasovka')">+ Новая смена</button><div style="height:10px"></div>`
-                : (currentCat !== 'History' ? `<button class="btn-main" onclick="openModal('add')">+ Приход</button><div style="height:10px"></div>` : '');
+            if (currentCat === 'Фасовка') div.innerHTML = `<button class="btn-main" onclick="openModal('fasovka')">+ Новая смена</button><div style="height:10px"></div>`;
+            else if (currentCat !== 'History') div.innerHTML = `<button class="btn-main" onclick="openModal('add')">+ Приход</button><div style="height:10px"></div>`;
+            else div.innerHTML = '';
         }
 
         function loadData() {
@@ -150,10 +142,8 @@
             let h = '';
             const sorted = Object.entries(data).map(([id, v]) => ({...v, id})).filter(v => v.size === size).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 50);
             sorted.forEach(v => {
-                const authorStr = v.author || 'система';
-                const tagClass = v.linkedId ? 'tag-auto' : 'tag-man';
-                const tagName = v.linkedId ? 'авто' : authorStr.split('@')[0];
-                h += `<div class="row" style="font-size:13px"><div><small style="color:var(--sub)">${formatSafeDate(v.date)}</small><br><span class="info-tag ${tagClass}">${tagName}</span> <span class="note-text">${v.note || ''}</span></div><div style="text-align:right"><b style="color:${v.amount>0?'var(--success)':'var(--danger)'}">${v.amount>0?'+':''}${v.amount.toFixed(1)}</b>${isAdmin ? `<br><span style="color:var(--danger);font-size:10px;font-weight:bold" onclick="deleteEntry('${cat}','${v.id}')">УДАЛИТЬ</span>` : ''}</div></div>`;
+                const authorStr = v.author || 'система', tagClass = v.linkedId ? 'tag-auto' : 'tag-man', tagName = v.linkedId ? 'авто' : authorStr.split('@')[0];
+                h += `<div class="row" style="font-size:13px"><div><small style="color:var(--sub)">${formatSafeDate(v.date)}</small><br><span class="info-tag ${tagClass}">${tagName}</span></div><div style="text-align:right"><b style="color:${v.amount>0?'var(--success)':'var(--danger)'}">${v.amount>0?'+':''}${v.amount.toFixed(1)}</b>${isAdmin ? `<br><span style="color:var(--danger);font-size:10px;font-weight:bold" onclick="deleteEntry('${cat}','${v.id}')">УДАЛИТЬ</span>` : ''}</div></div>`;
             });
             document.getElementById('modalBody').innerHTML = h || 'Пусто';
             document.getElementById('modal').style.display = 'flex';
@@ -164,7 +154,7 @@
             let h = '';
             Object.entries(data).sort((a,b) => b[1].date.localeCompare(a[1].date)).forEach(([id, v]) => {
                 const rash = (parseFloat(v.vzial||0) - parseFloat(v.ostatok||0)).toFixed(1);
-                h += `<div class="card" onclick="editFasovka('${id}')"><div style="display:flex;justify-content:space-between"><b>${v.name}</b> <small>${formatSafeDate(v.date)}</small></div><div style="margin:10px 0;font-size:16px"><b>${v.prihod||0}кг</b> → <span style="color:var(--primary)">${v.vyhod||0}шт</span></div><div style="font-size:12px;color:var(--sub)">Пакет: ${v.size} | Пленка: <b style="color:var(--danger)">${rash}кг</b> | <small>${(v.author||'').split('@')[0]}</small></div></div>`;
+                h += `<div class="card" onclick="editFasovka('${id}')"><div style="display:flex;justify-content:space-between"><b>${v.name}</b> <small>${formatSafeDate(v.date)}</small></div><div style="margin:10px 0;font-size:16px"><b>${v.prihod||0}кг</b> → <span style="color:var(--primary)">${v.vyhod||0}шт</span></div><div style="font-size:12px;color:var(--sub)">Пакет: ${v.size} | Пленка: ${rash}кг | ${(v.author||'').split('@')[0]}</div></div>`;
             });
             document.getElementById('content').innerHTML = h;
         }
@@ -174,9 +164,8 @@
             let list = [];
             ['Пакеты', 'Пленка', 'Скотч'].forEach(cat => { if(all[cat]) Object.entries(all[cat]).forEach(([id, v]) => list.push({...v, cat, id})); });
             list.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 50).forEach(v => {
-                const tagClass = v.linkedId ? 'tag-auto' : 'tag-man';
                 const authorShort = (v.author || 'система').split('@')[0];
-                h += `<div class="row" style="font-size:13px"><div><small>${formatSafeDate(v.date)} | ${v.cat}</small><br><b>${v.size}</b><br><span class="info-tag ${tagClass}">${v.linkedId?'авто':authorShort}</span> <span class="note-text">${v.note||''}</span></div><b style="color:${v.amount>0?'var(--success)':'var(--danger)'}">${v.amount>0?'+':''}${v.amount.toFixed(1)}</b></div>`;
+                h += `<div class="row" style="font-size:13px"><div><small>${formatSafeDate(v.date)} | ${v.cat}</small><br><b>${v.size}</b><br><span class="info-tag ${v.linkedId?'tag-auto':'tag-man'}">${v.linkedId?'авто':authorShort}</span></div><b style="color:${v.amount>0?'var(--success)':'var(--danger)'}">${v.amount>0?'+':''}${v.amount.toFixed(1)}</b></div>`;
             });
             document.getElementById('content').innerHTML = h + '</div>';
         }
@@ -184,75 +173,50 @@
         function openModal(type, name, val) {
             const title = document.getElementById('modalTitle'), body = document.getElementById('modalBody');
             if(type === 'auth') { 
-                title.innerText = 'Вход в систему'; 
-                body.innerHTML = `
-                    <input type="email" id="loginEmail" placeholder="Email" value="nukonor@gmail.com">
-                    <input type="password" id="pass" placeholder="Пароль">
-                    <button class="btn-main" onclick="login()">Войти</button>
-                    ${isAdmin ? '<button class="btn-main" style="background:var(--danger)" onclick="logout()">ВЫЙТИ</button>' : ''}`; 
+                title.innerText = 'Вход'; body.innerHTML = `<input type="email" id="loginEmail" placeholder="Email" value="nukonor@gmail.com"><input type="password" id="pass" placeholder="Пароль"><button class="btn-main" onclick="login()">Войти</button>${isAdmin ? '<button class="btn-main" style="background:var(--danger)" onclick="logout()">Выйти</button>' : ''}`; 
             }
             else if(type === 'edit') { title.innerText = name; body.innerHTML = `<p>Новый остаток:</p><input type="number" id="newQty" value="${val.toFixed(1)}"><button class="btn-main" onclick="saveEdit('${name}', ${val})">Обновить</button>`; }
             else if(type === 'add') { 
-                title.innerText = 'Приход: ' + currentCat; 
-                body.innerHTML = `
-                    <label style="font-size:12px;color:var(--sub)">Дата прихода:</label>
-                    <input type="date" id="addDate" value="${new Date().toISOString().split('T')[0]}">
-                    <select id="selSize">${(currentCat==='Пленка'?products:(currentCat==='Пакеты'?sizes:['Скотч 360г'])).map(s=>`<option>${s}</option>`).join('')}</select>
-                    <input type="number" id="amt" placeholder="Количество">
-                    <button class="btn-main" onclick="saveAdd()">Добавить</button>`; 
+                title.innerText = 'Приход: ' + currentCat; body.innerHTML = `<input type="date" id="addDate" value="${new Date().toISOString().split('T')[0]}"><select id="selSize">${(currentCat==='Пленка'?products:(currentCat==='Пакеты'?sizes:['Скотч 360г'])).map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="amt" placeholder="Количество"><button class="btn-main" onclick="saveAdd()">Добавить</button>`; 
             }
-            else if(type === 'fasovka') { title.innerText = 'Фасовка'; body.innerHTML = `<input type="date" id="fDate" value="${new Date().toISOString().split('T')[0]}"><select id="fName">${products.map(p=>`<option>${p}</option>`).join('')}</select><select id="fSize">${sizes.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fPrihod" placeholder="Сырье кг"><input type="number" id="fVyhod" placeholder="Выход шт"><input type="number" id="fVzial" placeholder="Взял пленки кг"><input type="number" id="fOstatok" placeholder="Остаток кг"><button class="btn-main" id="btnFasSave" onclick="saveFasovka()">Сохранить</button><button class="btn-main" id="btnFasDel" style="background:var(--danger);display:none" onclick="deleteFasovka()">Удалить отчет</button>`; }
+            else if(type === 'fasovka') { 
+                title.innerText = activeId ? 'Редактировать' : 'Новая фасовка'; 
+                body.innerHTML = `<input type="date" id="fDate" value="${new Date().toISOString().split('T')[0]}"><select id="fName">${products.map(p=>`<option>${p}</option>`).join('')}</select><select id="fSize">${sizes.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fPrihod" placeholder="Сырье кг"><input type="number" id="fVyhod" placeholder="Выход шт"><input type="number" id="fVzial" placeholder="Взял пленки кг"><input type="number" id="fOstatok" placeholder="Остаток кг"><button class="btn-main" id="btnFasSave" onclick="saveFasovka()">Сохранить</button>${activeId ? '<button class="btn-main" style="background:var(--danger)" onclick="deleteFasovka()">Удалить</button>' : ''}`; 
+            }
             document.getElementById('modal').style.display = 'flex';
         }
 
         async function saveFasovka() {
-            const d = document.getElementById('fDate').value, time = activeId ? originalTime : new Date().toISOString().split('T')[1], fullDate = d + "T" + time;
-            const name = document.getElementById('fName').value, size = document.getElementById('fSize').value, vyhod = parseFloat(document.getElementById('fVyhod').value)||0, vzial = parseFloat(document.getElementById('fVzial').value)||0, ostatok = parseFloat(document.getElementById('fOstatok').value)||0, prihod = document.getElementById('fPrihod').value;
-            const btn = document.getElementById('btnFasSave'); btn.disabled = true; btn.innerText = "Сохранение...";
+            const btn = document.getElementById('btnFasSave'); btn.disabled = true;
             try {
+                const d = document.getElementById('fDate').value, time = activeId ? originalTime : new Date().toISOString().split('T')[1], fullDate = d + "T" + time;
+                const name = document.getElementById('fName').value, size = document.getElementById('fSize').value, vyhod = parseFloat(document.getElementById('fVyhod').value)||0, vzial = parseFloat(document.getElementById('fVzial').value)||0, ostatok = parseFloat(document.getElementById('fOstatok').value)||0, prihod = document.getElementById('fPrihod').value;
                 if(activeId) { for(let c of ['Пакеты', 'Пленка', 'Скотч']) { const snap = await db.ref('inventory/'+c).once('value'); snap.forEach(ch => { if(ch.val().linkedId === activeId) ch.ref.remove(); }); } }
                 const ref = activeId ? db.ref('inventory/Фасовка/'+activeId) : db.ref('inventory/Фасовка').push(), nId = activeId || ref.key;
-                await ref.set({ date: fullDate, name, size, vyhod, vzial, ostatok, prihod: prihod, author: currentUserEmail });
+                await ref.set({ date: fullDate, name, size, vyhod, vzial, ostatok, prihod, author: currentUserEmail });
                 if(vyhod > 0) {
                     await db.ref('inventory/Пакеты').push({ size, amount: -(vyhod*0.103), date: fullDate, linkedId: nId, note: 'Списание: '+name, author: currentUserEmail });
                     await db.ref('inventory/Скотч').push({ size: 'Скотч 360г', amount: -((vyhod*0.12)/360), date: fullDate, linkedId: nId, note: 'Списание: '+name, author: currentUserEmail });
                 }
-                if(vzial-ostatok !== 0) { await db.ref('inventory/Пленка').push({ size: name, amount: -(vzial-ostatok), date: fullDate, linkedId: nId, note: 'Расход фасовка', author: currentUserEmail }); }
+                if(vzial-ostatok !== 0) await db.ref('inventory/Пленка').push({ size: name, amount: -(vzial-ostatok), date: fullDate, linkedId: nId, note: 'Расход фасовка', author: currentUserEmail });
                 closeModal();
-            } catch (err) { alert("Ошибка: " + err.message); } finally { btn.disabled = false; btn.innerText = "Сохранить"; }
+            } catch (err) { alert(err.message); } finally { btn.disabled = false; }
         }
 
-        async function saveEdit(name, old) { 
-            const nv = parseFloat(document.getElementById('newQty').value); 
-            await db.ref(`inventory/${currentCat}`).push({ 
-                size: name, 
-                amount: nv - old, 
-                date: new Date().toISOString(), 
-                note: 'Коррекция', 
-                author: currentUserEmail 
-            }); 
-            closeModal(); 
-        }
-        
-        async function saveAdd() { 
-            const s = document.getElementById('selSize').value, a = parseFloat(document.getElementById('amt').value), d = document.getElementById('addDate').value;
-            if(a) {
-                await db.ref(`inventory/${currentCat}`).push({ size: s, amount: a, date: d + "T12:00:00Z", note: 'Приход', author: currentUserEmail }); 
-                closeModal(); 
-            }
+        async function editFasovka(id) {
+            if(!isAdmin) return;
+            activeId = id; const v = cachedData.Фасовка[id]; originalTime = v.date.split('T')[1] || "12:00:00Z";
+            openModal('fasovka');
+            setTimeout(() => {
+                document.getElementById('fDate').value = v.date.split('T')[0]; document.getElementById('fName').value = v.name; document.getElementById('fSize').value = v.size; document.getElementById('fPrihod').value = v.prihod; document.getElementById('fVyhod').value = v.vyhod; document.getElementById('fVzial').value = v.vzial; document.getElementById('fOstatok').value = v.ostatok;
+            }, 50);
         }
 
-        async function deleteFasovka() { if(confirm('Удалить отчет?')) { for(let c of ['Пакеты', 'Пленка', 'Скотч']) { const s = await db.ref('inventory/'+c).once('value'); s.forEach(ch => { if(ch.val().linkedId === activeId) ch.ref.remove(); }); } await db.ref('inventory/Фасовка/'+activeId).remove(); closeModal(); } }
-        async function deleteEntry(cat, id) { if(confirm('Удалить запись?')) { await db.ref(`inventory/${cat}/${id}`).remove(); closeModal(); } }
-        
-        async function login() { 
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('pass').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-                closeModal(); 
-            } catch (e) { alert("Ошибка: " + e.message); }
-        }
+        async function saveEdit(name, old) { const nv = parseFloat(document.getElementById('newQty').value); await db.ref(`inventory/${currentCat}`).push({ size: name, amount: nv - old, date: new Date().toISOString(), note: 'Коррекция', author: currentUserEmail }); closeModal(); }
+        async function saveAdd() { const s = document.getElementById('selSize').value, a = parseFloat(document.getElementById('amt').value), d = document.getElementById('addDate').value; if(a) { await db.ref(`inventory/${currentCat}`).push({ size: s, amount: a, date: d + "T12:00:00Z", note: 'Приход', author: currentUserEmail }); closeModal(); } }
+        async function deleteFasovka() { if(confirm('Удалить?')) { for(let c of ['Пакеты', 'Пленка', 'Скотч']) { const s = await db.ref('inventory/'+c).once('value'); s.forEach(ch => { if(ch.val().linkedId === activeId) ch.ref.remove(); }); } await db.ref('inventory/Фасовка/'+activeId).remove(); closeModal(); } }
+        async function deleteEntry(cat, id) { if(confirm('Удалить?')) { await db.ref(`inventory/${cat}/${id}`).remove(); closeModal(); } }
+        async function login() { try { await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('pass').value); closeModal(); } catch (e) { alert(e.message); } }
         function logout() { auth.signOut(); closeModal(); }
         function closeModal() { document.getElementById('modal').style.display = 'none'; activeId = null; }
         window.onload = () => setCat('Пакеты');
