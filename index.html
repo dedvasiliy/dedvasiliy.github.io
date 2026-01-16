@@ -1,179 +1,65 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад PRO v192</title><style>
-:root{--bg:#f4f7f9;--card:#fff;--primary:#4e73df;--success:#1cc88a;--danger:#e74a3b;--text:#000;--sub:#666;--border:#bbb}
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад PRO v209</title><style>
+:root{--bg:#f4f7f9;--card:#fff;--primary:#4e73df;--success:#1cc88a;--danger:#e74a3b;--text:#000;--border:#bbb}
 body{font-family:sans-serif;background:var(--bg);color:var(--text);margin:0;padding:5px;padding-bottom:80px}
-.dash-grid{display:flex;flex-direction:column;gap:6px;max-width:500px;margin:0 auto}
-.dash-item{background:#fff;border-radius:8px;padding:15px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;border:1px solid var(--border);font-weight:700;color:var(--primary);text-transform:uppercase;font-size:13px}
-.card{background:#fff;border-radius:10px;padding:10px;margin-bottom:6px;border:1px solid var(--border)}
-.row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eee}
-.qty-alarm{color:var(--danger)!important;font-weight:900}
+.dash-grid{display:flex;flex-direction:column;gap:5px;max-width:500px;margin:0 auto}
+.dash-item{background:#fff;border-radius:8px;padding:18px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;border:1px solid var(--border);font-weight:700;color:var(--primary);text-transform:uppercase;font-size:13px}
+.card{background:#fff;border-radius:10px;padding:10px;margin-bottom:5px;border:1px solid var(--border);position:relative}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:5px}
-.modal-box{background:#fff;width:100%;max-width:400px;border-radius:12px;max-height:92vh;display:flex;flex-direction:column}
-.modal-body{overflow-y:auto;padding:0 12px 12px}
+.modal-box{background:#fff;width:100%;max-width:380px;border-radius:12px;max-height:92vh;display:flex;flex-direction:column}
+.modal-body{overflow-y:auto;padding:15px}
 input,select{width:100%;padding:10px;margin:4px 0;border:1px solid var(--border);border-radius:6px;font-size:16px;box-sizing:border-box}
-.btn-main{background:var(--primary);color:#fff;border:none;width:100%;padding:14px;font-size:13px;font-weight:700;border-radius:8px;margin:3px 0;text-transform:uppercase;text-align:center}
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-top:1px solid var(--border);z-index:900}
+.btn-main{background:var(--primary);color:#fff;border:none;width:100%;padding:14px;font-size:13px;font-weight:700;border-radius:8px;margin:2px 0;text-transform:uppercase}
+.btn-del{background:var(--danger);color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;border:none}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;grid-template-columns:1fr 1fr;gap:5px;padding:8px;border-top:1px solid var(--border);z-index:900}
 body.nav-active .bottom-nav{display:grid}
-.folder{background:#e2e6ea;padding:10px;border-radius:6px;margin-bottom:3px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;color:var(--primary);font-size:13px}
+.folder{background:#eee;padding:10px;border-radius:6px;margin-bottom:3px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;color:var(--primary);font-size:14px}
 .f-content{display:none;padding-left:8px;border-left:2px solid var(--primary);margin-left:4px}
-.gp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
-.gp-card{background:#fff;border-radius:6px;padding:5px 2px;text-align:center;border:1px solid #aaa}
-.gp-title{font-size:9px;font-weight:900;color:#000;text-transform:uppercase;margin-bottom:3px;height:11px;overflow:hidden}
-.gp-qty{font-size:14px;font-weight:900;color:var(--primary);margin-bottom:3px}
-.history-btn{border:none;background:#f0f0f0;padding:3px 0;border-radius:3px;font-size:8px;font-weight:700;color:var(--primary);width:90%;margin:0 auto;text-transform:uppercase;display:block}
-/* Новая сетка для отгрузки */
-.ship-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:10px}
-.ship-box{border:1px solid #ccc;border-radius:6px;padding:4px;text-align:center;background:#fff}
-.ship-box:focus-within{background:#fff9c4;border-color:var(--primary)}
-.ship-box label{font-size:10px;font-weight:900;display:block;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ship-box input{width:100%!important;margin:0!important;padding:4px!important;text-align:center;font-size:14px!important;font-weight:700;border:none!important;background:transparent}
+.f-badge{background:var(--primary);color:#fff;font-size:10px;padding:2px 6px;border-radius:10px}
+.report-line{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;border-bottom:1px solid #f9f9f9}
+.item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.item-card{background:#fff;border:1px solid #aaa;border-radius:6px;padding:5px 2px;text-align:center;transition: all 0.2s}
+.item-title{font-size:9px;font-weight:900;color:#000;text-transform:uppercase;margin-bottom:2px;height:11px;overflow:hidden}
+.item-qty{font-size:14px;font-weight:900;color:var(--primary);margin-bottom:3px}
+.history-btn{border:none;background:#f0f0f0;padding:4px 0;border-radius:3px;font-size:8px;font-weight:700;color:var(--primary);width:90%;margin:0 auto;text-transform:uppercase;display:block}
+.alarm{background: #ff0000 !important; border-color: #7a0000 !important; animation: blinker 1.5s linear infinite;}
+.alarm .item-title, .alarm .item-qty{color: #fff !important;}
+@keyframes blinker { 50% { opacity: 0.6; } }
+.dev-msg{text-align:center;padding:50px 20px;color:#999;font-weight:700;text-transform:uppercase;font-size:12px}
 </style></head><body>
-
-<div id="userStatus" style="font-size:9px;text-align:center;margin-bottom:5px">...</div>
-<div id="actions"></div>
-<div id="content"></div>
-
-<div class="bottom-nav">
-    <button class="btn-main" style="background:#555;" onclick="renderHome()">МЕНЮ</button>
-    <button class="btn-main" style="background:#888;" onclick="goBack()">НАЗАД</button>
-</div>
-
-<div id="modal" class="modal">
-    <div class="modal-box">
-        <div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee"><h4 id="modalTitle" style="margin:0;font-size:13px"></h4><button onclick="closeModal()" style="border:none;background:none;font-size:20px">✕</button></div>
-        <div id="modalBody" class="modal-body"></div>
-    </div>
-</div>
-
+<div id="userStatus" style="font-size:10px;text-align:center;margin-bottom:5px">...</div>
+<div id="actions"></div><div id="content"></div>
+<div class="bottom-nav"><button class="btn-main" style="background:#555" onclick="renderHome()">МЕНЮ</button><button class="btn-main" style="background:#999" onclick="goBack()">НАЗАД</button></div>
+<div id="modal" class="modal"><div class="modal-box">
+<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee"><h4 id="modalTitle" style="margin:0"></h4><button onclick="closeModal()" style="border:none;background:none;font-size:20px">✕</button></div>
+<div id="modalBody" class="modal-body"></div></div></div>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
 <script>
 const config={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
 if(!firebase.apps.length)firebase.initializeApp(config);const db=firebase.database(),auth=firebase.auth();
-let currentCat='Home',isAdmin=false,currentUserEmail='',cachedData={};
-const products=["Арнаутка","Артек","Ячка","Пшеничка","Кукуруза","Горох","Манка","Хлопья","Гречка","Рис дл","Рис кр","Рис пр","Перловка","Пшоно","Кук.мука","Басмати г","Басмати к","Кутя","Кус кус","Нут","Чечевица","Булгур"],sizes=["300×400","370×500","400×500","420×550"],monthsGen=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"],months=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],weightProds=["Покупная","Дед Василий","Отруби","Мучка","Кормовая"];
-
-auth.onAuthStateChanged(user=>{isAdmin=!!user;currentUserEmail=user?user.email:'';document.getElementById('userStatus').innerText=user?user.email.toUpperCase():"ВХОД...";renderHome()});
-
+let currentCat='Home',cachedData={},activeId=null;
+const products=["Арнаутка","Артек","Ячка","Пшеничка","Кукуруза","Горох","Манка","Хлопья","Гречка","Рис дл","Рис кр","Рис пр","Перловка","Пшоно","Кук.мука","Басмати г","Басмати к","Кутя","Кус кус","Нут","Чечевица","Булгур"],sizes=["300×400","370×500","400×500","420×550"],months=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 function fd(i){if(!i)return'';const d=i.split('T')[0].split('-');return `${d[2]}.${d[1]}.${d[0]}`}
-
-function renderHome(){
-    currentCat='Home'; document.body.classList.remove('nav-active');
-    document.getElementById('actions').innerHTML='';
-    document.getElementById('content').innerHTML=`<div class="dash-grid">
-        <div class="dash-item" onclick="setCat('StockRoot')">Склад</div>
-        <div class="dash-item" onclick="setCat('ProdSub')">Производство</div>
-        <div class="dash-item" onclick="setCat('PackSub')">Упаковка</div>
-        <div class="dash-item" onclick="openModal('auth')" style="color:#aaa">Система</div>
-    </div>`;
-}
-
-function goBack(){
-    const map={'InvoicesDate':'Invoices','InvoicesClient':'Invoices','Invoices':'StockRoot','GP_Root':'StockRoot','IncomingStock':'StockRoot','StockList':'GP_Root','WeightStock':'GP_Root','Фасовка':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч':'PackSub'};
-    if(weightProds.includes(currentCat)) setCat('WeightStock'); else if(map[currentCat]) setCat(map[currentCat]); else renderHome();
-}
-
-function setCat(c){
-    currentCat=c; document.body.classList.add('nav-active'); const a=document.getElementById('actions'); a.innerHTML='';
-    if(c==='StockRoot'){
-        a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px"><button class="btn-main" style="background:var(--success)" onclick="setCat('IncomingStock')">Приход</button><button class="btn-main" style="background:var(--danger)" onclick="openModal('shipment')">Отгрузка</button></div>`;
-        document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('GP_Root')">Готовая продукция</div><div class="dash-item" onclick="setCat('Invoices')">Архив накладных</div></div>`; return;
-    }
-    if(c==='GP_Root'){ document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">Фасовка</div><div class="dash-item" onclick="setCat('WeightStock')">Весовая</div></div>`; return; }
-    if(c==='Invoices'){ document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По клиентам</div></div>`; return; }
-    if(c==='WeightStock'){ let h=`<div class="dash-grid">`; weightProds.forEach(p => h+=`<div class="dash-item" onclick="setCat('${p}')">${p}</div>`); document.getElementById('content').innerHTML=h+`</div>`; return; }
-    if(c==='ProdSub'){ document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div></div>`; return; }
-    if(c==='PackSub'){ document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">Пленка</div><div class="dash-item" onclick="setCat('Пакеты')">Пакеты</div><div class="dash-item" onclick="setCat('Скотч')">Скотч</div></div>`; return; }
-    if(c==='Фасовка') a.innerHTML=`<button class="btn-main" onclick="openModal('fasovka')">+ Новая запись</button>`;
-    else if(!weightProds.includes(c) && !['Invoices','InvoicesDate','InvoicesClient','Home','PackSub','ProdSub','StockRoot','GP_Root','StockList','WeightStock','Kruporushka','IncomingStock'].includes(c)) a.innerHTML=`<button class="btn-main" onclick="openModal('add')">+ Приход</button>`;
-    loadData();
-}
-
-function loadData(){
-    db.ref('inventory').on('value',s=>{
-        cachedData=s.val()||{}; const c=document.getElementById('content'); if(!c || ['Home','PackSub','ProdSub','StockRoot','GP_Root','WeightStock','Invoices'].includes(currentCat)) return;
-        if(currentCat==='InvoicesDate') renderInvoicesDate(c); else if(currentCat==='InvoicesClient') renderInvoicesClient(c); else if(currentCat==='Фасовка') renderFasList(c); else if(currentCat==='StockList') renderWarehouseGrid(c); else renderGenericStock(c);
-    });
-}
-
-function renderInvoicesDate(c){
-    const d=cachedData.ArchInvoices||{}, tree={};
-    Object.entries(d).forEach(([id,v])=>{ const dt=new Date(v.date), y=dt.getFullYear(), m=dt.getMonth(), day=dt.getDate(); if(!tree[y])tree[y]={}; if(!tree[y][m])tree[y][m]={}; if(!tree[y][m][day])tree[y][m][day]=[]; tree[y][m][day].push({...v,id}); });
-    let h=''; Object.keys(tree).sort((a,b)=>b-a).forEach(y=>{
-        let yT=0; Object.values(tree[y]).forEach(m=>Object.values(m).forEach(d=>yT+=d.length));
-        h+=`<div class="folder" onclick="toggleF('y${y}')">${y} ГОД [${yT}]</div><div id="y${y}" class="f-content">`;
-        Object.keys(tree[y]).sort((a,b)=>b-a).forEach(m=>{
-            let mT=0; Object.values(tree[y][m]).forEach(d=>mT+=d.length);
-            h+=`<div class="folder" onclick="toggleF('m${y}${m}')">${months[m]} [${mT}]</div><div id="m${y}${m}" class="f-content">`;
-            Object.keys(tree[y][m]).sort((a,b)=>b-a).forEach(day=>{
-                let dC=tree[y][m][day].length;
-                h+=`<div class="folder" onclick="toggleF('d${y}${m}${day}')">${day} ${monthsGen[m]} [${dC}]</div><div id="d${y}${m}${day}" class="f-content">`;
-                tree[y][m][day].sort((a,b)=>b.date.localeCompare(a.date)).forEach(v=> h+=`<div class="card" onclick="toggleF('inv${v.id}')" style="padding:8px">№${v.num} — ${v.client}<div id="inv${v.id}" style="display:none;margin-top:5px;font-size:12px;color:var(--danger)">${v.items.join('<br>')}</div></div>`);
-                h+=`</div>`; }); h+=`</div>`; }); h+=`</div>`;
-    }); c.innerHTML=h||'Пусто';
-}
-
-function renderInvoicesClient(c){
-    const d=cachedData.ArchInvoices||{}, clients={};
-    Object.values(d).forEach(v=>{ if(!clients[v.client]) clients[v.client]=[]; clients[v.client].push(v); });
-    let h=''; Object.keys(clients).sort().forEach((cl,idx)=>{
-        let cC=clients[cl].length;
-        h+=`<div class="folder" onclick="toggleF('cl${idx}')">${cl} [${cC}]</div><div id="cl${idx}" class="f-content">`;
-        clients[cl].sort((a,b)=>b.date.localeCompare(a.date)).forEach(v=> h+=`<div class="card" onclick="toggleF('invcl${idx}_${v.num}')" style="padding:8px">№${v.num} — ${fd(v.date)}<div id="invcl${idx}_${v.num}" style="display:none;margin-top:5px;font-size:12px">${v.items.join('<br>')}</div></div>`);
-        h+=`</div>`; }); c.innerHTML=h||'Пусто';
-}
-
-function renderFasList(c){
-    let h=''; Object.entries(cachedData.Фасовка||{}).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([id,v])=>{
-        const fU=Math.abs(parseFloat(v.vzial||0)-parseFloat(v.ostatok||0)).toFixed(1);
-        h+=`<div class="card" style="padding:8px"><div style="font-weight:900;border-bottom:1px solid #eee;margin-bottom:3px;font-size:12px">${v.name.toUpperCase()} — ${fd(v.date)}</div><div style="font-size:11px">СЫРЬЕ: ${v.prihod}кг / ВЫХОД: ${v.vyhod}шт / ПЛЕНКА: ${fU}кг</div></div>`;
-    }); c.innerHTML=h||'Пусто';
-}
-
-function renderWarehouseGrid(c){
-    const t={}; products.forEach(p=>t[p]=0); Object.values(cachedData.Готовая||{}).forEach(v=>{if(t[v.name]!==undefined)t[v.name]+=v.amount});
-    let h='<div class="gp-grid">';
-    Object.keys(t).sort().forEach(n=>{ h+=`<div class="gp-card"><div class="gp-title">${n}</div><div class="gp-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showHist('Готовая','${n}')">История</button></div>`; });
-    c.innerHTML=h+'</div>';
-}
-
-function renderGenericStock(c){
-    const d=cachedData[currentCat]||{}, t={}; Object.values(d).forEach(v=>{let k=v.size||v.name; if(k) t[k]=(t[k]||0)+v.amount});
-    let h='<div class="card">'; Object.keys(t).sort().forEach(k=>{
-        const a=t[k]; const al=(currentCat==='Пакеты' && a<3000) || (currentCat==='Пленка' && a<50) || (currentCat==='Скотч' && a<30);
-        h+=`<div class="row"><b>${k}</b><div style="display:flex;align-items:center"><span class="${al?'qty-alarm':''}" style="font-weight:900;margin-right:10px;font-size:14px">${currentCat==='Пакеты'?Math.round(a):a.toFixed(1)}</span><button class="history-btn" style="width:auto;padding:4px 8px" onclick="showHist('${currentCat}','${k}')">История</button></div></div>`; 
-    });
-    c.innerHTML=h+'</div>';
-}
-
-function openModal(t){
-    const ti=document.getElementById('modalTitle'), b=document.getElementById('modalBody');
-    if(t==='auth'){ ti.innerText='Вход'; b.innerHTML=`<input type="email" id="lEmail" value="nukonor@gmail.com"><input type="password" id="lPass" placeholder="Пароль"><button class="btn-main" onclick="login()">Войти</button>${isAdmin?`<button class="btn-main" style="background:var(--danger);margin-top:10px" onclick="auth.signOut();closeModal();renderHome()">Выход</button>`:''}`}
-    else if(t==='fasovka'){ ti.innerText='Запись'; b.innerHTML=`<input type="date" id="fDate" value="${new Date().toISOString().split('T')[0]}"><select id="fName">${products.map(p=>`<option>${p}</option>`).join('')}</select><select id="fSize">${sizes.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fPr" placeholder="Сырье кг"><input type="number" id="fVy" placeholder="Выход шт"><input type="number" id="fVzial" placeholder="Взял пленки" step="0.1"><input type="number" id="fOs" placeholder="Остаток пленки" step="0.1"><button class="btn-main" onclick="saveFas()">Записать</button>`}
-    else if(t==='shipment'){ ti.innerText='Отгрузка'; let h=`<input type="date" id="sDate" value="${new Date().toISOString().split('T')[0]}"><input type="text" id="sNum" placeholder="Номер"><input type="text" id="sCl" placeholder="Клиент"><div class="ship-grid">`; products.sort().forEach(p=>h+=`<div class="ship-box"><label>${p}</label><input type="number" class="s-in" data-p="${p}" placeholder="0"></div>`); h+=`</div><button class="btn-main" onclick="saveShip()">Записать</button>`; b.innerHTML=h}
-    else if(t==='add'){ ti.innerText='Приход'; b.innerHTML=`<select id="aItem">${(currentCat==='Пленка'?products:(currentCat==='Пакеты'?sizes:['Скотч'])).map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="aAmt" placeholder="Количество" step="0.1"><button class="btn-main" onclick="saveAdd()">Записать</button>`}
-    document.getElementById('modal').style.display='flex';
-}
-
-async function saveFas(){
-    const d=document.getElementById('fDate').value, na=document.getElementById('fName').value, si=document.getElementById('fSize').value, vy=parseFloat(document.getElementById('fVy').value)||0, pr=parseFloat(document.getElementById('fPr').value)||0, vz=parseFloat(document.getElementById('fVzial').value)||0, os=parseFloat(document.getElementById('fOs').value)||0;
-    const nI=db.ref('inventory/Фасовка').push().key;
-    await db.ref('inventory/Фасовка/'+nI).set({date:d+"T12:00:00Z",name:na,size:si,vyhod:vy,prihod:pr,vzial:vz,ostatok:os,author:currentUserEmail});
-    if(vy>0){ await db.ref('inventory/Готовая').push({name:na,amount:vy,date:d+"T12:00:00Z",note:'Пр-во'}); await db.ref('inventory/Пакеты').push({size:si,amount:-Math.round(vy*0.103),date:d+"T12:00:00Z",note:'Фасовка: '+na}); }
-    if(vz-os!==0) await db.ref('inventory/Пленка').push({size:na,amount:-parseFloat((vz-os).toFixed(1)),date:d+"T12:00:00Z",note:'Фасовка: '+na}); closeModal();
-}
-
-async function saveShip(){
-    const d=document.getElementById('sDate').value, nu=document.getElementById('sNum').value, cl=document.getElementById('sCl').value, items=[]; 
-    const inputs=document.querySelectorAll('.s-in'); for(let i of inputs){ const a=parseFloat(i.value); if(a>0){ await db.ref('inventory/Готовая').push({name:i.dataset.p,amount:-a,date:d+"T12:00:00Z",note:cl}); items.push(i.dataset.p+': '+a+'шт')}} 
-    if(items.length) await db.ref('inventory/ArchInvoices').push({date:d+"T12:00:00Z",num:nu,client:cl,items:items}); closeModal();
-}
-
-async function saveAdd(){ const a=parseFloat(document.getElementById('aAmt').value), item=document.getElementById('aItem').value; await db.ref(`inventory/${currentCat}`).push({size:item,name:item,amount:a,date:new Date().toISOString(),note:'Приход'}); closeModal(); }
-async function login(){ try{await auth.signInWithEmailAndPassword(document.getElementById('lEmail').value,document.getElementById('lPass').value);closeModal()}catch(e){alert('Ошибка')}}
-function closeModal(){document.getElementById('modal').style.display='none'}
-function toggleF(id){const e=document.getElementById(id); e.style.display=(e.style.display==='block'?'none':'block')}
-function showHist(c,k){const ti=document.getElementById('modalTitle'),b=document.getElementById('modalBody');ti.innerText=k;const l=Object.values(cachedData[c]||{}).filter(v=>v.size===k||v.name===k).sort((x,y)=>y.date.localeCompare(x.date));let h='<table style="width:100%;font-size:11px;border-collapse:collapse">';l.forEach(v=>{ const n=v.note?`<div style="color:var(--sub);font-size:9px">${v.note}</div>`:''; h+=`<tr style="border-bottom:1px solid #ccc"><td style="padding:6px 0">${fd(v.date)}${n}</td><td style="text-align:right;font-weight:700;color:${v.amount>0?'#1cc88a':'#e74a3b'}">${v.amount.toFixed(1)}</td></tr>`});b.innerHTML=h+'</table>';document.getElementById('modal').style.display='flex'}
+function renderHome(){currentCat='Home'; document.body.classList.remove('nav-active'); document.getElementById('content').innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('StockRoot')">Склад</div><div class="dash-item" onclick="setCat('ProdSub')">Производство</div><div class="dash-item" onclick="setCat('PackSub')">Упаковка</div><div class="dash-item" onclick="openModal('auth')" style="color:#aaa">Вход</div></div>`;}
+function setCat(c){currentCat=c; document.body.classList.add('nav-active'); const a=document.getElementById('actions'); a.innerHTML=''; const ct=document.getElementById('content'); if(c==='StockRoot'){a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"><button class="btn-main" style="background:var(--success)" onclick="setCat('IncomingStock')">Приход</button><button class="btn-main" style="background:var(--danger)" onclick="openModal('shipment')">Отгрузка</button></div>`; ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('GP_Root')">Готовая продукция</div><div class="dash-item" onclick="setCat('Invoices')">Архив накладных</div></div>`; return;} if(c==='GP_Root'){a.innerHTML=`<button class="btn-main" onclick="openModal('gp_corr')">Коррекция ГП</button>`; ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">Фасовка</div><div class="dash-item" onclick="setCat('WeightStock')">Весовая</div></div>`; return;} if(c==='ProdSub') ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('Vibrostol')">Вибростол</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div></div>`; if(c==='PackSub') ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">Пленка</div><div class="dash-item" onclick="setCat('Пакеты')">Пакеты</div><div class="dash-item" onclick="setCat('Скотч')">Скотч</div></div>`; if(['Пленка','Пакеты','Скотч'].includes(c)) a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button class="btn-main" onclick="openModal('add')">Приход</button><button class="btn-main" style="background:var(--danger)" onclick="openModal('mat_corr')">Коррекция</button></div>`; if(c==='Invoices') ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По клиентам</div></div>`; if(c==='Фасовка') a.innerHTML=`<button class="btn-main" onclick="openModal('fasovka')">+ Новая запись</button>`; loadData();}
+function loadData(){db.ref('inventory').on('value',s=>{cachedData=s.val()||{}; const c=document.getElementById('content'); if(!c || ['Home','PackSub','ProdSub','StockRoot','GP_Root','Invoices'].includes(currentCat)) return; const dev = ['Kruporushka','Vibrostol','ZSHM','IncomingStock','WeightStock']; if(dev.includes(currentCat)){ c.innerHTML=`<div class="dev-msg">Раздел в разработке...</div>`; return; } if(currentCat==='InvoicesDate') renderInvoicesDate(c); else if(currentCat==='InvoicesClient') renderInvoicesClient(c); else if(currentCat==='Фасовка') renderFasList(c); else if(currentCat==='StockList') renderWarehouseGrid(c); else renderGenericStock(c);});}
+function renderWarehouseGrid(c){const t={}; products.forEach(p=>t[p]=0); Object.values(cachedData.Готовая||{}).forEach(v=>{if(t[v.name]!==undefined)t[v.name]+=v.amount}); let h='<div class="item-grid">'; Object.keys(t).sort().forEach(n=>{const isLow = t[n] < 10; h+=`<div class="item-card ${isLow?'alarm':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showHist('Готовая','${n}')">История</button></div>`;}); c.innerHTML=h+'</div>';}
+function renderGenericStock(c){const d=cachedData[currentCat]||{}, t={}; Object.values(d).forEach(v=>{let k=v.size||v.name; if(k) t[k]=(t[k]||0)+v.amount}); let h='<div class="item-grid">'; Object.keys(t).sort().forEach(k=>{let isLow = false; if(currentCat==='Пакеты') isLow = t[k] < 3000; if(currentCat==='Пленка') isLow = t[k] < 50; if(currentCat==='Скотч') isLow = t[k] < 30; h+=`<div class="item-card ${isLow?'alarm':''}"><div class="item-title">${k}</div><div class="item-qty">${currentCat==='Пакеты'?Math.round(t[k]):t[k].toFixed(1)}</div><button class="history-btn" onclick="showHist('${currentCat}','${k}')">История</button></div>`;}); c.innerHTML=h+'</div>';}
+function renderFasList(c){let h=''; Object.entries(cachedData.Фасовка||{}).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([id,v])=>{const fU=Math.abs(parseFloat(v.vzial||0)-parseFloat(v.ostatok||0)).toFixed(1); const pC=Math.round(v.vyhod*0.103); h+=`<div class="card" onclick="openModal('fasovka','${id}')"><div style="font-weight:900;border-bottom:1px solid #eee;margin-bottom:5px;display:flex;justify-content:space-between"><span>${v.name.toUpperCase()}</span> <span>${fd(v.date)}</span></div><div class="report-line"><span>Сырье:</span> <b>${v.prihod} кг</b></div><div class="report-line"><span>Выход:</span> <b>${v.vyhod} шт</b></div><div class="report-line"><span>Пакеты:</span> <b>${v.size} [${pC} шт]</b></div><div class="report-line"><span>Пленка:</span> <b>${fU} кг</b></div><button class="btn-del" style="margin-top:8px" onclick="event.stopPropagation();delRec('Фасовка','${id}')">УДАЛИТЬ</button></div>`;}); c.innerHTML=h;}
+function renderInvoicesDate(c){const d=cachedData.ArchInvoices||{}, tree={}; Object.entries(d).forEach(([id,v])=>{const dt=new Date(v.date), y=dt.getFullYear(), m=dt.getMonth(), day=dt.getDate(); if(!tree[y])tree[y]={count:0, m:{}}; if(!tree[y].m[m])tree[y].m[m]={count:0, d:{}}; if(!tree[y].m[m].d[day])tree[y].m[m].d[day]=[]; tree[y].m[m].d[day].push({...v,id}); tree[y].count++; tree[y].m[m].count++;}); let h=''; Object.keys(tree).sort((a,b)=>b-a).forEach(y=>{h+=`<div class="folder" onclick="toggleF('y${y}')"><span>Год ${y}</span><span class="f-badge">${tree[y].count}</span></div><div id="y${y}" class="f-content">`; Object.keys(tree[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div class="folder" onclick="toggleF('m${y}${m}')"><span>${months[m]}</span><span class="f-badge">${tree[y].m[m].count}</span></div><div id="m${y}${m}" class="f-content">`; Object.keys(tree[y].m[m].d).sort((a,b)=>b-a).forEach(day=>{h+=`<div class="folder" onclick="toggleF('d${y}${m}${day}')"><span>Число ${day}</span><span class="f-badge">${tree[y].m[m].d[day].length}</span></div><div id="d${y}${m}${day}" class="f-content">`; tree[y].m[m].d[day].forEach(v=> h+=`<div class="card" onclick="openModal('view_inv','${v.id}')"><b>№${v.num} — ${v.client}</b></div>`); h+=`</div>`;}); h+=`</div>`;}); h+=`</div>`;}); c.innerHTML=h||'Архив пуст';}
+function renderInvoicesClient(c){const d=cachedData.ArchInvoices||{}, cl={}; Object.entries(d).forEach(([id,v])=>{if(!cl[v.client])cl[v.client]=[]; cl[v.client].push({...v,id});}); let h=''; Object.keys(cl).sort().forEach((name,i)=>{h+=`<div class="folder" onclick="toggleF('cl${i}')"><span>${name}</span><span class="f-badge">${cl[name].length}</span></div><div id="cl${i}" class="f-content">`; cl[name].sort((a,b)=>b.date.localeCompare(a.date)).forEach(v=> h+=`<div class="card" onclick="openModal('view_inv','${v.id}')">№${v.num} — ${fd(v.date)}</div>`); h+=`</div>`;}); c.innerHTML=h||'Архив пуст';}
+function openModal(t, id){const ti=document.getElementById('modalTitle'), b=document.getElementById('modalBody'); activeId=id; if(t==='view_inv'){const v = cachedData.ArchInvoices[id]; ti.innerText = 'Накладная №'+v.num; b.innerHTML = `<div style="margin-bottom:15px;font-size:14px"><b>Клиент:</b> ${v.client}<br><b>Дата:</b> ${fd(v.date)}</div><div style="background:#f8f9fc;padding:10px;border-radius:8px;font-size:13px;margin-bottom:15px">${v.items.join('<br>')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="openModal('shipment','${id}')">ИЗМЕНИТЬ</button><button class="btn-main" style="background:var(--danger)" onclick="delRec('ArchInvoices','${id}')">УДАЛИТЬ</button></div>`;} else if(t==='shipment'){const v = id ? cachedData.ArchInvoices[id] : {date:new Date().toISOString().split('T')[0], num:'', client:''}; ti.innerText = id ? 'Редактор' : 'Отгрузка'; let h=`<input type="date" id="sDate" value="${v.date.split('T')[0]}"><input type="text" id="sNum" placeholder="Номер" value="${v.num}"><input type="text" id="sCl" placeholder="Клиент" value="${v.client}"><div class="item-grid" style="margin-top:10px">`; products.sort().forEach(p=>{let amt = ''; if(id && v.items){ const f = v.items.find(it=>it.startsWith(p+':')); if(f) amt = f.split(': ')[1].replace('шт',''); } h+=`<div class="item-card"><label style="font-size:9px;display:block;font-weight:900">${p}</label><input type="number" class="s-in" data-p="${p}" value="${amt}" style="width:90%;border:none;text-align:center;font-weight:700"></div>`;}); h+=`</div><button class="btn-main" onclick="saveShip()">СОХРАНИТЬ</button>`; b.innerHTML=h;} else if(t==='fasovka'){const v = id ? cachedData.Фасовка[id] : {date:new Date().toISOString().split('T')[0], name:'', size:'', vyhod:'', prihod:'', vzial:'', ostatok:''}; ti.innerText = id ? 'Редактировать' : 'Запись'; b.innerHTML=`<input type="date" id="fDate" value="${v.date.split('T')[0]}"><select id="fName">${products.map(p=>`<option ${v.name===p?'selected':''}>${p}</option>`).join('')}</select><select id="fSize">${sizes.map(s=>`<option ${v.size===s?'selected':''}>${s}</option>`).join('')}</select><input type="number" id="fPr" placeholder="Сырье кг" value="${v.prihod}"><input type="number" id="fVy" placeholder="Выход шт" value="${v.vyhod}"><input type="number" id="fVzial" placeholder="Взял пленки" value="${v.vzial}"><input type="number" id="fOs" placeholder="Остаток пленки" value="${v.ostatok}"><button class="btn-main" onclick="saveFas()">СОХРАНИТЬ</button>`;} else if(t==='mat_corr'){ti.innerText='Коррекция: '+currentCat; const it=currentCat==='Пленка'?products:(currentCat==='Пакеты'?sizes:['Скотч']); b.innerHTML=`<select id="mcIt">${it.map(i=>`<option>${i}</option>`).join('')}</select><input type="number" id="mcAm" placeholder="Кол-во (+/-)"><input type="text" id="mcNt" placeholder="Причина"><button class="btn-main" onclick="saveMatCorr()">ПРИМЕНИТЬ</button>`;} else if(t==='add'){ti.innerText='Приход: '+currentCat; const it=currentCat==='Пленка'?products:(currentCat==='Пакеты'?sizes:['Скотч']); b.innerHTML=`<select id="aIt">${it.map(i=>`<option>${i}</option>`).join('')}</select><input type="number" id="aAm" placeholder="Кол-во"><button class="btn-main" onclick="saveAdd()">ЗАПИСАТЬ</button>`;} else if(t==='gp_corr') {ti.innerText='Коррекция ГП'; b.innerHTML=`<select id="cName">${products.map(p=>`<option>${p}</option>`).join('')}</select><input type="number" id="cAmt" placeholder="Мешки (+/-)"><input type="text" id="cNote" placeholder="Причина"><button class="btn-main" onclick="saveCorr()">Сохранить</button>`;} else if(t==='auth') {ti.innerText='Вход'; b.innerHTML=`<input type="email" id="lEmail" value="nukonor@gmail.com"><input type="password" id="lPass"><button class="btn-main" onclick="login()">Войти</button>`} document.getElementById('modal').style.display='flex';}
+function goBack(){const map={'InvoicesDate':'Invoices','InvoicesClient':'Invoices','Invoices':'StockRoot','GP_Root':'StockRoot','StockList':'GP_Root','WeightStock':'GP_Root','Фасовка':'ProdSub','Kruporushka':'ProdSub','Vibrostol':'ProdSub','ZSHM':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч':'PackSub'}; if(map[currentCat]) setCat(map[currentCat]); else renderHome();}
+function toggleF(id){const e=document.getElementById(id); if(e) e.style.display=(e.style.display==='block'?'none':'block')}
+function delRec(cat, id){if(confirm('Удалить запись безвозвратно?')) {db.ref(`inventory/${cat}/${id}`).remove(); closeModal();}}
+function closeModal(){document.getElementById('modal').style.display='none'; activeId=null}
+async function saveShip(){const d=document.getElementById('sDate').value, nu=document.getElementById('sNum').value, cl=document.getElementById('sCl').value, items=[]; document.querySelectorAll('.s-in').forEach(i=>{const a=parseFloat(i.value); if(a>0) items.push(i.dataset.p+': '+a+'шт');}); const ref = activeId ? db.ref('inventory/ArchInvoices/'+activeId) : db.ref('inventory/ArchInvoices').push(); await ref.set({date:d+"T12:00:00Z", num:nu, client:cl, items:items}); closeModal();}
+async function saveFas(){const d=document.getElementById('fDate').value, na=document.getElementById('fName').value, si=document.getElementById('fSize').value, vy=parseFloat(document.getElementById('fVy').value)||0, vz=parseFloat(document.getElementById('fVzial').value)||0, os=parseFloat(document.getElementById('fOs').value)||0, pr=parseFloat(document.getElementById('fPr').value)||0; const ref = activeId ? db.ref('inventory/Фасовка/'+activeId) : db.ref('inventory/Фасовка').push(); await ref.set({date:d+"T12:00:00Z",name:na,size:si,vyhod:vy,prihod:pr,vzial:vz,ostatok:os}); closeModal();}
+async function saveCorr(){const n=document.getElementById('cName').value, a=parseFloat(document.getElementById('cAmt').value); if(a) await db.ref('inventory/Готовая').push({name:n,amount:a,date:new Date().toISOString(),note:'Корр: '+document.getElementById('cNote').value}); closeModal();}
+async function saveMatCorr(){const it=document.getElementById('mcIt').value, a=parseFloat(document.getElementById('mcAm').value); if(a) await db.ref(`inventory/${currentCat}`).push({size:it,name:it,amount:a,date:new Date().toISOString(),note:'Корр: '+document.getElementById('mcNt').value}); closeModal();}
+async function saveAdd(){const a=parseFloat(document.getElementById('aAm').value), it=document.getElementById('aIt').value; if(a) await db.ref(`inventory/${currentCat}`).push({size:it,name:it,amount:a,date:new Date().toISOString(),note:'Приход'}); closeModal();}
+function showHist(c,k){const ti=document.getElementById('modalTitle'),b=document.getElementById('modalBody');ti.innerText=k;const l=Object.entries(cachedData[c]||{}).filter(([id,v])=>v.size===k||v.name===k).sort((x,y)=>y[1].date.localeCompare(x[1].date));let h='<table style="width:100%;font-size:11px;border-collapse:collapse">';l.forEach(([id,v])=>{h+=`<tr style="border-bottom:1px solid #ccc"><td style="padding:6px 0">${fd(v.date)}<br><small>${v.note||''}</small></td><td style="text-align:right;font-weight:700">${v.amount.toFixed(1)}</td><td><button onclick="delRec('${c}','${id}')">✕</button></td></tr>`});b.innerHTML=h+'</table>';document.getElementById('modal').style.display='flex'}
+auth.onAuthStateChanged(user=>{document.getElementById('userStatus').innerText=user?user.email.toUpperCase():"ОЖИДАНИЕ...";renderHome()});
 window.onload=renderHome;
 </script></body></html>
