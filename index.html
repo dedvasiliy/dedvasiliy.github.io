@@ -3,44 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v325 MyLogo</title>
+<title>Склад v356 FinalRelease</title>
 <style>
-:root { --bg: #f8fafc; --p: #4f46e5; --d: #ef4444; --s: #10b981; --t: #1e293b; --w: #fff; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 10px; padding-bottom: 90px; color: var(--t); -webkit-tap-highlight-color: transparent; }
-.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 600px; margin: 0 auto; }
-.dash-item { background: var(--w); border-radius: 16px; padding: 18px 10px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); color: var(--p); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; border: 1px solid #e2e8f0; transition: 0.1s; }
+/* GLOBAL & RESET */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+:root { --bg: #f1f5f9; --p: #4f46e5; --d: #ef4444; --s: #10b981; --t: #1e293b; --w: #fff; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 5px; padding-bottom: 80px; color: var(--t); overflow-x: hidden; width: 100vw; }
+
+/* LOCK SCREEN */
+#lockScreen { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.3s; }
+.lock-hidden { opacity: 0; pointer-events: none; }
+.lock-logo { width: 100px; margin-bottom: 20px; }
+.lock-title { font-size: 14px; font-weight: 900; color: #94a3b8; letter-spacing: 2px; margin-bottom: 30px; text-transform: uppercase; }
+.lock-inp { width: 100%; max-width: 250px; padding: 15px; font-size: 18px; text-align: center; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px; }
+
+/* DASHBOARD */
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 100%; margin: 0 auto; }
+.dash-item { background: var(--w); border-radius: 16px; padding: 15px 5px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); color: var(--p); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; border: 1px solid #e2e8f0; transition: 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; }
 .dash-item:active { transform: scale(0.97); background: #eef2ff; }
-.card { background: var(--w); border-radius: 16px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; position: relative; }
-.btn-main { background: var(--p); color: #fff; border: none; width: 100%; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; margin: 5px 0; text-transform: uppercase; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); transition: 0.2s; }
+.dash-item span { font-size: 24px; margin-bottom: 8px; display: block; }
+
+/* CARD */
+.card { background: var(--w); border-radius: 16px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; position: relative; width: 100%; }
+.btn-main { background: var(--p); color: #fff; border: none; width: 100%; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; margin: 5px 0; text-transform: uppercase; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); transition: 0.2s; cursor: pointer; }
 .btn-main:active { transform: translateY(1px); box-shadow: none; }
 
-/* МЕНЮ */
-.bottom-nav { display: none; position: fixed; bottom: 15px; left: 15px; right: 15px; background: #fff; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding: 5px; z-index: 900; grid-template-columns: 1fr 1fr; gap: 5px; border: 1px solid #e2e8f0; }
+/* NAV */
+.bottom-nav { display: none; position: fixed; bottom: 10px; left: 10px; right: 10px; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15); padding: 5px; z-index: 900; grid-template-columns: 1fr 1fr; gap: 5px; border: 1px solid #e2e8f0; }
 .bottom-nav button { background: transparent; border: none; padding: 12px; border-radius: 14px; color: #94a3b8; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
 .bottom-nav button.nav-btn-active { background: #eef2ff; color: var(--p); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 body.nav-active .bottom-nav { display: grid; }
 
-input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; outline: none; font-weight: 600; color: #0f172a; transition: 0.2s; }
-input:focus, select:focus { border-color: var(--p); ring: 2px solid var(--p); background: #f8fafc; }
-.item-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.item-card { background: #fff; border-radius: 12px; padding: 10px 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative; }
-.item-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 4px; height: 24px; overflow: hidden; line-height: 1.1; }
-.item-qty { font-size: 15px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-.modal-box { background: #fff; width: 92%; max-width: 400px; border-radius: 20px; max-height: 94vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); }
-.modal-body { overflow-y: auto; padding: 15px; }
-.folder { background: #fff; padding: 14px; border-radius: 12px; margin-bottom: 6px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; color: var(--t); border: 1px solid #f1f5f9; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-.f-content { display: none; padding-left: 10px; border-left: 3px solid var(--p); margin-left: 5px; }
-.report-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed #e2e8f0; }
+input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; background: #fff; font-weight: 600; color: #0f172a; }
+input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
+
+/* ITEMS GRID */
+.item-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.item-card { background: #fff; border-radius: 12px; padding: 10px 2px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative; }
+.item-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 4px; height: 22px; overflow: hidden; line-height: 1.1; word-break: break-word; }
+.item-qty { font-size: 14px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
 .alarm-blink { background: #fef2f2 !important; border: 1px solid var(--d) !important; animation: blink 1s infinite alternate; }
-.alarm-blink * { color: var(--d) !important; }
+
+/* MODAL */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-box { background: #fff; width: 96%; max-width: 400px; border-radius: 20px; max-height: 94vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); }
+.modal-body { overflow-y: auto; padding: 15px; }
+
+/* UTILS */
+.report-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed #e2e8f0; }
 .history-btn { border: none; background: #e0e7ff; color: var(--p); border-radius: 8px; padding: 8px; font-weight: 700; font-size: 12px; width: 45%; }
 .corr-btn { display: none; border: none; background: #fef3c7; color: #d97706; border-radius: 8px; padding: 8px; font-weight: 700; font-size: 12px; width: 45%; margin-top: 4px; }
 .show-corr .corr-btn { display: inline-block; }
-.hist-pos { color: var(--p) !important; } .hist-neg { color: var(--d) !important; }
-.krup-row { display:grid; grid-template-columns: 2fr 1fr 1fr; gap:6px; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:8px; }
+.hist-pos { color: var(--p) !important; font-weight: 700; } .hist-neg { color: var(--d) !important; font-weight: 700; }
+
+.krup-row { display:grid; grid-template-columns: 2fr 1fr 1fr; gap:4px; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:8px; }
 .krup-sec { font-size:11px; font-weight:900; color:#64748b; margin-top:12px; text-transform:uppercase; letter-spacing: 1px; }
-.sect-head { grid-column: 1 / -1; font-size:11px; color:#94a3b8; text-align:center; margin-top:10px; margin-bottom:4px; font-weight:800; letter-spacing:1px; border-bottom:1px solid #e2e8f0; padding-bottom:2px; }
 .tab-group { display: flex; gap: 4px; margin-bottom: 10px; padding: 4px; background: #f1f5f9; border-radius: 12px; }
 .tab-btn { flex: 1; padding: 10px 4px; background: transparent; border: none; border-radius: 10px; color: #64748b; font-weight: 700; font-size: 10px; text-transform: uppercase; transition:0.2s }
 .tab-btn.active { background: #fff; color: var(--p); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -48,31 +65,52 @@ input:focus, select:focus { border-color: var(--p); ring: 2px solid var(--p); ba
 .ship-sect.active { display: grid; }
 .new-input { display:none; border:2px solid var(--s) !important; }
 .clean-cat { font-size:10px; font-weight:900; color:#94a3b8; margin:15px 0 5px; border-bottom:1px solid #eee; padding-bottom:2px; letter-spacing:1px; }
+.del-rep-btn { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #ef4444; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index:10; }
+.logo-box { text-align: center; margin-bottom: 20px; margin-top: 5px; }
+.logo-img { max-width: 220px; height: auto; object-fit: contain; }
 
-/* АРХИВ */
-.arch-content { display: none; padding-top: 10px; }
-.arch-y-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-.arch-tile-y { background: #3b82f6; color: #fff; padding: 15px; border-radius: 14px; text-align: center; font-weight: 800; font-size: 18px; cursor: pointer; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); transition: 0.1s; position: relative; }
-.arch-tile-y:active { transform: scale(0.98); }
-.arch-m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
-.arch-tile-m { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #475569; cursor: pointer; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.arch-tile-m:active { background: #f8fafc; }
-.arch-d-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
-.arch-tile-d { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 0; text-align: center; font-size: 14px; font-weight: 800; color: #1e293b; cursor: pointer; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.arch-badge { position: absolute; top: -5px; right: -5px; background: var(--d); color: #fff; font-size: 9px; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; font-weight: 700; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); border:1px solid #fff; }
-.arch-inv { background: #fff; border-left: 4px solid var(--p); border-radius: 8px; padding: 10px; margin-bottom: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-.arch-inv b { display: block; font-size: 13px; color: #334155; }
-.arch-cl-tile { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 5px; font-weight: 700; display: flex; justify-content: space-between; cursor: pointer; color: #475569; }
+/* JOURNAL CARDS */
+.log-entry { margin-bottom: 15px; width: 100%; }
+.j-card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; position: relative; }
+.j-head { font-weight: 900; font-size: 14px; text-transform: uppercase; color: var(--p); margin-bottom: 4px; }
+.j-sub { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; border-bottom:1px solid #f1f5f9; padding-bottom:4px; }
+.j-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+.j-body { font-size: 13px; color: #334155; }
+.j-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e2e8f0; align-items:center; }
+.j-row:last-child { border-bottom: none; }
+.j-dots { flex-grow: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 5px; position: relative; top: -4px; }
 
-/* ЛОГОТИП */
-.logo-box { text-align: center; margin-bottom: 25px; margin-top: 10px; }
-.logo-img { max-width: 240px; height: auto; object-fit: contain; }
+/* ARCHIVE TILES */
+.arch-y-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; width: 100%; }
+.arch-tile-y { background: #3b82f6; color: #fff; padding: 25px 5px; border-radius: 16px; text-align: center; font-weight: 900; font-size: 20px; cursor: pointer; box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.4); }
+.arch-m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; width: 100%; }
+.arch-tile-m { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 15px 2px; text-align: center; font-size: 10px; font-weight: 700; color: #334155; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-transform:uppercase; }
+.arch-d-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 10px; width: 100%; }
+.arch-tile-d { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 0; text-align: center; font-size: 13px; font-weight: 700; position: relative; color: #0f172a; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.arch-badge { position: absolute; top: -5px; right: -5px; background: var(--d); color: #fff; font-size: 9px; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; border:2px solid #fff; }
+.arch-c-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top:10px; width: 100%; }
+.arch-tile-c { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px 2px; text-align: center; font-size: 11px; font-weight: 700; color: #1e293b; position: relative; cursor: pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:50px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); word-break: break-word; }
+.arch-tile-c:active { background: #eef2ff; border-color: var(--p); }
+.arch-content { display: none; margin-bottom: 15px; width: 100%; }
+.arch-inv { background: #fff; border-left: 4px solid var(--p); border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; font-size: 13px; cursor: pointer; border: 1px solid #f1f5f9; width: 100%; }
+.arch-del { width: 36px; height: 36px; background: #fee2e2; color: #ef4444; border: none; border-radius: 50%; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+/* BASKET STYLES */
+.basket-list { margin-top: 10px; border-top: 2px solid #eee; padding-top: 10px; }
+.basket-item { display: flex; justify-content: space-between; background: #f8fafc; padding: 8px; margin-bottom: 4px; border-radius: 8px; font-size: 13px; align-items: center; }
+.basket-del { color: red; font-weight: bold; cursor: pointer; padding: 0 5px; }
 
 @keyframes blink { from { opacity: 1; } to { opacity: 0.7; } }
 </style>
 </head>
 <body>
-<div id="uS" style="font-size:10px;text-align:center;margin-bottom:5px;opacity:0.6">ЗАГРУЗКА...</div>
+<div id="lockScreen">
+    <img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo">
+    <div class="lock-title">СИСТЕМА УЧЕТА</div>
+    <input type="password" id="appPass" class="lock-inp" placeholder="Пароль">
+    <button class="btn-main" style="max-width:250px" onclick="tryLogin()">ОТКРЫТЬ</button>
+</div>
+
 <div id="act"></div>
 <div id="cnt"></div>
 <div class="bottom-nav">
@@ -85,9 +123,15 @@ input:focus, select:focus { border-color: var(--p); ring: 2px solid var(--p); ba
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script>
 const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
-if(!firebase.apps.length)firebase.initializeApp(cfg);const db=firebase.database().ref('production'),auth=firebase.auth();let cur='Home',data={},aId=null,archSub='',corrMode=false;
-const bP=["Арнаутка","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯнВ","Фев","Март","Апр","Май","Июнь","Июль","Авг","Сент","Окт","Ноя","Дек"];
-const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};const closeModal=()=>{document.getElementById('mdl').style.display='none';aId=null};const toggleF=id=>{const e=document.getElementById(id);e.style.display=e.style.display==='grid'||e.style.display==='block'?'none':(e.className.includes('arch-')?'grid':'block')};
+if(!firebase.apps.length)firebase.initializeApp(cfg);const db=firebase.database().ref('production'),auth=firebase.auth();let cur='Home',data={},aId=null,archSub='',corrMode=false,isLogged=false,incItems=[];
+const bP=["Арнаутка","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯНВ","ФЕВ","МАРТ","АПР","МАЙ","ИЮНЬ","ИЮЛЬ","АВГ","СЕНТ","ОКТ","НОЯБ","ДЕК"];
+const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]} ${parts[1]}:${parts[2]}`};const fd2=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};
+const closeModal=()=>{document.getElementById('mdl').style.display='none';aId=null;incItems=[];};const toggleF=id=>{const e=document.getElementById(id);e.style.display=e.style.display==='block'?'none':'block'};
+const toggleC=(id, btn)=>{ 
+    const e=document.getElementById(id);
+    if(e.style.display==='block'){ e.style.display='none'; btn.style.background='#fff'; btn.style.borderColor='#e2e8f0'; }
+    else { e.style.display='block'; btn.style.background='#eef2ff'; btn.style.borderColor='var(--p)'; }
+};
 const gP=(cat)=>{
     let init=[];
     if(cat==='WeightStock'||cat==='Готовая') init=bP; 
@@ -100,173 +144,415 @@ const gRaw=()=>{const s=new Set();if(data.Krup_Report)Object.values(data.Krup_Re
 const gS=()=>{const s=new Set();['ArchIncoming','Пакеты','Пленка','Скотч 360 грамм'].forEach(k=>{if(data[k])Object.values(data[k]).forEach(v=>{if(v.supplier)s.add(v.supplier)})});return Array.from(s).filter(x=>x).sort();};
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort();};
 const gPack=(cat)=>{const s=new Set();if(cat==='Пакеты')szs.forEach(x=>s.add(x));if(cat==='Скотч')s.add('Скотч 360 грамм');if(cat==='Пленка')bP.forEach(x=>s.add(x));const dbK=cat==='Скотч'?'Скотч 360 грамм':cat;if(data[dbK])Object.values(data[dbK]).forEach(v=>{if(v.name)s.add(v.name)});return Array.from(s).filter(x=>x).sort();};
+
+async function tryLogin() {
+    const p = document.getElementById('appPass').value;
+    try {
+        await auth.signInWithEmailAndPassword('nukonor@gmail.com', p);
+        document.getElementById('lockScreen').classList.add('lock-hidden');
+        document.body.classList.add('nav-active');
+        isLogged = true;
+        renderHome();
+    } catch(e) {
+        alert('Неверный пароль');
+    }
+}
+
 function renderHome(){
+    if(!isLogged) return;
     cur='Home';
     document.body.classList.remove('nav-active');
     document.getElementById('act').innerHTML='';
     const logo=`<div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>`;
-    document.getElementById('cnt').innerHTML=`${logo}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockRoot')">📦 Склад</div><div class="dash-item" onclick="setCat('ProdSub')">⚙️ Производство</div><div class="dash-item" onclick="setCat('PackSub')">🥡 Упаковка</div><div class="dash-item" onclick="openModal('auth')" style="color:#aaa">🔐 Вход</div></div>`;
+    document.getElementById('cnt').innerHTML=`${logo}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockRoot')"><span>📦</span>Склад</div><div class="dash-item" onclick="setCat('ProdSub')"><span>⚙️</span>Производство</div><div class="dash-item" onclick="setCat('PackSub')"><span>🥡</span>Упаковка</div><div class="dash-item" onclick="openModal('log')" style="color:#64748b"><span>📋</span>ЖУРНАЛ</div></div>`;
     updNav();
 }
-function goBack(){const m={'StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Invoices':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub'};let next=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')next=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(next);}
-function setCat(c){cur=c;document.body.classList.add('nav-active');const a=document.getElementById('act'),ct=document.getElementById('cnt');a.innerHTML='';if(c==='Home'){renderHome();return}if(c==='StockRoot'){a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"><button class="btn-main" style="background:var(--s)" onclick="openModal('inc')">Приход</button><button class="btn-main" style="background:var(--d)" onclick="openModal('ship')">Отгрузка</button></div>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">Фасовка</div><div class="dash-item" onclick="setCat('WeightStock')">Покупная</div><div class="dash-item" onclick="setCat('Stock_DV')">Склад ДВ</div><div class="dash-item" onclick="setCat('Stock_Feed')">Склад Корма</div><div class="dash-item" onclick="setCat('Stock_Semi')">Полуфабрикат</div><div class="dash-item" onclick="setCat('Invoices')">Архив</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px"><button id="corrTgl" class="btn-main" style="background:#fff;border:1px solid #d1d5db;color:#333;margin:0" onclick="toggleCorr()">Коррекция: ВЫКЛ</button></div>`;}else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;else if(c==='PackSub'){a.innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">Приход упаковки</button><button id="corrTgl" class="btn-main" style="background:#fff;border:1px solid #d1d5db;color:#333;margin-top:5px" onclick="toggleCorr()">Коррекция: ВЫКЛ</button>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">Пленка</div><div class="dash-item" onclick="setCat('Пакеты')">Пакеты</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">Скотч</div></div>`;}else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addKrup')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addVibro')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addZSHM')">НОВАЯ СМЕНА</button>`;else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}loadData();updCorrBtn();updNav();}
+function goBack(){const m={'StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Invoices':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','ArchPackIn':'PackSub'};let next=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')next=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(next);}
+function setCat(c){cur=c;document.body.classList.add('nav-active');const a=document.getElementById('act'),ct=document.getElementById('cnt');a.innerHTML='';if(c==='Home'){renderHome();return}if(c==='StockRoot'){a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"><button class="btn-main" style="background:var(--s)" onclick="openModal('inc')">Приход</button><button class="btn-main" style="background:var(--d)" onclick="openModal('ship')">Отгрузка</button></div>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">Фасовка</div><div class="dash-item" onclick="setCat('WeightStock')">Покупная</div><div class="dash-item" onclick="setCat('Stock_DV')">Склад ДВ</div><div class="dash-item" onclick="setCat('Stock_Feed')">Склад Корма</div><div class="dash-item" onclick="setCat('Stock_Semi')">Полуфабрикат</div><div class="dash-item" onclick="setCat('Invoices')">Архив</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px"><button id="corrTgl" class="btn-main" style="background:#fff;border:1px solid #d1d5db;color:#333;margin:0" onclick="toggleCorr()">Коррекция: ВЫКЛ</button></div>`;}else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;else if(c==='PackSub'){a.innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">Приход упаковки</button><button id="corrTgl" class="btn-main" style="background:#fff;border:1px solid #d1d5db;color:#333;margin-top:5px" onclick="toggleCorr()">Коррекция: ВЫКЛ</button>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">Пленка</div><div class="dash-item" onclick="setCat('Пакеты')">Пакеты</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">Скотч</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="grid-column:1/-1;background:#f0f9ff;color:#333">Архив Приходов</div></div>`;}else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addKrup')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addVibro')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addZSHM')">НОВАЯ СМЕНА</button>`;else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}loadData();updCorrBtn();updNav();}
 function toggleCorr(){corrMode=!corrMode;updCorrBtn();loadData();}
 function updCorrBtn(){const b=document.getElementById('corrTgl'),c=document.getElementById('corrCtls');if(b){b.innerText=corrMode?'КОРРЕКЦИЯ: ВКЛ':'КОРРЕКЦИЯ: ВЫКЛ';b.style.background=corrMode?'#f59e0b':'#fff';b.style.color=corrMode?'#fff':'#333';if(corrMode&&cur==='StockRoot'&&!document.getElementById('cleanBtn')){const btn=document.createElement('button');btn.id='cleanBtn';btn.className='btn-main';btn.innerText='ЧИСТКА СПИСКОВ';btn.style.background='#ef4444';btn.style.margin='0';btn.onclick=()=>openModal('clean');c.appendChild(btn);}if(!corrMode){const cb=document.getElementById('cleanBtn');if(cb)cb.remove();}}}
 function updNav(){document.getElementById('navM').className=`${cur==='Home'?'nav-btn-active':''}`;document.getElementById('navB').className=`${cur!=='Home'?'nav-btn-active':''}`;}
 function switchShipTab(id){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tb_'+id).classList.add('active');document.querySelectorAll('.ship-sect').forEach(s=>s.classList.remove('active'));document.getElementById('sc_'+id).classList.add('active');}
-function loadData(){db.on('value',s=>{data=s.val()||{};const c=document.getElementById('cnt');if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub'].includes(cur))return;if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='Фасовка')rFas(c);else if(cur==='Kruporushka')rKrup(c);else if(cur==='Vibro')rVibro(c);else if(cur==='ZSHM')rZSHM(c);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else rGen(c);});}
+function loadData(){db.on('value',s=>{data=s.val()||{};const c=document.getElementById('cnt');if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub'].includes(cur))return;if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(cur==='Kruporushka')rKrup(c);else if(cur==='Vibro')rVibro(c);else if(cur==='ZSHM')rZSHM(c);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else rGen(c);});}
 function calcKrup(){let t=0;['kQ1','kQ2','kQ3','kMQ','kOQ'].forEach((q,i)=>{const kgId=q.replace('Q','W');const w=parseFloat(document.getElementById(kgId).value)||0,qty=parseFloat(document.getElementById(q).value)||0;t+=w*qty;});const sec=parseFloat(document.getElementById('kSecW').value)||0;document.getElementById('kMainW').value=(t-sec).toFixed(1);}
 function calcVibro(){let t=0;for(let i=1;i<=3;i++){const q=parseFloat(document.getElementById(`vQ${i}`).value)||0,w=parseFloat(document.getElementById(`vW${i}`).value)||0;t+=q*w;}const sec=parseFloat(document.getElementById('vSecW').value)||0;document.getElementById('vRawW').value=(t-sec).toFixed(1);}
 function calcZSHM(){const p=(parseFloat(document.getElementById('zQ_Prod').value)||0)*(parseFloat(document.getElementById('zW_Prod').value)||0),s=(parseFloat(document.getElementById('zQ_Sech').value)||0)*(parseFloat(document.getElementById('zW_Sech').value)||0),m=(parseFloat(document.getElementById('zQ_Much').value)||0)*(parseFloat(document.getElementById('zW_Much').value)||0),o=(parseFloat(document.getElementById('zQ_Otr').value)||0)*(parseFloat(document.getElementById('zW_Otr').value)||0);const sec=parseFloat(document.getElementById('zSecW').value)||0;document.getElementById('zRawW').value=(p+s+m+o-sec).toFixed(1);}
 function toggleInput(id){const sel=document.getElementById('s_'+id),inp=document.getElementById('i_'+id);if(sel.value==='NEW'){sel.style.display='none';inp.style.display='block';inp.focus();}else{inp.style.display='none';}}
-</script>
-<script>
+    </script>
+    <script>
+function renderByTiles(c, rawD, type) {
+    const gr = {};
+    if(rawD) Object.entries(rawD).forEach(([id,v])=>{
+        if(!v.date) return;
+        const dObj = new Date(v.date);
+        const y = dObj.getFullYear(), m = dObj.getMonth(), dy = dObj.getDate();
+        if(!gr[y]) gr[y] = {};
+        if(!gr[y][m]) gr[y][m] = {};
+        if(!gr[y][m][dy]) gr[y][m][dy] = [];
+        gr[y][m][dy].push({...v, id});
+    });
+
+    let h = '';
+    Object.keys(gr).sort((a,b)=>b-a).forEach(y => {
+        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}${type}')">${y}</div></div><div id="y${y}${type}" class="arch-content">`;
+        h+=`<div class="arch-m-grid">`;
+        Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}${type}')">${mths[m]}</div>`;
+        });
+        h+=`</div>`; 
+
+        Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
+             h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
+             h+=`<div class="arch-d-grid">`;
+             Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{
+                 h+=`<div class="arch-tile-d" onclick="toggleF('d${y}${m}${dy}${type}')">${dy}<div class="arch-badge">${gr[y][m][dy].length}</div></div>`;
+             });
+             h+=`</div>`; 
+
+             Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{
+                 h+=`<div id="d${y}${m}${dy}${type}" class="arch-content">`;
+                 gr[y][m][dy].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
+                    const s = JSON.stringify(v).replace(/"/g, "&quot;");
+                    // RENDER EXACT TWINS IN JOURNAL
+                    if(type==='LOG') {
+                         if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
+                         else if(v.type==='KRUP') h+=`<div class="card"><b>КРУПОРУШКА</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                         else if(v.type==='VIBRO') h+=`<div class="card"><b>ВИБРОСТОЛ</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                         else if(v.type==='ZSHM') h+=`<div class="card"><b>ЗШМ СМЕНА</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                         else if(v.type==='INC') {
+                             h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`).join('')+`</div></div>`;
+                         }
+                         else if(v.type==='SHIP') {
+                             h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`).join('')+`</div></div>`;
+                         }
+                         else if(v.type==='PACK') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД УПАКОВКИ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}</b></div></div></div>`;
+                    }
+                    else if(type==='FAS') h+=`<div class="card"><button class="del-rep-btn" onclick="delFas('${v.id}')">🗑️</button><b>${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
+                    else if(type==='KRUP') h+=`<div class="card"><button class="del-rep-btn" onclick="delKrup('${v.id}')">🗑️</button><b>КРУПОРУШКА</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                    else if(type==='VIBRO') h+=`<div class="card"><button class="del-rep-btn" onclick="delVibro('${v.id}')">🗑️</button><b>ВИБРОСТОЛ</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                    else if(type==='ZSHM') h+=`<div class="card"><button class="del-rep-btn" onclick="delZSHM('${v.id}')">🗑️</button><b>ЗШМ СМЕНА</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                 });
+                 h+=`</div>`;
+             });
+             h+=`</div>`;
+        });
+        h+=`</div>`;
+    });
+    c.innerHTML = h || 'Нет записей';
+}
+
+const pk = (v,n) => Math.round(Math.abs(v/((n==="Кутя")?19.8:9.9)));
+const pl = (v,o) => Math.abs((v||0)-(o||0)).toFixed(1);
+
+function rFas(c) { renderByTiles(c, data.Фасовка, 'FAS'); }
+function rKrup(c) { renderByTiles(c, data.Krup_Report, 'KRUP'); }
+function rVibro(c) { renderByTiles(c, data.Vibro_Report, 'VIBRO'); }
+function rZSHM(c) { renderByTiles(c, data.ZSHM_Report, 'ZSHM'); }
+function rGlobalLog(c) { renderByTiles(c, data.GlobalLog, 'LOG'); }
+
+function rArchPack(c){
+    const d = data.ArchPackIn || {};
+    const gr = {};
+    if(d) Object.entries(d).forEach(([id,v])=>{ const dObj = new Date(v.date); const y = dObj.getFullYear(), m = dObj.getMonth(), dy = dObj.getDate(); if(!gr[y]) gr[y] = {}; if(!gr[y][m]) gr[y][m] = {}; if(!gr[y][m][dy]) gr[y][m][dy] = []; gr[y][m][dy].push({...v, id}); });
+    let h='';
+    Object.keys(gr).sort((a,b)=>b-a).forEach(y=>{
+        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('py${y}')">${y}</div></div><div id="py${y}" class="arch-content">`;
+        h+=`<div class="arch-m-grid">`;Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('pm${y}${m}')">${mths[m]}</div>`; }); h+=`</div>`;
+        Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div id="pm${y}${m}" class="arch-content">`;
+             h+=`<div class="arch-d-grid">`;Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{ h+=`<div class="arch-tile-d" onclick="toggleF('pd${y}${m}${dy}')">${dy}<div class="arch-badge">${gr[y][m][dy].length}</div></div>`; }); h+=`</div>`;
+             Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{
+                 h+=`<div id="pd${y}${m}${dy}" class="arch-content">`;
+                 gr[y][m][dy].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{
+                    h+=`<div class="arch-inv"><div><b>${(v.num||'Б/Н')}</b>${v.name} (${v.amount}кг)</div><div style="font-size:10px;color:#888">${v.supplier||'-'}</div></div>`;
+                 });
+                 h+=`</div>`;
+             });
+            h+=`</div>`;
+        });
+        h+=`</div>`;
+    });
+    c.innerHTML=h||'Пусто';
+}
+
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая|${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock|${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${cur==='Скотч 360 грамм'?val.toFixed(1):Math.round(val)} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}|${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
-function rFas(c){let h='';if(data.Фасовка){Object.entries(data.Фасовка).sort((a,b)=>(b[1].date+b[1].ts).localeCompare(a[1].date+a[1].ts)).forEach(([id,v])=>{const pl=Math.abs((v.vzial||0)-(v.ostatok||0)).toFixed(1), k=(v.name==="Кутя")?19.8:9.9, pk=Math.round(Math.abs(v.vyhod/k));h+=`<div class="card"><b>${v.name.toUpperCase()}</b> [${fd(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl}кг</b></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px"><button class="btn-main" style="padding:6px;font-size:10px" onclick="openModal('fas','${id}')">ПРАВИТЬ</button>${corrMode?`<button class="btn-main" style="background:var(--d);padding:6px;font-size:10px" onclick="delFas('${id}')">УДАЛИТЬ</button>`:''}</div></div>`;});}c.innerHTML=h||'Записей нет';}
-function rKrup(c){let h='';if(data.Krup_Report){Object.entries(data.Krup_Report).sort((a,b)=>(b[1].date+b[1].ts).localeCompare(a[1].date+a[1].ts)).forEach(([id,v])=>{h+=`<div class="card"><b>ОТЧЕТ КРУПОРУШКА</b> [${fd(v.date)}]<div style="font-size:11px;color:#888">${v.rawMix}</div><hr style="opacity:0.3">`;v.items.forEach(i=>{h+=`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`});if(corrMode)h+=`<button class="btn-main" style="background:var(--d);padding:6px;font-size:10px;margin-top:8px" onclick="delKrup('${id}')">УДАЛИТЬ</button>`;h+='</div>';});}c.innerHTML=h||'Записей нет';}
-function rVibro(c){let h='';if(data.Vibro_Report){Object.entries(data.Vibro_Report).sort((a,b)=>(b[1].date+b[1].ts).localeCompare(a[1].date+a[1].ts)).forEach(([id,v])=>{h+=`<div class="card"><b>ВИБРОСТОЛ</b> [${fd(v.date)}]<div style="font-size:11px;color:#888">${v.rawMix}</div><hr style="opacity:0.3">`;v.items.forEach(i=>{h+=`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`});if(corrMode)h+=`<button class="btn-main" style="background:var(--d);padding:6px;font-size:10px;margin-top:8px" onclick="delVibro('${id}')">УДАЛИТЬ</button>`;h+='</div>';});}c.innerHTML=h||'Записей нет';}
-function rZSHM(c){let h='';if(data.ZSHM_Report){Object.entries(data.ZSHM_Report).sort((a,b)=>(b[1].date+b[1].ts).localeCompare(a[1].date+a[1].ts)).forEach(([id,v])=>{h+=`<div class="card"><b>ЗШМ СМЕНА</b> [${fd(v.date)}]<div style="font-size:11px;color:#888">${v.rawMix}</div><hr style="opacity:0.3">`;v.items.forEach(i=>{h+=`<div class="report-line"><span>${i.n}</span><b>${i.w}кг</b></div>`});if(corrMode)h+=`<button class="btn-main" style="background:var(--d);padding:6px;font-size:10px;margin-top:8px" onclick="delZSHM('${id}')">УДАЛИТЬ</button>`;h+='</div>';});}c.innerHTML=h||'Записей нет';}
 function rCleanList(c){let h='<div style="font-size:11px;color:#666;margin-bottom:10px">Нажмите на имя для полного удаления:</div>';
-h+='<div class="clean-cat">📦 ТОВАРЫ</div>';const prods=new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Готовая')]);Array.from(prods).sort().forEach(n=>{h+=`<div onclick="delItemBatch('${n}','name')" style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;display:flex;justify-content:space-between"><b>${n}</b><span style="color:red">🗑️</span></div>`});
-h+='<div class="clean-cat">🚛 ПОСТАВЩИКИ</div>';gS().forEach(n=>{h+=`<div onclick="delItemBatch('${n}','supplier')" style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;display:flex;justify-content:space-between"><b>${n}</b><span style="color:red">🗑️</span></div>`});
-h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';gCl().forEach(n=>{h+=`<div onclick="delItemBatch('${n}','client')" style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;display:flex;justify-content:space-between"><b>${n}</b><span style="color:red">🗑️</span></div>`});c.innerHTML=h;}
-function showH(c,k){const ti=document.getElementById('mT'),b=document.getElementById('mB');ti.innerText=k;const hist=[];if(data[c])Object.entries(data[c]).filter(([id,v])=>v.name===k).forEach(([id,v])=>{let n=v.note||'Запись';if(v.supplier)n='Приход: '+v.supplier;if(v.client)n='Отгрузка: '+v.client;hist.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:id})});let h='<table style="width:100%;font-size:11px;border-collapse:collapse">';hist.sort((a,b)=>{const keyA=a.d+a.ts, keyB=b.d+b.ts; return keyB.localeCompare(keyA);}).forEach(v=>{h+=`<tr style="border-bottom:1px solid #ccc"><td style="padding:6px 0">${fd(v.d)}<br>${v.n}</td><td style="text-align:right" class="${v.a>=0?'hist-pos':'hist-neg'}">${c==='Пакеты'?Math.round(v.a):v.a.toFixed(1)}</td><td style="width:30px;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="color:red;border:none;background:none;font-weight:900;font-size:16px;padding:0 10px;cursor:pointer">✕</button>`:''}</td></tr>`});b.innerHTML=h+'</table>';document.getElementById('mdl').style.display='flex'}
-function rInvD(c){const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={};Object.entries(d).forEach(([id,v])=>{const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(),dy=dt.getDate();if(!t[y])t[y]={c:0,m:{}};if(!t[y].m[m])t[y].m[m]={c:0,d:{}};if(!t[y].m[m].d[dy])t[y].m[m].d[dy]=[];t[y].m[m].d[dy].push({...v,id});t[y].c++;t[y].m[m].c++;});let h='';Object.keys(t).sort((a,b)=>b-a).forEach(y=>{h+=`<div class="arch-tile-y" onclick="toggleF('y${y}')">${y}</div><div id="y${y}" class="arch-content"><div class="arch-m-grid">`;Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}')">${mths[m]}<div class="arch-badge">${t[y].m[m].c}</div></div><div id="m${y}${m}" class="arch-content" style="grid-column:1/-1"><div class="arch-d-grid">`;Object.keys(t[y].m[m].d).sort((a,b)=>b-a).forEach(dy=>{h+=`<div class="arch-tile-d" onclick="toggleF('d${y}${m}${dy}')">${dy}<div class="arch-badge">${t[y].m[m].d[dy].length}</div></div><div id="d${y}${m}${dy}" class="arch-content" style="grid-column:1/-1">`;t[y].m[m].d[dy].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>h+=`<div class="arch-inv" onclick="openModal('vInv','${v.id}|${dbK}')"><div><b>${(v.num||'Б/Н')}</b>${v.client||v.supplier}</div><div>📄</div>${corrMode?`<button onclick="event.stopPropagation();delRec('${dbK}','${v.id}')" style="color:red;border:none;background:none;font-weight:900;font-size:16px;padding:5px">✕</button>`:''}</div>`);h+=`</div>`;});h+=`</div></div>`;});h+=`</div></div>`;});c.innerHTML=h||'Пусто';}
-function rInvC(c){const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},cl={};Object.entries(d).forEach(([id,v])=>{const n=v.client||v.supplier;if(!cl[n])cl[n]=[];cl[n].push({...v,id});});let h='';Object.keys(cl).sort().forEach((n,i)=>{h+=`<div class="arch-cl-tile" onclick="toggleF('cl${i}')"><span>${n}</span><span>[${cl[n].length}]</span></div><div id="cl${i}" class="arch-content">`;cl[n].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>h+=`<div class="arch-inv" onclick="openModal('vInv','${v.id}|${dbK}')"><div><b>${(v.num||'Б/Н')}</b>${fd(v.date)}</div><div>📄</div>${corrMode?`<button onclick="event.stopPropagation();delRec('${dbK}','${v.id}')" style="color:red;border:none;background:none;font-weight:900;font-size:16px;padding:5px">✕</button>`:''}</div>`);h+=`</div>`;});c.innerHTML=h||'Пусто';}
-</script>
-<script>
-async function delRec(cat, id) {if(confirm('Удалить эту запись навсегда?')){await db.child(cat).child(id).remove();closeModal();}}
+const mkR = (s,t) => Array.from(s).sort().forEach(n=>{h+=`<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b>${n}</b><div><button onclick="renameItem('${n}','${t}')" style="margin-right:10px;border:none;background:none;font-size:16px">✏️</button><button onclick="delItemBatch('${n}','${t}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button></div></div>`});
+h+='<div class="clean-cat">📦 ТОВАРЫ</div>';mkR(new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Готовая')]),'name');
+h+='<div class="clean-cat">🚛 ПОСТАВЩИКИ</div>';mkR(new Set(gS()),'supplier');
+h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';mkR(new Set(gCl()),'client');c.innerHTML=h;}
+
+function showH(c, k) {
+    const ti = document.getElementById('mT'), b = document.getElementById('mB');
+    ti.innerText = k;
+    const hist = [];
+    if(data[c]) Object.entries(data[c]).filter(([id,v]) => v.name === k).forEach(([id,v]) => {
+        let n = v.note || 'Запись';
+        if(v.supplier) n = 'Приход: ' + v.supplier;
+        if(v.client) n = 'Отгрузка: ' + v.client;
+        hist.push({ d: v.date, ts: v.ts || '', n: n, a: v.amount, id: id });
+    });
+    // FLAT LIST FOR HISTORY
+    let h = '<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">';
+    hist.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v => {
+        const s = JSON.stringify({name:k, amount:v.a, date:v.d, note:v.n}).replace(/"/g, "&quot;");
+        h += `<tr style="border-bottom:1px solid #eee"><td style="padding:8px 0;width:60%"><div style="font-weight:600;color:#1e293b">${v.n}</div><div style="font-size:11px;color:#94a3b8">${fd2(v.d)}</div></td><td style="text-align:right;font-weight:800;font-size:14px" class="${v.a>=0?'hist-pos':'hist-neg'}">${c==='Пакеты'?Math.round(v.a):v.a.toFixed(1)}</td><td style="width:30px;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}','${s}',0)" style="border:none;background:none;font-size:16px;color:red">🗑️</button>`:''}</td></tr>`;
+    });
+    h += '</table>';
+    b.innerHTML = h || 'Нет записей';
+    document.getElementById('mdl').style.display = 'flex';
+}
+
+function rInvD(c){
+    // АРХИВ ПО ДАТАМ - ПЛИТКИ
+    const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={};
+    Object.entries(d).forEach(([id,v])=>{
+        const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(),dy=dt.getDate();
+        if(!t[y])t[y]={c:0,m:{}}; if(!t[y].m[m])t[y].m[m]={c:0,d:{}}; if(!t[y].m[m].d[dy])t[y].m[m].d[dy]=[];
+        t[y].m[m].d[dy].push({...v,id}); t[y].c++; t[y].m[m].c++;
+    });
+    
+    let h='';
+    Object.keys(t).sort((a,b)=>b-a).forEach(y=>{
+        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}')">${y}</div></div><div id="y${y}" class="arch-content">`;
+        h+=`<div class="arch-m-grid">`;
+        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}')">${mths[m]}<div class="arch-badge">${t[y].m[m].c}</div></div>`;
+        });
+        h+=`</div>`; 
+
+        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div id="m${y}${m}" class="arch-content" style="grid-column:1/-1;">`;
+            
+            h+=`<div class="arch-d-grid">`;
+            Object.keys(t[y].m[m].d).sort((a,b)=>b-a).forEach(dy=>{
+                 h+=`<div class="arch-tile-d" onclick="toggleF('d${y}${m}${dy}')">${dy}<div class="arch-badge">${t[y].m[m].d[dy].length}</div></div>`;
+            });
+            h+=`</div>`;
+
+            Object.keys(t[y].m[m].d).sort((a,b)=>b-a).forEach(dy=>{
+                h+=`<div id="d${y}${m}${dy}" class="arch-content">`;
+                t[y].m[m].d[dy].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{
+                    const s = JSON.stringify(v).replace(/"/g, "&quot;");
+                    let lbl = `<b>№ ${(v.num||'Б/Н')}</b> `;
+                    // ARCHIVE VIEW FOR INCOMING LIST
+                    if(dbK==='ArchIncoming') {
+                         h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`;
+                         if(v.items) {
+                             v.items.forEach(i => h+=`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`);
+                         } else {
+                             // Old format support
+                             h+=`<div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div>`;
+                         }
+                         h+=`</div>`;
+                         if(corrMode) h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delRec('${dbK}','${v.id}')">УДАЛИТЬ</button>`;
+                         h+=`</div>`;
+                    } 
+                    else {
+                        // ARCHIVE VIEW FOR OUTGOING LIST
+                        h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`;
+                        if(v.items) v.items.forEach(i=> h+=`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`);
+                        h+=`</div>`;
+                         if(corrMode) h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delRec('${dbK}','${v.id}')">УДАЛИТЬ</button>`;
+                        h+=`</div>`;
+                    }
+                });
+                h+=`</div>`;
+            });
+
+            h+=`</div>`;
+        });
+        h+=`</div>`;
+    });
+    c.innerHTML=h||'Пусто';
+}
+function rInvC(c){
+    // АРХИВ ПО ИМЕНАМ (ПЛИТКИ КЛИЕНТОВ)
+    const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={};
+    Object.entries(d).forEach(([id,v])=>{
+        const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth();
+        const clName = v.client || v.supplier || 'Без имени';
+        if(!t[y])t[y]={m:{}}; if(!t[y].m[m])t[y].m[m]={cl:{}}; if(!t[y].m[m].cl[clName])t[y].m[m].cl[clName]=[];
+        t[y].m[m].cl[clName].push({...v,id});
+    });
+    
+    let h='';
+    Object.keys(t).sort((a,b)=>b-a).forEach(y=>{
+        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('cy${y}')">${y}</div></div><div id="cy${y}" class="arch-content">`;
+        h+=`<div class="arch-m-grid">`;
+        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div class="arch-tile-m" onclick="toggleF('cm${y}${m}')">${mths[m]}</div>`;
+        });
+        h+=`</div>`;
+
+        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{
+            h+=`<div id="cm${y}${m}" class="arch-content" style="grid-column:1/-1;">`;
+            
+            h+=`<div class="arch-c-grid">`;
+            Object.keys(t[y].m[m].cl).sort().forEach(cl=>{
+                h+=`<div class="arch-tile-c" onclick="toggleF('c${y}${m}${cl.replace(/\s/g,'')}')">${cl}<div class="arch-badge">${t[y].m[m].cl[cl].length}</div></div>`;
+            });
+            h+=`</div>`; // end client grid
+
+            Object.keys(t[y].m[m].cl).sort().forEach(cl=>{
+                 h+=`<div id="c${y}${m}${cl.replace(/\s/g,'')}" class="arch-content" style="margin-top:10px">`;
+                 t[y].m[m].cl[cl].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{
+                    const s = JSON.stringify(v).replace(/"/g, "&quot;");
+                    // REUSE CARD LOGIC FOR CLIENT VIEW
+                     if(dbK==='ArchIncoming') {
+                         h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-body">`;
+                         if(v.items) v.items.forEach(i => h+=`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`);
+                         else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div>`;
+                         h+=`</div></div>`;
+                    } else {
+                        h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-body">`;
+                        if(v.items) v.items.forEach(i=> h+=`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`);
+                        h+=`</div></div>`;
+                    }
+                });
+                h+=`</div>`;
+            });
+            h+=`</div>`;
+        });
+        h+=`</div>`;
+    });
+    c.innerHTML=h||'Пусто';
+}
+    </script>
+    <script>
+async function logAction(obj) { await db.child('GlobalLog').push(obj); }
+
+// CLEAR OLD JOURNAL
+if(!localStorage.getItem('logCleaned356')) {
+    db.child('GlobalLog').remove();
+    localStorage.setItem('logCleaned356', 'true');
+}
+
+async function delRec(cat, id) {
+    if(confirm('Удалить эту запись навсегда?')) {
+        await db.child(cat).child(id).remove();
+        closeModal();
+    }
+}
 async function delItemBatch(val, type) {if(!confirm(`ВНИМАНИЕ! Удалить "${val}" изо всех списков и архивов?`)) return;const updates = {};Object.keys(data).forEach(cat => {Object.entries(data[cat]).forEach(([id, v]) => {if (type === 'name' && v.name === val) updates[`/${cat}/${id}`] = null;if (type === 'supplier' && v.supplier === val) updates[`/${cat}/${id}`] = null;if (type === 'client' && v.client === val) updates[`/${cat}/${id}`] = null;});});await db.update(updates);closeModal();alert('Удалено');}
-async function sFas(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('fD').value,n=document.getElementById('fN').value,raw=document.getElementById('fRaw').value,s=document.getElementById('fS').value,v=parseFloat(document.getElementById('fV').value),p=parseFloat(document.getElementById('fP').value),os=parseFloat(document.getElementById('fOs').value);let vzStr=document.getElementById('fVz').value.replace(/,/g,'.');let vzTotal=0;try{vzTotal=eval(vzStr.replace(/[^-+0-9.]/g,''))||0}catch(e){vzTotal=0}const k=(n==="Кутя")?19.8:9.9,sp=-Math.round(v/k),plUsed=Math.abs(vzTotal-os),scUsed=parseFloat(((v*0.12)/360).toFixed(1)),fId=db.child('Фасовка').push().key,ts=new Date().toISOString(),dV=d+"T12:00:00Z";
-let srcCat='WeightStock';if(data.Stock_DV){const vals=Object.values(data.Stock_DV);if(vals.find(x=>x.name===raw))srcCat='Stock_DV';}
-const updates={};updates['/Фасовка/'+fId]={date:dV,name:n,rawItem:raw,size:s,vyhod:v,prihod:p,vzial:vzTotal,ostatok:os,link:fId,ts:ts};updates['/Готовая/'+db.child('Готовая').push().key]={name:n,amount:v,date:dV,note:'Фасовка',fLink:fId,ts:ts};updates[`/${srcCat}/`+db.child(srcCat).push().key]={name:raw,amount:-p,date:dV,note:'Фасовка: '+n,fLink:fId,ts:ts};updates['/Пакеты/'+db.child('Пакеты').push().key]={name:s,amount:sp,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};updates['/Пленка/'+db.child('Пленка').push().key]={name:n,amount:-plUsed,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};updates['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-scUsed,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};await db.update(updates);closeModal();alert('Записано');}
-async function sKrup(){
-    const btn=document.getElementById('btnS');if(btn)btn.disabled=true;
-    const d=document.getElementById('kD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],kId=db.child('Krup_Report').push().key;
-    const mainRawName=document.getElementById('kMainName').value;
-    const secRawName=document.getElementById('kSecName').value;
-    const secRawW=parseFloat(document.getElementById('kSecW').value)||0;
-    const mainRawW=parseFloat(document.getElementById('kMainW').value)||0;
 
-    if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
+// === NEW INCOMING LOGIC ===
+function addIncItem() {
+    const n = document.getElementById('s_iN').value === 'NEW' ? document.getElementById('i_iN').value : document.getElementById('s_iN').value;
+    const w = parseFloat(document.getElementById('iA').value);
+    
+    if(!n || !w) return alert('Выберите товар и вес');
+    
+    incItems.push({n: n, w: w});
+    renderIncList();
+    document.getElementById('iA').value = '';
+}
 
-    updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'Крупорушка Основа',fLink:kId};
-    let rawMixStr = `${mainRawName}(${mainRawW}кг)`;
-    if(secRawName && secRawW){
-        updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'Крупорушка Добавка',fLink:kId};
-        rawMixStr += ` + ${secRawName}(${secRawW}кг)`;
-    }
+function renderIncList() {
+    const el = document.getElementById('incList');
+    if(incItems.length === 0) { el.innerHTML = '<div style="text-align:center;color:#999;font-size:12px;padding:10px">Список пуст</div>'; return; }
+    
+    let h = '';
+    incItems.forEach((item, idx) => {
+        h += `<div class="basket-item"><span>${item.n}</span><div style="display:flex;align-items:center"><b>${item.w} кг</b><span class="basket-del" onclick="incItems.splice(${idx},1);renderIncList()">✕</span></div></div>`;
+    });
+    el.innerHTML = h;
+}
 
-    for(let i=1;i<=3;i++){
-        let n=document.getElementById(`s_kN${i}`).value;
-        if(n==='NEW') n=document.getElementById(`i_kN${i}`).value;
-        const q=parseFloat(document.getElementById(`kQ${i}`).value),w=parseFloat(document.getElementById(`kW${i}`).value);
-        if(n&&q&&w){
-            const tot=q*w;items.push({n:n,q:q,w:w});
-            updates[`/Stock_DV/${db.child('Stock_DV').push().key}`]={name:`${n} [${w}кг]`,amount:tot,date:dV,ts:ts,note:'Крупорушка',fLink:kId};
-        }
-    }
-    ['M','O'].forEach(t=>{
-        let n=document.getElementById(`s_k${t}N`).value;
-        if(n==='NEW') n=document.getElementById(`i_k${t}N`).value;
-        const q=parseFloat(document.getElementById(`k${t}Q`).value),w=parseFloat(document.getElementById(`k${t}W`).value);
-        if(n&&q&&w){
-            const tot=q*w;items.push({n:n,q:q,w:w});
-            updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:n,amount:tot,date:dV,ts:ts,note:'Крупорушка',fLink:kId};
-        }
+async function sInc() {
+    const d = document.getElementById('iD').value;
+    const num = document.getElementById('iNum').value;
+    let supp = document.getElementById('s_iSupp').value === 'NEW' ? document.getElementById('i_iSupp').value : document.getElementById('s_iSupp').value;
+    
+    if(incItems.length === 0) return alert('Список товаров пуст');
+    if(!supp) return alert('Укажите поставщика');
+
+    const updates = {};
+    const dV = d + "T12:00:00Z";
+    const ts = new Date().toISOString();
+
+    // 1. Create Archive Record (One for all items)
+    const archId = db.child('ArchIncoming').push().key;
+    updates['/ArchIncoming/' + archId] = {
+        date: dV, ts: ts,
+        supplier: supp, num: num,
+        items: incItems // Save array
+    };
+
+    // 2. Update Warehouse (Loop through items)
+    incItems.forEach(item => {
+        const stockId = db.child('WeightStock').push().key;
+        updates['/WeightStock/' + stockId] = {
+            name: item.n, amount: item.w, date: dV, ts: ts, note: `Приход №${num}`
+        };
     });
 
-    if(items.length){
-        updates[`/Krup_Report/${kId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:kId};
-        await db.update(updates);closeModal();alert('Сохранено');
-    }else{
-        btn.disabled=false;alert('Заполните выход');
-    }
-}
-async function sVibro(){
-    const btn=document.getElementById('btnS');if(btn)btn.disabled=true;
-    const d=document.getElementById('vD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],vId=db.child('Vibro_Report').push().key;
-    const mainRawName=document.getElementById('vMain').value;
-    const secRawName=document.getElementById('vSecName').value;
-    const secRawW=parseFloat(document.getElementById('vSecW').value)||0;
-    const mainRawW=parseFloat(document.getElementById('vRawW').value)||0;
-
-    if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
-
-    updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'Вибро Основа',fLink:vId};
-    let rawMixStr = `${mainRawName}(${mainRawW}кг)`;
-    if(secRawName && secRawW){
-        updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'Вибро Добавка',fLink:vId};
-        rawMixStr += ` + ${secRawName}(${secRawW}кг)`;
-    }
-
-    for(let i=1;i<=3;i++){
-        let n=document.getElementById(`s_vN${i}`).value;
-        if(n==='NEW') n=document.getElementById(`i_vN${i}`).value;
-        const q=parseFloat(document.getElementById(`vQ${i}`).value),w=parseFloat(document.getElementById(`vW${i}`).value);
-        if(n&&q&&w){
-            const tot=q*w;items.push({n:n,q:q,w:w});
-            const dest=(i===1?'Stock_Semi':'Stock_Feed');
-            updates[`/${dest}/${db.child(dest).push().key}`]={name:n,amount:tot,date:dV,ts:ts,note:'Вибростол',fLink:vId};
-        }
-    }
-    if(items.length){
-        updates[`/Vibro_Report/${vId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:vId};
-        await db.update(updates);closeModal();alert('Сохранено');
-    }else{btn.disabled=false;alert('Заполните все данные');}
-}
-async function sZSHM(){
-    const btn=document.getElementById('btnS');if(btn)btn.disabled=true;
-    const d=document.getElementById('zD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],zId=db.child('ZSHM_Report').push().key;
-    const mainRawName=document.getElementById('zMain').value;
-    const secRawName=document.getElementById('zSecName').value;
-    const secRawW=parseFloat(document.getElementById('zSecW').value)||0;
-    const mainRawW=parseFloat(document.getElementById('zRawW').value)||0;
-
-    if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
-
-    updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'ЗШМ Основа',fLink:zId};
-    let rawMixStr = `${mainRawName}(${mainRawW}кг)`;
-    if(secRawName && secRawW){
-        updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'ЗШМ Добавка',fLink:zId};
-        rawMixStr += ` + ${secRawName}(${secRawW}кг)`;
-    }
-
-    let pN=document.getElementById('s_zN_Prod').value; if(pN==='NEW') pN=document.getElementById('i_zN_Prod').value;
-    const pQ=parseFloat(document.getElementById('zQ_Prod').value)||0,pW=parseFloat(document.getElementById('zW_Prod').value)||0;if(pN&&pQ&&pW){const tot=pQ*pW;items.push({n:pN,q:pQ,w:pW});updates[`/Stock_DV/${db.child('Stock_DV').push().key}`]={name:`${pN} [${pW}кг]`,amount:tot,date:dV,ts:ts,note:'ЗШМ',fLink:zId};}
-    let sN=document.getElementById('s_zN_Sech').value; if(sN==='NEW') sN=document.getElementById('i_zN_Sech').value;
-    const sQ=parseFloat(document.getElementById('zQ_Sech').value)||0,sW=parseFloat(document.getElementById('zW_Sech').value)||0;if(sN&&sQ&&sW){const tot=sQ*sW;items.push({n:sN,q:sQ,w:sW});updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:sN,amount:tot,date:dV,ts:ts,note:'ЗШМ Сечка',fLink:zId};}
-    let mN=document.getElementById('s_zN_Much').value; if(mN==='NEW') mN=document.getElementById('i_zN_Much').value;
-    const mQ=parseFloat(document.getElementById('zQ_Much').value)||0,mW=parseFloat(document.getElementById('zW_Much').value)||0;if(mN&&mQ&&mW){const tot=mQ*mW;items.push({n:mN,q:mQ,w:mW});updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:mN,amount:tot,date:dV,ts:ts,note:'ЗШМ Мучка',fLink:zId};}
-    let oN=document.getElementById('s_zN_Otr').value; if(oN==='NEW') oN=document.getElementById('i_zN_Otr').value;
-    const oQ=parseFloat(document.getElementById('zQ_Otr').value)||0,oW=parseFloat(document.getElementById('zW_Otr').value)||0;if(oN&&oQ&&oW){const tot=oQ*oW;items.push({n:oN,q:oQ,w:oW});updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:oN,amount:tot,date:dV,ts:ts,note:'ЗШМ Отруби',fLink:zId};}
+    await db.update(updates);
     
-    if(items.length){
-        updates[`/ZSHM_Report/${zId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:zId};
-        await db.update(updates);closeModal();alert('Сохранено');
-    }else{btn.disabled=false;alert('Заполните данные');}
+    // 3. Log to Journal
+    logAction({type: 'INC', date: dV, num: num, supplier: supp, items: incItems});
+    
+    closeModal();
+    alert('Приход сохранен');
 }
-async function sRawInc(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;
-    let n=document.getElementById('s_rN').value; if(n==='NEW') n=document.getElementById('i_rN').value;
-    let s=document.getElementById('s_rSupp').value; if(s==='NEW') s=document.getElementById('i_rSupp').value;
-    const a=parseFloat(document.getElementById('rA').value),d=new Date().toISOString().split('T')[0]+"T12:00:00Z",ts=new Date().toISOString();
-    if(n&&a){const updates={};updates['/Stock_Semi/'+db.child('Stock_Semi').push().key]={name:n,amount:a,date:d,ts:ts,note:'Приход сырья',supplier:s};updates['/ArchIncoming/'+db.child('ArchIncoming').push().key]={name:n,amount:a,date:d,ts:ts,note:'Сырье',supplier:s};await db.update(updates);closeModal();alert('Принято');}
-}
-async function sInc(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const dst=document.getElementById('iDst').value,d=document.getElementById('iD').value;
-    let n=document.getElementById('s_iN').value; if(n==='NEW') n=document.getElementById('i_iN').value;
-    let s=document.getElementById('s_iSupp').value; if(s==='NEW') s=document.getElementById('i_iSupp').value;
-    const a=parseFloat(document.getElementById('iA').value),num=document.getElementById('iNum').value;
-    if(a&&n){const iId=db.child('ArchIncoming').push().key,ts=new Date().toISOString(),dV=d+"T12:00:00Z";const updates={};updates['/ArchIncoming/'+iId]={date:dV,ts:ts,name:n,amount:a,supplier:s,num:num};updates['/'+dst+'/'+db.child(dst).push().key]={date:dV,ts:ts,name:n,amount:a,supplier:s,note:num};await db.update(updates);closeModal();}
-}
-async function sShip(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('sD').value;
+
+// === EXISTING FUNCTIONS ===
+async function sFas(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('fD').value,n=document.getElementById('fN').value,rawVal=document.getElementById('fRaw').value,s=document.getElementById('fS').value,v=parseFloat(document.getElementById('fV').value)||0,p=parseFloat(document.getElementById('fP').value)||0,os=parseFloat(document.getElementById('fOs').value)||0;let vzStr=document.getElementById('fVz').value.replace(/,/g,'.');let vzTotal=0;try{vzTotal=eval(vzStr.replace(/[^-+0-9.]/g,''))||0}catch(e){vzTotal=0}const k=(n==="Кутя")?19.8:9.9,sp=-Math.round(v/k),plUsed=Math.abs(vzTotal-os),scUsed=parseFloat(((v*0.12)/360).toFixed(1)),fId=db.child('Фасовка').push().key,ts=new Date().toISOString(),dV=d+"T12:00:00Z";
+let srcCat='WeightStock'; let rawName = rawVal.split(' (')[0]; if(rawVal.includes('(Склад ДВ)')){srcCat='Stock_DV';}
+const updates={};updates['/Фасовка/'+fId]={date:dV,name:n,rawItem:rawName,size:s,vyhod:v,prihod:p,vzial:vzTotal,ostatok:os,link:fId,ts:ts};updates['/Готовая/'+db.child('Готовая').push().key]={name:n,amount:v,date:dV,note:'Фасовка',fLink:fId,ts:ts};updates[`/${srcCat}/`+db.child(srcCat).push().key]={name:rawName,amount:-p,date:dV,note:'Фасовка: '+n,fLink:fId,ts:ts};updates['/Пакеты/'+db.child('Пакеты').push().key]={name:s,amount:sp,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};updates['/Пленка/'+db.child('Пленка').push().key]={name:n,amount:-plUsed,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};updates['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-scUsed,date:dV,note:'(авто) Фасовка: '+n,fLink:fId,ts:ts};await db.update(updates);
+logAction({type:'FAS', date:dV, name:n, rawItem:rawName, size:s, vyhod:v, prihod:p, vzial:vzTotal, ostatok:os});
+closeModal();alert('Записано');}
+
+async function sKrup(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('kD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],kId=db.child('Krup_Report').push().key;const mainRawName=document.getElementById('kMainName').value;const secRawName=document.getElementById('kSecName').value;const secRawW=parseFloat(document.getElementById('kSecW').value)||0;const mainRawW=parseFloat(document.getElementById('kMainW').value)||0;if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
+updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'Крупорушка Основа',fLink:kId};let rawMixStr = `${mainRawName}(${mainRawW}кг)`;if(secRawName && secRawW){updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'Крупорушка Добавка',fLink:kId};rawMixStr += ` + ${secRawName}(${secRawW}кг)`;}
+for(let i=1;i<=3;i++){let n=document.getElementById(`s_kN${i}`).value;if(n==='NEW') n=document.getElementById(`i_kN${i}`).value;const q=parseFloat(document.getElementById(`kQ${i}`).value),w=parseFloat(document.getElementById(`kW${i}`).value);if(n&&q&&w){const tot=q*w;items.push({n:n,q:q,w:w});updates[`/Stock_DV/${db.child('Stock_DV').push().key}`]={name:`${n} [${w}кг]`,amount:tot,date:dV,ts:ts,note:'Крупорушка',fLink:kId};}}
+['M','O'].forEach(t=>{let n=document.getElementById(`s_k${t}N`).value;if(n==='NEW') n=document.getElementById(`i_k${t}N`).value;const q=parseFloat(document.getElementById(`k${t}Q`).value),w=parseFloat(document.getElementById(`k${t}W`).value);if(n&&q&&w){const tot=q*w;items.push({n:n,q:q,w:w});updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:n,amount:tot,date:dV,ts:ts,note:'Крупорушка',fLink:kId};}});
+if(items.length){updates[`/Krup_Report/${kId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:kId};await db.update(updates);
+logAction({type:'KRUP', date:dV, items:items, rawMix:rawMixStr});
+closeModal();alert('Сохранено');}else{btn.disabled=false;alert('Заполните выход');}}
+
+async function sVibro(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('vD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],vId=db.child('Vibro_Report').push().key;const mainRawName=document.getElementById('vMain').value;const secRawName=document.getElementById('vSecName').value;const secRawW=parseFloat(document.getElementById('vSecW').value)||0;const mainRawW=parseFloat(document.getElementById('vRawW').value)||0;if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
+updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'Вибро Основа',fLink:vId};let rawMixStr = `${mainRawName}(${mainRawW}кг)`;if(secRawName && secRawW){updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'Вибро Добавка',fLink:vId};rawMixStr += ` + ${secRawName}(${secRawW}кг)`;}
+for(let i=1;i<=3;i++){let n=document.getElementById(`s_vN${i}`).value;if(n==='NEW') n=document.getElementById(`i_vN${i}`).value;const q=parseFloat(document.getElementById(`vQ${i}`).value),w=parseFloat(document.getElementById(`vW${i}`).value);if(n&&q&&w){const tot=q*w;items.push({n:n,q:q,w:w});const dest=(i===1?'Stock_Semi':'Stock_Feed');updates[`/${dest}/${db.child(dest).push().key}`]={name:n,amount:tot,date:dV,ts:ts,note:'Вибростол',fLink:vId};}}
+if(items.length){updates[`/Vibro_Report/${vId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:vId};await db.update(updates);
+logAction({type:'VIBRO', date:dV, items:items, rawMix:rawMixStr});
+closeModal();alert('Сохранено');}else{btn.disabled=false;alert('Заполните все данные');}}
+
+async function sZSHM(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('zD').value,ts=new Date().toISOString(),dV=d+"T12:00:00Z",updates={},items=[],zId=db.child('ZSHM_Report').push().key;const mainRawName=document.getElementById('zMain').value;const secRawName=document.getElementById('zSecName').value;const secRawW=parseFloat(document.getElementById('zSecW').value)||0;const mainRawW=parseFloat(document.getElementById('zRawW').value)||0;if(!mainRawName || mainRawW<=0){btn.disabled=false; alert('Ошибка расчета сырья'); return;}
+updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'ЗШМ Основа',fLink:zId};let rawMixStr = `${mainRawName}(${mainRawW}кг)`;if(secRawName && secRawW){updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'ЗШМ Добавка',fLink:zId};rawMixStr += ` + ${secRawName}(${secRawW}кг)`;}
+let pN=document.getElementById('s_zN_Prod').value; if(pN==='NEW') pN=document.getElementById('i_zN_Prod').value;const pQ=parseFloat(document.getElementById('zQ_Prod').value)||0,pW=parseFloat(document.getElementById('zW_Prod').value)||0;if(pN&&pQ&&pW){const tot=pQ*pW;items.push({n:pN,q:pQ,w:pW});updates[`/Stock_DV/${db.child('Stock_DV').push().key}`]={name:`${pN} [${pW}кг]`,amount:tot,date:dV,ts:ts,note:'ЗШМ',fLink:zId};}
+let sN=document.getElementById('s_zN_Sech').value; if(sN==='NEW') sN=document.getElementById('i_zN_Sech').value;const sQ=parseFloat(document.getElementById('zQ_Sech').value)||0,sW=parseFloat(document.getElementById('zW_Sech').value)||0;if(sN&&sQ&&sW){const tot=sQ*sW;items.push({n:sN,q:sQ,w:sW});updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:sN,amount:tot,date:dV,ts:ts,note:'ЗШМ Сечка',fLink:zId};}
+let mN=document.getElementById('s_zN_Much').value; if(mN==='NEW') mN=document.getElementById('i_zN_Much').value;const mQ=parseFloat(document.getElementById('zQ_Much').value)||0,mW=parseFloat(document.getElementById('zW_Much').value)||0;if(mN&&mQ&&mW){const tot=mQ*mW;items.push({n:mN,q:mQ,w:mW});updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:mN,amount:tot,date:dV,ts:ts,note:'ЗШМ Мучка',fLink:zId};}
+let oN=document.getElementById('s_zN_Otr').value; if(oN==='NEW') oN=document.getElementById('i_zN_Otr').value;const oQ=parseFloat(document.getElementById('zQ_Otr').value)||0,oW=parseFloat(document.getElementById('zW_Otr').value)||0;if(oN&&oQ&&oW){const tot=oQ*oW;items.push({n:oN,q:oQ,w:oW});updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`]={name:oN,amount:tot,date:dV,ts:ts,note:'ЗШМ Отруби',fLink:zId};}
+if(items.length){updates[`/ZSHM_Report/${zId}`]={date:dV,ts:ts,items:items,rawMix:rawMixStr,link:zId};await db.update(updates);
+logAction({type:'ZSHM', date:dV, items:items, rawMix:rawMixStr});
+closeModal();alert('Сохранено');}else{btn.disabled=false;alert('Заполните данные');}}
+
+async function sShip(){
+    const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const d=document.getElementById('sD').value;
     let cl=document.getElementById('s_sC').value; if(cl==='NEW') cl=document.getElementById('i_sC').value;
-    const items=[],updates={},ts=new Date().toISOString(),dV=d+"T12:00:00Z";document.querySelectorAll('.s-in').forEach(i=>{const a=parseFloat(i.value);if(a>0){const p=i.dataset.p,c=i.dataset.cat;items.push(p+': '+a);updates['/'+c+'/'+db.child(c).push().key]={name:p,amount:-a,date:dV,ts:ts,client:cl};}});if(items.length){updates['/ArchInvoices/'+db.child('ArchInvoices').push().key]={date:dV,ts:ts,client:cl,items:items};await db.update(updates);}closeModal();
+    const num=document.getElementById('sNum').value;
+    const items=[], updates={}, ts=new Date().toISOString(), dV=d+"T12:00:00Z";
+    document.querySelectorAll('.s-in').forEach(i=>{const a=parseFloat(i.value);if(a>0){const p=i.dataset.p, c=i.dataset.cat;
+    const unit = (c==='Готовая') ? 'шт' : 'кг';
+    items.push(`${p}: ${a}${unit}`);
+    updates['/'+c+'/'+db.child(c).push().key]={name:p,amount:-a,date:dV,ts:ts,client:cl,note:num};}});
+    if(items.length){
+        updates['/ArchInvoices/'+db.child('ArchInvoices').push().key]={date:dV,ts:ts,client:cl,items:items,num:num};
+        await db.update(updates);
+        logAction({type:'SHIP', date:dV, client:cl, items:items, num:num});
+        closeModal();
+    }
 }
-</script>
-<script>
-function makeSelect(id, cat, ph, sourceOverride) {
+async function sMatP(){const btn=document.getElementById('btnS');if(btn)btn.disabled=true;const c=document.getElementById('mCat').value;let s=document.getElementById('mS').value; if(s==='NEW') s=document.getElementById('mSn').value;let supp=document.getElementById('mSuppS').value; if(supp==='NEW') supp=document.getElementById('mSuppN').value;const a=parseFloat(document.getElementById('mA').value),mDate=document.getElementById('mDate').value,num=document.getElementById('mNum').value,catKey=c==='Скотч'?'Скотч 360 грамм':c;
+if(a&&s){const updates={};updates['/'+catKey+'/'+db.child(catKey).push().key]={date:mDate+"T12:00:00Z",ts:new Date().toISOString(),name:s,amount:a,supplier:supp,note:num};updates['/ArchPackIn/'+db.child('ArchPackIn').push().key]={date:mDate+"T12:00:00Z",ts:new Date().toISOString(),name:s,amount:a,supplier:supp,num:num};await db.update(updates);
+logAction({type:'PACK', date:mDate+"T12:00:00Z", name:s, amount:a, supplier:supp, num:num});
+closeModal();}}
+    </script>
+    <script>
+function makeSelect(id, cat, ph, sourceOverride, newLabel) {
     let opts = `<option value="">${ph}...</option>`;
     let list = [];
     if(sourceOverride) list = sourceOverride;
@@ -280,22 +566,35 @@ function makeSelect(id, cat, ph, sourceOverride) {
         }
     }
     list.forEach(n => opts += `<option value="${n}">${n}</option>`);
-    opts += `<option value="NEW" style="font-weight:bold;color:var(--p)">+ НОВЫЙ</option>`;
+    opts += `<option value="NEW" style="font-weight:bold;color:var(--p)">${newLabel || '+ НОВЫЙ ВИД'}</option>`;
     return `<select id="s_${id}" onchange="toggleInput('${id}')" style="width:100%">${opts}</select><input type="text" id="i_${id}" class="new-input" placeholder="Введите название" style="display:none;width:100%">`;
 }
 
-function openModal(t,id){const ti=document.getElementById('mT'),b=document.getElementById('mB');if(!id)aId=null;else aId=id;if(t=='auth'){ti.innerText='Вход / Сброс';b.innerHTML=`<input type="email" id="lE" value="nukonor@gmail.com"><input type="password" id="lP"><button class="btn-main" onclick="login()">ВХОД</button><hr><button class="btn-main" style="background:var(--d)" onclick="if(confirm('Сбросить базу?')){db.set(null);location.reload()}">ОБНУЛИТЬ БАЗУ</button>`;}else if(t=='clean'){rCleanList(b);ti.innerText='ЧИСТКА (Удалить навсегда)';}else if(t=='addMatPack'){ti.innerText='Приход Упаковки';b.innerHTML=`Раздел:<select id="mCat" onchange="const s=document.getElementById('mS');const list=gPack(this.value);s.innerHTML='<option value=>Выбрать...</option>'+list.map(x=>'<option value=\\''+x+'\\'>'+x+'</option>').join('')+'<option value=NEW>+ НОВЫЙ</option>'"><option value="">Выбрать...</option><option value="Пакеты">Пакеты</option><option value="Пленка">Пленка</option><option value="Скотч">Скотч</option></select>Тип:<select id="mS" onchange="document.getElementById('mSn').style.display=this.value==='NEW'?'block':'none'"><option value="">Выбрать...</option></select><input type="text" id="mSn" placeholder="Название" style="display:none">Поставщик:<select id="mSuppS" onchange="document.getElementById('mSuppN').style.display=this.value==='NEW'?'block':'none'"><option value=>Выбрать...</option>${gS().map(s=>`<option value="${s}">${s}</option>`).join('')}<option value="NEW">+ НОВЫЙ</option></select><input type="text" id="mSuppN" placeholder="Имя нового поставщика" style="display:none">Кол-во:<input type="number" id="mA">Дата:<input type="date" id="mDate" value="${new Date().toISOString().split('T')[0]}"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sMatP()">ЗАПИСАТЬ</button>`;}
-else if(t=='inc'){ti.innerText='Приход';b.innerHTML=`Склад:<select id="iDst" onchange="const s=document.getElementById('s_iN');const list=gP(this.value);let o='<option value=>Выбрать...</option>';list.forEach(x=>o+='<option value=\\''+x+'\\'>'+x+'</option>');o+='<option value=NEW>+ НОВЫЙ</option>';s.innerHTML=o"><option value="WeightStock">ПОКУПНАЯ</option><option value="Готовая">ФАСОВКА</option><option value="Stock_DV">СКЛАД ДВ</option><option value="Stock_Feed">КОРМА</option></select>Дата:<input type="date" id="iD" value="${new Date().toISOString().split('T')[0]}">Продукт:${makeSelect('iN','WeightStock','Продукт')}Поставщик:${makeSelect('iSupp','','Поставщик',gS())}Кол-во:<input type="number" id="iA">№ Накл:<input type="text" id="iNum"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sInc()">ЗАПИСАТЬ</button>`;}
-else if(t=='ship'){ti.innerText='Отгрузка';b.innerHTML=`Дата:<input type="date" id="sD" value="${new Date().toISOString().split('T')[0]}">Клиент:${makeSelect('sC','','Клиент',gCl())}
+function openModal(t,id){const ti=document.getElementById('mT'),b=document.getElementById('mB');if(!id)aId=null;else aId=id;if(t=='auth'){ti.innerText='Вход / Сброс';b.innerHTML=`<input type="email" id="lE" value="nukonor@gmail.com"><input type="password" id="lP"><button class="btn-main" onclick="login()">ВХОД</button><hr><button class="btn-main" style="background:var(--d)" onclick="if(confirm('Сбросить базу?')){db.set(null);location.reload()}">ОБНУЛИТЬ БАЗУ</button>`;}else if(t=='clean'){rCleanList(b);ti.innerText='ЧИСТКА (Удалить навсегда)';}else if(t=='addMatPack'){ti.innerText='Приход Упаковки';b.innerHTML=`Раздел:<select id="mCat" onchange="const s=document.getElementById('mS');const list=gPack(this.value);s.innerHTML='<option value=>Выбрать...</option>'+list.map(x=>'<option value=\\''+x+'\\'>'+x+'</option>').join('')+'<option value=NEW>+ НОВЫЙ</option>'"><option value="">Выбрать...</option><option value="Пакеты">Пакеты</option><option value="Пленка">Пленка</option><option value="Скотч">Скотч</option></select>Тип:<select id="mS" onchange="document.getElementById('mSn').style.display=this.value==='NEW'?'block':'none'"><option value="">Выбрать...</option></select><input type="text" id="mSn" placeholder="Название" style="display:none">Поставщик:<select id="mSuppS" onchange="document.getElementById('mSuppN').style.display=this.value==='NEW'?'block':'none'"><option value=>Выбрать...</option>${gS().map(s=>`<option value="${s}">${s}</option>`).join('')}<option value="NEW">+ НОВЫЙ ПОСТАВЩИК</option></select><input type="text" id="mSuppN" placeholder="Имя нового поставщика" style="display:none">Кол-во:<input type="number" id="mA">№ Накл:<input type="text" id="mNum">Дата:<input type="date" id="mDate" value="${new Date().toISOString().split('T')[0]}"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sMatP()">ЗАПИСАТЬ</button>`;}
+else if(t=='inc'){ti.innerText='Приход (Покупная)';b.innerHTML=`Дата:<input type="date" id="iD" value="${new Date().toISOString().split('T')[0]}">№ Накл:<input type="text" id="iNum">Поставщик:${makeSelect('iSupp','','Поставщик',gS(),'+ НОВЫЙ ПОСТАВЩИК')}<div style="background:#f1f5f9;padding:10px;border-radius:10px;margin-top:10px;border:1px solid #e2e8f0"><div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:5px">ДОБАВИТЬ ТОВАР</div>Товар:${makeSelect('iN','WeightStock','Выбрать...',null,'+ НОВЫЙ ВИД')}Вес (кг):<input type="number" id="iA"><button class="btn-main" style="background:var(--s);padding:8px" onclick="addIncItem()">+ ДОБАВИТЬ В СПИСОК</button></div><div id="incList" class="basket-list"><div style="text-align:center;color:#999;font-size:12px;padding:10px">Список пуст</div></div><button class="btn-main" id="btnS" onclick="if(confirm('Сохранить накладную?'))sInc()">СОХРАНИТЬ ПРИХОД</button>`;}
+else if(t=='ship'){ti.innerText='Отгрузка';b.innerHTML=`Дата:<input type="date" id="sD" value="${new Date().toISOString().split('T')[0]}">Клиент:${makeSelect('sC','','Клиент',gCl(),'+ НОВЫЙ КЛИЕНТ')}№ Накладной:<input type="text" id="sNum">
 <div class="tab-group"><button id="tb_Got" class="tab-btn active" onclick="switchShipTab('Got')">ФАСОВКА</button><button id="tb_Wgh" class="tab-btn" onclick="switchShipTab('Wgh')">ПОКУПНАЯ</button><button id="tb_DV" class="tab-btn" onclick="switchShipTab('DV')">ДВ</button><button id="tb_Fd" class="tab-btn" onclick="switchShipTab('Fd')">КОРМА</button></div>
-<div id="shipGridF" class="item-body" style="max-height:400px;overflow-y:auto;margin-top:5px">
+<div id="shipGridF" class="item-body" style="max-height:300px;overflow-y:auto;margin-top:5px">
 <div id="sc_Got" class="ship-sect active item-grid">${gP('Готовая').map(p=>`<div class="item-card"><div class="item-title">${p}</div><input type="number" class="s-in" data-cat="Готовая" data-p="${p}" style="width:100%;box-sizing:border-box;border:1px solid #eee;border-radius:4px;padding:4px;text-align:center" placeholder="шт"></div>`).join('')}</div>
 <div id="sc_Wgh" class="ship-sect item-grid">${gP('WeightStock').map(p=>`<div class="item-card"><div class="item-title">${p}</div><input type="number" class="s-in" data-cat="WeightStock" data-p="${p}" style="width:100%;box-sizing:border-box;border:1px solid #eee;border-radius:4px;padding:4px;text-align:center" placeholder="кг"></div>`).join('')}</div>
 <div id="sc_DV" class="ship-sect item-grid">${gP('Stock_DV').map(p=>`<div class="item-card"><div class="item-title">${p}</div><input type="number" class="s-in" data-cat="Stock_DV" data-p="${p}" style="width:100%;box-sizing:border-box;border:1px solid #eee;border-radius:4px;padding:4px;text-align:center" placeholder="кг"></div>`).join('')}</div>
 <div id="sc_Fd" class="ship-sect item-grid">${gP('Stock_Feed').map(p=>`<div class="item-card"><div class="item-title">${p}</div><input type="number" class="s-in" data-cat="Stock_Feed" data-p="${p}" style="width:100%;box-sizing:border-box;border:1px solid #eee;border-radius:4px;padding:4px;text-align:center" placeholder="кг"></div>`).join('')}</div>
-</div><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sShip()">СОХРАНИТЬ</button>`;}else if(t=='fas'){const rL=[...gP('WeightStock'), ...gP('Stock_DV')].sort();
-ti.innerText='Фасовка';b.innerHTML=`Дата:<input type="date" id="fD" value="${new Date().toISOString().split('T')[0]}">Крупа:<select id="fN">${gP('Готовая').map(p=>`<option>${p}</option>`).join('')}</select>Списать:<select id="fRaw">${rL.map(p=>`<option>${p}</option>`).join('')}</select>Пакет:<select id="fS">${szs.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fP" placeholder="Сырье кг"><input type="number" id="fV" placeholder="Выход шт"><input type="text" id="fVz" placeholder="Взял пленки (через +)"><input type="number" id="fOs" placeholder="Остаток пленки"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sFas()">СОХРАНИТЬ</button>`;}else if(t=='addKrup'){ti.innerText='Крупорушка Отчет';
-b.innerHTML=`<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ (со Склада)</div><select id="kMainName" onchange="calcKrup()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА (со Склада)</div><select id="kSecName" onchange="calcKrup()"><option value="">Нет добавки</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="kSecW" placeholder="Кг" oninput="calcKrup()"></div></div>Дата:<input type="date" id="kD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход (Фракции)</div><div class="krup-row">${makeSelect('kN1','Stock_DV','Фракция 1')}<input type="number" id="kQ1" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW1" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kN2','Stock_DV','Фракция 2')}<input type="number" id="kQ2" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW2" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kN3','Stock_DV','Фракция 3')}<input type="number" id="kQ3" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW3" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-sec">Отходы</div><div class="krup-row">${makeSelect('kMN','Stock_Feed','Мучка')}<input type="number" id="kMQ" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kMW" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kON','Stock_Feed','Отруби')}<input type="number" id="kOQ" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kOW" placeholder="Кг" oninput="calcKrup()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="kMainW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать?'))sKrup()">СОХРАНИТЬ</button>`;}else if(t=='addRaw'){ti.innerText='Приход Сырья';b.innerHTML=`Название:${makeSelect('rN','Stock_Semi','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gS())}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="if(confirm('Принять сырье?'))sRawInc()">ПРИНЯТЬ</button>`;}else if(t=='addVibro'){ti.innerText='Вибростол';const dListSemi=`<datalist id="list_Semi">${gP('Stock_Semi').map(x=>`<option value="${x}">`).join('')}</datalist>`;const dListFeed=`<datalist id="list_Feed">${gP('Stock_Feed').map(x=>`<option value="${x}">`).join('')}</datalist>`;b.innerHTML=`${dListSemi}${dListFeed}<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><select id="vMain" onchange="calcVibro()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА</div><select id="vSecName" onchange="calcVibro()"><option value="">Нет</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="vSecW" placeholder="Кг" oninput="calcVibro()"></div></div>Дата:<input type="date" id="vD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход</div><div class="krup-row">${makeSelect('vN1','Stock_Semi','Фракция 1')}<input type="number" id="vQ1" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW1" placeholder="Кг" oninput="calcVibro()"></div><div class="krup-row">${makeSelect('vN2','Stock_Feed','Фракция 2')}<input type="number" id="vQ2" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW2" placeholder="Кг" oninput="calcVibro()"></div><div class="krup-row">${makeSelect('vN3','Stock_Feed','Фракция 3')}<input type="number" id="vQ3" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW3" placeholder="Кг" oninput="calcVibro()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="vRawW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать?'))sVibro()">СОХРАНИТЬ</button>`;}else if(t=='addZSHM'){ti.innerText='ЗШМ Смена';b.innerHTML=`<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><select id="zMain" onchange="calcZSHM()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА</div><select id="zSecName" onchange="calcZSHM()"><option value="">Нет</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="zSecW" placeholder="Кг" oninput="calcZSHM()"></div></div>Дата:<input type="date" id="zD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход Продукта</div><div class="krup-row">${makeSelect('zN_Prod','Stock_DV','Продукт')}<input type="number" id="zQ_Prod" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Prod" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-sec">Отходы</div><div class="krup-row">${makeSelect('zN_Sech','Stock_Semi','Сечка')}<input type="number" id="zQ_Sech" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Sech" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-row">${makeSelect('zN_Much','Stock_Feed','Мучка')}<input type="number" id="zQ_Much" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Much" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-row">${makeSelect('zN_Otr','Stock_Feed','Отруби')}<input type="number" id="zQ_Otr" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Otr" placeholder="Кг" oninput="calcZSHM()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="zRawW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать смену ЗШМ?'))sZSHM()">СОХРАНИТЬ</button>`;}else if(t=='corr'){const [cat,name]=id.split('|');ti.innerText='Коррекция: '+name;b.innerHTML=`Дата:<input type="date" id="cD" value="${new Date().toISOString().split('T')[0]}">Кол-во:<input type="number" id="cA">Причина:<input type="text" id="cR"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sCorr('${cat}','${name}')">ОК</button>`;}else if(t=='vInv'){const [rid,key]=id.split('|'),v=data[key][rid];ti.innerText='Накладная';b.innerHTML=`<b>${v.client||v.supplier}</b> (${fd(v.date)})<br>№ ${v.num||'Б/Н'}<hr><div style="font-size:12px">${v.items?v.items.join('<br>'):(v.name+': '+v.amount)}</div><button class="btn-main" style="background:var(--d);margin-top:15px" onclick="delArchRec('${key}','${rid}')">УДАЛИТЬ С ВОЗВРАТОМ</button>`;}document.getElementById('mdl').style.display='flex';}
+</div><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sShip()">СОХРАНИТЬ</button>`;}else if(t=='fas'){
+    let rL = [];
+    gP('WeightStock').forEach(x => rL.push(`${x} (Покупная)`));
+    gP('Stock_DV').forEach(x => rL.push(`${x} (Склад ДВ)`));
+    rL.sort();
+    
+    ti.innerText='Фасовка';b.innerHTML=`Дата:<input type="date" id="fD" value="${new Date().toISOString().split('T')[0]}">Крупа:<select id="fN">${gP('Готовая').map(p=>`<option>${p}</option>`).join('')}</select>Списать:<select id="fRaw">${rL.map(p=>`<option>${p}</option>`).join('')}</select>Пакет:<select id="fS">${szs.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fP" placeholder="Сырье кг"><input type="number" id="fV" placeholder="Выход шт"><input type="text" id="fVz" placeholder="Взял пленки (через +)"><input type="number" id="fOs" placeholder="Остаток пленки"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sFas()">СОХРАНИТЬ</button>`;}else if(t=='addKrup'){ti.innerText='Крупорушка Отчет';
+b.innerHTML=`<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ (со Склада)</div><select id="kMainName" onchange="calcKrup()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА (со Склада)</div><select id="kSecName" onchange="calcKrup()"><option value="">Нет добавки</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="kSecW" placeholder="Кг" oninput="calcKrup()"></div></div>Дата:<input type="date" id="kD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход (Фракции)</div><div class="krup-row">${makeSelect('kN1','Stock_DV','Фракция 1')}<input type="number" id="kQ1" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW1" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kN2','Stock_DV','Фракция 2')}<input type="number" id="kQ2" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW2" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kN3','Stock_DV','Фракция 3')}<input type="number" id="kQ3" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kW3" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-sec">Отходы</div><div class="krup-row">${makeSelect('kMN','Stock_Feed','Мучка')}<input type="number" id="kMQ" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kMW" placeholder="Кг" oninput="calcKrup()"></div><div class="krup-row">${makeSelect('kON','Stock_Feed','Отруби')}<input type="number" id="kOQ" placeholder="Меш" oninput="calcKrup()"><input type="number" id="kOW" placeholder="Кг" oninput="calcKrup()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="kMainW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать?'))sKrup()">СОХРАНИТЬ</button>`;}else if(t=='addRaw'){ti.innerText='Приход Сырья';b.innerHTML=`Название:${makeSelect('rN','Stock_Semi','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="if(confirm('Принять сырье?'))sRawInc()">ПРИНЯТЬ</button>`;}else if(t=='addVibro'){ti.innerText='Вибростол';const dListSemi=`<datalist id="list_Semi">${gP('Stock_Semi').map(x=>`<option value="${x}">`).join('')}</datalist>`;const dListFeed=`<datalist id="list_Feed">${gP('Stock_Feed').map(x=>`<option value="${x}">`).join('')}</datalist>`;b.innerHTML=`${dListSemi}${dListFeed}<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><select id="vMain" onchange="calcVibro()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА</div><select id="vSecName" onchange="calcVibro()"><option value="">Нет</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="vSecW" placeholder="Кг" oninput="calcVibro()"></div></div>Дата:<input type="date" id="vD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход</div><div class="krup-row">${makeSelect('vN1','Stock_Semi','Фракция 1')}<input type="number" id="vQ1" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW1" placeholder="Кг" oninput="calcVibro()"></div><div class="krup-row">${makeSelect('vN2','Stock_Feed','Фракция 2')}<input type="number" id="vQ2" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW2" placeholder="Кг" oninput="calcVibro()"></div><div class="krup-row">${makeSelect('vN3','Stock_Feed','Фракция 3')}<input type="number" id="vQ3" placeholder="Меш" oninput="calcVibro()"><input type="number" id="vW3" placeholder="Кг" oninput="calcVibro()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="vRawW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать?'))sVibro()">СОХРАНИТЬ</button>`;}else if(t=='addZSHM'){ti.innerText='ЗШМ Смена';b.innerHTML=`<div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><select id="zMain" onchange="calcZSHM()"><option value="">Выбрать...</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div style="font-size:10px;color:#888;font-weight:700;grid-column:1/-1;margin-top:5px">ДОБАВКА</div><select id="zSecName" onchange="calcZSHM()"><option value="">Нет</option>${gP('Stock_Semi').map(s=>`<option value="${s}">${s}</option>`).join('')}</select><input type="number" id="zSecW" placeholder="Кг" oninput="calcZSHM()"></div></div>Дата:<input type="date" id="zD" value="${new Date().toISOString().split('T')[0]}"><div class="krup-sec">Выход Продукта</div><div class="krup-row">${makeSelect('zN_Prod','Stock_DV','Продукт')}<input type="number" id="zQ_Prod" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Prod" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-sec">Отходы</div><div class="krup-row">${makeSelect('zN_Sech','Stock_Semi','Сечка')}<input type="number" id="zQ_Sech" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Sech" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-row">${makeSelect('zN_Much','Stock_Feed','Мучка')}<input type="number" id="zQ_Much" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Much" placeholder="Кг" oninput="calcZSHM()"></div><div class="krup-row">${makeSelect('zN_Otr','Stock_Feed','Отруби')}<input type="number" id="zQ_Otr" placeholder="Меш" oninput="calcZSHM()"><input type="number" id="zW_Otr" placeholder="Кг" oninput="calcZSHM()"></div><div style="margin-top:10px;padding:10px;background:#ecfdf5;border:1px solid #10b981;border-radius:8px;text-align:center"><div style="font-size:10px;color:#047857;font-weight:700">ИСПОЛЬЗОВАНО ОСНОВЫ:</div><input id="zRawW" readonly style="background:transparent;border:none;font-size:20px;font-weight:900;color:#047857;text-align:center;width:100%" value="0"></div><button class="btn-main" id="btnS" onclick="if(confirm('Записать смену ЗШМ?'))sZSHM()">СОХРАНИТЬ</button>`;}else if(t=='corr'){const [cat,name]=id.split('|');ti.innerText='Коррекция: '+name;b.innerHTML=`Дата:<input type="date" id="cD" value="${new Date().toISOString().split('T')[0]}">Кол-во:<div style="display:flex;gap:5px"><input type="number" id="cA"><button onclick="document.getElementById('cA').value *= -1" style="width:50px;font-weight:900">+/-</button></div>Причина:<input type="text" id="cR"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sCorr('${cat}','${name}')">ОК</button>`;}else if(t=='vInv'){const [rid,key]=id.split('|');const rec = data[key] ? data[key][rid] : null; if(!rec) return alert('Запись не найдена');const items = rec.items; let h = ''; if(items && Array.isArray(items)) { h = '<div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0"><div style="font-weight:700;margin-bottom:5px;font-size:11px;color:#64748b">СОСТАВ НАКЛАДНОЙ:</div>'; items.forEach(i => { h += `<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:4px 0;font-size:13px"><span>${i.n || i.split(':')[0]}</span><b>${i.w || i.split(':')[1]}${i.w ? 'кг' : ''}</b></div>`; }); h += '</div>'; } 
+    let mainInfo = '';
+    if(key === 'ArchIncoming') {
+        mainInfo = `<div style="background:#ecfdf5;padding:15px;border-radius:10px;border:1px solid #a7f3d0;text-align:center;margin-bottom:15px"><div style="font-size:12px;color:#047857;font-weight:700;text-transform:uppercase">ПОСТАВЩИК</div><div style="font-size:20px;color:#064e3b;font-weight:900;margin-top:5px">${rec.supplier}</div></div>`;
+    }
+    ti.innerText='Накладная';b.innerHTML=`<div style="font-size:18px;margin-bottom:10px"><b>№ ${rec.num||'Б/Н'}</b></div><div style="color:#64748b;margin-bottom:15px;font-weight:600">${rec.client||rec.supplier} | ${fd2(rec.date)}</div>${mainInfo}${h}<button class="btn-main" style="background:var(--d);margin-top:20px" onclick="delArchRec('${key}','${rid}')">УДАЛИТЬ С ВОЗВРАТОМ</button>`;
+}
+else if(t=='log'){rGlobalLog(b);ti.innerText='Журнал действий';}
+document.getElementById('mdl').style.display='flex';}
 async function login(){try{await auth.signInWithEmailAndPassword(document.getElementById('lE').value,document.getElementById('lP').value);closeModal()}catch(e){alert('Ошибка')}}
 auth.onAuthStateChanged(u=>{document.getElementById('uS').innerText=u?u.email.toUpperCase():"ВХОД...";renderHome()});window.onload=renderHome;
 </script></body></html>
