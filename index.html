@@ -680,6 +680,42 @@ async function sRawInc(){
     closeModal();
     alert('Принято! (Склад + Архив + Журнал)');
 }
+async function saveCorr(){
+    const btn = document.getElementById('btnC');
+    if(btn) btn.disabled = true;
 
+    // Считываем, что исправляем (Категория|Товар)
+    const t = document.getElementById('c_tit').innerText.split('|');
+    const cat = t[0];
+    const name = t[1];
+
+    const val = parseFloat(document.getElementById('c_val').value);
+    const note = document.getElementById('c_note').value;
+
+    if(!val || !note) {
+        if(btn) btn.disabled = false;
+        return alert('Укажите вес (+ или -) и причину');
+    }
+
+    const d = new Date().toISOString().split('T')[0] + "T12:00:00Z";
+    const updates = {};
+    const key = db.child(cat).push().key;
+
+    // Записываем исправление
+    updates['/' + cat + '/' + key] = {
+        name: name,
+        amount: val,
+        date: d,
+        ts: new Date().toISOString(),
+        note: 'Коррекция: ' + note
+    };
+
+    await db.update(updates);
+    logAction({type:'CORR', date:d, name:name, amount:val, reason:note});
+
+    closeModal();
+    alert('Остаток успешно исправлен!');
+}
+        
 window.onload=renderHome;
 </script></body></html>
