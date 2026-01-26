@@ -637,8 +637,7 @@ async function login(){
 auth.onAuthStateChanged(u=>{
     document.getElementById('uS').innerText=u?u.email.toUpperCase():"ВХОД...";
     renderHome();
-});
-
+})
 async function sRawInc(){
     const btn=document.getElementById('btnS');
     if(btn)btn.disabled=true;
@@ -673,19 +672,22 @@ async function sRawInc(){
     };
 
     await db.update(updates);
-    
-    // 3. ВОТ ЭТА СТРОЧКА ВЕРНУЛАСЬ (ДЛЯ ЖУРНАЛА):
     logAction({type:'INC_RAW', date:d, name:n, amount:a, supplier:supp});
     
     closeModal();
-    alert('Принято! (Склад + Архив + Журнал)');
+    alert('Сырье принято!');
 }
+
 async function saveCorr(){
     const btn = document.getElementById('btnC');
     if(btn) btn.disabled = true;
 
-    // Считываем, что исправляем (Категория|Товар)
+    // Считываем заголовок (Категория|Товар)
     const t = document.getElementById('c_tit').innerText.split('|');
+    if(t.length < 2) {
+         if(btn) btn.disabled = false;
+         return alert('Ошибка: не выбран товар');
+    }
     const cat = t[0];
     const name = t[1];
 
@@ -701,7 +703,6 @@ async function saveCorr(){
     const updates = {};
     const key = db.child(cat).push().key;
 
-    // Записываем исправление
     updates['/' + cat + '/' + key] = {
         name: name,
         amount: val,
@@ -714,8 +715,11 @@ async function saveCorr(){
     logAction({type:'CORR', date:d, name:name, amount:val, reason:note});
 
     closeModal();
-    alert('Остаток успешно исправлен!');
+    alert('Остаток исправлен!');
+    renderHome(); // Обновляем экран сразу
 }
-        
+
 window.onload=renderHome;
 </script></body></html>
+
+
