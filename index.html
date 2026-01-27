@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v356 FinalRelease</title>
+<title>Склад v357 Fixed</title>
 <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
 <link rel="shortcut icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
 <link rel="apple-touch-icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
@@ -157,7 +157,7 @@ const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInv
 const gPack=(cat)=>{const s=new Set();if(cat==='Пакеты')szs.forEach(x=>s.add(x));if(cat==='Скотч')s.add('Скотч 360 грамм');if(cat==='Пленка')bP.forEach(x=>s.add(x));const dbK=cat==='Скотч'?'Скотч 360 грамм':cat;if(data[dbK])Object.values(data[dbK]).forEach(v=>{if(v.name)s.add(v.name)});return Array.from(s).filter(x=>x).sort();};
 
 // ============================================
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА
+// ВХОД
 // ============================================
 async function tryLogin() {
     const p = document.getElementById('appPass').value;
@@ -678,65 +678,35 @@ async function sRawInc(){
     alert('Сырье принято!');
 }
 
-async function saveCorr(){
-    const btn = document.getElementById('btnC');
+async function sCorr(cat, name) {
+    const btn = document.getElementById('btnS');
+    const d = document.getElementById('cD').value;
+    const a = parseFloat(document.getElementById('cA').value);
+    const r = document.getElementById('cR').value;
     
-    // 1. Читаем заголовок (Умный поиск имени)
-    let txt = document.getElementById('c_tit').innerText;
-    let name = '';
-    let cat = '';
-
-    // Если формат "Категория|Товар" (Новый)
-    if(txt.includes('|')) {
-        let parts = txt.split('|');
-        cat = parts[0];
-        name = parts[1];
-    } 
-    // Если формат "Коррекция: Товар" (Старый, как у тебя сейчас)
-    else if (txt.includes(':')) {
-        name = txt.split(':')[1].trim(); // Берем "Ячмень"
-        
-        // Ищем, в какой категории живет этот товар
-        if(data.WeightStock && Object.values(data.WeightStock).find(x=>x.name===name)) cat = 'WeightStock';
-        else if(data.Stock_Semi && Object.values(data.Stock_Semi).find(x=>x.name===name)) cat = 'Stock_Semi';
-        else if(data.Готовая && Object.values(data.Готовая).find(x=>x.name===name)) cat = 'Готовая';
-        else cat = 'WeightStock'; // Если не нашли, кидаем в сыпучку
-    } 
-    else {
-        return alert('Ошибка: непонятное название товара');
-    }
-
-    const val = parseFloat(document.getElementById('c_val').value);
-    const note = document.getElementById('c_note').value;
-
-    if(!val || !note) {
-        return alert('Укажите вес (+ или -) и причину');
-    }
-
+    if(!a || !r) return alert('Заполните кол-во и причину');
+    
     if(btn) btn.disabled = true;
 
-    const d = new Date().toISOString().split('T')[0] + "T12:00:00Z";
+    const dV = d + "T12:00:00Z";
     const updates = {};
     const key = db.child(cat).push().key;
 
-    updates['/' + cat + '/' + key] = {
+    updates[`/${cat}/${key}`] = {
         name: name,
-        amount: val,
-        date: d,
+        amount: a,
+        date: dV,
         ts: new Date().toISOString(),
-        note: 'Коррекция: ' + note
+        note: 'Коррекция: ' + r
     };
 
     await db.update(updates);
-    logAction({type:'CORR', date:d, name:name, amount:val, reason:note});
-
+    logAction({type:'CORR', date:dV, name:name, amount:a, reason:r});
+    
     closeModal();
-    alert('Остаток исправлен!');
+    alert('Успешно скорректировано');
     renderHome();
 }
 
-
 window.onload=renderHome;
 </script></body></html>
-
-
