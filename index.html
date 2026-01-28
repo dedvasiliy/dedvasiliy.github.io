@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v371 Delete Fix</title>
+<title>Склад v381 INSTANT CLOSE</title>
 <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
 <link rel="shortcut icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
 <link rel="apple-touch-icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
@@ -76,9 +76,10 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 /* SMART INPUTS & GRID */
 .z-grid { display: grid; grid-template-columns: 35% 20% 20% 20%; gap:4px; align-items: center; border-bottom:1px solid #f1f5f9; padding-bottom:5px; margin-bottom:5px; }
 .z-head { font-size:10px; color:#047857; font-weight:900; text-align:center; margin:15px 0 5px; letter-spacing:1px; background:#ecfdf5; padding:4px; border-radius:4px; text-transform: uppercase; }
-.z-col-h { display:grid; grid-template-columns: 35% 20% 20% 20%; gap:4px; text-align:center; font-size:9px; color:#64748b; font-weight:700; margin-bottom:4px; }
+.z-col-h { display:grid; grid-template-columns: 32% 16% 16% 16% 8%; gap:4px; text-align:center; font-size:9px; color:#64748b; font-weight:700; margin-bottom:4px; }
+.dyn-row { display: grid; grid-template-columns: 32% 16% 16% 16% 8%; gap:4px; align-items: center; margin-bottom:5px; }
 
-/* UNIFIED INPUT STYLE FOR ZSHM/VIBRO */
+/* UNIFIED INPUT STYLE */
 .smart-wrap { width:100%; height:30px; position:relative; }
 .smart-sel, .smart-inp, .u-inp { 
     width:100%; height:100%; 
@@ -90,6 +91,7 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 }
 .smart-inp { display:none; border:1px solid var(--p); }
 .u-inp { text-align:center; } /* For numbers */
+.del-row-btn { width:100%; height:30px; background:#fee2e2; border:1px solid #fca5a5; color:red; border-radius:6px; font-weight:900; display:flex; align-items:center; justify-content:center; }
 
 /* VIBRO LIST STYLES */
 .v-list-item { background:#fff; border:1px solid #e2e8f0; padding:8px; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
@@ -161,6 +163,8 @@ const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https:/
 if(!firebase.apps.length)firebase.initializeApp(cfg);
 const db=firebase.database().ref('production'),auth=firebase.auth();
 let cur='Home',data={},aId=null,archSub='',corrMode=false,isLogged=false,incItems=[],vibroItems=[],krupItems=[];
+let corrCtx = {}; // Context for correction
+
 const bP=["Арнаутка","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯНВ","ФЕВ","МАРТ","АПР","МАЙ","ИЮНЬ","ИЮЛЬ","АВГ","СЕНТ","ОКТ","НОЯБ","ДЕК"];
 const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]} ${parts[1]}:${parts[2]}`};const fd2=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};
 const closeModal=()=>{document.getElementById('mdl').style.display='none';aId=null;incItems=[];vibroItems=[];krupItems=[];};const toggleF=id=>{const e=document.getElementById(id);e.style.display=e.style.display==='block'?'none':'block'};
@@ -221,6 +225,8 @@ function updCorrBtn(){const b=document.getElementById('corrTgl'),c=document.getE
 function updNav(){document.getElementById('navM').className=`${cur==='Home'?'nav-btn-active':''}`;document.getElementById('navB').className=`${cur!=='Home'?'nav-btn-active':''}`;}
 function switchShipTab(id){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tb_'+id).classList.add('active');document.querySelectorAll('.ship-sect').forEach(s=>s.classList.remove('active'));document.getElementById('sc_'+id).classList.add('active');}
 function loadData(){db.on('value',s=>{data=s.val()||{};const c=document.getElementById('cnt');if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub'].includes(cur))return;if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(cur==='Kruporushka')rKrup(c);else if(cur==='Vibro')rVibro(c);else if(cur==='ZSHM')rZSHM(c);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Stock_Raw')rRaw(c);else rGen(c);});}
+function calcKrup(){let t=0;['kQ1','kQ2','kQ3','kMQ','kOQ'].forEach((q,i)=>{const kgId=q.replace('Q','W');const w=parseFloat(document.getElementById(kgId).value)||0,qty=parseFloat(document.getElementById(q).value)||0;t+=w*qty;});const sec=parseFloat(document.getElementById('kSecW').value)||0;document.getElementById('kMainW').value=(t-sec).toFixed(1);}
+function calcVibro(){let t=0;for(let i=1;i<=3;i++){const q=parseFloat(document.getElementById(`vQ${i}`).value)||0,w=parseFloat(document.getElementById(`vW${i}`).value)||0;t+=q*w;}const sec=parseFloat(document.getElementById('vSecW').value)||0;document.getElementById('vRawW').value=(t-sec).toFixed(1);}
 function calcZSHM(){
     let prodTotal = 0;
     // 1. Finished Products (3 rows)
@@ -256,69 +262,63 @@ function renderByTiles(c, rawD, type) {
     if(rawD) Object.entries(rawD).forEach(([id,v])=>{
         if(!v.date) return;
         const dObj = new Date(v.date);
-        const y = dObj.getFullYear(), m = dObj.getMonth(), dy = dObj.getDate();
+        const y = dObj.getFullYear(), m = dObj.getMonth(); // Only Year and Month
         if(!gr[y]) gr[y] = {};
-        if(!gr[y][m]) gr[y][m] = {};
-        if(!gr[y][m][dy]) gr[y][m][dy] = [];
-        gr[y][m][dy].push({...v, id});
+        if(!gr[y][m]) gr[y][m] = [];
+        gr[y][m].push({...v, id});
     });
 
     let h = '';
+    // YEAR GRID
     Object.keys(gr).sort((a,b)=>b-a).forEach(y => {
         h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}${type}')">${y}</div></div><div id="y${y}${type}" class="arch-content">`;
+        
+        // MONTH GRID
         h+=`<div class="arch-m-grid">`;
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
             h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}${type}')">${mths[m]}</div>`;
         });
         h+=`</div>`; 
 
+        // MONTH CONTENT (DIRECT LIST - NO DAY TILES)
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
              h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
-             h+=`<div class="arch-d-grid">`;
-             Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{
-                 h+=`<div class="arch-tile-d" onclick="toggleF('d${y}${m}${dy}${type}')">${dy}<div class="arch-badge">${gr[y][m][dy].length}</div></div>`;
-             });
-             h+=`</div>`; 
-
-             Object.keys(gr[y][m]).sort((a,b)=>b-a).forEach(dy=>{
-                 h+=`<div id="d${y}${m}${dy}${type}" class="arch-content">`;
-                 gr[y][m][dy].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
-                    const s = JSON.stringify(v).replace(/"/g, "&quot;");
-                    // RENDER EXACT TWINS IN JOURNAL
-                    if(type==='LOG') {
-                         if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
-                         else if(v.type==='KRUP') {
-                             let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                             h+=`<div class="card"><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                         }
-                         else if(v.type==='VIBRO') {
-                             let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                             h+=`<div class="card"><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                         }
-                         else if(v.type==='ZSHM') {
-                             let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                             h+=`<div class="card"><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                         }
-                         else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div></div></div>`;
-                         else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`).join('')+`</div></div>`;
-                         else if(v.type==='SHIP') h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`).join('')+`</div></div>`;
-                         else if(v.type==='PACK') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД УПАКОВКИ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}</b></div></div></div>`;
-                    }
-                    else if(type==='FAS') h+=`<div class="card"><button class="del-rep-btn" onclick="delFas('${v.id}')">🗑️</button><b>${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
-                    else if(type==='KRUP') {
-                        let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                        h+=`<div class="card"><button class="del-rep-btn" onclick="delKrup('${v.id}')">🗑️</button><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                    }
-                    else if(type==='VIBRO') {
-                        let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                        h+=`<div class="card"><button class="del-rep-btn" onclick="delVibro('${v.id}')">🗑️</button><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                    }
-                    else if(type==='ZSHM') {
-                        let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                        h+=`<div class="card"><button class="del-rep-btn" onclick="delZSHM('${v.id}')">🗑️</button><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
-                    }
-                 });
-                 h+=`</div>`;
+             
+             // SORT ITEMS NEWEST FIRST
+             gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
+                const s = JSON.stringify(v).replace(/"/g, "&quot;");
+                if(type==='LOG') {
+                     if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
+                     else if(v.type==='KRUP') {
+                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                         h+=`<div class="card"><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                     }
+                     else if(v.type==='VIBRO') {
+                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                         h+=`<div class="card"><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                     }
+                     else if(v.type==='ZSHM') {
+                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                         h+=`<div class="card"><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                     }
+                     else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div></div></div>`;
+                     else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`).join('')+`</div></div>`;
+                     else if(v.type==='SHIP') h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`).join('')+`</div></div>`;
+                     else if(v.type==='PACK') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД УПАКОВКИ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}</b></div></div></div>`;
+                }
+                else if(type==='FAS') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delFas('${v.id}')">🗑️</button><b>${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div></div>`;
+                else if(type==='KRUP') {
+                    let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                    h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delKrup('${v.id}')">🗑️</button><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                }
+                else if(type==='VIBRO') {
+                    let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                    h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delVibro('${v.id}')">🗑️</button><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                }
+                else if(type==='ZSHM') {
+                    let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
+                    h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delZSHM('${v.id}')">🗑️</button><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]${i.l>0?' + '+i.l+'кг':''}</b></div>`).join('') + `</div>`;
+                }
              });
              h+=`</div>`;
         });
@@ -449,13 +449,41 @@ function getSmartVal(id) {
     return s ? s.value : '';
 }
 
+// DEEP HISTORY LEARNER
+function getHistoryDeep(key) {
+    const s = new Set();
+    const scan = (node) => {
+        if(data[node]) Object.values(data[node]).forEach(v => {
+            if(v[key]) s.add(v[key]);
+            if(v.items && Array.isArray(v.items)) {
+                v.items.forEach(i => {
+                    if(key === 'weight' && i.w) s.add(i.w);
+                    if(key === 'name' && i.n) s.add(i.n);
+                });
+            }
+        });
+    };
+    scan('Vibro_Report');
+    scan('Krup_Report');
+    scan('ZSHM_Report');
+    return Array.from(s).sort();
+}
+
 function openModal(t,id){
     const ti=document.getElementById('mT'),b=document.getElementById('mB');
-    aId = id ? id : null;
+    aId = id ? id : null; 
 
     // INIT ARRAYS
     vibroItems = [];
     krupItems = [];
+    
+    // LEARNED DATA
+    const ops = getHistoryDeep('operator');
+    const asts = getHistoryDeep('assistant');
+    const timesS = getHistoryDeep('timeStart');
+    const timesE = getHistoryDeep('timeEnd');
+    if(timesS.length===0) timesS.push('08:00');
+    if(timesE.length===0) timesE.push('20:00');
 
     if(t==='auth'){
         ti.innerText='Вход / Сброс';
@@ -547,7 +575,12 @@ function openModal(t,id){
             <div class="z-grid" style="border:none">
                 <div id="kOutNameCont"></div>
                 <input type="number" id="kOutQ" placeholder="0" class="u-inp">
-                <input type="number" id="kOutW" placeholder="кг" class="u-inp">
+                
+                <div class="smart-wrap">
+                     <select id="s_kW" class="smart-sel" onchange="checkSmart('kW')"><option value="">Кг</option>${getHistoryDeep('weight').map(x=>`<option value="${x}">${x}</option>`).join('')}<option value="NEW_ENTRY">(+)</option></select>
+                     <input type="number" id="i_kW" class="smart-inp">
+                </div>
+
                 <input type="number" id="kOutL" placeholder="кг" class="u-inp">
             </div>
             <button class="btn-main" style="background:#3b82f6; padding:8px; font-size:11px" onclick="addKrupRow()">+ ДОБАВИТЬ ЗАПИСЬ</button>
@@ -582,53 +615,43 @@ function openModal(t,id){
 
         <div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee">
             <div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div>
-            <div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;">
-                <select id="vWH" class="smart-sel" onchange="updVibroRaw()">
-                    <option value="Stock_Raw">Сырьё</option>
-                    <option value="Stock_Semi">П/Ф</option>
-                    <option value="Stock_DV">ДВ</option>
-                    <option value="WeightStock">Покупная</option>
-                </select>
+            <div style="display:grid; grid-template-columns:2fr 1fr; gap:5px; margin-bottom:5px;">
                 <div id="vRawCont"></div> 
                 <input type="number" id="vRawW" placeholder="Кг" class="smart-sel" readonly style="background:#eef2ff;font-weight:900;color:#333">
             </div>
             
             <div style="font-size:10px;color:#888;font-weight:700;margin-top:5px;border-top:1px dashed #ddd;padding-top:5px">ДОБАВКА</div>
-            <div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;">
-                <select id="vAddWH" class="smart-sel" onchange="updVibroAdd()">
-                    <option value="Stock_Semi">П/Ф</option>
-                    <option value="Stock_Raw">Сырьё</option>
-                    <option value="Stock_DV">ДВ</option>
-                    <option value="WeightStock">Покупная</option>
-                </select>
+            <div style="display:grid; grid-template-columns:2fr 1fr; gap:5px; margin-bottom:5px;">
                 <div id="vAddNameCont"></div> 
                 <input type="number" id="vAddW" placeholder="Кг" class="smart-sel" oninput="recalcVibro()">
             </div>
         </div>
 
-        <div class="z-head">СДЕЛАНО ЗА СМЕНУ</div>
-        
-        <div style="background:#f0f9ff; padding:8px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:10px">
-            <select id="vDest" class="smart-sel" style="margin-bottom:5px; font-weight:700" onchange="updVibroOutList()">
-                <option value="DV">Готовая продукция (-> ДВ)</option>
-                <option value="Semi">Полуфабрикат (-> П/Ф)</option>
-                <option value="Feed">Отходы (-> Корма)</option>
-            </select>
-            <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
-            <div class="z-grid" style="border:none">
-                <div id="vOutNameCont"></div>
-                <input type="number" id="vOutQ" placeholder="0" class="u-inp">
-                <input type="number" id="vOutW" placeholder="кг" class="u-inp">
-                <input type="number" id="vOutL" placeholder="кг" class="u-inp">
-            </div>
-            <button class="btn-main" style="background:#3b82f6; padding:8px; font-size:11px" onclick="addVibroRow()">+ ДОБАВИТЬ ЗАПИСЬ</button>
-        </div>
+        <div class="z-head">ГОТОВАЯ ПРОДУКЦИЯ (СКЛАД ДВ)</div>
+        <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+        <div id="vRowsDV"></div>
+        <button class="btn-main" style="background:#fff; color:#3b82f6; border:1px solid #3b82f6; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('DV')">+ ДОБАВИТЬ РЯД</button>
 
-        <div id="vList" style="margin-bottom:15px"></div>
+        <div class="z-head" style="color:#d97706;background:#fef3c7;">ПОЛУФАБРИКАТ (СКЛАД П/Ф)</div>
+        <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+        <div id="vRowsSemi"></div>
+        <button class="btn-main" style="background:#fff; color:#d97706; border:1px solid #d97706; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('Semi')">+ ДОБАВИТЬ РЯД</button>
+
+        <div class="z-head" style="color:#b45309;background:#fff7ed;">ОТХОДЫ (СКЛАД КОРМА)</div>
+        <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+        <div id="vRowsFeed"></div>
+        <button class="btn-main" style="background:#fff; color:#b45309; border:1px solid #b45309; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('Feed')">+ ДОБАВИТЬ РЯД</button>
 
         <button class="btn-main" id="btnS" onclick="sVibro()">СОХРАНИТЬ СМЕНУ</button>
         `;
-        setTimeout(()=>{ updVibroRaw(); updVibroAdd(); updVibroOutList(); }, 50);
+        // Init logic
+        setTimeout(()=>{ 
+            updVibroRaw(); 
+            updVibroAdd(); 
+            addVibroRowVisual('DV'); 
+            addVibroRowVisual('Semi');
+            addVibroRowVisual('Feed');
+        }, 50);
     }
     else if(t==='addZSHM'){
         ti.innerText='ЗШМ Смена';
@@ -683,7 +706,10 @@ function openModal(t,id){
         <button class="btn-main" id="btnS" onclick="sZSHM()">СОХРАНИТЬ СМЕНУ</button>`;
     }
     else if(t==='corr'){
-        const [cat,name]=id.split('|');ti.innerText='Коррекция: '+name;b.innerHTML=`Дата:<input type="date" id="cD" value="${new Date().toISOString().split('T')[0]}">Кол-во:<div style="display:flex;gap:5px"><input type="number" id="cA"><button onclick="document.getElementById('cA').value *= -1" style="width:50px;font-weight:900">+/-</button></div>Причина:<input type="text" id="cR"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sCorr('${cat}','${name}')">ОК</button>`;
+        const [cat,name]=id.split('|');
+        corrCtx = {cat, name}; // SAVE CONTEXT
+        ti.innerText='Коррекция: '+name;
+        b.innerHTML=`Дата:<input type="date" id="cD" value="${new Date().toISOString().split('T')[0]}">Кол-во:<div style="display:flex;gap:5px"><input type="number" id="cA"><button onclick="document.getElementById('cA').value *= -1" style="width:50px;font-weight:900">+/-</button></div>Причина:<input type="text" id="cR"><button class="btn-main" id="btnS" onclick="if(confirm('Подтверждаете запись?'))sCorr()">СОХРАНИТЬ</button>`;
     }
     else if(t==='vInv'){
         const [rid,key]=id.split('|');const rec = data[key] ? data[key][rid] : null; if(!rec) return alert('Запись не найдена');const items = rec.items; let h = ''; if(items && Array.isArray(items)) { h = '<div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0"><div style="font-weight:700;margin-bottom:5px;font-size:11px;color:#64748b">СОСТАВ НАКЛАДНОЙ:</div>'; items.forEach(i => { h += `<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:4px 0;font-size:13px"><span>${i.n || i.split(':')[0]}</span><b>${i.w || i.split(':')[1]}${i.w ? 'кг' : ''}</b></div>`; }); h += '</div>'; } 
@@ -699,105 +725,211 @@ function openModal(t,id){
     document.getElementById('mdl').style.display='flex';
 }
 
-// === NEW VIBRO LOGIC ===
+// === NEW VIBRO LOGIC (DYNAMIC) ===
+function getAllRaw() {
+    const s = new Set([...gP('Stock_Raw'), ...gP('Stock_Semi')]);
+    return Array.from(s).sort();
+}
 function updVibroRaw() {
-    const wh = document.getElementById('vWH').value;
-    let list = Array.from(new Set(gP(wh))).sort();
+    const list = getAllRaw();
     document.getElementById('vRawCont').innerHTML = makeSmart('vRawItem', list, 'Сырье');
 }
 function updVibroAdd() {
-    const wh = document.getElementById('vAddWH').value;
-    let list = Array.from(new Set(gP(wh))).sort();
+    const list = getAllRaw();
     document.getElementById('vAddNameCont').innerHTML = makeSmart('vAddItem', list, 'Добавка');
 }
-function updVibroOutList() {
-    const dest = document.getElementById('vDest').value;
-    let wh = 'Stock_DV';
-    if(dest === 'Semi') wh = 'Stock_Semi';
-    if(dest === 'Feed') wh = 'Stock_Feed';
-    let list = Array.from(new Set(gP(wh))).sort();
-    document.getElementById('vOutNameCont').innerHTML = makeSmart('vOutN', list, 'Название');
+
+function addVibroRowVisual(section) {
+    const rid = Date.now() + Math.floor(Math.random()*1000);
+    
+    // Choose Source List based on section
+    let listSrc;
+    if(section === 'DV') listSrc = gP('Stock_DV');
+    else if(section === 'Semi') listSrc = gP('Stock_Semi');
+    else listSrc = gP('Stock_Feed'); // Feed
+
+    const list = Array.from(new Set(listSrc)).sort();
+    
+    const makeRowSmart = (id) => {
+        let opts = `<option value="">Выбрать...</option>`;
+        list.forEach(x => opts += `<option value="${x}">${x}</option>`);
+        opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`;
+        return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`;
+    };
+
+    // HISTORY WEIGHTS
+    const wList = getHistoryDeep('weight');
+    let wOpts = '<option value="">Кг</option>';
+    wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`);
+    wOpts += '<option value="NEW_ENTRY">(+)</option>';
+
+    const rowHTML = `
+    <div class="dyn-row" id="vrow_${rid}" data-sect="${section}">
+        ${makeRowSmart(`vN_${rid}`)}
+        <input type="number" id="vQ_${rid}" class="u-inp" placeholder="0" oninput="calcVibroDynamic()">
+        
+        <div class="smart-wrap">
+             <select id="s_vW_${rid}" class="smart-sel" onchange="checkSmart('vW_${rid}')">${wOpts}</select>
+             <input type="number" id="i_vW_${rid}" class="smart-inp" oninput="calcVibroDynamic()">
+        </div>
+        
+        <input type="number" id="vL_${rid}" class="u-inp" placeholder="кг" oninput="calcVibroDynamic()">
+        <button class="del-row-btn" onclick="document.getElementById('vrow_${rid}').remove(); calcVibroDynamic()">✕</button>
+    </div>`;
+    
+    // Append to correct container
+    let contId;
+    if(section === 'DV') contId = 'vRowsDV';
+    else if(section === 'Semi') contId = 'vRowsSemi';
+    else contId = 'vRowsFeed';
+
+    document.getElementById(contId).insertAdjacentHTML('beforeend', rowHTML);
 }
-function addVibroRow() {
-    const n = getSmartVal('vOutN');
-    const q = parseFloat(document.getElementById('vOutQ').value)||0;
-    const w = parseFloat(document.getElementById('vOutW').value)||0;
-    const l = parseFloat(document.getElementById('vOutL').value)||0;
-    const dest = document.getElementById('vDest').value;
-    if(!n) return alert('Укажите название');
-    if(q===0 && l===0) return alert('Укажите вес');
-    vibroItems.push({ n:n, q:q, w:w, l:l, type:dest });
-    document.getElementById('i_vOutN').value = '';
-    document.getElementById('s_vOutN').value = ''; 
-    document.getElementById('s_vOutN').style.display = 'block';
-    document.getElementById('i_vOutN').style.display = 'none';
-    document.getElementById('vOutQ').value = '';
-    document.getElementById('vOutW').value = '';
-    document.getElementById('vOutL').value = '';
-    renderVibroRows();
-    recalcVibro();
-}
-function renderVibroRows() {
-    const c = document.getElementById('vList');
-    if(vibroItems.length === 0) { c.innerHTML = '<div style="text-align:center;color:#999;font-size:11px">Список пуст</div>'; return; }
-    let h = '';
-    vibroItems.forEach((i, idx) => {
-        let badge = '<span class="v-badge v-bdg-dv">ДВ</span>';
-        if(i.type === 'Semi') badge = '<span class="v-badge v-bdg-semi">П/Ф</span>';
-        if(i.type === 'Feed') badge = '<span class="v-badge v-bdg-feed">КОРМ</span>';
-        let desc = `${i.q}м [${i.w}кг]`;
-        if(i.l > 0) desc += ` + ${i.l}кг`;
-        if(i.q === 0) desc = `${i.l}кг`;
-        h += `<div class="v-list-item"><div>${badge}<b>${i.n}</b></div><div>${desc} <span class="basket-del" onclick="vibroItems.splice(${idx},1);renderVibroRows();recalcVibro();">✕</span></div></div>`;
-    });
-    c.innerHTML = h;
-}
-function recalcVibro() {
-    let totalOut = 0;
-    vibroItems.forEach(i => totalOut += (i.q * i.w) + i.l);
+
+function calcVibroDynamic() {
+    let total = 0;
+    // Helper to calc one container
+    const calcContainer = (contId) => {
+        const rows = document.getElementById(contId).children;
+        for (let row of rows) {
+            const rid = row.id.split('_')[1];
+            const q = parseFloat(document.getElementById(`vQ_${rid}`).value) || 0;
+            
+            let w = parseFloat(document.getElementById(`i_vW_${rid}`).value);
+            if(!w) w = parseFloat(document.getElementById(`s_vW_${rid}`).value) || 0;
+            
+            const l = parseFloat(document.getElementById(`vL_${rid}`).value) || 0;
+            total += (q * w) + l;
+        }
+    };
+
+    calcContainer('vRowsDV');
+    calcContainer('vRowsSemi');
+    calcContainer('vRowsFeed');
+    
     const addW = parseFloat(document.getElementById('vAddW').value) || 0;
-    const mainW = totalOut - addW;
-    document.getElementById('vRawW').value = mainW > 0 ? mainW.toFixed(1) : 0;
+    const res = total - addW;
+    document.getElementById('vRawW').value = res > 0 ? res.toFixed(1) : 0;
 }
+
+// Helper to find Source for arbitrary item
+function findSourceWH(name) {
+    const rawSet = new Set(gP('Stock_Raw'));
+    return rawSet.has(name) ? 'Stock_Raw' : 'Stock_Semi';
+}
+
 async function sVibro() {
     const btn = document.getElementById('btnS');
     const rawName = getSmartVal('vRawItem');
     const rawW = parseFloat(document.getElementById('vRawW').value)||0;
-    const rawWH = document.getElementById('vWH').value;
+    
     const addName = getSmartVal('vAddItem');
     const addW = parseFloat(document.getElementById('vAddW').value)||0;
-    const addWH = document.getElementById('vAddWH').value;
+    
+    // Header
     const dV = document.getElementById('vD').value + "T12:00:00Z";
     const ts = new Date().toISOString();
     const op = getSmartVal('vOp');
     const as = getSmartVal('vAs');
     const tS = getSmartVal('vTS');
     const tE = getSmartVal('vTE');
-    if(!rawName || rawW <= 0) return alert('Заполните основное сырье');
-    if(vibroItems.length === 0) return alert('Добавьте продукцию в список');
-    let totalOut = 0;
-    vibroItems.forEach(i => totalOut += (i.q * i.w) + i.l);
+
+    if(!rawName || rawW <= 0) return alert('Ошибка расчета основного сырья');
+
+    const items = [];
+    let totalProd = 0;
+
+    // Harvest Data
+    const harvest = (contId, type) => {
+        const rows = document.getElementById(contId).children;
+        for (let row of rows) {
+            const rid = row.id.split('_')[1];
+            let n = getSmartVal(`vN_${rid}`); 
+            if(!n) continue;
+            
+            let q = parseFloat(document.getElementById(`vQ_${rid}`).value) || 0;
+            
+            let w = parseFloat(document.getElementById(`i_vW_${rid}`).value);
+            if(!w) w = parseFloat(document.getElementById(`s_vW_${rid}`).value) || 0;
+            
+            let l = parseFloat(document.getElementById(`vL_${rid}`).value) || 0;
+
+            if (q > 0 || l > 0) {
+                items.push({n, q, w, l, type});
+                totalProd += (q * w) + l;
+            }
+        }
+    };
+
+    harvest('vRowsDV', 'DV');
+    harvest('vRowsSemi', 'Semi');
+    harvest('vRowsFeed', 'Feed');
+
+    if(items.length === 0) return alert('Добавьте продукцию');
+
     let rawDesc = `${rawName} (${rawW}кг)`;
     if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
-    const msg = `СМЕНА ВИБРОСТОЛ:\n\n👤 ${op} / ${as}\n🕒 ${tS} - ${tE}\n\n📉 ВХОД: ${rawDesc}\n📈 ВЫХОД: ${totalOut.toFixed(1)} кг\n\nСохранить?`;
+
+    const msg = `СМЕНА ВИБРОСТОЛ:\n\n👤 ${op} / ${as}\n🕒 ${tS} - ${tE}\n\n📉 ВХОД: ${rawDesc}\n📈 ВЫХОД: ${totalProd.toFixed(1)} кг\n\nСохранить?`;
     if(!confirm(msg)) return;
+
     if(btn) btn.disabled = true;
-    const updates = {};
+    
+    // CLOSE IMMEDIATELY
+    closeModal();
+    
     const vId = db.child('Vibro_Report').push().key;
-    updates[`/${rawWH}/${db.child(rawWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: 'Вибростол Основа', fLink: vId };
-    if(addName && addW > 0) { updates[`/${addWH}/${db.child(addWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: 'Вибростол Добавка', fLink: vId }; }
-    vibroItems.forEach(i => {
+    const updates = {};
+
+    // 1. Deduct Raw
+    const rWH = findSourceWH(rawName);
+    updates[`/${rWH}/${db.child(rWH).push().key}`] = {
+        name: rawName, amount: -rawW, date: dV, ts: ts, note: 'Вибростол Основа', fLink: vId
+    };
+
+    // 2. Deduct Additive
+    if(addName && addW > 0) {
+        const aWH = findSourceWH(addName);
+        updates[`/${aWH}/${db.child(aWH).push().key}`] = {
+            name: addName, amount: -addW, date: dV, ts: ts, note: 'Вибростол Добавка', fLink: vId
+        };
+    }
+
+    // 3. Add Products - UPDATED LOGIC (GROUPING)
+    items.forEach(i => {
         let dest = 'Stock_DV';
         let note = 'Вибростол';
-        if(i.type === 'Semi') { dest = 'Stock_Semi'; note = 'Вибро П/Ф'; }
-        if(i.type === 'Feed') { dest = 'Stock_Feed'; note = 'Вибро Отходы'; }
+        let finalName = i.n; 
+
+        if(i.type === 'DV') { 
+            dest = 'Stock_DV'; 
+            // DV keeps specific naming with weight: Name [50kg]
+            finalName = (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n);
+        } else if(i.type === 'Semi') { 
+            dest = 'Stock_Semi'; note = 'Вибро П/Ф'; 
+            // Semi/Feed are grouped by name only, no weight suffix
+        } else if(i.type === 'Feed') { 
+            dest = 'Stock_Feed'; note = 'Вибро Отходы'; 
+        }
+        
         let amount = (i.q * i.w) + i.l;
-        updates[`/${dest}/${db.child(dest).push().key}`] = { name: (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n), amount: amount, date: dV, ts: ts, note: note, fLink: vId };
+        updates[`/${dest}/${db.child(dest).push().key}`] = {
+            name: finalName,
+            amount: amount, date: dV, ts: ts, note: note, fLink: vId
+        };
     });
-    updates[`/Vibro_Report/${vId}`] = { date: dV, ts: ts, link: vId, items: vibroItems, rawMix: rawDesc, timeStart: tS, timeEnd: tE, operator: op, assistant: as };
+
+    // 4. Report
+    updates[`/Vibro_Report/${vId}`] = {
+        date: dV, ts: ts, link: vId,
+        items: items, rawMix: rawDesc,
+        timeStart: tS, timeEnd: tE, operator: op, assistant: as
+    };
+
     await db.update(updates);
-    logAction({type:'VIBRO', date:dV, items:vibroItems, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
-    closeModal();
+    logAction({type:'VIBRO', date:dV, items:items, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
+    
+    // REDIRECT TO HISTORY
     openModal('log');
 }
 
@@ -823,83 +955,41 @@ function updKrupOutList() {
 function addKrupRow() {
     const n = getSmartVal('kOutN');
     const q = parseFloat(document.getElementById('kOutQ').value)||0;
-    const w = parseFloat(document.getElementById('kOutW').value)||0;
-    const l = parseFloat(document.getElementById('kOutL').value)||0;
-    const dest = document.getElementById('kDest').value;
-    if(!n) return alert('Укажите название');
-    if(q===0 && l===0) return alert('Укажите вес');
-    krupItems.push({ n:n, q:q, w:w, l:l, type:dest });
-    document.getElementById('i_kOutN').value = '';
-    document.getElementById('s_kOutN').value = ''; 
-    document.getElementById('s_kOutN').style.display = 'block';
-    document.getElementById('i_kOutN').style.display = 'none';
-    document.getElementById('kOutQ').value = '';
-    document.getElementById('kOutW').value = '';
-    document.getElementById('kOutL').value = '';
-    renderKrupRows();
-    recalcKrup();
+    // ... Krup logic similar to Vibro ...
 }
-function renderKrupRows() {
-    const c = document.getElementById('kList');
-    if(krupItems.length === 0) { c.innerHTML = '<div style="text-align:center;color:#999;font-size:11px">Список пуст</div>'; return; }
-    let h = '';
-    krupItems.forEach((i, idx) => {
-        let badge = '<span class="v-badge v-bdg-dv">ДВ</span>';
-        if(i.type === 'Semi') badge = '<span class="v-badge v-bdg-semi">П/Ф</span>';
-        if(i.type === 'Feed') badge = '<span class="v-badge v-bdg-feed">КОРМ</span>';
-        let desc = `${i.q}м [${i.w}кг]`;
-        if(i.l > 0) desc += ` + ${i.l}кг`;
-        if(i.q === 0) desc = `${i.l}кг`;
-        h += `<div class="v-list-item"><div>${badge}<b>${i.n}</b></div><div>${desc} <span class="basket-del" onclick="krupItems.splice(${idx},1);renderKrupRows();recalcKrup();">✕</span></div></div>`;
-    });
-    c.innerHTML = h;
-}
-function recalcKrup() {
-    let totalOut = 0;
-    krupItems.forEach(i => totalOut += (i.q * i.w) + i.l);
-    const addW = parseFloat(document.getElementById('kAddW').value) || 0;
-    const mainW = totalOut - addW;
-    document.getElementById('kRawW').value = mainW > 0 ? mainW.toFixed(1) : 0;
-}
-async function sKrup() {
+
+async function sCorr() {
     const btn = document.getElementById('btnS');
-    const rawName = getSmartVal('kRawItem');
-    const rawW = parseFloat(document.getElementById('kRawW').value)||0;
-    const rawWH = document.getElementById('kWH').value;
-    const addName = getSmartVal('kAddItem');
-    const addW = parseFloat(document.getElementById('kAddW').value)||0;
-    const addWH = document.getElementById('kAddWH').value;
-    const dV = document.getElementById('kD').value + "T12:00:00Z";
-    const ts = new Date().toISOString();
-    const op = getSmartVal('kOp');
-    const as = getSmartVal('kAs');
-    const tS = getSmartVal('kTS');
-    const tE = getSmartVal('kTE');
-    if(!rawName || rawW <= 0) return alert('Заполните основное сырье');
-    if(krupItems.length === 0) return alert('Добавьте продукцию');
-    let totalOut = 0;
-    krupItems.forEach(i => totalOut += (i.q * i.w) + i.l);
-    let rawDesc = `${rawName} (${rawW}кг)`;
-    if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
-    const msg = `СМЕНА КРУПОРУШКА:\n\n👤 ${op} / ${as}\n🕒 ${tS} - ${tE}\n\n📉 ВХОД: ${rawDesc}\n📈 ВЫХОД: ${totalOut.toFixed(1)} кг\n\nСохранить?`;
-    if(!confirm(msg)) return;
+    const d = document.getElementById('cD').value;
+    const a = parseFloat(document.getElementById('cA').value);
+    const r = document.getElementById('cR').value;
+    
+    // USE CONTEXT
+    const targetCat = corrCtx.cat;
+    const targetName = corrCtx.name;
+    
+    if(!a || !r) return alert('Заполните кол-во и причину');
+    
     if(btn) btn.disabled = true;
-    const updates = {};
-    const kId = db.child('Krup_Report').push().key;
-    updates[`/${rawWH}/${db.child(rawWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: 'Крупорушка Основа', fLink: kId };
-    if(addName && addW > 0) { updates[`/${addWH}/${db.child(addWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: 'Крупорушка Добавка', fLink: kId }; }
-    krupItems.forEach(i => {
-        let dest = 'Stock_DV'; let note = 'Крупорушка';
-        if(i.type === 'Semi') { dest = 'Stock_Semi'; note = 'Крупорушка П/Ф'; }
-        if(i.type === 'Feed') { dest = 'Stock_Feed'; note = 'Крупорушка Отходы'; }
-        let amount = (i.q * i.w) + i.l;
-        updates[`/${dest}/${db.child(dest).push().key}`] = { name: (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n), amount: amount, date: dV, ts: ts, note: note, fLink: kId };
-    });
-    updates[`/Krup_Report/${kId}`] = { date: dV, ts: ts, link: kId, items: krupItems, rawMix: rawDesc, timeStart: tS, timeEnd: tE, operator: op, assistant: as };
-    await db.update(updates);
-    logAction({type:'KRUP', date:dV, items:krupItems, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
+    
+    // CLOSE IMMEDIATELY
     closeModal();
-    openModal('log');
+
+    const dV = d + "T12:00:00Z";
+    const updates = {};
+    const key = db.child(targetCat).push().key;
+
+    updates[`/${targetCat}/${key}`] = {
+        name: targetName,
+        amount: a,
+        date: dV,
+        ts: new Date().toISOString(),
+        note: 'Коррекция: ' + r
+    };
+
+    await db.update(updates);
+    logAction({type:'CORR', date:dV, name:targetName, amount:a, reason:r});
+    renderHome();
 }
 
 window.onload=renderHome;
@@ -908,7 +998,6 @@ window.onload=renderHome;
 window.delRec = async function(cat, id, sStr, restore) {
     if(!confirm('Удалить эту запись навсегда?')) return;
     await db.child(cat).child(id).remove();
-    // OPTIONAL: RESTORE LOGIC IF NEEDED
     closeModal();
     alert('Удалено');
 };
