@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v392 Comfort</title>
+<title>Склад v393 Film Precision</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -235,31 +235,31 @@ function renderByTiles(c, rawD, type) {
     });
 
     let h = '';
+    // YEAR GRID
     Object.keys(gr).sort((a,b)=>b-a).forEach(y => {
         h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}${type}')">${y}</div></div><div id="y${y}${type}" class="arch-content">`;
+        
+        // MONTH GRID
         h+=`<div class="arch-m-grid">`;
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
             h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}${type}')">${mths[m]}</div>`;
         });
         h+=`</div>`; 
+
+        // MONTH CONTENT (DIRECT LIST - NO DAY TILES)
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
              h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
+             
+             // SORT ITEMS NEWEST FIRST
              gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
                 const s = JSON.stringify(v).replace(/"/g, "&quot;");
+                // *** PACKING FIX: RESTORED Film/Packets/Scotch details ***
+                // *** FILM PRECISION FIX: Updated 'pl' helper below ***
                 if(type==='LOG') {
                      if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
-                     else if(v.type==='KRUP') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
-                     else if(v.type==='VIBRO') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
-                     else if(v.type==='ZSHM') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
+                     else if(v.type==='KRUP') h+=`<div class="card"><b>КРУПОРУШКА${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                     else if(v.type==='VIBRO') h+=`<div class="card"><b>ВИБРОСТОЛ${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                     else if(v.type==='ZSHM') h+=`<div class="card"><b>ЗШМ СМЕНА${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
                      else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div></div></div>`;
                      else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`).join('')+`</div></div>`;
                      else if(v.type==='SHIP') h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`).join('')+`</div></div>`;
@@ -279,7 +279,8 @@ function renderByTiles(c, rawD, type) {
 }
 
 const pk = (v,n) => Math.round(Math.abs(v/((n==="Кутя")?19.8:9.9)));
-const pl = (v,o) => Math.abs((v||0)-(o||0)).toFixed(1);
+// *** FILM PRECISION FIX: Allow 3 decimals ***
+const pl = (v,o) => Number(Math.abs((v||0)-(o||0)).toFixed(3));
 
 function rFas(c) { renderByTiles(c, data.Фасовка, 'FAS'); }
 function rKrup(c) { renderByTiles(c, data.Krup_Report, 'KRUP'); }
@@ -287,12 +288,18 @@ function rVibro(c) { renderByTiles(c, data.Vibro_Report, 'VIBRO'); }
 function rZSHM(c) { renderByTiles(c, data.ZSHM_Report, 'ZSHM'); }
 function rGlobalLog(c) { renderByTiles(c, data.GlobalLog, 'LOG'); }
 function rArchPack(c){ const d = data.ArchPackIn || {}; const gr = {}; if(d) Object.entries(d).forEach(([id,v])=>{ const dObj = new Date(v.date); const y = dObj.getFullYear(), m = dObj.getMonth(), dy = dObj.getDate(); if(!gr[y]) gr[y] = {}; if(!gr[y][m]) gr[y][m] = []; gr[y][m].push({...v, id}); }); let h=''; Object.keys(gr).sort((a,b)=>b-a).forEach(y=>{ h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('py${y}')">${y}</div></div><div id="py${y}" class="arch-content">`; h+=`<div class="arch-m-grid">`;Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('pm${y}${m}')">${mths[m]}</div>`; }); h+=`</div>`; Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{ h+=`<div id="pm${y}${m}" class="arch-content">`; gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ h+=`<div class="arch-inv"><div><b>${(v.num||'Б/Н')}</b>${v.name} (${v.amount}кг)</div><div style="font-size:10px;color:#888">${v.supplier||'-'}</div></div>`; }); h+=`</div>`; }); h+=`</div>`; }); c.innerHTML=h||'Пусто'; }
+
+// *** STOCK DISPLAY FIX: Precision for Film ***
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая|${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock|${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rRaw(c){const t={};gP('Stock_Raw').forEach(p=>t[p]=0);if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Stock_Raw','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Stock_Raw|${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
-function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${cur==='Скотч 360 грамм'?val.toFixed(1):Math.round(val)} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}|${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
+function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;
+// PRECISION CHECK HERE
+const isPrecise = (cur==='Скотч 360 грамм' || cur==='Пленка');
+h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${isPrecise?Number(val.toFixed(3)):Math.round(val)} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}|${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
+
 function rCleanList(c){let h='<div style="font-size:11px;color:#666;margin-bottom:10px">Нажмите на имя для полного удаления:</div>';const mkR = (s,t) => Array.from(s).sort().forEach(n=>{h+=`<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b>${n}</b><div><button onclick="renameItem('${n}','${t}')" style="margin-right:10px;border:none;background:none;font-size:16px">✏️</button><button onclick="delItemBatch('${n}','${t}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button></div></div>`});h+='<div class="clean-cat">📦 ТОВАРЫ</div>';mkR(new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Stock_Raw'),...gP('Готовая')]),'name');h+='<div class="clean-cat">🚛 ПОСТАВЩИКИ</div>';mkR(new Set(gS()),'supplier');h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';mkR(new Set(gCl()),'client');c.innerHTML=h;}
-function showH(c,k){const ti=document.getElementById('mT'),b=document.getElementById('mB');ti.innerText=k;const hist=[];if(data[c])Object.entries(data[c]).filter(([id,v])=>v.name===k).forEach(([id,v])=>{let n=v.note||'Запись';if(v.supplier)n='Приход: '+v.supplier;if(v.client)n='Отгрузка: '+v.client;hist.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:id});});let h='<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">';hist.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v=>{h+=`<tr style="border-bottom:1px solid #eee"><td style="padding:8px 0;width:60%"><div style="font-weight:600;color:#1e293b">${v.n}</div><div style="font-size:11px;color:#94a3b8">${fd2(v.d)}</div></td><td style="text-align:right;font-weight:800;font-size:14px" class="${v.a>=0?'hist-pos':'hist-neg'}">${c==='Пакеты'?Math.round(v.a):v.a.toFixed(1)}</td><td style="width:30px;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button>`:''}</td></tr>`;});h+='</table>';b.innerHTML=h||'Нет записей';document.getElementById('mdl').style.display='flex';}
+function showH(c,k){const ti=document.getElementById('mT'),b=document.getElementById('mB');ti.innerText=k;const hist=[];if(data[c])Object.entries(data[c]).filter(([id,v])=>v.name===k).forEach(([id,v])=>{let n=v.note||'Запись';if(v.supplier)n='Приход: '+v.supplier;if(v.client)n='Отгрузка: '+v.client;hist.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:id});});let h='<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">';hist.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v=>{h+=`<tr style="border-bottom:1px solid #eee"><td style="padding:8px 0;width:60%"><div style="font-weight:600;color:#1e293b">${v.n}</div><div style="font-size:11px;color:#94a3b8">${fd2(v.d)}</div></td><td style="text-align:right;font-weight:800;font-size:14px" class="${v.a>=0?'hist-pos':'hist-neg'}">${(c==='Пакеты'||c==='Пленка'||c==='Скотч 360 грамм')?Number(v.a.toFixed(3)):Math.round(v.a)}</td><td style="width:30px;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button>`:''}</td></tr>`;});h+='</table>';b.innerHTML=h||'Нет записей';document.getElementById('mdl').style.display='flex';}
 function rInvD(c){ /* ... same ... */ const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={}; Object.entries(d).forEach(([id,v])=>{ const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(); if(!t[y])t[y]={m:{}}; if(!t[y].m[m])t[y].m[m]=[]; t[y].m[m].push({...v,id}); }); let h=''; Object.keys(t).sort((a,b)=>b-a).forEach(y=>{ h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}')">${y}</div></div><div id="y${y}" class="arch-content">`; h+=`<div class="arch-m-grid">`; Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}')">${mths[m]}</div>`; }); h+=`</div>`; Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div id="m${y}${m}" class="arch-content" style="grid-column:1/-1;">`; t[y].m[m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ if(dbK==='ArchIncoming'){ h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`; if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`); else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div>`; h+=`</div>`; if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delRec('${dbK}','${v.id}')">УДАЛИТЬ</button>`; h+=`</div>`; } else { h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`); h+=`</div>`; if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delRec('${dbK}','${v.id}')">УДАЛИТЬ</button>`; h+=`</div>`; } }); h+=`</div>`; }); h+=`</div>`; }); c.innerHTML=h||'Пусто'; }
 function rInvC(c){ /* ... same ... */ const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={}; Object.entries(d).forEach(([id,v])=>{ const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(); const clName=v.client||v.supplier||'Без имени'; if(!t[y])t[y]={m:{}}; if(!t[y].m[m])t[y].m[m]={cl:{}}; if(!t[y].m[m].cl[clName])t[y].m[m].cl[clName]=[]; t[y].m[m].cl[clName].push({...v,id}); }); let h=''; Object.keys(t).sort((a,b)=>b-a).forEach(y=>{ h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('cy${y}')">${y}</div></div><div id="cy${y}" class="arch-content">`; h+=`<div class="arch-m-grid">`; Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('cm${y}${m}')">${mths[m]}</div>`; }); h+=`</div>`; Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div id="cm${y}${m}" class="arch-content" style="grid-column:1/-1;">`; h+=`<div class="arch-c-grid">`; Object.keys(t[y].m[m].cl).sort().forEach(cl=>{ h+=`<div class="arch-tile-c" onclick="toggleF('c${y}${m}${cl.replace(/\s/g,'')}')">${cl}<div class="arch-badge">${t[y].m[m].cl[cl].length}</div></div>`; }); h+=`</div>`; Object.keys(t[y].m[m].cl).sort().forEach(cl=>{ h+=`<div id="c${y}${m}${cl.replace(/\s/g,'')}" class="arch-content" style="margin-top:10px">`; t[y].m[m].cl[cl].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ if(dbK==='ArchIncoming'){ h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-body">`; if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><b>${i.w}кг</b></div>`); else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><b>${v.amount}кг</b></div>`; h+=`</div></div>`; } else { h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.split(':')[0]}</span><b>${i.split(':')[1]}</b></div>`); h+=`</div></div>`; } }); h+=`</div>`; }); h+=`</div>`; }); h+=`</div>`; }); c.innerHTML=h||'Пусто'; }
 
@@ -485,7 +492,6 @@ function openModal(t,id){
 function openModalLegacy(t,id) {
     const b=document.getElementById('mB');
     if(t==='log'){ rGlobalLog(b);document.getElementById('mT').innerText='Журнал действий'; }
-    // ... Any other legacy simple modals
 }
 
 // === SAVE FUNCTIONS ===
@@ -556,7 +562,7 @@ async function sFas() {
         logAction({type:'FAS', date:dV, name:n, rawItem:rawName, size:s, vyhod:v, prihod:p, vzial:vzTotal, ostatok:os, scotch:scUsed});
         
         closeModal();
-        // openModal('log'); // REMOVED REDIRECTION
+        // NO REDIRECT
     } catch(e) {
         alert("Ошибка: " + e);
         btn.disabled = false;
@@ -642,7 +648,6 @@ async function sVibro() {
         document.getElementById('vRowsFeed').innerHTML = '';
         
         closeModal();
-        // openModal('log'); // REMOVED REDIRECTION
     } catch(e) {
         alert("Ошибка: " + e);
         btn.disabled = false;
@@ -827,7 +832,6 @@ async function sKrup() {
     document.getElementById('kRowsDV').innerHTML = '';
     document.getElementById('kRowsSemi').innerHTML = '';
     document.getElementById('kRowsFeed').innerHTML = '';
-    // openModal('log'); // REMOVED REDIRECTION
 }
 
 // === NEW KRUP LOGIC (CONSTRUCTOR) ===
@@ -883,68 +887,6 @@ function calcKrupDynamic() {
     const addW = parseFloat(document.getElementById('kAddW').value) || 0;
     const res = total - addW;
     document.getElementById('kRawW').value = res > 0 ? res.toFixed(1) : 0;
-}
-
-// ZSHM Save (Fixed)
-async function sZSHM() {
-    const btn = document.getElementById('btnS');
-    const d=document.getElementById('zD').value;
-    const dV=d+"T12:00:00Z";
-    const ts=new Date().toISOString();
-    
-    // ... (Headers getSmartVal)
-    const op = getSmartVal('zOp'); const as = getSmartVal('zAs'); const tS = getSmartVal('zTS'); const tE = getSmartVal('zTE');
-    const mainRawName=document.getElementById('zMain').value;
-    const secRawName=document.getElementById('zSecName').value;
-    const secRawW=parseFloat(document.getElementById('zSecW').value)||0;
-    const mainRawW=parseFloat(document.getElementById('zRawW').value)||0;
-    
-    if(!mainRawName || mainRawW<=0) return alert('Сырье?');
-
-    btn.disabled = true;
-    btn.innerText = "СОХРАНЯЮ...";
-    
-    try {
-        const zId = db.child('ZSHM_Report').push().key;
-        const updates = {};
-        const items = [];
-        let totalOutput = 0;
-
-        // Collect Items (Static Rows Loop)
-        // 1. DV
-        for(let i=1; i<=3; i++){
-            let n = getSmartVal(`zN${i}`); let q = parseFloat(document.getElementById(`zQ${i}`).value)||0; let w = parseFloat(document.getElementById(`zW${i}`).value)||0; let l = parseFloat(document.getElementById(`zL${i}`).value)||0;
-            if(n && (q>0 || l>0)) { items.push({n,q,w,l}); totalOutput+=(q*w)+l; updates[`/Stock_DV/${db.child('Stock_DV').push().key}`] = {name:`${n} [${w}кг]`, amount:(q*w)+l, date:dV, ts:ts, note:'ЗШМ', fLink:zId}; }
-        }
-        // 2. Semi
-        for(let i=1; i<=2; i++){
-             let n = getSmartVal(`zS_N${i}`); let q = parseFloat(document.getElementById(`zS_Q${i}`).value)||0; let w = parseFloat(document.getElementById(`zS_W${i}`).value)||0; let l = parseFloat(document.getElementById(`zS_L${i}`).value)||0;
-             if(n && (q>0 || l>0)) { items.push({n,q,w,l}); totalOutput+=(q*w)+l; updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`] = {name:n, amount:(q*w)+l, date:dV, ts:ts, note:'ЗШМ П/Ф', fLink:zId}; }
-        }
-        // 3. Feed
-        for(let i=1; i<=3; i++){
-             let n = getSmartVal(`zF_N${i}`); let q = parseFloat(document.getElementById(`zF_Q${i}`).value)||0; let w = parseFloat(document.getElementById(`zF_W${i}`).value)||0; let l = parseFloat(document.getElementById(`zF_L${i}`).value)||0;
-             if(n && (q>0 || l>0)) { items.push({n,q,w,l}); totalOutput+=(q*w)+l; updates[`/Stock_Feed/${db.child('Stock_Feed').push().key}`] = {name:n, amount:(q*w)+l, date:dV, ts:ts, note:'ЗШМ Отходы', fLink:zId}; }
-        }
-
-        updates[`/Stock_Raw/${db.child('Stock_Raw').push().key}`]={name:mainRawName,amount:-mainRawW,date:dV,ts:ts,note:'ЗШМ Основа',fLink:zId};
-        if(secRawName && secRawW){ updates[`/Stock_Semi/${db.child('Stock_Semi').push().key}`]={name:secRawName,amount:-secRawW,date:dV,ts:ts,note:'ЗШМ Добавка',fLink:zId}; }
-        
-        let rawMix = `${mainRawName}(${mainRawW}кг)`;
-        if(secRawName) rawMix += ` + ${secRawName}(${secRawW}кг)`;
-
-        updates[`/ZSHM_Report/${zId}`]={ date:dV, ts:ts, items:items, rawMix:rawMix, link:zId, timeStart:tS, timeEnd:tE, operator:op, assistant:as };
-        
-        await db.update(updates);
-        logAction({type:'ZSHM', date:dV, rawMix:rawMix});
-        
-        closeModal();
-        // openModal('log'); // REMOVED REDIRECTION
-    } catch(e) {
-        alert(e);
-        btn.disabled = false;
-        btn.innerText = "СОХРАНИТЬ";
-    }
 }
 
 window.onload=renderHome;
