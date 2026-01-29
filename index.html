@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v391 NO ERRORS</title>
+<title>Склад v392 Comfort</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -74,7 +74,7 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 .new-input { display:none; border:2px solid var(--s) !important; }
 .clean-cat { font-size:10px; font-weight:900; color:#94a3b8; margin:15px 0 5px; border-bottom:1px solid #eee; padding-bottom:2px; letter-spacing:1px; }
 
-/* TRANSPARENT TRASH BTN */
+/* TRASH BUTTON */
 .del-rep-btn { position: absolute; top: 5px; right: 5px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 99; opacity: 0.3; transition: 0.2s; }
 .del-rep-btn:active { opacity: 1; transform: scale(1.1); }
 
@@ -235,26 +235,18 @@ function renderByTiles(c, rawD, type) {
     });
 
     let h = '';
-    // YEAR GRID
     Object.keys(gr).sort((a,b)=>b-a).forEach(y => {
         h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}${type}')">${y}</div></div><div id="y${y}${type}" class="arch-content">`;
-        
-        // MONTH GRID
         h+=`<div class="arch-m-grid">`;
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
             h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}${type}')">${mths[m]}</div>`;
         });
         h+=`</div>`; 
-
-        // MONTH CONTENT (DIRECT LIST - NO DAY TILES)
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
              h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
-             
-             // SORT ITEMS NEWEST FIRST
              gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
                 const s = JSON.stringify(v).replace(/"/g, "&quot;");
                 if(type==='LOG') {
-                     // ... (LOG renders as before) ...
                      if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
                      else if(v.type==='KRUP') {
                          let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
@@ -325,20 +317,18 @@ function openModal(t,id){
         ti.innerText='Коррекция: '+name;
         b.innerHTML=`Дата:<input type="date" id="cD" value="${new Date().toISOString().split('T')[0]}">Кол-во:<div style="display:flex;gap:5px"><input type="number" id="cA"><button onclick="document.getElementById('cA').value *= -1" style="width:50px;font-weight:900">+/-</button></div>Причина:<input type="text" id="cR"><button class="btn-main" id="btnS" onclick="sCorr()">СОХРАНИТЬ</button>`;
     }
-    // ... (rest of modals are same structure but with instant close logic below) ...
+    // ...
     else if(t==='fas'){
         let rL = []; gP('WeightStock').forEach(x => rL.push(`${x} (Покупная)`)); gP('Stock_DV').forEach(x => rL.push(`${x} (Склад ДВ)`)); rL.sort();
         ti.innerText='Фасовка';
         b.innerHTML=`Дата:<input type="date" id="fD" value="${new Date().toISOString().split('T')[0]}">Крупа:<select id="fN">${gP('Готовая').map(p=>`<option>${p}</option>`).join('')}</select>Списать:<select id="fRaw">${rL.map(p=>`<option>${p}</option>`).join('')}</select>Пакет:<select id="fS">${szs.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fP" placeholder="Сырье кг"><input type="number" id="fV" placeholder="Выход шт"><input type="text" id="fVz" placeholder="Взял пленки (через +)"><input type="number" id="fOs" placeholder="Остаток пленки"><button class="btn-main" id="btnS" onclick="sFas()">СОХРАНИТЬ</button>`;
     }
-    // ... RE-INSERT ALL OTHER MODALS (KRUP, VIBRO, ZSHM) EXACTLY AS IN v382 BUT BUTTONS CALL FUNCTIONS ...
-    // FOR BREVITY, I'M USING THE v382 LOGIC BUT WITH FIXED FUNCTIONS BELOW
     else if(t==='addVibro'){
         ti.innerText='Вибростол';
         b.innerHTML=`
         <div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <div><label class="l-t">ДАТА</label><input type="date" id="vD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div>
+                <div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="vD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div></div>
                 <div><label class="l-t">С</label>${makeSmart('vTS', timesS, '08:00')}</div>
                 <div><label class="l-t">ДО</label>${makeSmart('vTE', timesE, '20:00')}</div>
             </div>
@@ -377,15 +367,13 @@ function openModal(t,id){
     }
     else if(t==='addKrup'){
         ti.innerText='Крупорушка Отчет';
-        // --- NEW KRUP CONSTRUCTOR ---
-        const getHist=(k)=>{ const s=new Set(); if(data.Krup_Report) Object.values(data.Krup_Report).forEach(v=>{if(v[k]) s.add(v[k])}); return Array.from(s).sort(); };
         const timesS = getHistoryDeep('timeStart'); if(timesS.length===0) timesS.push('08:00');
         const timesE = getHistoryDeep('timeEnd'); if(timesE.length===0) timesE.push('20:00');
         
         b.innerHTML=`
         <div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <div><label class="l-t">ДАТА</label><input type="date" id="kD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div>
+                <div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="kD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div></div>
                 <div><label class="l-t">С</label>${makeSmart('kTS', timesS, '08:00')}</div>
                 <div><label class="l-t">ДО</label>${makeSmart('kTE', timesE, '20:00')}</div>
             </div>
@@ -437,15 +425,11 @@ function openModal(t,id){
         `;
         setTimeout(()=>{ updKrupRaw(); updKrupAdd(); addKrupRowVisual('DV'); addKrupRowVisual('Semi'); addKrupRowVisual('Feed'); }, 50);
     }
-    // (Other modals remain functionally same but call updated save functions)
-    else { openModalLegacy(t,id); } // Fallback for simple modals
-    document.getElementById('mdl').style.display='flex';
-}
-
-function openModalLegacy(t,id) {
-    const b=document.getElementById('mB');
-    if(t==='log'){ rGlobalLog(b);document.getElementById('mT').innerText='Журнал действий'; }
-    if(t==='addZSHM'){
+    else if(t==='addRaw'){
+        ti.innerText='Приход Сырья';
+        b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
+    }
+    else if(t==='addZSHM'){
          document.getElementById('mT').innerText='ЗШМ Смена';
          const ops = getHistoryDeep('operator');
          const asts = getHistoryDeep('assistant');
@@ -455,7 +439,7 @@ function openModalLegacy(t,id) {
          b.innerHTML=`
          <div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
             <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;">
-                <div><label class="l-t">ДАТА</label><input type="date" id="zD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div>
+                <div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="zD" value="${new Date().toISOString().split('T')[0]}" class="smart-sel"></div></div>
                 <div><label class="l-t">С</label>${makeSmart('zTS', timesS, '08:00')}</div>
                 <div><label class="l-t">ДО</label>${makeSmart('zTE', timesE, '20:00')}</div>
             </div>
@@ -493,8 +477,18 @@ function openModalLegacy(t,id) {
         </div>
         <button class="btn-main" id="btnS" onclick="sZSHM()">СОХРАНИТЬ СМЕНУ</button>`;
     }
+    // (Other modals remain functionally same but call updated save functions)
+    else { openModalLegacy(t,id); } // Fallback for simple modals
+    document.getElementById('mdl').style.display='flex';
 }
 
+function openModalLegacy(t,id) {
+    const b=document.getElementById('mB');
+    if(t==='log'){ rGlobalLog(b);document.getElementById('mT').innerText='Журнал действий'; }
+    // ... Any other legacy simple modals
+}
+
+// === SAVE FUNCTIONS ===
 async function sCorr() {
     const btn = document.getElementById('btnS');
     const d = document.getElementById('cD').value;
@@ -562,7 +556,7 @@ async function sFas() {
         logAction({type:'FAS', date:dV, name:n, rawItem:rawName, size:s, vyhod:v, prihod:p, vzial:vzTotal, ostatok:os, scotch:scUsed});
         
         closeModal();
-        openModal('log');
+        // openModal('log'); // REMOVED REDIRECTION
     } catch(e) {
         alert("Ошибка: " + e);
         btn.disabled = false;
@@ -648,7 +642,7 @@ async function sVibro() {
         document.getElementById('vRowsFeed').innerHTML = '';
         
         closeModal();
-        openModal('log');
+        // openModal('log'); // REMOVED REDIRECTION
     } catch(e) {
         alert("Ошибка: " + e);
         btn.disabled = false;
@@ -833,7 +827,7 @@ async function sKrup() {
     document.getElementById('kRowsDV').innerHTML = '';
     document.getElementById('kRowsSemi').innerHTML = '';
     document.getElementById('kRowsFeed').innerHTML = '';
-    openModal('log');
+    // openModal('log'); // REMOVED REDIRECTION
 }
 
 // === NEW KRUP LOGIC (CONSTRUCTOR) ===
@@ -945,7 +939,7 @@ async function sZSHM() {
         logAction({type:'ZSHM', date:dV, rawMix:rawMix});
         
         closeModal();
-        openModal('log');
+        // openModal('log'); // REMOVED REDIRECTION
     } catch(e) {
         alert(e);
         btn.disabled = false;
