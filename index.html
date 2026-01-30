@@ -321,7 +321,7 @@ function openModal(t,id){
         setTimeout(()=>{ updZSHMRaw(); updZSHMAdd(); addZSHMRowVisual('DV'); addZSHMRowVisual('Semi'); addZSHMRowVisual('Feed'); }, 50);
     }
     else if(t==='inc'){
-        b.innerHTML=`<input type="date" id="iD" value="${td}">${makeSelect('iS','ArchIncoming','Поставщик',gS(),'+ НОВЫЙ')}${makeSelect('iN','Stock_Raw','Сырье',gP('Stock_Raw'))}<input type="number" id="iA" placeholder="Вес"><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sInc()">ПРИНЯТЬ</button>`;
+        b.innerHTML=`<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:5px"><div><label class="l-t">ДАТА</label><input type="date" id="iD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="iNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАВЩИК</label>${makeSelect('iS','ArchIncoming','Поставщик',gS(),'+ НОВЫЙ')}</div><div style="margin-bottom:5px"><label class="l-t">НАИМЕНОВАНИЕ</label>${makeSelect('iN','WeightStock','Товар',gP('WeightStock'),'+ НОВЫЙ')}</div><div style="margin-bottom:15px"><label class="l-t">ВЕС (КГ)</label><input type="number" id="iA" placeholder="0"></div><button class="btn-main" style="background:var(--s)" onclick="sInc()">ПРИНЯТЬ НА СКЛАД ПОКУПНАЯ</button>`;
     }
     else if(t==='addMatPack'){
         b.innerHTML=`<input type="date" id="pD" value="${td}">${makeSelect('pS','ArchPackIn','Поставщик',gS(),'+ НОВЫЙ')}${makeSelect('pN','Пакеты','Вид',gPack('Пакеты'))}<input type="number" id="pA" placeholder="Кол-во"><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИНЯТЬ</button>`;
@@ -555,15 +555,16 @@ async function sInc(){
     const sS = document.getElementById('s_iS'); const s = (sS.value==='NEW')?document.getElementById('i_iS').value:sS.value;
     const sN = document.getElementById('s_iN'); const n = (sN.value==='NEW')?document.getElementById('i_iN').value:sN.value;
     const a=parseFloat(document.getElementById('iA').value);
-    if(!a)return;
-    if(!confirm('Принять?'))return;
+    const num = document.getElementById('iNum').value;
+    if(!a)return alert('Введите вес');
+    if(!confirm('Принять на склад ПОКУПНАЯ?'))return;
     const d=document.getElementById('iD').value+"T12:00:00Z";
     const l=db.child('ArchIncoming').push().key;
     const updates={};
-    updates['/ArchIncoming/'+l]={date:d,supplier:s,name:n,amount:a,ts:new Date().toISOString()};
-    updates['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:n,amount:a,date:d,note:'Приход '+s,fLink:l,ts:new Date().toISOString()};
+    updates['/ArchIncoming/'+l]={date:d,supplier:s,name:n,amount:a,num:num,ts:new Date().toISOString()};
+    updates['/WeightStock/'+db.child('WeightStock').push().key]={name:n,amount:a,date:d,note:'Приход '+s + (num ? ' №'+num : ''),fLink:l,ts:new Date().toISOString()};
     await db.update(updates);
-    logAction({type:'INC_RAW', date:d, supplier:s, name:n, amount:a});
+    logAction({type:'INC_RAW', date:d, supplier:s, name:n, amount:a, num:num});
     closeModal();
 }
 
