@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v508 "Спецсвязь"</title>
+<title>Склад v514 "Связной"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -74,7 +74,7 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 .arch-tile-c { background: #fff; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:13px; margin-bottom:5px; cursor:pointer }
 .arch-badge { background:#eef2ff; color:var(--p); padding:2px 6px; border-radius:6px; font-size:10px; }
 
-/* JOURNAL CARDS & SPECIFIC SHIPMENT STYLES */
+/* JOURNAL CARDS */
 .j-card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 8px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; position: relative; }
 .j-head { font-weight: 900; font-size: 14px; text-transform: uppercase; color: var(--p); margin-bottom: 4px; }
 .j-sub { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 12px; border-bottom:1px solid #f1f5f9; padding-bottom:6px; }
@@ -102,16 +102,16 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 .z-col-h { display:grid; grid-template-columns: 32% 16% 16% 16% 8%; gap:4px; text-align:center; font-size:9px; color:#64748b; font-weight:700; margin-bottom:4px; }
 .del-rep-btn { position: absolute; top: 5px; right: 5px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 99; opacity: 0.3; transition: 0.2s; }
 .del-rep-btn:active { opacity: 1; transform: scale(1.1); }
+.clean-cat { font-size: 11px; font-weight: 900; color: var(--p); background: #eef2ff; padding: 8px; margin-top: 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
 
 /* --- СТИЛИ ДЛЯ ПЕЧАТИ --- */
 @media print {
-    body { background: white; padding: 0; color: black; }
-    #lockScreen, #act, .bottom-nav, .dash-item, .btn-main, .logo-box, #corrCtls, .history-btn, .corr-btn, #navM, #navB, #print-ctrl { display: none !important; }
-    #cnt { display: block !important; position: static; width: 100%; margin: 0; padding: 0; }
-    .z-head { background: none !important; border: none !important; color: #000 !important; font-size: 16px !important; text-align: left !important; padding-left: 0 !important; margin-top: 20px !important; border-bottom: 2px solid #000 !important; }
-    .item-card { box-shadow: none !important; border: none !important; border-bottom: 1px dotted #ccc !important; padding: 5px 0 !important; margin: 0 !important; color: #000 !important; }
+    body { background: white; padding: 0; }
+    #lockScreen, #act, .bottom-nav, .dash-item, .btn-main, .logo-box, #corrCtls, .history-btn, .corr-btn, #navM, #navB { display: none !important; }
+    #cnt { display: block !important; position: static; width: 100%; }
+    .z-head { background: none !important; border: none !important; color: #000 !important; font-size: 14px !important; text-align: left !important; padding-left: 0 !important; margin-top: 20px !important; border-bottom: 2px solid #000 !important; }
+    .item-card { box-shadow: none !important; border: none !important; border-bottom: 1px dotted #ccc !important; padding: 5px 0 !important; margin: 0 !important; }
     .item-grid { display: block !important; }
-    .item-card span { color: #000 !important; }
 }
 
 @keyframes blink { from { opacity: 1; } to { opacity: 0.7; } }
@@ -200,7 +200,16 @@ window.delArchRec = (cat, id) => window.delRec(cat, id);
 const bP=["Арнаутка","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯНВ","ФЕВ","МАРТ","АПР","МАЙ","ИЮНЬ","ИЮЛЬ","АВГ","СЕНТ","ОКТ","НОЯБ","ДЕК"];
 const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]} ${parts[1]}:${parts[2]}`};const fd2=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};
 function closeModal(){document.getElementById('mdl').style.display='none';aId=null;}
-function toggleF(id){const e=document.getElementById(id);e.style.display=e.style.display==='block'?'none':'block'}
+
+function toggleF(id) {
+    const e = document.getElementById(id);
+    if (e) {
+        e.style.display = (e.style.display === 'block') ? 'none' : 'block';
+    } else {
+        console.error('Не найден блок с ID:', id);
+    }
+}
+
 function toggleC(id, btn){ const e=document.getElementById(id); if(e.style.display==='block'){ e.style.display='none'; btn.style.background='#fff'; btn.style.borderColor='#e2e8f0'; } else { e.style.display='block'; btn.style.background='#eef2ff'; btn.style.borderColor='var(--p)'; } }
 
 const gP=(cat)=>{ let init=[]; if(cat==='WeightStock'||cat==='Готовая') init=bP; const s=new Set(init); const dbK=(cat==='WeightStock')?'WeightStock':(cat==='Stock_DV'?'Stock_DV':(cat==='Stock_Feed'?'Stock_Feed':(cat==='Stock_Raw'?'Stock_Raw':(cat==='Stock_Semi'?'Stock_Semi':'Готовая')))); if(data[dbK])Object.values(data[dbK]).forEach(v=>s.add(v.name)); return Array.from(s).filter(x=>x).sort(); };
@@ -209,6 +218,30 @@ const gS=()=>{const s=new Set();['ArchIncoming','Пакеты','Пленка','�
 const gRawS=()=>{const s=new Set();if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier)s.add(v.supplier)});return Array.from(s).filter(x=>x).sort();};
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort();};
 const gPack=(cat)=>{const s=new Set();if(cat==='Пакеты')szs.forEach(x=>s.add(x));if(cat==='Скотч')s.add('Скотч 360 грамм');if(cat==='Пленка')bP.forEach(x=>s.add(x));const dbK=cat==='Скотч'?'Скотч 360 грамм':cat;if(data[dbK])Object.values(data[dbK]).forEach(v=>{if(v.name)s.add(v.name)});return Array.from(s).filter(x=>x).sort();};
+
+// === ЛОГИКА РАЗДЕЛЕНИЯ ПОСТАВЩИКОВ ===
+const gSuppPack = () => {
+    const s = new Set();
+    if(data.ArchPackIn) Object.values(data.ArchPackIn).forEach(v => { if(v.supplier) s.add(v.supplier); });
+    return Array.from(s).sort();
+};
+
+const gSuppMain = (isRaw) => {
+    const s = new Set();
+    const prodSet = new Set(bP); 
+    if(data.WeightStock) Object.values(data.WeightStock).forEach(v => prodSet.add(v.name));
+    if(data.ArchIncoming) Object.values(data.ArchIncoming).forEach(v => {
+        if(!v.supplier) return;
+        const isProd = prodSet.has(v.name);
+        if(isRaw && !isProd) s.add(v.supplier);
+        if(!isRaw && isProd) s.add(v.supplier);
+    });
+    return Array.from(s).sort();
+};
+
+const gSuppRaw = () => gSuppMain(true);
+const gSuppProd = () => gSuppMain(false);
+
 
 function renderHome(){
     if(!isLogged) return;
@@ -287,7 +320,77 @@ function drawShipItem(str) {
     return `<div class="j-row"><span class="j-dots">${n}</span><span class="j-val">${a}${u}</span></div>`;
 }
 
-// === ОБНОВЛЕННЫЙ СВОДНЫЙ ОТЧЕТ (СТРОГО ПО ПОЛКАМ V506) ===
+// === ОБНОВЛЕННАЯ ЧИСТКА СПИСКОВ (УДАЛЕНИЕ РАБОТАЕТ ЖЕЛЕЗНО) ===
+function esc(s) {
+    return s.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+}
+
+function rCleanList(c){
+    let h='<div style="font-size:11px;color:#666;margin-bottom:10px">Нажмите 🗑️ для удаления записи из истории, которая создает этот пункт:</div>';
+    
+    window.delSuppBatch = async (name, dbKey) => {
+        if(!confirm(`Удалить все записи о поставщике "${name}" из ${dbKey}?`)) return;
+        const updates = {};
+        if(data[dbKey]) {
+            Object.entries(data[dbKey]).forEach(([key, val]) => {
+                if(val.supplier === name) updates[`/${dbKey}/${key}`] = null;
+            });
+        }
+        await db.update(updates);
+        closeModal();
+        alert('Удалено');
+    };
+
+    window.delClientBatch = async (name) => {
+        if(!confirm(`Удалить все накладные клиента "${name}"?\nЭто полностью уберет его из списка.`)) return;
+        const updates = {};
+        if(data.ArchInvoices) {
+            Object.entries(data.ArchInvoices).forEach(([key, val]) => {
+                if(val.client === name) updates[`/ArchInvoices/${key}`] = null;
+            });
+        }
+        await db.update(updates);
+        closeModal();
+        alert('Клиент удален');
+    };
+
+    const mkR = (s, type, dbKey, isClient) => {
+        Array.from(s).sort().forEach(n => {
+            const safeName = esc(n);
+            let delFunc = '';
+            if(isClient) delFunc = `delClientBatch('${safeName}')`;
+            else if(dbKey) delFunc = `delSuppBatch('${safeName}','${dbKey}')`;
+            else delFunc = `delItemBatch('${safeName}','${type}')`;
+
+            h += `<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
+                <b>${n}</b>
+                <div>
+                    ${!dbKey && !isClient ? `<button onclick="renameItem('${safeName}','${type}')" style="margin-right:10px;border:none;background:none;font-size:16px">✏️</button>` : ''}
+                    <button onclick="${delFunc}" style="border:none;background:none;font-size:16px;color:red">🗑️</button>
+                </div>
+            </div>`
+        });
+    };
+
+    h+='<div class="clean-cat">📦 ТОВАРЫ (СКЛАДЫ)</div>';
+    mkR(new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Stock_Raw'),...gP('Готовая')]), 'name');
+    
+    h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';
+    mkR(new Set(gCl()), null, null, true);
+
+    h+='<div class="clean-cat" style="background:#dcfce7;color:#166534">🚛 ПОСТАВЩИКИ (ТОВАР)</div>';
+    mkR(new Set(gSuppProd()), null, 'ArchIncoming');
+
+    h+='<div class="clean-cat" style="background:#fef3c7;color:#92400e">🚛 ПОСТАВЩИКИ (СЫРЬЕ)</div>';
+    mkR(new Set(gSuppRaw()), null, 'ArchIncoming');
+
+    h+='<div class="clean-cat" style="background:#e0e7ff;color:#3730a3">🚛 ПОСТАВЩИКИ (УПАКОВКА)</div>';
+    mkR(new Set(gSuppPack()), null, 'ArchPackIn');
+
+    c.innerHTML=h;
+}
+
+// === НОВЫЙ СВОДНЫЙ ОТЧЕТ С ПРЯМОЙ ОТПРАВКОЙ ===
 function rConsolidated(c) {
     const sumCat = (cats) => {
         let res = {};
@@ -315,93 +418,61 @@ function rConsolidated(c) {
 
     let h = '<div id="print-area" style="padding-bottom:20px">';
     
-    // 1. ФАСОВКА (Только Готовая) - ТЕПЕРЬ В ШТУКАХ
     let fas = sumCat(['Готовая']);
     h += drawSection('📦 ФАСОВКА', fas, 'шт', '#dbeafe');
-
-    // 2. СКЛАД ДВ (Только Stock_DV)
     let dv = sumCat(['Stock_DV']);
     h += drawSection('🏭 СКЛАД ДВ', dv, 'кг', '#bfdbfe');
-
-    // 3. ПОКУПНАЯ (Только WeightStock)
     let wgh = sumCat(['WeightStock']);
     h += drawSection('⚖️ ПОКУПНАЯ', wgh, 'кг', '#dcfce7');
-
-    // 4. СЫРЬЁ (Только Stock_Raw)
     let raw = sumCat(['Stock_Raw']);
     h += drawSection('🚜 СЫРЬЁ', raw, 'кг', '#bbf7d0');
-
-    // 5. ПОЛУФАБРИКАТ (Только Stock_Semi)
     let semi = sumCat(['Stock_Semi']);
     h += drawSection('⚙️ ПОЛУФАБРИКАТ', semi, 'кг', '#ffedd5');
-
-    // 6. КОРМА (Только Stock_Feed)
     let feed = sumCat(['Stock_Feed']);
     h += drawSection('🍂 КОРМА', feed, 'кг', '#fef3c7');
-
-    // 7. УПАКОВКА - РАЗБИТО ПО ПОЛКАМ
     let packs = sumCat(['Пакеты']);
     h += drawSection('🥡 ПАКЕТЫ', packs, 'шт', '#f1f5f9');
-
     let film = sumCat(['Пленка']);
     h += drawSection('🎞️ ПЛЕНКА', film, 'кг', '#f1f5f9');
-
     let tape = sumCat(['Скотч 360 грамм']);
     h += drawSection('🧴 СКОТЧ', tape, 'шт', '#f1f5f9');
-
     let sacks = sumCat(['Мешки']);
     h += drawSection('💰 МЕШКИ', sacks, 'шт', '#f1f5f9');
-
     let thread = sumCat(['Нитки']);
     h += drawSection('🧵 НИТКИ', thread, 'шт', '#f1f5f9');
-
     let label = sumCat(['Этикетка']);
     h += drawSection('🏷️ ЭТИКЕТКА', label, 'шт', '#f1f5f9');
 
     h += '</div>';
     
-    // БЛОК УПРАВЛЕНИЯ ОТПРАВКОЙ (ДЛЯ WhatsApp)
-    let bossNum = localStorage.getItem('bossNumber') || '';
-    
-    h += `<div id="print-ctrl" style="margin-top:20px;border-top:2px dashed #cbd5e1;padding-top:15px">
-        <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px">НАСТРОЙКА ОТПРАВКИ</div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:5px;margin-bottom:15px">
-            <input type="tel" id="bossNum" placeholder="Номер (7900...)" value="${bossNum}" style="margin:0">
-            <button class="btn-main" onclick="saveNumber()" style="margin:0;padding:5px;font-size:10px;background:#94a3b8">💾 ЗАПОМНИТЬ</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
-            <button class="btn-main" onclick="printRep()" style="background:#334155;font-size:10px">🖨️ ПЕЧАТЬ</button>
-            <button class="btn-main" onclick="sendWA()" style="background:#22c55e;font-size:10px">WHATSAPP (Директ)</button>
-            <button class="btn-main" onclick="shareRep()" style="background:#2563eb;font-size:10px">ОБЩИЕ (Viber/TG)</button>
-        </div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:5px;text-align:center">Для Viber/TG выберите контакт вручную</div>
+    h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px">
+        <button class="btn-main" onclick="printRep()" style="background:#334155;grid-column:1/-1">🖨️ ПЕЧАТЬ</button>
+        <button class="btn-main" onclick="shareVia('vb')" style="background:#7360f2">Viber</button>
+        <button class="btn-main" onclick="shareVia('wa')" style="background:#25d366">WhatsApp</button>
+        <button class="btn-main" onclick="shareVia('tg')" style="background:#229ED9;grid-column:1/-1">Telegram</button>
+    </div>
+    <div style="margin-top:15px;border-top:1px dashed #ccc;padding-top:15px">
+        <button class="btn-main" onclick="openModal('fixBal')" style="background:#f59e0b;color:#fff;border:1px solid #d97706">🔒 ЗАФИКСИРОВАТЬ НАЧАЛО МЕСЯЦА</button>
+        <div style="font-size:10px;color:#666;text-align:center;margin-top:5px">Создать метку "Остаток" в истории</div>
     </div>`;
 
     c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Склады пусты</div>';
 }
 
-function saveNumber() {
-    let num = document.getElementById('bossNum').value.replace(/[^0-9]/g, '');
-    localStorage.setItem('bossNumber', num);
-    alert('Номер сохранен: ' + num);
-}
-
 function printRep() { window.print(); }
 
-function getReportText() {
+function shareVia(app) {
     let txt = "📊 СВОДНЫЙ ОТЧЕТ [" + new Date().toLocaleDateString() + "]\n\n";
-    
     const getTxt = (cat, title, unit) => {
         let d = {};
         if(data[cat]) Object.values(data[cat]).forEach(v => d[v.name] = (d[v.name] || 0) + v.amount);
         let items = Object.keys(d).filter(k => Math.abs(d[k]) > 0.1).sort();
         if(items.length) {
-            txt += title + ":\n";
+            txt += "*" + title + "*:\n";
             items.forEach(k => txt += `- ${k}: ${Math.round(d[k])} ${unit}\n`);
             txt += "\n";
         }
     };
-
     getTxt('Готовая', '📦 ФАСОВКА', 'шт');
     getTxt('Stock_DV', '🏭 СКЛАД ДВ', 'кг');
     getTxt('WeightStock', '⚖️ ПОКУПНАЯ', 'кг');
@@ -414,24 +485,13 @@ function getReportText() {
     getTxt('Мешки', '💰 МЕШКИ', 'шт');
     getTxt('Нитки', '🧵 НИТКИ', 'шт');
     getTxt('Этикетка', '🏷️ ЭТИКЕТКА', 'шт');
+
+    const enc = encodeURIComponent(txt);
     
-    return txt;
-}
-
-function sendWA() {
-    let num = localStorage.getItem('bossNumber');
-    if(!num) return alert('Сначала введите и запомните номер!');
-    let txt = encodeURIComponent(getReportText());
-    window.open(`https://wa.me/${num}?text=${txt}`, '_blank');
-}
-
-function shareRep() {
-    let txt = getReportText();
-    if (navigator.share) {
-        navigator.share({ title: 'Отчет', text: txt }).catch(console.error);
-    } else {
-        navigator.clipboard.writeText(txt).then(() => alert('Отчет скопирован! Вставьте в мессенджер.')).catch(e => alert('Ошибка копирования'));
-    }
+    // ИСПОЛЬЗУЕМ ПРЯМЫЕ ССЫЛКИ НА ПРИЛОЖЕНИЯ
+    if(app === 'wa') window.location.href = `whatsapp://send?text=${enc}`;
+    if(app === 'tg') window.location.href = `tg://msg?text=${enc}`;
+    if(app === 'vb') window.location.href = `viber://forward?text=${enc}`;
 }
 
 function renderByTiles(c, rawD, type) {
@@ -444,7 +504,6 @@ function renderByTiles(c, rawD, type) {
         if(!gr[y][m]) gr[y][m] = [];
         gr[y][m].push({...v, id});
     });
-
     let h = '';
     Object.keys(gr).sort((a,b)=>b-a).forEach(y => {
         h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}${type}')">${y}</div></div><div id="y${y}${type}" class="arch-content">`;
@@ -454,125 +513,303 @@ function renderByTiles(c, rawD, type) {
         });
         h+=`</div>`; 
         Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{
-             h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
-             gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
+            h+=`<div id="m${y}${m}${type}" class="arch-content" style="grid-column:1/-1;">`;
+            gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
                 if(type==='LOG') {
-                     if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
-                     else if(v.type==='KRUP' || v.type==='VIBRO' || v.type==='ZSHM') {
-                         let ts = (v.timeStart||'??') + ' — ' + (v.timeEnd||'??');
-                         h+=`<div class="card"><b>${WS_CFG[v.type].title}</b> [${fd2(v.date)}]` + `<div style="font-size:11px;color:#333;margin-bottom:5px;font-weight:bold">🕑 ${ts}</div>` + `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator||'-'} / ${v.assistant||'-'}</div>` + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
-                     else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div></div></div>`;
-                     else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`).join('')+`</div></div>`;
-                     else if(v.type==='SHIP') h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>drawShipItem(i)).join('')+`</div></div>`;
-                     else if(v.type==='PACK') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД УПАКОВКИ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}</span></div></div></div>`;
-                     else if(v.type==='CORR') h+=`<div class="j-card"><div class="j-head" style="color:#f59e0b">КОРРЕКЦИЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.name}</div><div class="j-body"><b>${v.amount}</b> (${v.reason})</div></div>`;
+                    if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
+                    else if(v.type==='KRUP' || v.type==='VIBRO' || v.type==='ZSHM') {
+                        let ts = (v.timeStart||'??') + ' — ' + (v.timeEnd||'??');
+                        h+=`<div class="card"><b>${WS_CFG[v.type].title}</b> [${fd2(v.date)}]` + `<div style="font-size:11px;color:#333;margin-bottom:5px;font-weight:bold">🕑 ${ts}</div>` + `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator||'-'} / ${v.assistant||'-'}</div>` + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                    }
+                    else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div></div></div>`;
+                    else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`).join('')+`</div></div>`;
+                    else if(v.type==='SHIP') h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`+v.items.map(i=>drawShipItem(i)).join('')+`</div></div>`;
+                    else if(v.type==='PACK') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД УПАКОВКИ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}</span></div></div></div>`;
+                    else if(v.type==='CORR') h+=`<div class="j-card"><div class="j-head" style="color:#f59e0b">КОРРЕКЦИЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.name}</div><div class="j-body"><b>${v.amount}</b> (${v.reason})</div></div>`;
                 }
                 else if(type==='FAS') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delFas('${v.id}')">🗑️</button><b>${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
                 else if(type==='KRUP' || type==='VIBRO' || type==='ZSHM') {
                     let ts = (v.timeStart||'??') + ' — ' + (v.timeEnd||'??');
                     h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delRec('${WS_CFG[type].db}', '${v.id}')">🗑️</button><b>${WS_CFG[type].title}</b> [${fd2(v.date)}]` + `<div style="font-size:11px;color:#333;margin-bottom:5px;font-weight:bold">🕑 ${ts}</div>` + `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator||'-'} / ${v.assistant||'-'}</div>` + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
                 }
-             });
-             h+=`</div>`;
+            });
+            h+=`</div>`;
         });
         h+=`</div>`;
     });
     c.innerHTML = h || 'Нет записей';
 }
 
-const pk = (v,n) => Math.round(Math.abs(v/((n==="Кутя")?19.8:9.9)));
-const pl = (v,o) => Math.abs((v||0)-(o||0)).toFixed(1);
-
-function rFas(c) { renderByTiles(c, data.Фасовка, 'FAS'); }
-function rKrup(c) { renderByTiles(c, data.Krup_Report, 'KRUP'); }
-function rVibro(c) { renderByTiles(c, data.Vibro_Report, 'VIBRO'); }
-function rZSHM(c) { renderByTiles(c, data.ZSHM_Report, 'ZSHM'); }
-function rGlobalLog(c) { renderByTiles(c, data.GlobalLog, 'LOG'); }
-function rArchPack(c){ const d = data.ArchPackIn || {}; const gr = {}; if(d) Object.entries(d).forEach(([id,v])=>{ if(!v.date) return; const dObj = new Date(v.date); const y = dObj.getFullYear(), m = dObj.getMonth(), dy = dObj.getDate(); if(!gr[y]) gr[y] = {}; if(!gr[y][m]) gr[y][m] = []; gr[y][m].push({...v, id}); }); let h=''; Object.keys(gr).sort((a,b)=>b-a).forEach(y=>{ h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('py${y}')">${y}</div></div><div id="py${y}" class="arch-content">`; h+=`<div class="arch-m-grid">`;Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('pm${y}${m}')">${mths[m]}</div>`; }); h+=`</div>`; Object.keys(gr[y]).sort((a,b)=>b-a).forEach(m=>{ h+=`<div id="pm${y}${m}" class="arch-content">`; gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ h+=`<div class="arch-inv"><div><b>${(v.num||'Б/Н')}</b>${v.name} (${v.amount}кг)</div><div style="font-size:10px;color:#888">${v.supplier||'-'}</div></div>`; }); h+=`</div>`; }); h+=`</div>`; }); c.innerHTML=h||'Пусто'; }
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rRaw(c){const t={};gP('Stock_Raw').forEach(p=>t[p]=0);if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Stock_Raw','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Stock_Raw','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${cur==='Скотч 360 грамм'?val.toFixed(1):Math.round(val)} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rCleanList(c){let h='<div style="font-size:11px;color:#666;margin-bottom:10px">Нажмите на имя для полного удаления:</div>';const mkR = (s,t) => Array.from(s).sort().forEach(n=>{h+=`<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b>${n}</b><div><button onclick="renameItem('${n}','${t}')" style="margin-right:10px;border:none;background:none;font-size:16px">✏️</button><button onclick="delItemBatch('${n}','${t}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button></div></div>`});h+='<div class="clean-cat">📦 ТОВАРЫ</div>';mkR(new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Stock_Raw'),...gP('Готовая')]),'name');h+='<div class="clean-cat">🚛 ПОСТАВЩИКИ</div>';mkR(new Set(gS()),'supplier');h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';mkR(new Set(gCl()),'client');c.innerHTML=h;}
-function showH(c,k){const ti=document.getElementById('mT'),b=document.getElementById('mB');ti.innerText=k;const hist=[];if(data[c])Object.entries(data[c]).filter(([id,v])=>v.name===k).forEach(([id,v])=>{let n=v.note||'Запись';if(v.supplier)n='Приход: '+v.supplier;if(v.client)n='Отгрузка: '+v.client;hist.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:id});});let h='<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:10px">';hist.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v=>{h+=`<tr style="border-bottom:1px solid #eee"><td style="padding:8px 0;width:60%"><div style="font-weight:600;color:#1e293b">${v.n}</div><div style="font-size:11px;color:#94a3b8">${fd2(v.d)}</div></td><td style="text-align:right;font-weight:800;font-size:14px" class="${v.a>=0?'hist-pos':'hist-neg'}">${c==='Пакеты'?Math.round(v.a):v.a.toFixed(1)}</td><td style="width:30px;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button>`:''}</td></tr>`;});h+='</table>';b.innerHTML=h||'Нет записей';document.getElementById('mdl').style.display='flex';}
 
-function rInvD(c){ 
-    const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={}; 
-    Object.entries(d).forEach(([id,v])=>{ if(!v.date) return; const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(); if(!t[y])t[y]={m:{}}; if(!t[y].m[m])t[y].m[m]=[]; t[y].m[m].push({...v,id}); }); 
-    let h=''; 
-    Object.keys(t).sort((a,b)=>b-a).forEach(y=>{ 
-        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}')">${y}</div></div><div id="y${y}" class="arch-content">`; 
-        h+=`<div class="arch-m-grid">`; 
-        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}')">${mths[m]}</div>`; }); 
-        h+=`</div>`; 
-        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ 
-            h+=`<div id="m${y}${m}" class="arch-content" style="grid-column:1/-1;">`; 
-            t[y].m[m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ 
-                if(dbK==='ArchIncoming'){ 
-                    h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`; 
-                    if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`); 
-                    else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`; 
-                    h+=`</div>`; 
-                    if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ОТМЕНИТЬ</button>`; 
-                    h+=`</div>`; 
-                } else { 
-                    h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; 
-                    if(v.items)v.items.forEach(i=>h+=drawShipItem(i)); 
-                    h+=`</div>`; 
-                    if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ВЕРНУТЬ</button>`; 
-                    h+=`</div>`; 
-                } 
-            }); 
-            h+=`</div>`; 
-        }); 
-        h+=`</div>`; 
-    }); 
-    c.innerHTML=h||'Пусто'; 
+// === ИСТОРИЯ С ПАПКАМИ И КРАСИВОЙ ФИКСАЦИЕЙ ===
+function showH(c, k) {
+    const ti = document.getElementById('mT'), b = document.getElementById('mB');
+    ti.innerText = k;
+    
+    const hist = [];
+    if (data[c]) Object.entries(data[c]).filter(([id, v]) => v.name === k).forEach(([id, v]) => {
+        let n = v.note || 'Запись';
+        if (v.supplier) n = 'Приход: ' + v.supplier;
+        if (v.client) n = 'Отгрузка: ' + v.client;
+        hist.push({ d: v.date, ts: v.ts || '', n: n, a: v.amount, id: id, isFix: v.isFix });
+    });
+
+    hist.sort((a, b) => (a.d + a.ts).localeCompare(b.d + b.ts));
+
+    const curMonthKey = new Date().toISOString().slice(0, 7); 
+    const archives = {};
+    const currentList = [];
+    let incomingBalance = 0;
+
+    hist.forEach(v => {
+        const vMonth = v.d.slice(0, 7);
+        if (vMonth === curMonthKey) {
+            currentList.push(v);
+        } else {
+            if (!archives[vMonth]) archives[vMonth] = [];
+            archives[vMonth].push(v);
+            incomingBalance += v.a;
+        }
+    });
+    
+    currentList.reverse();
+
+    let h = '<div style="margin-top:10px">';
+
+    const sortedMonths = Object.keys(archives).sort().reverse();
+    if(sortedMonths.length > 0) {
+        h += `<div class="arch-y-grid" style="margin-bottom:15px">`;
+        sortedMonths.forEach(mKey => {
+            const [yr, mn] = mKey.split('-');
+            const mName = mths[parseInt(mn)-1];
+            h += `<div class="arch-tile-y" style="font-size:12px;padding:15px 5px;background:#f1f5f9;color:#64748b;box-shadow:none;border:1px solid #cbd5e1" onclick="toggleF('h_${mKey}')">📁 ${mName} ${yr}</div>`;
+        });
+        h += `</div>`;
+        
+        sortedMonths.forEach(mKey => {
+            h += `<div id="h_${mKey}" class="arch-content" style="border-left:2px solid #ccc;padding-left:10px;margin-bottom:10px">`;
+            archives[mKey].sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v => {
+               h += renderHistRow(c, v);
+            });
+            h += `</div>`;
+        });
+    }
+
+    if(sortedMonths.length > 0 || incomingBalance !== 0) {
+        h += `<div style="background:#f0fdf4;padding:8px 12px;border-radius:8px;border:1px dashed #22c55e;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase">⬇ Входящий остаток (прошлые мес.)</span>
+            <span style="font-size:13px;font-weight:900;color:#166534">${incomingBalance.toFixed(1)}</span>
+        </div>`;
+    }
+
+    if(currentList.length > 0) {
+        h += `<div style="font-size:10px;color:#94a3b8;font-weight:800;margin-bottom:5px;text-transform:uppercase">Текущий месяц (${mths[new Date().getMonth()]})</div>`;
+        h += `<div style="display:flex;flex-direction:column;gap:0;">`;
+        currentList.forEach(v => {
+            h += renderHistRow(c, v, false);
+        });
+        h += '</div>';
+    } else {
+        h += `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">В этом месяце операций еще не было</div>`;
+    }
+
+    h += '</div>';
+    b.innerHTML = h;
+    document.getElementById('mdl').style.display = 'flex';
 }
 
-function rInvC(c){ 
-    const dbK=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[dbK]||{},t={}; 
-    Object.entries(d).forEach(([id,v])=>{ if(!v.date) return; const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(); const clName=v.client||v.supplier||'Без имени'; if(!t[y])t[y]={m:{}}; if(!t[y].m[m])t[y].m[m]={cl:{}}; if(!t[y].m[m].cl[clName])t[y].m[m].cl[clName]=[]; t[y].m[m].cl[clName].push({...v,id}); }); 
-    let h=''; 
-    Object.keys(t).sort((a,b)=>b-a).forEach(y=>{ 
-        h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('cy${y}')">${y}</div></div><div id="cy${y}" class="arch-content">`; 
-        h+=`<div class="arch-m-grid">`; 
-        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ h+=`<div class="arch-tile-m" onclick="toggleF('cm${y}${m}')">${mths[m]}</div>`; }); 
-        h+=`</div>`; 
-        Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{ 
-            h+=`<div id="cm${y}${m}" class="arch-content" style="grid-column:1/-1;">`; 
+function renderHistRow(c, v, isTable=false) {
+    if(v.isFix) {
+        const row = `<div style="background:#fffbeb;padding:10px;border-radius:8px;margin:5px 0;font-size:12px;color:#92400e;display:flex;justify-content:space-between;align-items:center;border:1px solid #fcd34d;">
+            <span style="font-weight:700">📌 ${v.n}</span>
+            <span style="font-size:10px;color:#b45309">${fd2(v.d)}</span>
+            ${corrMode ? `<button onclick="delRec('${c}','${v.id}')" style="border:none;background:none;font-size:14px;margin-left:5px">🗑️</button>` : ''}
+        </div>`;
+        return row;
+    }
+    const html = `<div style="padding:8px 0;width:60%">
+            <div style="font-weight:600;color:#1e293b;font-size:13px">${v.n}</div>
+            <div style="font-size:10px;color:#94a3b8">${fd2(v.d)}</div>
+        </div>
+        <div style="text-align:right;font-weight:800;font-size:14px;width:30%" class="${v.a >= 0 ? 'hist-pos' : 'hist-neg'}">
+            ${c === 'Пакеты' ? Math.round(v.a) : v.a.toFixed(1)}
+        </div>
+        <div style="width:30px;text-align:center">
+            ${corrMode ? `<button onclick="delRec('${c}','${v.id}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button>` : ''}
+        </div>`;
+    return `<div style="display:flex;align-items:center;border-bottom:1px solid #f1f5f9;justify-content:space-between;padding:2px 0">${html}</div>`;
+}
+
+// === НОВАЯ ФУНКЦИЯ СОХРАНЕНИЯ С ВЫБОРОМ ДАТЫ ===
+async function sFixBal() {
+    const dVal = document.getElementById('fixDate').value;
+    if(!dVal) return alert('Выберите дату!');
+    
+    // Ставим время 00:00:00, чтобы запись упала вниз списка этого дня
+    const dStart = dVal + "T00:00:00.000Z";
+    
+    const cats = ['Stock_DV', 'Stock_Semi', 'Stock_Feed', 'Stock_Raw', 'WeightStock', 'Готовая', 'Пакеты', 'Пленка', 'Скотч 360 грамм', 'Мешки', 'Нитки', 'Этикетка'];
+    const updates = {};
+    let count = 0;
+    
+    // Кнопка сохранения
+    const btn = document.getElementById('btnFix');
+    btn.disabled = true; btn.innerText = "СОХРАНЯЮ...";
+
+    cats.forEach(cat => {
+        if(!data[cat]) return;
+        const sums = {};
+        Object.values(data[cat]).forEach(v => sums[v.name] = (sums[v.name]||0) + v.amount);
+        Object.keys(sums).forEach(name => {
+            const amount = sums[name];
+            if(Math.abs(amount) > 0.01) {
+                const key = db.child(cat).push().key;
+                updates[`/${cat}/${key}`] = { 
+                    name: name, 
+                    amount: 0, 
+                    date: dStart, 
+                    ts: dStart, 
+                    note: `🟢 ОСТАТОК: ${Math.round(amount)}`, 
+                    isFix: true 
+                };
+                count++;
+            }
+        });
+    });
+
+    try {
+        await db.update(updates);
+        alert(`Готово! Зафиксировано ${count} позиций на дату ${dVal}`);
+        closeModal();
+    } catch(e) {
+        alert("Ошибка: " + e);
+        btn.disabled = false; btn.innerText = "СОХРАНИТЬ";
+    }
+}
+
+// === ИСПРАВЛЕННЫЙ АРХИВ ПО ДАТАМ (БЕЗОПАСНЫЙ ID) ===
+function rInvD(c) { 
+    const dbK = (archSub === 'In' ? 'ArchIncoming' : 'ArchInvoices');
+    const d = data[dbK] || {};
+    const t = {}; 
+
+    Object.entries(d).forEach(([id, v]) => { 
+        if (!v.date) return; 
+        const dt = new Date(v.date), y = dt.getFullYear(), m = dt.getMonth(); 
+        if (!t[y]) t[y] = { m: {} }; 
+        if (!t[y].m[m]) t[y].m[m] = []; 
+        t[y].m[m].push({ ...v, id }); 
+    }); 
+
+    let h = ''; 
+    Object.keys(t).sort((a, b) => b - a).forEach(y => { 
+        const yId = 'y_' + y + '_' + Math.random().toString(36).substr(2, 5); 
+        h += `<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('${yId}')">${y}</div></div><div id="${yId}" class="arch-content">`; 
+        
+        h += `<div class="arch-m-grid">`; 
+        Object.keys(t[y].m).sort((a, b) => b - a).forEach(m => { 
+            const mId = 'm_' + y + m + '_' + Math.random().toString(36).substr(2, 5);
+            t[y].m[m].uniqueId = mId; 
+            h += `<div class="arch-tile-m" onclick="toggleF('${mId}')">${mths[m]}</div>`; 
+        }); 
+        h += `</div>`; 
+
+        Object.keys(t[y].m).sort((a, b) => b - a).forEach(m => { 
+            const mId = t[y].m[m].uniqueId; 
+            h += `<div id="${mId}" class="arch-content" style="grid-column:1/-1;">`; 
             
-            Object.keys(t[y].m[m].cl).sort().forEach(cl=>{ 
-                const uniqueId = `c${y}${m}${cl.replace(/\s/g,'')}`;
+            t[y].m[m].sort((a, b) => (b.date + b.ts).localeCompare(a.date + a.ts)).forEach(v => { 
+                if (dbK === 'ArchIncoming') { 
+                    h += `<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num || 'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`; 
+                    if (v.items) v.items.forEach(i => h += `<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`); 
+                    else h += `<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`; 
+                    h += `</div>`; 
+                    if (corrMode) h += `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ОТМЕНИТЬ</button>`; 
+                    h += `</div>`; 
+                } else { 
+                    h += `<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num || 'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; 
+                    if (v.items) v.items.forEach(i => h += drawShipItem(i)); 
+                    h += `</div>`; 
+                    if (corrMode) h += `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ВЕРНУТЬ</button>`; 
+                    h += `</div>`; 
+                } 
+            }); 
+            h += `</div>`; 
+        }); 
+        h += `</div>`; 
+    }); 
+    c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Архив пуст</div>'; 
+}
+
+// === ИСПРАВЛЕННЫЙ АРХИВ ПО КЛИЕНТАМ (БЕЗОПАСНЫЙ ID) ===
+function rInvC(c) { 
+    const dbK = (archSub === 'In' ? 'ArchIncoming' : 'ArchInvoices');
+    const d = data[dbK] || {};
+    const t = {}; 
+
+    Object.entries(d).forEach(([id, v]) => { 
+        if (!v.date) return; 
+        const dt = new Date(v.date), y = dt.getFullYear(), m = dt.getMonth(); 
+        const clName = v.client || v.supplier || 'Без имени'; 
+        if (!t[y]) t[y] = { m: {} }; 
+        if (!t[y].m[m]) t[y].m[m] = { cl: {} }; 
+        if (!t[y].m[m].cl[clName]) t[y].m[m].cl[clName] = []; 
+        t[y].m[m].cl[clName].push({ ...v, id }); 
+    }); 
+
+    let h = ''; 
+    Object.keys(t).sort((a, b) => b - a).forEach(y => { 
+        const yId = 'cy_' + y + '_' + Math.random().toString(36).substr(2, 5);
+        h += `<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('${yId}')">${y}</div></div><div id="${yId}" class="arch-content">`; 
+        
+        h += `<div class="arch-m-grid">`; 
+        Object.keys(t[y].m).sort((a, b) => b - a).forEach(m => { 
+            const mId = 'cm_' + y + m + '_' + Math.random().toString(36).substr(2, 5);
+            t[y].m[m].uid = mId; 
+            h += `<div class="arch-tile-m" onclick="toggleF('${mId}')">${mths[m]}</div>`; 
+        }); 
+        h += `</div>`; 
+
+        Object.keys(t[y].m).sort((a, b) => b - a).forEach(m => { 
+            const mId = t[y].m[m].uid;
+            h += `<div id="${mId}" class="arch-content" style="grid-column:1/-1;">`; 
+            
+            Object.keys(t[y].m[m].cl).sort().forEach(cl => { 
+                const uniqueId = 'cl_' + Math.random().toString(36).substr(2, 9);
                 const count = t[y].m[m].cl[cl].length;
-                h+=`<div class="arch-tile-c" style="margin-bottom:2px" onclick="toggleF('${uniqueId}')">${cl}<div class="arch-badge">${count}</div></div>`;
-                h+=`<div id="${uniqueId}" class="arch-content" style="margin-bottom:10px; border-left: 2px solid var(--p); padding-left: 5px;">`;
                 
-                t[y].m[m].cl[cl].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{ 
-                    if(dbK==='ArchIncoming'){ 
-                        h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`; 
-                        if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`); 
-                        else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`; 
-                        h+=`</div>`;
-                        if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ОТМЕНИТЬ</button>`;
-                        h+=`</div>`; 
+                h += `<div class="arch-tile-c" style="margin-bottom:2px" onclick="toggleF('${uniqueId}')">${cl}<div class="arch-badge">${count}</div></div>`;
+                h += `<div id="${uniqueId}" class="arch-content" style="margin-bottom:10px; border-left: 2px solid var(--p); padding-left: 5px;">`;
+                
+                t[y].m[m].cl[cl].sort((a, b) => (b.date + b.ts).localeCompare(a.date + a.ts)).forEach(v => { 
+                    if (dbK === 'ArchIncoming') { 
+                        h += `<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num || 'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`; 
+                        if (v.items) v.items.forEach(i => h += `<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`); 
+                        else h += `<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`; 
+                        h += `</div>`;
+                        if (corrMode) h += `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ОТМЕНИТЬ</button>`;
+                        h += `</div>`; 
                     } else { 
-                        h+=`<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; 
-                        if(v.items)v.items.forEach(i=>h+=drawShipItem(i)); 
-                        h+=`</div>`;
-                        if(corrMode)h+=`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ВЕРНУТЬ</button>`;
-                        h+=`</div>`; 
+                        h += `<div class="j-card"><div class="j-head">ОТГРУЗКА</div><div class="j-sub">${fd2(v.date)} №${v.num || 'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`; 
+                        if (v.items) v.items.forEach(i => h += drawShipItem(i)); 
+                        h += `</div>`;
+                        if (corrMode) h += `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${dbK}','${v.id}')">УДАЛИТЬ И ВЕРНУТЬ</button>`;
+                        h += `</div>`; 
                     } 
                 }); 
-                h+=`</div>`; 
+                h += `</div>`; 
             }); 
             
-            h+=`</div>`; 
+            h += `</div>`; 
         }); 
-        h+=`</div>`; 
+        h += `</div>`; 
     }); 
-    c.innerHTML=h||'Пусто'; 
+    c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Архив пуст</div>'; 
 }
 
 function makeSelect(id, cat, ph, sourceOverride, newLabel) { let opts = `<option value="">${ph}...</option>`; let list = []; if(sourceOverride) list = sourceOverride; else { if(cat === 'Stock_DV') { const rawSet = new Set(); gP(cat).forEach(full => rawSet.add(full.split(' [')[0])); list = Array.from(rawSet).sort(); } else { list = gP(cat); } } list.forEach(n => opts += `<option value="${n}">${n}</option>`); opts += `<option value="NEW" style="font-weight:bold;color:var(--p)">${newLabel || '+ НОВЫЙ ВИД'}</option>`; return `<select id="s_${id}" onchange="toggleInput('${id}')" style="width:100%">${opts}</select><input type="text" id="i_${id}" class="new-input" placeholder="Введите название" style="display:none;width:100%">`; }
@@ -586,7 +823,6 @@ function openModal(t, a1, a2){
     const td = new Date().toISOString().split('T')[0];
     aId = null; 
     
-    // ПРОВЕРКА: ЕСЛИ ЭТО ОДИН ИЗ НАШИХ ЦЕХОВ — ЗАПУСКАЕМ "ЗАВХОЗА"
     if(WS_CFG[t]) {
         renderWorkshopModal(t, ti, b, td);
         document.getElementById('mdl').style.display='flex';
@@ -621,6 +857,18 @@ function openModal(t, a1, a2){
             <button class="btn-main" id="btnS" onclick="sCorr()" style="margin-top:10px">СОХРАНИТЬ</button>
         `;
     }
+    else if(t==='fixBal'){
+        ti.innerText='Фиксация остатков';
+        b.innerHTML=`
+            <div style="text-align:center;margin-bottom:15px;color:#666;font-size:13px">
+                Выберите дату, на которую нужно зафиксировать "Начало периода".<br>
+                Запись сохранится на <b>00:00:00</b> этой даты.
+            </div>
+            <label class="l-t">ДАТА ФИКСАЦИИ</label>
+            <input type="date" id="fixDate" value="${td}" style="text-align:center;font-weight:900;font-size:18px">
+            <button class="btn-main" id="btnFix" onclick="sFixBal()" style="margin-top:15px;background:#f59e0b">СОХРАНИТЬ МЕТКУ</button>
+        `;
+    }
     else if(t==='fas'){
         let rL = []; gP('WeightStock').forEach(x => rL.push(`${x} (Покупная)`)); gP('Stock_DV').forEach(x => rL.push(`${x} (Склад ДВ)`)); rL.sort();
         ti.innerText='Фасовка';
@@ -628,14 +876,13 @@ function openModal(t, a1, a2){
     }
     else if(t==='addRaw'){
         ti.innerText='Приход Сырья';
-        // ИСПОЛЬЗУЕМ НОВЫЙ ФИЛЬТР gRawS()
-        b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gRawS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
+        b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gSuppRaw(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
     }
     else if(t==='inc'){
-        b.innerHTML=`<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:5px"><div><label class="l-t">ДАТА</label><input type="date" id="iD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="iNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАВЩИК</label>${makeSelect('iS','ArchIncoming','Поставщик',gS(),'+ НОВЫЙ')}</div><div style="margin-bottom:5px"><label class="l-t">НАИМЕНОВАНИЕ</label>${makeSelect('iN','WeightStock','Товар',gP('WeightStock'),'+ НОВЫЙ')}</div><div style="margin-bottom:15px"><label class="l-t">ВЕС (КГ)</label><input type="number" id="iA" placeholder="0"></div><button class="btn-main" style="background:var(--s)" onclick="sInc()">ПРИНЯТЬ НА СКЛАД ПОКУПНАЯ</button>`;
+        b.innerHTML=`<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:5px"><div><label class="l-t">ДАТА</label><input type="date" id="iD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="iNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАВЩИК</label>${makeSelect('iS','ArchIncoming','Поставщик',gSuppProd(),'+ НОВЫЙ')}</div><div style="margin-bottom:5px"><label class="l-t">НАИМЕНОВАНИЕ</label>${makeSelect('iN','WeightStock','Товар',gP('WeightStock'),'+ НОВЫЙ')}</div><div style="margin-bottom:15px"><label class="l-t">ВЕС (КГ)</label><input type="number" id="iA" placeholder="0"></div><button class="btn-main" style="background:var(--s)" onclick="sInc()">ПРИНЯТЬ НА СКЛАД ПОКУПНАЯ</button>`;
     }
     else if(t==='addMatPack'){
-        b.innerHTML=`<input type="date" id="pD" value="${td}">${makeSelect('pS','ArchPackIn','Поставщик',gS(),'+ НОВЫЙ')}${makeSelect('pN','Пакеты','Вид',gPack('Пакеты'))}<input type="number" id="pA" placeholder="Кол-во"><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИНЯТЬ</button>`;
+        b.innerHTML=`<input type="date" id="pD" value="${td}">${makeSelect('pS','ArchPackIn','Поставщик',gSuppPack(),'+ НОВЫЙ')}${makeSelect('pN','Пакеты','Вид',gPack('Пакеты'))}<input type="number" id="pA" placeholder="Кол-во"><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИНЯТЬ</button>`;
     }
     else if(t==='ship'){
         b.innerHTML=`<div class="grid" style="grid-template-columns:2fr 1fr"><div class="col"><label class="lt">ДАТА</label><input type="date" id="hD" value="${td}"></div><div class="col"><label class="lt">№ НАКЛ</label><input type="text" id="hNum" placeholder="№"></div></div><div style="margin:5px 0"><label class="lt">КЛИЕНТ</label>${makeSelect('hC', 'ArchInvoices', 'Клиент', gCl(), '+ НОВЫЙ')}</div><div class="z-head">ОТКУДА ГРУЗИМ:</div><div class="dash-grid" style="margin-bottom:10px;grid-template-columns:1fr 1fr"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Готовая')">ФАСОВКА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_DV')">ДВ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_Feed')">КОРМА</button></div><div id="shpR"></div><button class="btn-main" id="btnS" onclick="sShip()" style="margin-top:15px;background:var(--d)">ОТГРУЗИТЬ</button>`;
@@ -656,11 +903,10 @@ function renderWorkshopModal(type, titleEl, bodyEl, today) {
     const p = conf.prefix; // префикс (v, k, z)
     titleEl.innerText = conf.title;
     
-    // Списки для выпадающих меню
     const ops = getHistoryDeep('operator');
     const asts = getHistoryDeep('assistant');
-    const timesS = getHistoryDeep('timeStart'); if(timesS.length===0) timesS.push('07:00'); // ИСПРАВЛЕНО
-    const timesE = getHistoryDeep('timeEnd'); if(timesE.length===0) timesE.push('17:00'); // ИСПРАВЛЕНО
+    const timesS = getHistoryDeep('timeStart'); if(timesS.length===0) timesS.push('07:00');
+    const timesE = getHistoryDeep('timeEnd'); if(timesE.length===0) timesE.push('17:00');
 
     bodyEl.innerHTML = `
     <div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
@@ -738,7 +984,6 @@ function addGenRow(p, section) {
     if(section === 'DV') listSrc = gP('Stock_DV'); else if(section === 'Semi') listSrc = gP('Stock_Semi'); else listSrc = gP('Stock_Feed');
     const list = Array.from(new Set(listSrc)).sort();
     
-    // Генерация строки
     const makeRowSmart = (id) => { let opts = `<option value="">Выбрать...</option>`; list.forEach(x => opts += `<option value="${x}">${x}</option>`); opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`; return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`; };
     const wList = getHistoryDeep('weight'); let wOpts = '<option value="">Кг</option>'; wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`); wOpts += '<option value="NEW_ENTRY">(+)</option>';
     
@@ -777,10 +1022,8 @@ async function saveGen(type) {
     const p = conf.prefix;
     const btn = document.getElementById('btnS');
     
-    // !!! ИСПРАВЛЕНИЕ: ПРИНУДИТЕЛЬНЫЙ ПЕРЕСЧЕТ ПЕРЕД СОХРАНЕНИЕМ !!!
     calcGen(p);
 
-    // Сбор данных
     const rawName = getSmartVal(p+'RawItem'); const rawW = parseFloat(document.getElementById(p+'RawW').value)||0;
     const addName = getSmartVal(p+'AddItem'); const addW = parseFloat(document.getElementById(p+'AddW').value)||0;
     const dV = document.getElementById(p+'D').value + "T12:00:00Z"; 
@@ -820,7 +1063,6 @@ async function saveGen(type) {
         const repId = db.child(conf.db).push().key; 
         const updates = {};
 
-        // Списание сырья
         let rWH = document.getElementById(p+'WH').value; 
         updates[`/${rWH}/${db.child(rWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: conf.note+' Основа', fLink: repId };
         
@@ -829,7 +1071,6 @@ async function saveGen(type) {
             updates[`/${aWH}/${db.child(aWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: conf.note+' Добавка', fLink: repId }; 
         }
 
-        // Зачисление продукции
         items.forEach(i => {
             let dest = 'Stock_DV'; 
             let note = conf.note; 
@@ -851,7 +1092,6 @@ async function saveGen(type) {
             updates[`/${dest}/${db.child(dest).push().key}`] = { name: finalName, amount: amount, date: dV, ts: ts, note: note, fLink: repId };
         });
 
-        // Запись отчета
         updates[`/${conf.db}/${repId}`] = { 
             date: dV, ts: ts, link: repId, items: items, rawMix: rawDesc, 
             timeStart: tS, timeEnd: tE, operator: op, assistant: as, type: type 
@@ -895,7 +1135,6 @@ async function sFas() {
     const d=document.getElementById('fD').value,n=document.getElementById('fN').value,rawVal=document.getElementById('fRaw').value,s=document.getElementById('fS').value;
     const v=parseFloat(document.getElementById('fV').value)||0,p=parseFloat(document.getElementById('fP').value)||0,os=parseFloat(document.getElementById('fOs').value)||0;
     
-    // БЕЗОПАСНЫЙ РАСЧЕТ ВМЕСТО EVAL
     let vzStr=document.getElementById('fVz').value;
     let vzTotal = vzStr.split('+').reduce((acc, val) => {
         let num = parseFloat(val.replace(',', '.').trim());
@@ -920,7 +1159,6 @@ async function sFas() {
     } catch(e) { alert("Ошибка: " + e); btn.disabled = false; btn.innerText = "СОХРАНИТЬ"; }
 }
 
-// === SHIP FUNCTIONS ===
 function loadBulk(cat){
     const stock={}; 
     Object.values(data[cat]||{}).forEach(v=>{if(v)stock[v.name]=(stock[v.name]||0)+v.amount});
@@ -1000,7 +1238,6 @@ async function sRawInc(){
     if(!confirm('Принять сырье?'))return;
     const d=new Date().toISOString(); const dV=d;
     
-    // !!! ИМЯ ТЕПЕРЬ: СЫРЬЕ + ПОСТАВЩИК !!!
     const finalName = `${n} [${s}]`;
 
     const l=db.child('ArchIncoming').push().key;
@@ -1038,4 +1275,6 @@ async function renameItem(oldN, cat) {
 }
 
 window.onload=renderHome;
-</script></body></html>
+</script>
+</body>
+</html>
