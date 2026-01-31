@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v402 Stable</title>
+<title>Склад v506 "Эстет"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -125,6 +125,13 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script>
+// === КОНФИГУРАЦИЯ ЦЕХОВ ===
+const WS_CFG = {
+    'VIBRO': { title: 'Вибростол', db: 'Vibro_Report', prefix: 'v', note: 'Вибро' },
+    'KRUP':  { title: 'Крупорушка', db: 'Krup_Report',  prefix: 'k', note: 'Крупорушка' },
+    'ZSHM':  { title: 'ЗШМ Смена',  db: 'ZSHM_Report',  prefix: 'z', note: 'ЗШМ' }
+};
+
 function tryLogin() {
     const p = document.getElementById('appPass').value;
     if(p === '1111') {
@@ -141,7 +148,7 @@ const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https:/
 if(!firebase.apps.length)firebase.initializeApp(cfg);
 const db=firebase.database().ref('production'),auth=firebase.auth();
 
-let cur='Home',data={},aId=null,archSub='',corrMode=false,isLogged=false,incItems=[],vibroItems=[],krupItems=[];
+let cur='Home',data={},aId=null,archSub='',corrMode=false,isLogged=false;
 let corrCtx = {}; 
 
 async function logAction(obj) { try { await db.child('GlobalLog').push(obj); } catch(e){console.error(e)} }
@@ -181,13 +188,14 @@ window.delArchRec = (cat, id) => window.delRec(cat, id);
 
 const bP=["Арнаутка","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯНВ","ФЕВ","МАРТ","АПР","МАЙ","ИЮНЬ","ИЮЛЬ","АВГ","СЕНТ","ОКТ","НОЯБ","ДЕК"];
 const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]} ${parts[1]}:${parts[2]}`};const fd2=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};
-function closeModal(){document.getElementById('mdl').style.display='none';aId=null;incItems=[];vibroItems=[];krupItems=[];}
+function closeModal(){document.getElementById('mdl').style.display='none';aId=null;}
 function toggleF(id){const e=document.getElementById(id);e.style.display=e.style.display==='block'?'none':'block'}
 function toggleC(id, btn){ const e=document.getElementById(id); if(e.style.display==='block'){ e.style.display='none'; btn.style.background='#fff'; btn.style.borderColor='#e2e8f0'; } else { e.style.display='block'; btn.style.background='#eef2ff'; btn.style.borderColor='var(--p)'; } }
 
 const gP=(cat)=>{ let init=[]; if(cat==='WeightStock'||cat==='Готовая') init=bP; const s=new Set(init); const dbK=(cat==='WeightStock')?'WeightStock':(cat==='Stock_DV'?'Stock_DV':(cat==='Stock_Feed'?'Stock_Feed':(cat==='Stock_Raw'?'Stock_Raw':(cat==='Stock_Semi'?'Stock_Semi':'Готовая')))); if(data[dbK])Object.values(data[dbK]).forEach(v=>s.add(v.name)); return Array.from(s).filter(x=>x).sort(); };
 const gRaw=()=>{const s=new Set();if(data.Krup_Report)Object.values(data.Krup_Report).forEach(v=>{if(v.raw)s.add(v.raw)});return Array.from(s).sort();}
 const gS=()=>{const s=new Set();['ArchIncoming','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка'].forEach(k=>{if(data[k])Object.values(data[k]).forEach(v=>{if(v.supplier)s.add(v.supplier)})});return Array.from(s).filter(x=>x).sort();};
+const gRawS=()=>{const s=new Set();if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier)s.add(v.supplier)});return Array.from(s).filter(x=>x).sort();};
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort();};
 const gPack=(cat)=>{const s=new Set();if(cat==='Пакеты')szs.forEach(x=>s.add(x));if(cat==='Скотч')s.add('Скотч 360 грамм');if(cat==='Пленка')bP.forEach(x=>s.add(x));const dbK=cat==='Скотч'?'Скотч 360 грамм':cat;if(data[dbK])Object.values(data[dbK]).forEach(v=>{if(v.name)s.add(v.name)});return Array.from(s).filter(x=>x).sort();};
 
@@ -197,37 +205,44 @@ function renderHome(){
     document.body.classList.remove('nav-active');
     document.getElementById('act').innerHTML='';
     const logo=`<div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>`;
-    document.getElementById('cnt').innerHTML=`${logo}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockRoot')"><span>📦</span>Склад</div><div class="dash-item" onclick="setCat('ProdSub')"><span>⚙️</span>Производство</div><div class="dash-item" onclick="openModal('log')" style="color:#64748b"><span>📋</span>ЖУРНАЛ</div></div>`;
+    // КНОПКА СВОДНЫЙ ОТЧЕТ ТЕПЕРЬ ОБЫЧНАЯ
+    document.getElementById('cnt').innerHTML=`${logo}<div class="dash-grid">
+        <div class="dash-item" onclick="setCat('StockRoot')"><span>📦</span>Склад</div>
+        <div class="dash-item" onclick="setCat('ProdSub')"><span>⚙️</span>Производство</div>
+        <div class="dash-item" onclick="setCat('Consolidated')"><span>📊</span>СВОДНЫЙ ОТЧЕТ</div>
+        <div class="dash-item" onclick="openModal('log')" style="color:#64748b"><span>📋</span>ЖУРНАЛ</div>
+    </div>`;
     updNav();
 }
-function goBack(){const m={'StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','ArchPackIn':'PackSub'};let next=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')next=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(next);}
+function goBack(){const m={'StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home'};let next=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')next=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(next);}
 function setCat(c){cur=c;document.body.classList.add('nav-active');const a=document.getElementById('act'),ct=document.getElementById('cnt');a.innerHTML='';if(c==='Home'){renderHome();return}
 if(c==='StockRoot'){
-    a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:10px">
+    a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px">
         <button class="btn-main" style="background:var(--s);padding:10px 2px;font-size:10px" onclick="openModal('inc')">Приход</button>
         <button class="btn-main" style="background:var(--d);padding:10px 2px;font-size:10px" onclick="openModal('ship')">Отгрузка</button>
-        <button class="btn-main" style="background:#0ea5e9;padding:10px 2px;font-size:10px" onclick="openModal('addMatPack')">Приход Упаковки</button>
     </div>`;
     ct.innerHTML=`<div class="dash-grid">
         <div class="dash-item" onclick="setCat('StockList')">ФАСОВКА</div>
         <div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ</div>
-        
         <div class="dash-item" onclick="setCat('Stock_DV')">СКЛАД ДВ</div>
         <div class="dash-item" onclick="setCat('Stock_Feed')">КОРМА</div>
-        
         <div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЁ</div>
         <div class="dash-item" onclick="setCat('Stock_Semi')">ПОЛУФАБРИКАТ</div>
-        
         <div class="dash-item" onclick="setCat('PackSub')">УПАК. МАТ.</div>
         <div class="dash-item" onclick="setCat('Invoices')">АРХИВ НАКЛАДНЫХ</div>
-        
         <div id="corrTile" class="dash-item" onclick="toggleCorr()" style="grid-column:1/-1">КОРРЕКЦИЯ</div>
     </div>
     <div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`;
 }else if(c==='PackSub'){
     a.innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">Приход упаковки</button>`;
     ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛЕНКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТЫ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МЕШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЭТИКЕТКА</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="grid-column:1/-1;">АРХИВ УПАКОВКИ</div></div>`;
-}else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addKrup')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addVibro')">НОВАЯ ЗАПИСЬ</button>`;else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('addZSHM')">НОВАЯ СМЕНА</button>`;else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}loadData();updCorrBtn();updNav();}
+}else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;
+else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('KRUP')">НОВАЯ ЗАПИСЬ</button>`;
+else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('VIBRO')">НОВАЯ ЗАПИСЬ</button>`;
+else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('ZSHM')">НОВАЯ СМЕНА</button>`;
+else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}
+else if(c==='Consolidated'){ ct.innerHTML='<div style="text-align:center;padding:20px;color:#666">Загрузка...</div>'; loadData(); }
+loadData();updCorrBtn();updNav();}
 function toggleCorr(){corrMode=!corrMode;updCorrBtn();loadData();}
 function updCorrBtn(){
     const t=document.getElementById('corrTile');
@@ -251,7 +266,7 @@ function updCorrBtn(){
 }
 function updNav(){document.getElementById('navM').className=`${cur==='Home'?'nav-btn-active':''}`;document.getElementById('navB').className=`${cur!=='Home'?'nav-btn-active':''}`;}
 function switchShipTab(id){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tb_'+id).classList.add('active');document.querySelectorAll('.ship-sect').forEach(s=>s.classList.remove('active'));document.getElementById('sc_'+id).classList.add('active');}
-function loadData(){db.on('value',s=>{data=s.val()||{};const c=document.getElementById('cnt');if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub'].includes(cur))return;if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(cur==='Kruporushka')rKrup(c);else if(cur==='Vibro')rVibro(c);else if(cur==='ZSHM')rZSHM(c);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Stock_Raw')rRaw(c);else rGen(c);});}
+function loadData(){db.on('value',s=>{data=s.val()||{};const c=document.getElementById('cnt');if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub'].includes(cur))return;if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(cur==='Kruporushka')rKrup(c);else if(cur==='Vibro')rVibro(c);else if(cur==='ZSHM')rZSHM(c);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Stock_Raw')rRaw(c);else if(cur==='Consolidated')rConsolidated(c);else rGen(c);});}
 function toggleInput(id){const sel=document.getElementById('s_'+id),inp=document.getElementById('i_'+id);if(sel.value==='NEW'){sel.style.display='none';inp.style.display='block';inp.focus();}else{inp.style.display='none';}}
 
 function drawShipItem(str) {
@@ -260,6 +275,81 @@ function drawShipItem(str) {
     let n=p[0], a=p[1], u=p[2];
     if(!u) { u = bP.includes(n) ? 'шт' : 'кг'; }
     return `<div class="j-row"><span class="j-dots">${n}</span><span class="j-val">${a}${u}</span></div>`;
+}
+
+// === ОБНОВЛЕННЫЙ СВОДНЫЙ ОТЧЕТ (СТРОГО ПО ПОЛКАМ V506) ===
+function rConsolidated(c) {
+    const sumCat = (cats) => {
+        let res = {};
+        cats.forEach(catName => {
+            if(data[catName]) Object.values(data[catName]).forEach(v => {
+                res[v.name] = (res[v.name] || 0) + v.amount;
+            });
+        });
+        return res;
+    };
+
+    const drawSection = (title, dataObj, unit, color) => {
+        let items = Object.keys(dataObj).filter(k => Math.abs(dataObj[k]) > 0.1).sort();
+        if(items.length === 0) return '';
+        let h = `<div class="z-head" style="background:${color};color:#333;border:1px solid #ddd">${title}</div><div class="item-grid" style="grid-template-columns:1fr 1fr;">`;
+        items.forEach(k => {
+            let val = dataObj[k];
+            h += `<div class="item-card" style="text-align:left;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:11px;font-weight:700;color:#475569">${k}</span>
+                <span style="font-size:14px;font-weight:900;color:#0f172a">${Math.round(val)}<small style="font-size:9px;color:#94a3b8;margin-left:2px">${unit}</small></span>
+            </div>`;
+        });
+        return h + `</div>`;
+    };
+
+    let h = '<div style="padding-bottom:20px">';
+    
+    // 1. ФАСОВКА (Только Готовая) - ТЕПЕРЬ В ШТУКАХ
+    let fas = sumCat(['Готовая']);
+    h += drawSection('📦 ФАСОВКА', fas, 'шт', '#dbeafe');
+
+    // 2. СКЛАД ДВ (Только Stock_DV)
+    let dv = sumCat(['Stock_DV']);
+    h += drawSection('🏭 СКЛАД ДВ', dv, 'кг', '#bfdbfe');
+
+    // 3. ПОКУПНАЯ (Только WeightStock)
+    let wgh = sumCat(['WeightStock']);
+    h += drawSection('⚖️ ПОКУПНАЯ', wgh, 'кг', '#dcfce7');
+
+    // 4. СЫРЬЁ (Только Stock_Raw)
+    let raw = sumCat(['Stock_Raw']);
+    h += drawSection('🚜 СЫРЬЁ', raw, 'кг', '#bbf7d0');
+
+    // 5. ПОЛУФАБРИКАТ (Только Stock_Semi)
+    let semi = sumCat(['Stock_Semi']);
+    h += drawSection('⚙️ ПОЛУФАБРИКАТ', semi, 'кг', '#ffedd5');
+
+    // 6. КОРМА (Только Stock_Feed)
+    let feed = sumCat(['Stock_Feed']);
+    h += drawSection('🍂 КОРМА', feed, 'кг', '#fef3c7');
+
+    // 7. УПАКОВКА - РАЗБИТО ПО ПОЛКАМ
+    let packs = sumCat(['Пакеты']);
+    h += drawSection('🥡 ПАКЕТЫ', packs, 'шт', '#f1f5f9');
+
+    let film = sumCat(['Пленка']);
+    h += drawSection('🎞️ ПЛЕНКА', film, 'кг', '#f1f5f9');
+
+    let tape = sumCat(['Скотч 360 грамм']);
+    h += drawSection('🧴 СКОТЧ', tape, 'шт', '#f1f5f9');
+
+    let sacks = sumCat(['Мешки']);
+    h += drawSection('💰 МЕШКИ', sacks, 'шт', '#f1f5f9');
+
+    let thread = sumCat(['Нитки']);
+    h += drawSection('🧵 НИТКИ', thread, 'шт', '#f1f5f9');
+
+    let label = sumCat(['Этикетка']);
+    h += drawSection('🏷️ ЭТИКЕТКА', label, 'шт', '#f1f5f9');
+
+    h += '</div>';
+    c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Склады пусты</div>';
 }
 
 function renderByTiles(c, rawD, type) {
@@ -286,17 +376,9 @@ function renderByTiles(c, rawD, type) {
              gr[y][m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v => {
                 if(type==='LOG') {
                      if(v.type==='FAS') h+=`<div class="card"><b>ФАСОВКА: ${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
-                     else if(v.type==='KRUP') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>КРУПОРУШКА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
-                     else if(v.type==='VIBRO') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>ВИБРОСТОЛ${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                     }
-                     else if(v.type==='ZSHM') {
-                         let ts = v.timeStart ? ` (${v.timeStart}-${v.timeEnd})` : '';
-                         h+=`<div class="card"><b>ЗШМ СМЕНА${ts}</b> [${fd2(v.date)}]` + (v.operator ? `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator} / ${v.assistant}</div>` : '') + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                     else if(v.type==='KRUP' || v.type==='VIBRO' || v.type==='ZSHM') {
+                         let ts = (v.timeStart||'??') + ' — ' + (v.timeEnd||'??');
+                         h+=`<div class="card"><b>${WS_CFG[v.type].title}</b> [${fd2(v.date)}]` + `<div style="font-size:11px;color:#333;margin-bottom:5px;font-weight:bold">🕑 ${ts}</div>` + `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator||'-'} / ${v.assistant||'-'}</div>` + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
                      }
                      else if(v.type==='INC_RAW') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД СЫРЬЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div></div></div>`;
                      else if(v.type==='INC') h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХОД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`+v.items.map(i=>`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`).join('')+`</div></div>`;
@@ -305,9 +387,10 @@ function renderByTiles(c, rawD, type) {
                      else if(v.type==='CORR') h+=`<div class="j-card"><div class="j-head" style="color:#f59e0b">КОРРЕКЦИЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.name}</div><div class="j-body"><b>${v.amount}</b> (${v.reason})</div></div>`;
                 }
                 else if(type==='FAS') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delFas('${v.id}')">🗑️</button><b>${v.name.toUpperCase()}</b> [${fd2(v.date)}]<div class="report-line"><span>Сырье:</span><b>${v.prihod}кг [${v.rawItem}]</b></div><div class="report-line"><span>Выход:</span><b>${v.vyhod}шт</b></div><div class="report-line"><span>Пакеты:</span><b>${v.size} [${pk(v.vyhod, v.name)}шт]</b></div><div class="report-line"><span>Пленка:</span><b>${pl(v.vzial, v.ostatok)}кг</b></div><div class="report-line"><span>Скотч:</span><b>${v.scotch||0} шт</b></div></div>`;
-                else if(type==='KRUP') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delKrup('${v.id}')">🗑️</button><b>КРУПОРУШКА${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                else if(type==='VIBRO') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delVibro('${v.id}')">🗑️</button><b>ВИБРОСТОЛ${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
-                else if(type==='ZSHM') h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delZSHM('${v.id}')">🗑️</button><b>ЗШМ${v.timeStart ? ' ('+v.timeStart+')' : ''}</b> [${fd2(v.date)}]<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                else if(type==='KRUP' || type==='VIBRO' || type==='ZSHM') {
+                    let ts = (v.timeStart||'??') + ' — ' + (v.timeEnd||'??');
+                    h+=`<div class="card"><button class="del-rep-btn" onclick="event.stopPropagation();delRec('${WS_CFG[type].db}', '${v.id}')">🗑️</button><b>${WS_CFG[type].title}</b> [${fd2(v.date)}]` + `<div style="font-size:11px;color:#333;margin-bottom:5px;font-weight:bold">🕑 ${ts}</div>` + `<div style="font-size:11px;color:#333;margin-bottom:5px">👤 ${v.operator||'-'} / ${v.assistant||'-'}</div>` + `<div style="font-size:11px;color:#64748b">${v.rawMix}</div><hr style="opacity:0.2">` + v.items.map(i=>`<div class="report-line"><span>${i.n}</span><b>${i.q}м [${i.w}кг]</b></div>`).join('') + `</div>`;
+                }
              });
              h+=`</div>`;
         });
@@ -421,17 +504,16 @@ function openModal(t, a1, a2){
     const td = new Date().toISOString().split('T')[0];
     aId = null; 
     
-    // Если передан только первый аргумент и это ID (старый способ вызова для логов/отчетов)
+    // ПРОВЕРКА: ЕСЛИ ЭТО ОДИН ИЗ НАШИХ ЦЕХОВ — ЗАПУСКАЕМ "ЗАВХОЗА"
+    if(WS_CFG[t]) {
+        renderWorkshopModal(t, ti, b, td);
+        document.getElementById('mdl').style.display='flex';
+        return;
+    }
+
     if(arguments.length === 2 && (t!=='corr')) aId = a1;
 
-    vibroItems = []; krupItems = [];
-    const ops = getHistoryDeep('operator');
-    const asts = getHistoryDeep('assistant');
-    const timesS = getHistoryDeep('timeStart'); if(timesS.length===0) timesS.push('08:00');
-    const timesE = getHistoryDeep('timeEnd'); if(timesE.length===0) timesE.push('20:00');
-
     if(t==='corr'){
-        // a1 = category, a2 = name (гарантированная передача без ошибок парсинга)
         const cat = a1; 
         const name = a2;
         corrCtx = {cat, name};
@@ -462,24 +544,10 @@ function openModal(t, a1, a2){
         ti.innerText='Фасовка';
         b.innerHTML=`Дата:<input type="date" id="fD" value="${td}">Крупа:<select id="fN">${gP('Готовая').map(p=>`<option>${p}</option>`).join('')}</select>Списать:<select id="fRaw">${rL.map(p=>`<option>${p}</option>`).join('')}</select>Пакет:<select id="fS">${szs.map(s=>`<option>${s}</option>`).join('')}</select><input type="number" id="fP" placeholder="Сырье кг"><input type="number" id="fV" placeholder="Выход шт"><input type="text" id="fVz" placeholder="Взял пленки (через +)"><input type="number" id="fOs" placeholder="Остаток пленки"><button class="btn-main" id="btnS" onclick="sFas()">СОХРАНИТЬ</button>`;
     }
-    else if(t==='addVibro'){
-        ti.innerText='Вибростол';
-        b.innerHTML=`<div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;"><div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;"><div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="vD" value="${td}" class="smart-sel"></div></div><div><label class="l-t">С</label>${makeSmart('vTS', timesS, '08:00')}</div><div><label class="l-t">ДО</label>${makeSmart('vTE', timesE, '20:00')}</div></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div><label class="l-t">ОПЕРАТОР</label>${makeSmart('vOp', ops, 'Фамилия')}</div><div><label class="l-t">ПОМОЩНИК</label>${makeSmart('vAs', asts, 'Фамилия')}</div></div></div><div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="vWH" class="smart-sel" onchange="updVibroRaw()"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырьё</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="vRawCont"></div> <input type="number" id="vRawW" placeholder="Кг" class="smart-sel" readonly style="background:#eef2ff;font-weight:900;color:#333"></div><div style="font-size:10px;color:#888;font-weight:700;margin-top:5px;border-top:1px dashed #ddd;padding-top:5px">ДОБАВКА</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="vAddWH" class="smart-sel" onchange="updVibroAdd()"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырьё</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="vAddNameCont"></div> <input type="number" id="vAddW" placeholder="Кг" class="smart-sel" oninput="recalcVibro()"></div></div><div class="z-head">ГОТОВАЯ ПРОДУКЦИЯ (СКЛАД ДВ)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="vRowsDV"></div><button class="btn-main" style="background:#fff; color:#3b82f6; border:1px solid #3b82f6; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('DV')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#d97706;background:#fef3c7;">ПОЛУФАБРИКАТ (СКЛАД П/Ф)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="vRowsSemi"></div><button class="btn-main" style="background:#fff; color:#d97706; border:1px solid #d97706; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('Semi')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#b45309;background:#fff7ed;">ОТХОДЫ (СКЛАД КОРМА)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="vRowsFeed"></div><button class="btn-main" style="background:#fff; color:#b45309; border:1px solid #b45309; margin-bottom:15px; font-size:10px" onclick="addVibroRowVisual('Feed')">+ ДОБАВИТЬ РЯД</button><button class="btn-main" id="btnS" onclick="sVibro()">СОХРАНИТЬ СМЕНУ</button>`;
-        setTimeout(()=>{ updVibroRaw(); updVibroAdd(); addVibroRowVisual('DV'); addVibroRowVisual('Semi'); addVibroRowVisual('Feed'); }, 50);
-    }
-    else if(t==='addKrup'){
-        ti.innerText='Крупорушка Отчет';
-        b.innerHTML=`<div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;"><div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;"><div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="kD" value="${td}" class="smart-sel"></div></div><div><label class="l-t">С</label>${makeSmart('kTS', timesS, '08:00')}</div><div><label class="l-t">ДО</label>${makeSmart('kTE', timesE, '20:00')}</div></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div><label class="l-t">ОПЕРАТОР</label>${makeSmart('kOp', ops, 'Фамилия')}</div><div><label class="l-t">ПОМОЩНИК</label>${makeSmart('kAs', asts, 'Фамилия')}</div></div></div><div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="kWH" class="smart-sel" onchange="updKrupRaw()"><option value="Stock_Raw">Сырьё</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="kRawCont"></div> <input type="number" id="kRawW" placeholder="Кг" class="smart-sel" readonly style="background:#eef2ff;font-weight:900;color:#333"></div><div style="font-size:10px;color:#888;font-weight:700;margin-top:5px;border-top:1px dashed #ddd;padding-top:5px">ДОБАВКА</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="kAddWH" class="smart-sel" onchange="updKrupAdd()"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырьё</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="kAddNameCont"></div> <input type="number" id="kAddW" placeholder="Кг" class="smart-sel" oninput="recalcKrup()"></div></div><div class="z-head">ГОТОВАЯ ПРОДУКЦИЯ (СКЛАД ДВ)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="kRowsDV"></div><button class="btn-main" style="background:#fff; color:#3b82f6; border:1px solid #3b82f6; margin-bottom:15px; font-size:10px" onclick="addKrupRowVisual('DV')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#d97706;background:#fef3c7;">ПОЛУФАБРИКАТ (СКЛАД П/Ф)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="kRowsSemi"></div><button class="btn-main" style="background:#fff; color:#d97706; border:1px solid #d97706; margin-bottom:15px; font-size:10px" onclick="addKrupRowVisual('Semi')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#b45309;background:#fff7ed;">ОТХОДЫ (СКЛАД КОРМА)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="kRowsFeed"></div><button class="btn-main" style="background:#fff; color:#b45309; border:1px solid #b45309; margin-bottom:15px; font-size:10px" onclick="addKrupRowVisual('Feed')">+ ДОБАВИТЬ РЯД</button><button class="btn-main" id="btnS" onclick="sKrup()">СОХРАНИТЬ СМЕНУ</button>`;
-        setTimeout(()=>{ updKrupRaw(); updKrupAdd(); addKrupRowVisual('DV'); addKrupRowVisual('Semi'); addKrupRowVisual('Feed'); }, 50);
-    }
     else if(t==='addRaw'){
         ti.innerText='Приход Сырья';
-        b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
-    }
-    else if(t==='addZSHM'){
-         document.getElementById('mT').innerText='ЗШМ Смена';
-         b.innerHTML=`<div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;"><div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;"><div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="zD" value="${td}" class="smart-sel"></div></div><div><label class="l-t">С</label>${makeSmart('zTS', timesS, '08:00')}</div><div><label class="l-t">ДО</label>${makeSmart('zTE', timesE, '20:00')}</div></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div><label class="l-t">ОПЕРАТОР</label>${makeSmart('zOp', ops, 'Фамилия')}</div><div><label class="l-t">ПОМОЩНИК</label>${makeSmart('zAs', asts, 'Фамилия')}</div></div></div><div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee"><div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="zWH" class="smart-sel" onchange="updZSHMRaw()"><option value="Stock_Raw">Сырьё</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="zRawCont"></div> <input type="number" id="zRawW" placeholder="Кг" class="smart-sel" readonly style="background:#eef2ff;font-weight:900;color:#333"></div><div style="font-size:10px;color:#888;font-weight:700;margin-top:5px;border-top:1px dashed #ddd;padding-top:5px">ДОБАВКА</div><div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;"><select id="zAddWH" class="smart-sel" onchange="updZSHMAdd()"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырьё</option><option value="Stock_DV">ДВ</option><option value="WeightStock">Покупная</option></select><div id="zAddNameCont"></div> <input type="number" id="zAddW" placeholder="Кг" class="smart-sel" oninput="recalcZSHM()"></div></div><div class="z-head">ГОТОВАЯ ПРОДУКЦИЯ (СКЛАД ДВ)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="zRowsDV"></div><button class="btn-main" style="background:#fff; color:#3b82f6; border:1px solid #3b82f6; margin-bottom:15px; font-size:10px" onclick="addZSHMRowVisual('DV')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#d97706;background:#fef3c7;">ПОЛУФАБРИКАТ (СКЛАД П/Ф)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="zRowsSemi"></div><button class="btn-main" style="background:#fff; color:#d97706; border:1px solid #d97706; margin-bottom:15px; font-size:10px" onclick="addZSHMRowVisual('Semi')">+ ДОБАВИТЬ РЯД</button><div class="z-head" style="color:#b45309;background:#fff7ed;">ОТХОДЫ (СКЛАД КОРМА)</div><div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div><div id="zRowsFeed"></div><button class="btn-main" style="background:#fff; color:#b45309; border:1px solid #b45309; margin-bottom:15px; font-size:10px" onclick="addZSHMRowVisual('Feed')">+ ДОБАВИТЬ РЯД</button><button class="btn-main" id="btnS" onclick="sZSHM()">СОХРАНИТЬ СМЕНУ</button>`;
-        setTimeout(()=>{ updZSHMRaw(); updZSHMAdd(); addZSHMRowVisual('DV'); addZSHMRowVisual('Semi'); addZSHMRowVisual('Feed'); }, 50);
+        // ИСПОЛЬЗУЕМ НОВЫЙ ФИЛЬТР gRawS()
+        b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gRawS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
     }
     else if(t==='inc'){
         b.innerHTML=`<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:5px"><div><label class="l-t">ДАТА</label><input type="date" id="iD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="iNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАВЩИК</label>${makeSelect('iS','ArchIncoming','Поставщик',gS(),'+ НОВЫЙ')}</div><div style="margin-bottom:5px"><label class="l-t">НАИМЕНОВАНИЕ</label>${makeSelect('iN','WeightStock','Товар',gP('WeightStock'),'+ НОВЫЙ')}</div><div style="margin-bottom:15px"><label class="l-t">ВЕС (КГ)</label><input type="number" id="iA" placeholder="0"></div><button class="btn-main" style="background:var(--s)" onclick="sInc()">ПРИНЯТЬ НА СКЛАД ПОКУПНАЯ</button>`;
@@ -490,6 +558,7 @@ function openModal(t, a1, a2){
     else if(t==='ship'){
         b.innerHTML=`<div class="grid" style="grid-template-columns:2fr 1fr"><div class="col"><label class="lt">ДАТА</label><input type="date" id="hD" value="${td}"></div><div class="col"><label class="lt">№ НАКЛ</label><input type="text" id="hNum" placeholder="№"></div></div><div style="margin:5px 0"><label class="lt">КЛИЕНТ</label>${makeSelect('hC', 'ArchInvoices', 'Клиент', gCl(), '+ НОВЫЙ')}</div><div class="z-head">ОТКУДА ГРУЗИМ:</div><div class="dash-grid" style="margin-bottom:10px;grid-template-columns:1fr 1fr"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Готовая')">ФАСОВКА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_DV')">ДВ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_Feed')">КОРМА</button></div><div id="shpR"></div><button class="btn-main" id="btnS" onclick="sShip()" style="margin-top:15px;background:var(--d)">ОТГРУЗИТЬ</button>`;
     }
+    else if(t==='clean') { rCleanList(b); document.getElementById('mT').innerText='Чистка списков'; }
     else { openModalLegacy(t,a1); } 
     document.getElementById('mdl').style.display='flex';
 }
@@ -499,7 +568,224 @@ function openModalLegacy(t,id) {
     if(t==='log'){ rGlobalLog(b);document.getElementById('mT').innerText='Журнал действий'; }
 }
 
-// === SAVE FUNCTIONS ===
+// === УНИВЕРСАЛЬНЫЙ ЗАВХОЗ (RENDERER) ===
+function renderWorkshopModal(type, titleEl, bodyEl, today) {
+    const conf = WS_CFG[type];
+    const p = conf.prefix; // префикс (v, k, z)
+    titleEl.innerText = conf.title;
+    
+    // Списки для выпадающих меню
+    const ops = getHistoryDeep('operator');
+    const asts = getHistoryDeep('assistant');
+    const timesS = getHistoryDeep('timeStart'); if(timesS.length===0) timesS.push('07:00'); // ИСПРАВЛЕНО
+    const timesE = getHistoryDeep('timeEnd'); if(timesE.length===0) timesE.push('17:00'); // ИСПРАВЛЕНО
+
+    bodyEl.innerHTML = `
+    <div style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+        <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div><label class="l-t">ДАТА</label><div class="smart-wrap"><input type="date" id="${p}D" value="${today}" class="smart-sel"></div></div>
+            <div><label class="l-t">С</label>${makeSmart(p+'TS', timesS, '07:00')}</div>
+            <div><label class="l-t">ДО</label>${makeSmart(p+'TE', timesE, '17:00')}</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div><label class="l-t">ОПЕРАТОР</label>${makeSmart(p+'Op', ops, 'Фамилия')}</div>
+            <div><label class="l-t">ПОМОЩНИК</label>${makeSmart(p+'As', asts, 'Фамилия')}</div>
+        </div>
+    </div>
+    
+    <div style="background:#f9fafb;padding:8px;border-radius:8px;margin-bottom:10px;border:1px solid #eee">
+        <div style="font-size:10px;color:#888;font-weight:700">ОСНОВНОЕ СЫРЬЕ</div>
+        <div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;">
+            <select id="${p}WH" class="smart-sel" onchange="updGenRaw('${p}')">
+                <option value="Stock_Semi">П/Ф</option>
+                <option value="Stock_Raw" ${type!=='VIBRO'?'selected':''}>Сырьё</option>
+                <option value="Stock_DV">ДВ</option>
+                <option value="WeightStock">Покупная</option>
+            </select>
+            <div id="${p}RawCont"></div> 
+            <input type="number" id="${p}RawW" placeholder="Кг" class="smart-sel" readonly style="background:#eef2ff;font-weight:900;color:#333">
+        </div>
+        
+        <div style="font-size:10px;color:#888;font-weight:700;margin-top:5px;border-top:1px dashed #ddd;padding-top:5px">ДОБАВКА</div>
+        <div style="display:grid; grid-template-columns:1fr 1.5fr 0.8fr; gap:5px; margin-bottom:5px;">
+            <select id="${p}AddWH" class="smart-sel" onchange="updGenAdd('${p}')">
+                <option value="Stock_Semi">П/Ф</option>
+                <option value="Stock_Raw">Сырьё</option>
+                <option value="Stock_DV">ДВ</option>
+                <option value="WeightStock">Покупная</option>
+            </select>
+            <div id="${p}AddNameCont"></div> 
+            <input type="number" id="${p}AddW" placeholder="Кг" class="smart-sel" oninput="calcGen('${p}')">
+        </div>
+    </div>
+
+    <div class="z-head">ГОТОВАЯ ПРОДУКЦИЯ (СКЛАД ДВ)</div>
+    <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+    <div id="${p}RowsDV"></div>
+    <button class="btn-main" style="background:#fff; color:#3b82f6; border:1px solid #3b82f6; margin-bottom:15px; font-size:10px" onclick="addGenRow('${p}','DV')">+ ДОБАВИТЬ РЯД</button>
+
+    <div class="z-head" style="color:#d97706;background:#fef3c7;">ПОЛУФАБРИКАТ (СКЛАД П/Ф)</div>
+    <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+    <div id="${p}RowsSemi"></div>
+    <button class="btn-main" style="background:#fff; color:#d97706; border:1px solid #d97706; margin-bottom:15px; font-size:10px" onclick="addGenRow('${p}','Semi')">+ ДОБАВИТЬ РЯД</button>
+
+    <div class="z-head" style="color:#b45309;background:#fff7ed;">ОТХОДЫ (СКЛАД КОРМА)</div>
+    <div class="z-col-h"><div>НАЗВАНИЕ</div><div>МЕШ</div><div>ВЕС</div><div>ОСТ</div></div>
+    <div id="${p}RowsFeed"></div>
+    <button class="btn-main" style="background:#fff; color:#b45309; border:1px solid #b45309; margin-bottom:15px; font-size:10px" onclick="addGenRow('${p}','Feed')">+ ДОБАВИТЬ РЯД</button>
+
+    <button class="btn-main" id="btnS" onclick="saveGen('${type}')">СОХРАНИТЬ СМЕНУ</button>
+    `;
+
+    setTimeout(()=>{ 
+        updGenRaw(p); 
+        updGenAdd(p); 
+        addGenRow(p, 'DV'); 
+        addGenRow(p, 'Semi'); 
+        addGenRow(p, 'Feed'); 
+    }, 50);
+}
+
+// === УНИВЕРСАЛЬНЫЕ ФУНКЦИИ ===
+function updGenRaw(p) { const wh = document.getElementById(p+'WH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById(p+'RawCont').innerHTML = makeSmart(p+'RawItem', list, 'Сырье'); }
+function updGenAdd(p) { const wh = document.getElementById(p+'AddWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById(p+'AddNameCont').innerHTML = makeSmart(p+'AddItem', list, 'Добавка'); }
+
+function addGenRow(p, section) {
+    const rid = Date.now() + Math.floor(Math.random()*1000); 
+    let listSrc;
+    if(section === 'DV') listSrc = gP('Stock_DV'); else if(section === 'Semi') listSrc = gP('Stock_Semi'); else listSrc = gP('Stock_Feed');
+    const list = Array.from(new Set(listSrc)).sort();
+    
+    // Генерация строки
+    const makeRowSmart = (id) => { let opts = `<option value="">Выбрать...</option>`; list.forEach(x => opts += `<option value="${x}">${x}</option>`); opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`; return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`; };
+    const wList = getHistoryDeep('weight'); let wOpts = '<option value="">Кг</option>'; wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`); wOpts += '<option value="NEW_ENTRY">(+)</option>';
+    
+    const rowHTML = `<div class="dyn-row" id="${p}row_${rid}" data-sect="${section}">
+        ${makeRowSmart(`${p}N_${rid}`)}
+        <input type="number" id="${p}Q_${rid}" class="u-inp" placeholder="0" oninput="calcGen('${p}')">
+        <div class="smart-wrap"><select id="s_${p}W_${rid}" class="smart-sel" onchange="checkSmart('${p}W_${rid}')">${wOpts}</select><input type="number" id="i_${p}W_${rid}" class="smart-inp" oninput="calcGen('${p}')"></div>
+        <input type="number" id="${p}L_${rid}" class="u-inp" placeholder="кг" oninput="calcGen('${p}')">
+        <button class="del-row-btn" onclick="document.getElementById('${p}row_${rid}').remove(); calcGen('${p}')">✕</button>
+    </div>`;
+    
+    let contId = p+'RowsDV'; if(section === 'Semi') contId = p+'RowsSemi'; if(section === 'Feed') contId = p+'RowsFeed'; 
+    document.getElementById(contId).insertAdjacentHTML('beforeend', rowHTML);
+}
+
+function calcGen(p) {
+    let total = 0; 
+    const calcContainer = (contId) => { 
+        const rows = document.getElementById(contId).children; 
+        for (let row of rows) { 
+            const rid = row.id.split('_')[1]; 
+            const q = parseFloat(document.getElementById(`${p}Q_${rid}`).value) || 0; 
+            let w = parseFloat(document.getElementById(`i_${p}W_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_${p}W_${rid}`).value) || 0; 
+            const l = parseFloat(document.getElementById(`${p}L_${rid}`).value) || 0; 
+            total += (q * w) + l; 
+        } 
+    };
+    calcContainer(p+'RowsDV'); calcContainer(p+'RowsSemi'); calcContainer(p+'RowsFeed'); 
+    const addW = parseFloat(document.getElementById(p+'AddW').value) || 0; 
+    const res = total - addW; 
+    document.getElementById(p+'RawW').value = res > 0 ? res.toFixed(1) : 0;
+}
+
+async function saveGen(type) {
+    const conf = WS_CFG[type];
+    const p = conf.prefix;
+    const btn = document.getElementById('btnS');
+    
+    // !!! ИСПРАВЛЕНИЕ: ПРИНУДИТЕЛЬНЫЙ ПЕРЕСЧЕТ ПЕРЕД СОХРАНЕНИЕМ !!!
+    calcGen(p);
+
+    // Сбор данных
+    const rawName = getSmartVal(p+'RawItem'); const rawW = parseFloat(document.getElementById(p+'RawW').value)||0;
+    const addName = getSmartVal(p+'AddItem'); const addW = parseFloat(document.getElementById(p+'AddW').value)||0;
+    const dV = document.getElementById(p+'D').value + "T12:00:00Z"; 
+    const ts = new Date().toISOString();
+    const op = getSmartVal(p+'Op'); const as = getSmartVal(p+'As'); 
+    const tS = getSmartVal(p+'TS'); const tE = getSmartVal(p+'TE');
+
+    if(!rawName || rawW <= 0) return alert('Ошибка: Проверьте основное сырье или добавьте продукцию');
+
+    const items = []; let totalProd = 0;
+    const harvest = (contId, sectionType) => { 
+        const rows = document.getElementById(contId).children; 
+        for (let row of rows) { 
+            const rid = row.id.split('_')[1]; 
+            let n = getSmartVal(`${p}N_${rid}`); if(!n) continue; 
+            let q = parseFloat(document.getElementById(`${p}Q_${rid}`).value) || 0; 
+            let w = parseFloat(document.getElementById(`i_${p}W_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_${p}W_${rid}`).value) || 0; 
+            let l = parseFloat(document.getElementById(`${p}L_${rid}`).value) || 0; 
+            if (q > 0 || l > 0) { 
+                items.push({n, q, w, l, type: sectionType}); 
+                totalProd += (q * w) + l; 
+            } 
+        } 
+    };
+    harvest(p+'RowsDV', 'DV'); harvest(p+'RowsSemi', 'Semi'); harvest(p+'RowsFeed', 'Feed');
+
+    if(items.length === 0) return alert('Добавьте хоть одну строку продукции');
+
+    let rawDesc = `${rawName} (${rawW}кг)`; 
+    if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
+
+    if(!confirm(`${conf.title}: Сохранить смену?\n\nВход: ${rawDesc}\nВыход: ${totalProd.toFixed(1)}кг`)) return;
+    
+    btn.disabled = true; btn.innerText = "СОХРАНЯЮ...";
+
+    try {
+        const repId = db.child(conf.db).push().key; 
+        const updates = {};
+
+        // Списание сырья
+        let rWH = document.getElementById(p+'WH').value; 
+        updates[`/${rWH}/${db.child(rWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: conf.note+' Основа', fLink: repId };
+        
+        if(addName && addW > 0) { 
+            let aWH = document.getElementById(p+'AddWH').value; 
+            updates[`/${aWH}/${db.child(aWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: conf.note+' Добавка', fLink: repId }; 
+        }
+
+        // Зачисление продукции
+        items.forEach(i => {
+            let dest = 'Stock_DV'; 
+            let note = conf.note; 
+            let finalName = i.n;
+            
+            if(i.type === 'DV') { 
+                dest = 'Stock_DV'; 
+                let cleanName = i.n.replace(/\s\[.*?\]/g, '').trim();
+                finalName = (i.q > 0 ? `${cleanName} [${i.w}кг]` : cleanName); 
+            } else if(i.type === 'Semi') { 
+                dest = 'Stock_Semi'; 
+                note = conf.note + ' П/Ф'; 
+            } else if(i.type === 'Feed') { 
+                dest = 'Stock_Feed'; 
+                note = conf.note + ' Отходы'; 
+            }
+            
+            let amount = (i.q * i.w) + i.l; 
+            updates[`/${dest}/${db.child(dest).push().key}`] = { name: finalName, amount: amount, date: dV, ts: ts, note: note, fLink: repId };
+        });
+
+        // Запись отчета
+        updates[`/${conf.db}/${repId}`] = { 
+            date: dV, ts: ts, link: repId, items: items, rawMix: rawDesc, 
+            timeStart: tS, timeEnd: tE, operator: op, assistant: as, type: type 
+        };
+
+        await db.update(updates);
+        logAction({type: type, date: dV, items: items, rawMix: rawDesc, timeStart: tS, operator: op});
+        closeModal();
+
+    } catch(e) { 
+        alert("Ошибка: " + e); 
+        btn.disabled = false; btn.innerText = "СОХРАНИТЬ СМЕНУ"; 
+    }
+}
+
+// === SAVE FUNCTIONS FOR OTHERS ===
 async function sCorr() {
     const btn = document.getElementById('btnS');
     const d = document.getElementById('cD').value;
@@ -526,8 +812,14 @@ async function sFas() {
     const btn=document.getElementById('btnS');
     const d=document.getElementById('fD').value,n=document.getElementById('fN').value,rawVal=document.getElementById('fRaw').value,s=document.getElementById('fS').value;
     const v=parseFloat(document.getElementById('fV').value)||0,p=parseFloat(document.getElementById('fP').value)||0,os=parseFloat(document.getElementById('fOs').value)||0;
-    let vzStr=document.getElementById('fVz').value.replace(/,/g,'.');
-    let vzTotal=0; try{vzTotal=eval(vzStr.replace(/[^-+0-9.]/g,''))||0}catch(e){vzTotal=0}
+    
+    // БЕЗОПАСНЫЙ РАСЧЕТ ВМЕСТО EVAL
+    let vzStr=document.getElementById('fVz').value;
+    let vzTotal = vzStr.split('+').reduce((acc, val) => {
+        let num = parseFloat(val.replace(',', '.').trim());
+        return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+
     btn.disabled = true; btn.innerText = "СОХРАНЯЮ...";
     try {
         const k=(n==="Кутя")?19.8:9.9; const sp=-Math.round(v/k); const plUsed=Math.abs(vzTotal-os); const scUsed=parseFloat(((v*0.12)/360).toFixed(1));
@@ -544,134 +836,6 @@ async function sFas() {
         logAction({type:'FAS', date:dV, name:n, rawItem:rawName, size:s, vyhod:v, prihod:p, vzial:vzTotal, ostatok:os, scotch:scUsed});
         closeModal();
     } catch(e) { alert("Ошибка: " + e); btn.disabled = false; btn.innerText = "СОХРАНИТЬ"; }
-}
-
-async function sVibro() {
-    const btn = document.getElementById('btnS');
-    const rawName = getSmartVal('vRawItem'); const rawW = parseFloat(document.getElementById('vRawW').value)||0;
-    const addName = getSmartVal('vAddItem'); const addW = parseFloat(document.getElementById('vAddW').value)||0;
-    const dV = document.getElementById('vD').value + "T12:00:00Z"; const ts = new Date().toISOString();
-    const op = getSmartVal('vOp'); const as = getSmartVal('vAs'); const tS = getSmartVal('vTS'); const tE = getSmartVal('vTE');
-    if(!rawName || rawW <= 0) return alert('Ошибка сырья');
-    const items = []; let totalProd = 0;
-    const harvest = (contId, type) => {
-        const rows = document.getElementById(contId).children;
-        for (let row of rows) {
-            const rid = row.id.split('_')[1];
-            let n = getSmartVal(`vN_${rid}`); if(!n) continue;
-            let q = parseFloat(document.getElementById(`vQ_${rid}`).value) || 0;
-            let w = parseFloat(document.getElementById(`i_vW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_vW_${rid}`).value) || 0;
-            let l = parseFloat(document.getElementById(`vL_${rid}`).value) || 0;
-            if (q > 0 || l > 0) { items.push({n, q, w, l, type}); totalProd += (q * w) + l; }
-        }
-    };
-    harvest('vRowsDV', 'DV'); harvest('vRowsSemi', 'Semi'); harvest('vRowsFeed', 'Feed');
-    if(items.length === 0) return alert('Пусто');
-    let rawDesc = `${rawName} (${rawW}кг)`; if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
-    if(!confirm(`Сохранить смену?\n\nВход: ${rawDesc}\nВыход: ${totalProd.toFixed(1)}кг`)) return;
-    btn.disabled = true; btn.innerText = "СОХРАНЯЮ...";
-    try {
-        const vId = db.child('Vibro_Report').push().key; const updates = {};
-        let rWH = document.getElementById('vWH').value; updates[`/${rWH}/${db.child(rWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: 'Вибростол Основа', fLink: vId };
-        if(addName && addW > 0) { let aWH = document.getElementById('vAddWH').value; updates[`/${aWH}/${db.child(aWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: 'Вибростол Добавка', fLink: vId }; }
-        items.forEach(i => {
-            let dest = 'Stock_DV'; let note = 'Вибростол'; let finalName = i.n;
-            if(i.type === 'DV') { dest = 'Stock_DV'; finalName = (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n); } else if(i.type === 'Semi') { dest = 'Stock_Semi'; note = 'Вибро П/Ф'; } else if(i.type === 'Feed') { dest = 'Stock_Feed'; note = 'Вибро Отходы'; }
-            let amount = (i.q * i.w) + i.l; updates[`/${dest}/${db.child(dest).push().key}`] = { name: finalName, amount: amount, date: dV, ts: ts, note: note, fLink: vId };
-        });
-        updates[`/Vibro_Report/${vId}`] = { date: dV, ts: ts, link: vId, items: items, rawMix: rawDesc, timeStart: tS, timeEnd: tE, operator: op, assistant: as };
-        await db.update(updates); logAction({type:'VIBRO', date:dV, items:items, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
-        closeModal();
-    } catch(e) { alert("Ошибка: " + e); btn.disabled = false; btn.innerText = "СОХРАНИТЬ СМЕНУ"; }
-}
-function updVibroRaw() { const wh = document.getElementById('vWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('vRawCont').innerHTML = makeSmart('vRawItem', list, 'Сырье'); }
-function updVibroAdd() { const wh = document.getElementById('vAddWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('vAddNameCont').innerHTML = makeSmart('vAddItem', list, 'Добавка'); }
-function addVibroRowVisual(section) {
-    const rid = Date.now() + Math.floor(Math.random()*1000); let listSrc;
-    if(section === 'DV') listSrc = gP('Stock_DV'); else if(section === 'Semi') listSrc = gP('Stock_Semi'); else listSrc = gP('Stock_Feed');
-    const list = Array.from(new Set(listSrc)).sort();
-    const makeRowSmart = (id) => { let opts = `<option value="">Выбрать...</option>`; list.forEach(x => opts += `<option value="${x}">${x}</option>`); opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`; return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`; };
-    const wList = getHistoryDeep('weight'); let wOpts = '<option value="">Кг</option>'; wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`); wOpts += '<option value="NEW_ENTRY">(+)</option>';
-    const rowHTML = `<div class="dyn-row" id="vrow_${rid}" data-sect="${section}">${makeRowSmart(`vN_${rid}`)}<input type="number" id="vQ_${rid}" class="u-inp" placeholder="0" oninput="calcVibroDynamic()"><div class="smart-wrap"><select id="s_vW_${rid}" class="smart-sel" onchange="checkSmart('vW_${rid}')">${wOpts}</select><input type="number" id="i_vW_${rid}" class="smart-inp" oninput="calcVibroDynamic()"></div><input type="number" id="vL_${rid}" class="u-inp" placeholder="кг" oninput="calcVibroDynamic()"><button class="del-row-btn" onclick="document.getElementById('vrow_${rid}').remove(); calcVibroDynamic()">✕</button></div>`;
-    let contId = 'vRowsDV'; if(section === 'Semi') contId = 'vRowsSemi'; if(section === 'Feed') contId = 'vRowsFeed'; document.getElementById(contId).insertAdjacentHTML('beforeend', rowHTML);
-}
-function calcVibroDynamic() {
-    let total = 0; const calcContainer = (contId) => { const rows = document.getElementById(contId).children; for (let row of rows) { const rid = row.id.split('_')[1]; const q = parseFloat(document.getElementById(`vQ_${rid}`).value) || 0; let w = parseFloat(document.getElementById(`i_vW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_vW_${rid}`).value) || 0; const l = parseFloat(document.getElementById(`vL_${rid}`).value) || 0; total += (q * w) + l; } };
-    calcContainer('vRowsDV'); calcContainer('vRowsSemi'); calcContainer('vRowsFeed'); const addW = parseFloat(document.getElementById('vAddW').value) || 0; const res = total - addW; document.getElementById('vRawW').value = res > 0 ? res.toFixed(1) : 0;
-}
-
-async function sKrup() {
-    const btn = document.getElementById('btnS');
-    const rawName = getSmartVal('kRawItem'); const rawW = parseFloat(document.getElementById('kRawW').value)||0;
-    const addName = getSmartVal('kAddItem'); const addW = parseFloat(document.getElementById('kAddW').value)||0;
-    const dV = document.getElementById('kD').value + "T12:00:00Z"; const ts = new Date().toISOString();
-    const op = getSmartVal('kOp'); const as = getSmartVal('kAs'); const tS = getSmartVal('kTS'); const tE = getSmartVal('kTE');
-    if(!rawName || rawW <= 0) return alert('Ошибка расчета основного сырья');
-    const items = []; let totalProd = 0;
-    const harvest = (contId, type) => { const rows = document.getElementById(contId).children; for (let row of rows) { const rid = row.id.split('_')[1]; let n = getSmartVal(`kN_${rid}`); if(!n) continue; let q = parseFloat(document.getElementById(`kQ_${rid}`).value) || 0; let w = parseFloat(document.getElementById(`i_kW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_kW_${rid}`).value) || 0; let l = parseFloat(document.getElementById(`kL_${rid}`).value) || 0; if (q > 0 || l > 0) { items.push({n, q, w, l, type}); totalProd += (q * w) + l; } } };
-    harvest('kRowsDV', 'DV'); harvest('kRowsSemi', 'Semi'); harvest('kRowsFeed', 'Feed');
-    if(items.length === 0) return alert('Добавьте продукцию');
-    let rawDesc = `${rawName} (${rawW}кг)`; if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
-    if(!confirm(`Сохранить смену?\n\nВход: ${rawDesc}\nВыход: ${totalProd.toFixed(1)}кг`)) return;
-    if(btn) btn.disabled = true; closeModal();
-    const kId = db.child('Krup_Report').push().key; const updates = {};
-    let rWH = document.getElementById('kWH').value; updates[`/${rWH}/${db.child(rWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: 'Крупорушка Основа', fLink: kId };
-    if(addName && addW > 0) { let aWH = document.getElementById('kAddWH').value; updates[`/${aWH}/${db.child(aWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: 'Крупорушка Добавка', fLink: kId }; }
-    items.forEach(i => { let dest = 'Stock_DV'; let note = 'Крупорушка'; let finalName = i.n; if(i.type === 'DV') { dest = 'Stock_DV'; finalName = (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n); } else if(i.type === 'Semi') { dest = 'Stock_Semi'; note = 'Крупорушка П/Ф'; } else if(i.type === 'Feed') { dest = 'Stock_Feed'; note = 'Крупорушка Отходы'; } let amount = (i.q * i.w) + i.l; updates[`/${dest}/${db.child(dest).push().key}`] = { name: finalName, amount: amount, date: dV, ts: ts, note: note, fLink: kId }; });
-    updates[`/Krup_Report/${kId}`] = { date: dV, ts: ts, link: kId, items: items, rawMix: rawDesc, timeStart: tS, timeEnd: tE, operator: op, assistant: as };
-    await db.update(updates); logAction({type:'KRUP', date:dV, items:items, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
-    krupItems = []; document.getElementById('kRowsDV').innerHTML = ''; document.getElementById('kRowsSemi').innerHTML = ''; document.getElementById('kRowsFeed').innerHTML = '';
-}
-function updKrupRaw() { const wh = document.getElementById('kWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('kRawCont').innerHTML = makeSmart('kRawItem', list, 'Сырье'); }
-function updKrupAdd() { const wh = document.getElementById('kAddWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('kAddNameCont').innerHTML = makeSmart('kAddItem', list, 'Добавка'); }
-function addKrupRowVisual(section) {
-    const rid = Date.now() + Math.floor(Math.random()*1000); let listSrc; if(section === 'DV') listSrc = gP('Stock_DV'); else if(section === 'Semi') listSrc = gP('Stock_Semi'); else listSrc = gP('Stock_Feed');
-    const list = Array.from(new Set(listSrc)).sort();
-    const makeRowSmart = (id) => { let opts = `<option value="">Выбрать...</option>`; list.forEach(x => opts += `<option value="${x}">${x}</option>`); opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`; return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`; };
-    const wList = getHistoryDeep('weight'); let wOpts = '<option value="">Кг</option>'; wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`); wOpts += '<option value="NEW_ENTRY">(+)</option>';
-    const rowHTML = `<div class="dyn-row" id="krow_${rid}" data-sect="${section}">${makeRowSmart(`kN_${rid}`)}<input type="number" id="kQ_${rid}" class="u-inp" placeholder="0" oninput="calcKrupDynamic()"><div class="smart-wrap"><select id="s_kW_${rid}" class="smart-sel" onchange="checkSmart('kW_${rid}')">${wOpts}</select><input type="number" id="i_kW_${rid}" class="smart-inp" oninput="calcKrupDynamic()"></div><input type="number" id="kL_${rid}" class="u-inp" placeholder="кг" oninput="calcKrupDynamic()"><button class="del-row-btn" onclick="document.getElementById('krow_${rid}').remove(); calcKrupDynamic()">✕</button></div>`;
-    let contId = 'kRowsDV'; if(section === 'Semi') contId = 'kRowsSemi'; if(section === 'Feed') contId = 'kRowsFeed'; document.getElementById(contId).insertAdjacentHTML('beforeend', rowHTML);
-}
-function calcKrupDynamic() {
-    let total = 0; const calcContainer = (contId) => { const rows = document.getElementById(contId).children; for (let row of rows) { const rid = row.id.split('_')[1]; const q = parseFloat(document.getElementById(`kQ_${rid}`).value) || 0; let w = parseFloat(document.getElementById(`i_kW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_kW_${rid}`).value) || 0; const l = parseFloat(document.getElementById(`kL_${rid}`).value) || 0; total += (q * w) + l; } };
-    calcContainer('kRowsDV'); calcContainer('kRowsSemi'); calcContainer('kRowsFeed'); const addW = parseFloat(document.getElementById('kAddW').value) || 0; const res = total - addW; document.getElementById('kRawW').value = res > 0 ? res.toFixed(1) : 0;
-}
-
-async function sZSHM() {
-    const btn = document.getElementById('btnS');
-    const rawName = getSmartVal('zRawItem'); const rawW = parseFloat(document.getElementById('zRawW').value)||0;
-    const addName = getSmartVal('zAddItem'); const addW = parseFloat(document.getElementById('zAddW').value)||0;
-    const dV = document.getElementById('zD').value + "T12:00:00Z"; const ts = new Date().toISOString();
-    const op = getSmartVal('zOp'); const as = getSmartVal('zAs'); const tS = getSmartVal('zTS'); const tE = getSmartVal('zTE');
-    if(!rawName || rawW <= 0) return alert('Ошибка расчета основного сырья');
-    const items = []; let totalProd = 0;
-    const harvest = (contId, type) => { const rows = document.getElementById(contId).children; for (let row of rows) { const rid = row.id.split('_')[1]; let n = getSmartVal(`zN_${rid}`); if(!n) continue; let q = parseFloat(document.getElementById(`zQ_${rid}`).value) || 0; let w = parseFloat(document.getElementById(`i_zW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_zW_${rid}`).value) || 0; let l = parseFloat(document.getElementById(`zL_${rid}`).value) || 0; if (q > 0 || l > 0) { items.push({n, q, w, l, type}); totalProd += (q * w) + l; } } };
-    harvest('zRowsDV', 'DV'); harvest('zRowsSemi', 'Semi'); harvest('zRowsFeed', 'Feed');
-    if(items.length === 0) return alert('Добавьте продукцию');
-    let rawDesc = `${rawName} (${rawW}кг)`; if(addName && addW > 0) rawDesc += ` + ${addName} (${addW}кг)`;
-    if(!confirm(`Сохранить смену?\n\nВход: ${rawDesc}\nВыход: ${totalProd.toFixed(1)}кг`)) return;
-    if(btn) btn.disabled = true; closeModal();
-    const zId = db.child('ZSHM_Report').push().key; const updates = {};
-    let rWH = document.getElementById('zWH').value; updates[`/${rWH}/${db.child(rWH).push().key}`] = { name: rawName, amount: -rawW, date: dV, ts: ts, note: 'ЗШМ Основа', fLink: zId };
-    if(addName && addW > 0) { let aWH = document.getElementById('zAddWH').value; updates[`/${aWH}/${db.child(aWH).push().key}`] = { name: addName, amount: -addW, date: dV, ts: ts, note: 'ЗШМ Добавка', fLink: zId }; }
-    items.forEach(i => { let dest = 'Stock_DV'; let note = 'ЗШМ'; let finalName = i.n; if(i.type === 'DV') { dest = 'Stock_DV'; finalName = (i.q > 0 ? `${i.n} [${i.w}кг]` : i.n); } else if(i.type === 'Semi') { dest = 'Stock_Semi'; note = 'ЗШМ П/Ф'; } else if(i.type === 'Feed') { dest = 'Stock_Feed'; note = 'ЗШМ Отходы'; } let amount = (i.q * i.w) + i.l; updates[`/${dest}/${db.child(dest).push().key}`] = { name: finalName, amount: amount, date: dV, ts: ts, note: note, fLink: zId }; });
-    updates[`/ZSHM_Report/${zId}`] = { date: dV, ts: ts, link: zId, items: items, rawMix: rawDesc, timeStart: tS, timeEnd: tE, operator: op, assistant: as };
-    await db.update(updates); logAction({type:'ZSHM', date:dV, items:items, rawMix:rawDesc, timeStart:tS, timeEnd:tE, operator:op, assistant:as});
-    document.getElementById('zRowsDV').innerHTML = ''; document.getElementById('zRowsSemi').innerHTML = ''; document.getElementById('zRowsFeed').innerHTML = '';
-}
-function updZSHMRaw() { const wh = document.getElementById('zWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('zRawCont').innerHTML = makeSmart('zRawItem', list, 'Сырье'); }
-function updZSHMAdd() { const wh = document.getElementById('zAddWH').value; let list = Array.from(new Set(gP(wh))).sort(); document.getElementById('zAddNameCont').innerHTML = makeSmart('zAddItem', list, 'Добавка'); }
-function addZSHMRowVisual(section) {
-    const rid = Date.now() + Math.floor(Math.random()*1000); let listSrc; if(section === 'DV') listSrc = gP('Stock_DV'); else if(section === 'Semi') listSrc = gP('Stock_Semi'); else listSrc = gP('Stock_Feed');
-    const list = Array.from(new Set(listSrc)).sort();
-    const makeRowSmart = (id) => { let opts = `<option value="">Выбрать...</option>`; list.forEach(x => opts += `<option value="${x}">${x}</option>`); opts += `<option value="NEW_ENTRY" style="color:blue">(+) Новый</option>`; return `<div class="smart-wrap"><select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${opts}</select><input type="text" id="i_${id}" class="smart-inp"></div>`; };
-    const wList = getHistoryDeep('weight'); let wOpts = '<option value="">Кг</option>'; wList.forEach(w => wOpts += `<option value="${w}">${w}</option>`); wOpts += '<option value="NEW_ENTRY">(+)</option>';
-    const rowHTML = `<div class="dyn-row" id="zrow_${rid}" data-sect="${section}">${makeRowSmart(`zN_${rid}`)}<input type="number" id="zQ_${rid}" class="u-inp" placeholder="0" oninput="calcZSHM()"><div class="smart-wrap"><select id="s_zW_${rid}" class="smart-sel" onchange="checkSmart('zW_${rid}')">${wOpts}</select><input type="number" id="i_zW_${rid}" class="smart-inp" oninput="calcZSHM()"></div><input type="number" id="zL_${rid}" class="u-inp" placeholder="кг" oninput="calcZSHM()"><button class="del-row-btn" onclick="document.getElementById('zrow_${rid}').remove(); calcZSHM()">✕</button></div>`;
-    let contId = 'zRowsDV'; if(section === 'Semi') contId = 'zRowsSemi'; if(section === 'Feed') contId = 'zRowsFeed'; document.getElementById(contId).insertAdjacentHTML('beforeend', rowHTML);
-}
-function calcZSHM() {
-    let total = 0; const calcContainer = (contId) => { const rows = document.getElementById(contId).children; for (let row of rows) { const rid = row.id.split('_')[1]; const q = parseFloat(document.getElementById(`zQ_${rid}`).value) || 0; let w = parseFloat(document.getElementById(`i_zW_${rid}`).value); if(!w) w = parseFloat(document.getElementById(`s_zW_${rid}`).value) || 0; const l = parseFloat(document.getElementById(`zL_${rid}`).value) || 0; total += (q * w) + l; } };
-    calcContainer('zRowsDV'); calcContainer('zRowsSemi'); calcContainer('zRowsFeed'); const addW = parseFloat(document.getElementById('zAddW').value) || 0; const res = total - addW; document.getElementById('zRawW').value = res > 0 ? res.toFixed(1) : 0;
 }
 
 // === SHIP FUNCTIONS ===
@@ -753,10 +917,14 @@ async function sRawInc(){
     if(!a)return;
     if(!confirm('Принять сырье?'))return;
     const d=new Date().toISOString(); const dV=d;
+    
+    // !!! ИМЯ ТЕПЕРЬ: СЫРЬЕ + ПОСТАВЩИК !!!
+    const finalName = `${n} [${s}]`;
+
     const l=db.child('ArchIncoming').push().key;
     const updates={};
     updates['/ArchIncoming/'+l]={date:dV,supplier:s,name:n,amount:a,ts:d};
-    updates['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:n,amount:a,date:dV,note:'Вх '+s,fLink:l,ts:d};
+    updates['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:finalName,amount:a,date:dV,note:'Вх '+s,fLink:l,ts:d};
     await db.update(updates);
     logAction({type:'INC_RAW', date:dV, supplier:s, name:n, amount:a});
     closeModal();
