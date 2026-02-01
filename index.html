@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v511 "Фундамент"</title>
+<title>Склад v512 "Отчетность"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -103,6 +103,10 @@ input:focus, select:focus { border-color: var(--p); background: #f8fafc; }
 .del-rep-btn { position: absolute; top: 5px; right: 5px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 99; opacity: 0.3; transition: 0.2s; }
 .del-rep-btn:active { opacity: 1; transform: scale(1.1); }
 
+/* DAY REPORT */
+.day-rep-box { background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 12px; color: #333; white-space: pre-wrap; margin-bottom: 10px; }
+.dr-h { font-weight: 900; border-bottom: 1px dashed #94a3b8; margin: 10px 0 5px; color: #000; text-transform: uppercase; }
+
 /* --- СТИЛИ ДЛЯ ПЕЧАТИ --- */
 @media print {
     body { background: white; padding: 0; }
@@ -190,7 +194,6 @@ window.delInvoiceFull = async function(cat, id) {
     }
 };
 
-// === УДАЛЕНИЕ ОТЧЕТОВ ЦЕХОВ С ВОЗВРАТОМ ===
 window.delWorkshopReportFull = async function(dbName, id) {
     if(!confirm('Удалить отчет производства и вернуть все материалы/продукцию на склад?')) return;
     const updates = {};
@@ -213,7 +216,6 @@ window.delWorkshopReportFull = async function(dbName, id) {
     }
 };
 
-// === УДАЛЕНИЕ ФАСОВКИ С ВОЗВРАТОМ (НОВАЯ ФУНКЦИЯ) ===
 window.delFasFull = async function(id) {
     if(!confirm('Удалить отчет фасовки?\nВНИМАНИЕ: Все материалы (пленка, пакеты, крупа) вернутся на склад, готовая продукция спишется.')) return;
     const updates = {};
@@ -359,6 +361,13 @@ function rConsolidated(c) {
     };
 
     let h = '<div id="print-area" style="padding-bottom:20px">';
+    
+    // КНОПКА ДНЕВНОГО ОТЧЕТА
+    h += `<div style="margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn-main" onclick="openModal('dayRep')" style="background:#4f46e5;border:1px solid #4338ca">📅 ДНЕВНОЙ ОТЧЕТ</button>
+        <button class="btn-main" onclick="shareRep()" style="background:#fff;color:#4f46e5;border:1px solid #4f46e5">📤 ОТПРАВИТЬ СВОДКУ</button>
+    </div>`;
+    
     let fas = sumCat(['Готовая']); h += drawSection('📦 ФАСОВКА', fas, 'шт', '#dbeafe');
     let dv = sumCat(['Stock_DV']); h += drawSection('🏭 СКЛАД ДВ', dv, 'кг', '#bfdbfe');
     let wgh = sumCat(['WeightStock']); h += drawSection('⚖️ ПОКУПНАЯ', wgh, 'кг', '#dcfce7');
@@ -373,18 +382,13 @@ function rConsolidated(c) {
     let label = sumCat(['Этикетка']); h += drawSection('🏷️ ЭТИКЕТКА', label, 'шт', '#f1f5f9');
     h += '</div>';
     
-    h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px">
-        <button class="btn-main" onclick="printRep()" style="background:#334155">🖨️ ПЕЧАТЬ</button>
-        <button class="btn-main" onclick="shareRep()" style="background:#2563eb">📤 ОТПРАВИТЬ</button>
-    </div>
-    <div style="margin-top:15px;border-top:1px dashed #ccc;padding-top:15px">
+    h += `<div style="margin-top:15px;border-top:1px dashed #ccc;padding-top:15px">
         <button class="btn-main" onclick="openModal('fixBal')" style="background:#f59e0b;color:#fff;border:1px solid #d97706">🔒 ЗАФИКСИРОВАТЬ НАЧАЛО МЕСЯЦА</button>
         <div style="font-size:10px;color:#666;text-align:center;margin-top:5px">Создать метку "Остаток" в истории</div>
     </div>`;
     c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Склады пусты</div>';
 }
 
-function printRep() { window.print(); }
 function shareRep() {
     let txt = "📊 СВОДНЫЙ ОТЧЕТ [" + new Date().toLocaleDateString() + "]\n\n";
     const getTxt = (cat, title, unit) => {
@@ -487,10 +491,8 @@ function showH(c, k) {
         }
     });
     
-    // СОРТИРУЕМ ТЕКУЩИЙ МЕСЯЦ: НОВЫЕ СВЕРХУ (DESC)
     currentList.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts));
 
-    // ДОБАВЛЯЕМ ОСТАТОК В КОНЕЦ СПИСКА (КАК САМОЕ СТАРОЕ СОБЫТИЕ)
     if(incomingBalance !== 0) {
         currentList.push({
             d: curMonthKey + '-01',
@@ -502,7 +504,6 @@ function showH(c, k) {
     }
 
     let h = '<div style="margin-top:10px">';
-
     const sortedMonths = Object.keys(archives).sort().reverse();
     if(sortedMonths.length > 0) {
         h += `<div class="arch-y-grid" style="margin-bottom:15px">`;
@@ -532,14 +533,12 @@ function showH(c, k) {
     } else {
         h += `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">В этом месяце операций еще не было</div>`;
     }
-
     h += '</div>';
     b.innerHTML = h;
     document.getElementById('mdl').style.display = 'flex';
 }
 
 function renderHistRow(c, v, isTable=false) {
-    // ОТРИСОВКА ВХОДЯЩЕГО ОСТАТКА (ЗЕЛЕНАЯ СТРОКА)
     if(v.isBalance) {
         return `<div style="background:#ecfccb;padding:10px;border-radius:8px;margin:5px 0;font-size:12px;color:#365314;display:flex;justify-content:space-between;align-items:center;border:1px solid #bef264;">
             <span style="font-weight:900">⬇ ${v.n}</span>
@@ -571,14 +570,11 @@ async function sFixBal() {
     const dVal = document.getElementById('fixDate').value;
     if(!dVal) return alert('Выберите дату!');
     
-    // Ставим время 00:00:00, чтобы запись упала вниз списка этого дня
     const dStart = dVal + "T00:00:00.000Z";
-    
     const cats = ['Stock_DV', 'Stock_Semi', 'Stock_Feed', 'Stock_Raw', 'WeightStock', 'Готовая', 'Пакеты', 'Пленка', 'Скотч 360 грамм', 'Мешки', 'Нитки', 'Этикетка'];
     const updates = {};
     let count = 0;
     
-    // Кнопка сохранения
     const btn = document.getElementById('btnFix');
     btn.disabled = true; btn.innerText = "СОХРАНЯЮ...";
 
@@ -703,7 +699,6 @@ function openModal(t, a1, a2){
     const td = new Date().toISOString().split('T')[0];
     aId = null; 
     
-    // ПРОВЕРКА: ЕСЛИ ЭТО ОДИН ИЗ НАШИХ ЦЕХОВ — ЗАПУСКАЕМ "ЗАВХОЗА"
     if(WS_CFG[t]) {
         renderWorkshopModal(t, ti, b, td);
         document.getElementById('mdl').style.display='flex';
@@ -745,7 +740,6 @@ function openModal(t, a1, a2){
     }
     else if(t==='addRaw'){
         ti.innerText='Приход Сырья';
-        // ИСПОЛЬЗУЕМ НОВЫЙ ФИЛЬТР gRawS()
         b.innerHTML=`Название:${makeSelect('rN','Stock_Raw','Название')}Поставщик:${makeSelect('rSupp','','Поставщик',gRawS(),'+ НОВЫЙ ПОСТАВЩИК')}Вес (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИНЯТЬ</button>`;
     }
     else if(t==='inc'){
@@ -758,8 +752,107 @@ function openModal(t, a1, a2){
         b.innerHTML=`<div class="grid" style="grid-template-columns:2fr 1fr"><div class="col"><label class="lt">ДАТА</label><input type="date" id="hD" value="${td}"></div><div class="col"><label class="lt">№ НАКЛ</label><input type="text" id="hNum" placeholder="№"></div></div><div style="margin:5px 0"><label class="lt">КЛИЕНТ</label>${makeSelect('hC', 'ArchInvoices', 'Клиент', gCl(), '+ НОВЫЙ')}</div><div class="z-head">ОТКУДА ГРУЗИМ:</div><div class="dash-grid" style="margin-bottom:10px;grid-template-columns:1fr 1fr"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Готовая')">ФАСОВКА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_DV')">ДВ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_Feed')">КОРМА</button></div><div id="shpR"></div><button class="btn-main" id="btnS" onclick="sShip()" style="margin-top:15px;background:var(--d)">ОТГРУЗИТЬ</button>`;
     }
     else if(t==='clean') { rCleanList(b); document.getElementById('mT').innerText='Чистка списков'; }
+    else if(t==='fixBal') { ti.innerText='Фиксация остатков'; b.innerHTML=`<p style="font-size:12px;color:#666">Зафиксировать текущие остатки как "Входящий остаток" на начало выбранного дня?</p><input type="date" id="fixDate" value="${td}"><button class="btn-main" id="btnFix" onclick="sFixBal()" style="background:#f59e0b">СОХРАНИТЬ МЕТКУ</button>`; }
+    else if(t==='dayRep') { 
+        ti.innerText = 'Дневной отчет';
+        b.innerHTML = `<label class="l-t">ВЫБЕРИТЕ ДАТУ</label><input type="date" id="repDate" value="${td}" style="margin-bottom:15px"><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`;
+    }
     else { openModalLegacy(t,a1); } 
     document.getElementById('mdl').style.display='flex';
+}
+
+function genDayReport() {
+    const dVal = document.getElementById('repDate').value;
+    if(!dVal) return;
+    const dateStr = dVal.split('-').reverse().join('.'); // dd.mm.yyyy
+    const rep = { inc: [], out: {}, used: {}, prod: {} };
+    
+    // 1. ПРИХОД (ArchIncoming + ArchPackIn)
+    if(data.ArchIncoming) Object.values(data.ArchIncoming).forEach(v => {
+        if(v.date && v.date.startsWith(dVal)) rep.inc.push(`${v.name} (${v.supplier}) ${v.amount}кг`);
+    });
+    if(data.ArchPackIn) Object.values(data.ArchPackIn).forEach(v => {
+        if(v.date && v.date.startsWith(dVal)) rep.inc.push(`${v.name} (${v.supplier}) ${v.amount}шт`);
+    });
+
+    // 2. ОТГРУЖЕНО
+    if(data.ArchInvoices) Object.values(data.ArchInvoices).forEach(v => {
+        if(v.date && v.date.startsWith(dVal)) {
+            v.items.forEach(i => {
+                let parts = i.split('|');
+                if(parts.length < 2 && i.includes(':')) parts = i.split(':');
+                let name = parts[0], am = parseFloat(parts[1]) || 0, u = parts[2] || 'кг';
+                if(!rep.out[name]) rep.out[name] = {val:0, u:u};
+                rep.out[name].val += am;
+            });
+        }
+    });
+
+    // 3. ПРОИЗВОДСТВО & ФАСОВКА
+    const addUsed = (n, a, u) => { if(!n)return; if(!rep.used[n]) rep.used[n]={val:0,u:u}; rep.used[n].val += a; };
+    const addProd = (n, a, u) => { if(!n)return; if(!rep.prod[n]) rep.prod[n]={val:0,u:u}; rep.prod[n].val += a; };
+
+    // Фасовка
+    if(data.Фасовка) Object.values(data.Фасовка).forEach(v => {
+        if(v.date && v.date.startsWith(dVal)) {
+            addUsed(v.rawItem, parseFloat(v.prihod), 'кг'); // Сырье
+            addProd(v.name, parseFloat(v.vyhod), 'шт'); // Готовая
+        }
+    });
+
+    // Цеха
+    ['Vibro_Report', 'Krup_Report', 'ZSHM_Report'].forEach(dbName => {
+        if(data[dbName]) Object.values(data[dbName]).forEach(v => {
+            if(v.date && v.date.startsWith(dVal)) {
+                // Пытаемся взять сырье из строки (просто отобразим строку, т.к. там может быть микс)
+                if(v.rawMix) {
+                    // Очистка строки для ключа
+                    let cleanMix = v.rawMix; // "Гречка (1000кг)"
+                    // Пробуем извлечь число для суммы, если формат совпадает
+                    let match = cleanMix.match(/^(.*)\s\((\d+(\.\d+)?)кг\)$/);
+                    if(match) { addUsed(match[1], parseFloat(match[2]), 'кг'); }
+                    else { addUsed(cleanMix, 0, ''); } // Если формат сложный, просто добавим как текст
+                }
+                // Продукция
+                if(v.items) v.items.forEach(i => {
+                    let wTotal = (i.q * i.w) + i.l;
+                    addProd(i.n, wTotal, 'кг');
+                });
+            }
+        });
+    });
+
+    // ГЕНЕРАЦИЯ HTML
+    let h = `<div class="day-rep-box">Отчёт за ${dateStr}`;
+    
+    h += `<div class="dr-h">Приход:</div>`;
+    if(rep.inc.length) rep.inc.forEach(l => h += `${l}\n`); else h += `-\n`;
+
+    h += `<div class="dr-h">Отгружено:</div>`;
+    let outKeys = Object.keys(rep.out).sort();
+    if(outKeys.length) outKeys.forEach(k => h += `${k} ${parseFloat(rep.out[k].val.toFixed(1))}${rep.out[k].u}\n`); else h += `-\n`;
+
+    h += `<div class="dr-h">Переработано:</div>`;
+    let usedKeys = Object.keys(rep.used).sort();
+    if(usedKeys.length) usedKeys.forEach(k => {
+        let val = rep.used[k].val;
+        h += `${k} ${val > 0 ? parseFloat(val.toFixed(1)) + rep.used[k].u : ''}\n`;
+    }); else h += `-\n`;
+
+    h += `<div class="dr-h">Произведено:</div>`;
+    let prodKeys = Object.keys(rep.prod).sort();
+    if(prodKeys.length) prodKeys.forEach(k => h += `${k} ${parseFloat(rep.prod[k].val.toFixed(1))}${rep.prod[k].u}\n`); else h += `-\n`;
+    
+    h += `</div>`;
+    h += `<button class="btn-main" onclick="copyDayRep()" style="background:#334155">КОПИРОВАТЬ</button>`;
+    
+    document.getElementById('mB').innerHTML = h;
+}
+
+function copyDayRep() {
+    const el = document.querySelector('.day-rep-box');
+    if(!el) return;
+    navigator.clipboard.writeText(el.innerText).then(() => alert('Скопировано!')).catch(e => alert('Ошибка копирования'));
 }
 
 function openModalLegacy(t,id) {
