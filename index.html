@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v512 "Отчетность"</title>
+<title>Склад v514 "Движение"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -765,7 +765,7 @@ function genDayReport() {
     const dVal = document.getElementById('repDate').value;
     if(!dVal) return;
     const dateStr = dVal.split('-').reverse().join('.'); // dd.mm.yyyy
-    const rep = { inc: [], out: {}, used: {}, prod: {} };
+    const rep = { inc: [], out: {}, used: {}, prod: {}, pack: {} };
     
     // 1. ПРИХОД (ArchIncoming + ArchPackIn)
     if(data.ArchIncoming) Object.values(data.ArchIncoming).forEach(v => {
@@ -804,16 +804,12 @@ function genDayReport() {
     ['Vibro_Report', 'Krup_Report', 'ZSHM_Report'].forEach(dbName => {
         if(data[dbName]) Object.values(data[dbName]).forEach(v => {
             if(v.date && v.date.startsWith(dVal)) {
-                // Пытаемся взять сырье из строки (просто отобразим строку, т.к. там может быть микс)
                 if(v.rawMix) {
-                    // Очистка строки для ключа
-                    let cleanMix = v.rawMix; // "Гречка (1000кг)"
-                    // Пробуем извлечь число для суммы, если формат совпадает
+                    let cleanMix = v.rawMix;
                     let match = cleanMix.match(/^(.*)\s\((\d+(\.\d+)?)кг\)$/);
                     if(match) { addUsed(match[1], parseFloat(match[2]), 'кг'); }
-                    else { addUsed(cleanMix, 0, ''); } // Если формат сложный, просто добавим как текст
+                    else { addUsed(cleanMix, 0, ''); }
                 }
-                // Продукция
                 if(v.items) v.items.forEach(i => {
                     let wTotal = (i.q * i.w) + i.l;
                     addProd(i.n, wTotal, 'кг');
@@ -822,26 +818,46 @@ function genDayReport() {
         });
     });
 
+    // 4. УПАКОВКА (Списание)
+    const packCats = ['Пакеты', 'Пленка', 'Скотч 360 грамм', 'Мешки', 'Нитки', 'Этикетка'];
+    packCats.forEach(cat => {
+        if(data[cat]) Object.values(data[cat]).forEach(v => {
+            if(v.date && v.date.startsWith(dVal) && v.amount < 0) {
+                let n = v.name;
+                let u = (cat === 'Пленка') ? 'кг' : 'шт';
+                if(!rep.pack[n]) rep.pack[n] = {val:0, u:u};
+                rep.pack[n].val += Math.abs(v.amount);
+            }
+        });
+    });
+
     // ГЕНЕРАЦИЯ HTML
+    // Helper to wrap red text
+    const red = (txt) => `<span style="color:#ef4444">${txt}</span>`;
+    
     let h = `<div class="day-rep-box">Отчёт за ${dateStr}`;
     
     h += `<div class="dr-h">Приход:</div>`;
-    if(rep.inc.length) rep.inc.forEach(l => h += `${l}\n`); else h += `-\n`;
+    if(rep.inc.length) rep.inc.forEach(l => h += `+ ${l}\n`); else h += `-\n`;
 
     h += `<div class="dr-h">Отгружено:</div>`;
     let outKeys = Object.keys(rep.out).sort();
-    if(outKeys.length) outKeys.forEach(k => h += `${k} ${parseFloat(rep.out[k].val.toFixed(1))}${rep.out[k].u}\n`); else h += `-\n`;
+    if(outKeys.length) outKeys.forEach(k => h += red(`- ${k} ${parseFloat(rep.out[k].val.toFixed(1))}${rep.out[k].u}`) + `\n`); else h += `-\n`;
 
     h += `<div class="dr-h">Переработано:</div>`;
     let usedKeys = Object.keys(rep.used).sort();
     if(usedKeys.length) usedKeys.forEach(k => {
         let val = rep.used[k].val;
-        h += `${k} ${val > 0 ? parseFloat(val.toFixed(1)) + rep.used[k].u : ''}\n`;
+        h += red(`- ${k} ${val > 0 ? parseFloat(val.toFixed(1)) + rep.used[k].u : ''}`) + `\n`;
     }); else h += `-\n`;
 
     h += `<div class="dr-h">Произведено:</div>`;
     let prodKeys = Object.keys(rep.prod).sort();
-    if(prodKeys.length) prodKeys.forEach(k => h += `${k} ${parseFloat(rep.prod[k].val.toFixed(1))}${rep.prod[k].u}\n`); else h += `-\n`;
+    if(prodKeys.length) prodKeys.forEach(k => h += `+ ${k} ${parseFloat(rep.prod[k].val.toFixed(1))}${rep.prod[k].u}\n`); else h += `-\n`;
+
+    h += `<div class="dr-h">Упаковка:</div>`;
+    let packKeys = Object.keys(rep.pack).sort();
+    if(packKeys.length) packKeys.forEach(k => h += red(`- ${k} ${parseFloat(rep.pack[k].val.toFixed(1))}${rep.pack[k].u}`) + `\n`); else h += `-\n`;
     
     h += `</div>`;
     h += `<button class="btn-main" onclick="copyDayRep()" style="background:#334155">КОПИРОВАТЬ</button>`;
