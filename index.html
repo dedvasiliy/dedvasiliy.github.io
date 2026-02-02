@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v514 "Движение"</title>
+<title>Склад v515 "Без лишних слов"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -461,7 +461,7 @@ function rRaw(c){const t={};gP('Stock_Raw').forEach(p=>t[p]=0);if(data.Stock_Raw
 function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${cur==='Скотч 360 грамм'?val.toFixed(1):Math.round(val)} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rCleanList(c){let h='<div style="font-size:11px;color:#666;margin-bottom:10px">Нажмите на имя для полного удаления:</div>';const mkR = (s,t) => Array.from(s).sort().forEach(n=>{h+=`<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b>${n}</b><div><button onclick="renameItem('${n}','${t}')" style="margin-right:10px;border:none;background:none;font-size:16px">✏️</button><button onclick="delItemBatch('${n}','${t}')" style="border:none;background:none;font-size:16px;color:red">🗑️</button></div></div>`});h+='<div class="clean-cat">📦 ТОВАРЫ</div>';mkR(new Set([...gP('WeightStock'),...gP('Stock_DV'),...gP('Stock_Feed'),...gP('Stock_Semi'),...gP('Stock_Raw'),...gP('Готовая')]),'name');h+='<div class="clean-cat">🚛 ПОСТАВЩИКИ</div>';mkR(new Set(gS()),'supplier');h+='<div class="clean-cat">🤝 КЛИЕНТЫ</div>';mkR(new Set(gCl()),'client');c.innerHTML=h;}
 
-// === ИСТОРИЯ V511: ОСТАТОК ВНИЗУ ===
+// === ИСТОРИЯ V515: БЕЗ "ВХОДЯЩЕГО ОСТАТКА" ===
 function showH(c, k) {
     const ti = document.getElementById('mT'), b = document.getElementById('mB');
     ti.innerText = k;
@@ -478,7 +478,7 @@ function showH(c, k) {
     const curMonthKey = new Date().toISOString().slice(0, 7); 
     const archives = {};
     const currentList = [];
-    let incomingBalance = 0;
+    // Переменная входящего остатка удалена за ненадобностью визуализации
 
     hist.forEach(v => {
         const vMonth = v.d.slice(0, 7);
@@ -487,21 +487,12 @@ function showH(c, k) {
         } else {
             if (!archives[vMonth]) archives[vMonth] = [];
             archives[vMonth].push(v);
-            incomingBalance += v.a;
         }
     });
     
     currentList.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts));
 
-    if(incomingBalance !== 0) {
-        currentList.push({
-            d: curMonthKey + '-01',
-            ts: '00:00:00',
-            n: '🟢 Входящий остаток',
-            a: incomingBalance,
-            isBalance: true
-        });
-    }
+    // БЛОК ДОБАВЛЕНИЯ "ВХОДЯЩЕГО ОСТАТКА" УДАЛЕН ПО ПРОСЬБЕ
 
     let h = '<div style="margin-top:10px">';
     const sortedMonths = Object.keys(archives).sort().reverse();
@@ -540,6 +531,7 @@ function showH(c, k) {
 
 function renderHistRow(c, v, isTable=false) {
     if(v.isBalance) {
+        // Этот блок теперь не будет вызываться, но оставим на всякий случай
         return `<div style="background:#ecfccb;padding:10px;border-radius:8px;margin:5px 0;font-size:12px;color:#365314;display:flex;justify-content:space-between;align-items:center;border:1px solid #bef264;">
             <span style="font-weight:900">⬇ ${v.n}</span>
             <span style="font-size:14px;font-weight:900">${v.a.toFixed(1)}</span>
@@ -657,7 +649,9 @@ function rInvC(c){
             h+=`<div id="cm${y}${m}" class="arch-content" style="grid-column:1/-1;">`; 
             
             Object.keys(t[y].m[m].cl).sort().forEach(cl=>{ 
-                const uniqueId = `c${y}${m}${cl.replace(/\s/g,'')}`;
+                // УДАЛЯЕМ СПЕЦСИМВОЛЫ ИЗ ID, ЧТОБЫ НЕ ЛОМАЛСЯ ONCLICK
+                const safeCl = cl.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '');
+                const uniqueId = `c${y}${m}${safeCl}`;
                 const count = t[y].m[m].cl[cl].length;
                 h+=`<div class="arch-tile-c" style="margin-bottom:2px" onclick="toggleF('${uniqueId}')">${cl}<div class="arch-badge">${count}</div></div>`;
                 h+=`<div id="${uniqueId}" class="arch-content" style="margin-bottom:10px; border-left: 2px solid var(--p); padding-left: 5px;">`;
@@ -1155,7 +1149,7 @@ async function sShip(){
     const its=[];
     document.querySelectorAll('.bulk-q').forEach(i=>{
         const q=parseFloat(i.value);
-        if(q>0) its.push({n:i.getAttribute('data-n'), w:q, c:i.getAttribute('data-cat')});
+        if(i.value>0) its.push({n:i.getAttribute('data-n'), w:q, c:i.getAttribute('data-cat')});
     });
     if(!its.length)return alert('Введите кол-во');
     if(!confirm(`Отгрузить ${its.length} позиций для ${c}?`)) return;
