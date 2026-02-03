@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v550 "Отчет"</title>
+<title>Склад v555 "Упаковка"</title>
 <script>
     window.onerror = function(msg, url, line) {
         alert("ОШИБКА:\n" + msg + "\nСтрока: " + line + "\nПришлите скриншот!");
@@ -713,7 +713,8 @@ function openModal(t, a1, a2){
     }
     else if(t==='addMatPack'){
         ti.innerText='ПРИХОД УПАКОВКИ';
-        b.innerHTML=`<input type="date" id="pD" value="${td}">${makeSelect('pS','ArchPackIn','Поставщик',gPackS(),'+ НОВЫЙ')}${makeSelect('pN','Пакеты','Вид',gPack('Пакеты'))}<input type="number" id="pA" placeholder="Кол-во"><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИНЯТЬ</button>`;
+        b.innerHTML=`<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:5px"><div><label class="l-t">ДАТА</label><input type="date" id="pD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="pNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАВЩИК</label>${makeSelect('pS','ArchPackIn','Поставщик',gPackS(),'+ НОВЫЙ')}</div><div style="margin-bottom:5px"><label class="l-t">СКЛАД ПРИЕМА</label><select id="pCat" onchange="updPackList()"><option value="Пакеты">Пакеты</option><option value="Пленка">Пленка</option><option value="Скотч 360 грамм">Скотч</option><option value="Мешки">Мешки</option><option value="Нитки">Нитки</option><option value="Этикетка">Этикетка</option></select></div><div style="margin-bottom:5px"><label class="l-t">ПРОДУКЦИЯ</label><div id="pProdCont"></div></div><div style="margin-bottom:15px"><label class="l-t" id="pALbl">КОЛИЧЕСТВО (ШТ)</label><input type="number" id="pA" placeholder="0"></div><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИНЯТЬ</button>`;
+        setTimeout(updPackList, 100);
     }
     else if(t==='ship'){
         ti.innerText='ОТГРУЗКА СО СКЛАДА';
@@ -725,6 +726,16 @@ function openModal(t, a1, a2){
         b.innerHTML = `<label class="l-t">ВЫБЕРИТЕ ДАТУ</label><input type="date" id="repDate" value="${td}" style="margin-bottom:15px"><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`;
     }
     document.getElementById('mdl').style.display='flex';
+}
+
+window.updPackList = function() {
+    const cat = document.getElementById('pCat').value;
+    document.getElementById('pALbl').innerText = (cat === 'Пленка') ? 'КОЛИЧЕСТВО (КГ)' : 'КОЛИЧЕСТВО (ШТ)';
+    const s = new Set();
+    if(data[cat]) Object.values(data[cat]).forEach(v => s.add(v.name));
+    if(cat === 'Пакеты') szs.forEach(x => s.add(x));
+    const list = Array.from(s).sort();
+    document.getElementById('pProdCont').innerHTML = makeSelect('pN', '', 'Выберите вид...', list, '+ НОВЫЙ ВИД');
 }
 
 // НОВЫЕ ФУНКЦИИ ДЛЯ МУЛЬТИ-ФАСОВКИ
@@ -1200,15 +1211,37 @@ async function sInc(){
 
 async function sPack(){
     const sS = document.getElementById('s_pS'); const s = (sS.value==='NEW')?document.getElementById('i_pS').value:sS.value;
-    const sN = document.getElementById('s_pN'); const n = (sN.value==='NEW')?document.getElementById('i_pN').value:sN.value;
+    const sN = document.getElementById('s_pN'); // Это может быть select или undefined, если NEW_ENTRY
+    let n = '';
+    
+    // Проверка, что выбрано:
+    const sel = document.getElementById('s_pN');
+    const inp = document.getElementById('i_pN');
+    
+    if (sel && sel.style.display !== 'none') {
+        n = sel.value;
+    } else if (inp && inp.style.display !== 'none') {
+        n = inp.value;
+    }
+    
+    // Если makeSelect вернул NEW, берем из input
+    if (n === 'NEW' || n === 'NEW_ENTRY') {
+         n = inp.value;
+    }
+
     const a=parseFloat(document.getElementById('pA').value);
-    if(!a)return;
-    if(!confirm('Принять?'))return;
+    const num = document.getElementById('pNum').value;
+    
+    if(!n) return alert('Выберите продукцию');
+    if(!a) return alert('Введите количество');
+    if(!confirm('Принять упаковку?')) return;
+    
     const d=document.getElementById('pD').value+"T12:00:00Z";
+    const cat = document.getElementById('pCat').value;
     const l=db.child('ArchPackIn').push().key;
-    let cat='Пакеты'; if(n.includes('Скотч'))cat='Скотч 360 грамм'; if(n.includes('Пленка'))cat='Пленка'; if(n.includes('Мешки'))cat='Мешки';
+    
     const updates={};
-    updates['/ArchPackIn/'+l]={date:d,supplier:s,name:n,amount:a,ts:new Date().toISOString()};
+    updates['/ArchPackIn/'+l]={date:d,supplier:s,name:n,amount:a,num:num,category:cat,ts:new Date().toISOString()};
     updates[`/${cat}/`+db.child(cat).push().key]={name:n,amount:a,date:d,note:'Приход '+s,fLink:l,ts:new Date().toISOString()};
     await db.update(updates);
     closeModal();
