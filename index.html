@@ -435,7 +435,9 @@ function renderByTiles(c, rawD, type) {
                     });
                     
                     let plVal = v.vzial ? Math.abs(v.vzial - (v.ostatok||0)).toFixed(2) : '0';
-                    h+=`<div class="j-row" style="margin:0"><span class="j-dots">Пленка</span><span class="j-val" style="color:#000">-${plVal}кг</span></div>`;
+                    // ПЛЕНКА: берем сохраненное имя или вычисляем из выхода
+                    let fNameDisp = (v.filmName) ? v.filmName : (v.outputItems && v.outputItems.length > 0 ? v.outputItems[0].name : 'Пленка');
+                    h+=`<div class="j-row" style="margin:0"><span class="j-dots">${fNameDisp}</span><span class="j-val" style="color:#000">-${plVal}кг</span></div>`;
                     h+=`<div class="j-row" style="margin:0"><span class="j-dots">Скотч</span><span class="j-val" style="color:#000">-${v.scotch||0}шт</span></div>`;
                     
                     h+=`</div>`;
@@ -1241,8 +1243,12 @@ async function sFas() {
         }
     }
 
-    if(rawItems.length === 0) return alert("Добавьте хотя бы одно сырье!");
-    if(outItems.length === 0) return alert("Добавьте хотя бы одну продукцию!");
+    if(rawItems.length === 0) return alert("Добавьте сырье!");
+    if(outItems.length === 0) return alert("Добавьте продукцию (второе окно)!");
+
+    // === БЕРЕМ ИМЯ ПЛЕНКИ ИЗ НАЗВАНИЯ ПРОДУКЦИИ ===
+    const filmName = outItems[0].name; 
+    // ============================================
 
     const os=parseFloat(document.getElementById('fOs').value)||0;
     let vzStr=document.getElementById('fVz').value;
@@ -1264,9 +1270,10 @@ async function sFas() {
             date:dV, 
             prihod:totalP, 
             items: rawItems, 
-            outputItems: outItems, // Новый массив выхода
+            outputItems: outItems,
             rawItem: rawSummary, 
-            vzial:vzTotal, ostatok:os, scotch:scUsed, link:fId, ts:ts
+            vzial:vzTotal, ostatok:os, scotch:scUsed, link:fId, ts:ts,
+            filmName: filmName // Пишем в историю
         };
 
         // Списываем сырье
@@ -1278,17 +1285,23 @@ async function sFas() {
 
         // Зачисляем продукцию и списываем пакеты
         outItems.forEach(item => {
-             // Продукция на склад
              updates['/Готовая/'+db.child('Готовая').push().key]={name:item.name, amount:item.count, date:dV, note:'Фасовка', fLink:fId, ts:ts};
              
-             // Списание пакетов (расчет)
              const k=(item.name==="Кутя")?19.8:9.9;
              const sp=-Math.round(item.count/k);
              updates['/Пакеты/'+db.child('Пакеты').push().key]={name:item.size, amount:sp, date:dV, note:`(авто) ${item.name}`, fLink:fId, ts:ts};
         });
 
-        // Пленка и скотч (общие)
-        updates['/Пленка/'+db.child('Пленка').push().key]={name:'Пленка', amount:-plUsed, date:dV, note:'(авто) Фасовка', fLink:fId, ts:ts};
+        // === СПИСЫВАЕМ ПЛЕНКУ ПО ИМЕНИ ПРОДУКТА ===
+        updates['/Пленка/'+db.child('Пленка').push().key]={
+            name: filmName, // Имя берется из продукции
+            amount: -plUsed, 
+            date: dV, 
+            note: '(авто) Фасовка', 
+            fLink: fId, 
+            ts: ts
+        };
+        
         updates['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм', amount:-scUsed, date:dV, note:'(авто) Фасовка', fLink:fId, ts:ts};
         
         await db.update(updates);
