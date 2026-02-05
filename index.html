@@ -223,7 +223,6 @@ window.delVibro = (id) => window.delRec('Vibro_Report', id);
 window.delZSHM = (id) => window.delRec('ZSHM_Report', id);
 window.delArchRec = (cat, id) => window.delRec(cat, id);
 
-// ОБНОВЛЕННЫЙ СПИСОК (АРНАУТКА 1 фр, 2 фр)
 const bP=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"],szs=["300×400","370×500","400×500","420×550"],mths=["ЯНВ","ФЕВ","МАРТ","АПР","МАЙ","ИЮНЬ","ИЮЛЬ","АВГ","СЕНТ","ОКТ","НОЯБ","ДЕК"];
 const fd=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]} ${parts[1]}:${parts[2]}`};const fd2=i=>{if(!i)return'';const parts=i.split('T')[0].split('-');return `${parts[2]}.${parts[1]}.${parts[0]}`};
 function closeModal(){document.getElementById('mdl').style.display='none';aId=null;}
@@ -252,34 +251,51 @@ function renderHome(){
     updNav();
 }
 function goBack(){const m={'StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home'};let next=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')next=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(next);}
-function setCat(c){cur=c;document.body.classList.add('nav-active');const a=document.getElementById('act'),ct=document.getElementById('cnt');a.innerHTML='';if(c==='Home'){renderHome();return}
-if(c==='StockRoot'){
-    a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px">
-        <button class="btn-main" style="background:var(--s);padding:10px 2px;font-size:10px" onclick="openModal('inc')">Приход</button>
-        <button class="btn-main" style="background:var(--d);padding:10px 2px;font-size:10px" onclick="openModal('ship')">Отгрузка</button>
-    </div>`;
-    ct.innerHTML=`<div class="dash-grid">
-        <div class="dash-item" onclick="setCat('StockList')">ФАСОВАНАЯ ПРОДУКЦИЯ</div>
-        <div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ ВЕСОВАЯ</div>
-        <div class="dash-item" onclick="setCat('Stock_DV')">СКЛАД ГОТОВОЙ ВЕСОВОЙ ПРОДУКЦИИ С ПРОИЗВОДСТВА</div>
-        <div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ С ПРОИЗВОДСТВА</div>
-        <div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЁ(ЗЕРНО)СЫРЬЕВЫЕ СКЛАДЫ</div>
-        <div class="dash-item" onclick="setCat('Stock_Semi')">ПОЛУФАБРИКАТ</div>
-        <div class="dash-item" onclick="setCat('PackSub')">УПАК. МАТ.</div>
-        <div class="dash-item" onclick="setCat('Invoices')">АРХИВ НАКЛАДНЫХ</div>
-        <div id="corrTile" class="dash-item" onclick="toggleCorr()" style="grid-column:1/-1">КОРРЕКЦИЯ</div>
-    </div>
-    <div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`;
-}else if(c==='PackSub'){
-    a.innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">Приход упаковки</button>`;
-    ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛЕНКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТЫ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МЕШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЭТИКЕТКА</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="grid-column:1/-1;">АРХИВ УПАКОВКИ</div></div>`;
-}else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;
-else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('KRUP')">НОВАЯ ЗАПИСЬ</button>`;
-else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('VIBRO')">НОВАЯ ЗАПИСЬ</button>`;
-else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('ZSHM')">НОВАЯ СМЕНА</button>`;
-else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}
-else if(c==='Consolidated'){ ct.innerHTML='<div style="text-align:center;padding:20px;color:#666">Загрузка...</div>'; loadData(); }
-loadData();updCorrBtn();updNav();}
+
+function setCat(c){
+    cur=c;
+    document.body.classList.add('nav-active');
+    const a=document.getElementById('act'),ct=document.getElementById('cnt');
+    a.innerHTML='';
+    
+    if(c==='Home'){renderHome();return}
+
+    if(c==='StockRoot'){
+        a.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px">
+            <button class="btn-main" style="background:var(--s);padding:10px 2px;font-size:10px" onclick="openModal('inc')">Приход</button>
+            <button class="btn-main" style="background:var(--d);padding:10px 2px;font-size:10px" onclick="openModal('ship')">Отгрузка</button>
+        </div>`;
+        ct.innerHTML=`<div class="dash-grid">
+            <div class="dash-item" onclick="setCat('StockList')">ФАСОВАНАЯ ПРОДУКЦИЯ</div>
+            <div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ ВЕСОВАЯ</div>
+            <div class="dash-item" onclick="setCat('Stock_DV')">СКЛАД ГОТОВОЙ ВЕСОВОЙ ПРОДУКЦИИ С ПРОИЗВОДСТВА</div>
+            <div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ С ПРОИЗВОДСТВА</div>
+            <div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЁ(ЗЕРНО)СЫРЬЕВЫЕ СКЛАДЫ</div>
+            <div class="dash-item" onclick="setCat('Stock_Semi')">ПОЛУФАБРИКАТ</div>
+            <div class="dash-item" onclick="setCat('PackSub')">УПАК. МАТ.</div>
+            <div class="dash-item" onclick="setCat('Invoices')">АРХИВ НАКЛАДНЫХ</div>
+            <div id="corrTile" class="dash-item" onclick="toggleCorr()" style="grid-column:1/-1">КОРРЕКЦИЯ</div>
+        </div>
+        <div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`;
+    }
+    else if(c==='PackSub'){
+        a.innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">Приход упаковки</button>`;
+        ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛЕНКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТЫ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МЕШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЭТИКЕТКА</div></div>`;
+    }
+    else if(c==='ProdSub')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">Цех фасовки</div><div class="dash-item" onclick="setCat('Kruporushka')">Крупорушка</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">Вибростол</div></div><button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`;
+    else if(c==='Фасовка')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВАЯ ЗАПИСЬ</button>`;
+    else if(c==='Kruporushka')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('KRUP')">НОВАЯ ЗАПИСЬ</button>`;
+    else if(c==='Vibro')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('VIBRO')">НОВАЯ ЗАПИСЬ</button>`;
+    else if(c==='ZSHM')a.innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('ZSHM')">НОВАЯ СМЕНА</button>`;
+    else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">Приходы</div><div class="dash-item" onclick="setCat('ArchSubOut')">Отгрузки</div></div>`;
+    else if(c==='ArchSubIn'||c==='ArchSubOut'){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">По датам</div><div class="dash-item" onclick="setCat('InvoicesClient')">По именам</div></div>`;}
+    else if(c==='Consolidated'){ ct.innerHTML='<div style="text-align:center;padding:20px;color:#666">Загрузка...</div>'; loadData(); }
+    
+    loadData();
+    updCorrBtn();
+    updNav();
+}
+
 function toggleCorr(){corrMode=!corrMode;updCorrBtn();loadData();}
 function updCorrBtn(){
     const t=document.getElementById('corrTile');
@@ -302,7 +318,6 @@ function drawShipItem(str) {
     if(!u) { u = bP.includes(n) ? 'шт' : 'кг'; }
     return `<div class="j-row"><span class="j-dots">${n}</span><span class="j-val">${a}${u}</span></div>`;
 }
-
 function rConsolidated(c) {
     const sumCat = (cats) => {
         let res = {};
@@ -465,11 +480,32 @@ function rArchPack(c){ const d = data.ArchPackIn || {}; const gr = {}; if(d) Obj
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
 function rRaw(c){const t={};gP('Stock_Raw').forEach(p=>t[p]=0);if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]+=v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Stock_Raw','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Stock_Raw','${n}')">±</button></div>`;});c.innerHTML=h+'</div>';}
-function rGen(c){const d=data[cur]||{},t={},u='кг';Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=true;if(cur==='Скотч 360 грамм'&&val<30)alarm=true;if(cur==='Пакеты'&&val<3000)alarm=true;
-let dispVal = Math.round(val); let unit = u;
-if(cur === 'Скотч 360 грамм') { unit = 'шт'; dispVal = val.toFixed(1); }
-if(cur === 'Пленка') { dispVal = val.toFixed(2); }
-h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${dispVal} <small style="font-size:10px">${unit}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`;});c.innerHTML=h+'</div>';}
+
+function rGen(c){
+    const d=data[cur]||{},t={};
+    Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});
+    let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;
+    Object.keys(t).sort().forEach(k=>{
+        const val=t[k];
+        let alarm=val<0;
+        if(cur==='Пленка'&&val<50)alarm=true;
+        if(cur==='Скотч 360 грамм'&&val<30)alarm=true;
+        if(cur==='Пакеты'&&val<3000)alarm=true;
+        
+        let unit = 'кг';
+        let dispVal = Math.round(val);
+
+        if(cur === 'Скотч 360 грамм' || cur === 'Пакеты' || cur === 'Мешки' || cur === 'Нитки' || cur === 'Этикетка') {
+            unit = 'шт';
+        }
+
+        if(cur === 'Скотч 360 грамм') { dispVal = val.toFixed(1); }
+        if(cur === 'Пленка') { dispVal = val.toFixed(2); unit = 'кг'; }
+
+        h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty">${dispVal} <small style="font-size:10px">${unit}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`;
+    });
+    c.innerHTML=h+'</div>';
+}
 
 function showH(c, k) {
     const ti = document.getElementById('mT'), b = document.getElementById('mB');
@@ -565,7 +601,6 @@ async function sFixBal() {
     catch(e) { alert("Ошибка: " + e); btn.disabled = false; btn.innerText = "СОХРАНИТЬ"; }
 }
 
-// НОВАЯ ФУНКЦИЯ ДЛЯ СВЕРТКИ БАЗЫ
 async function runArchive() {
     const dVal = document.getElementById('archDate').value;
     if(!dVal) return alert('Выберите дату свертки!');
