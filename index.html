@@ -163,4 +163,55 @@ async function sRawInc(){const ss=gID('s_rSupp'),s=(ss.value==='NEW')?gID('i_rSu
 async function delItemBatch(n,c){if(!confirm('Удалить карточку и историю?'))return;const u={};if(data[c])Object.entries(data[c]).forEach(([k,v])=>{if(v.name===n)u[`/${c}/${k}`]=null});await db.update(u);closeModal()}
 async function renameItem(o,c){const n=prompt('Новое имя:',o);if(!n||n===o)return;const u={};if(data[c])Object.entries(data[c]).forEach(([k,v])=>{if(v.name===o)u[`/${c}/${k}/name`]=n});await db.update(u);closeModal()}
 function printPage(m){D.body.className=m==='cons'?'p-cons':'p-modal';window.print();setTimeout(()=>D.body.className='',500)}
+  // === СКРИПТ ОЧИСТКИ (УДАЛИТЬ ПОСЛЕ ИСПОЛЬЗОВАНИЯ) ===
+async function runEmergencyCleanup() {
+    const targetDate = "2026-01-31"; // Дата флуда (из твоего скриншота)
+    const targetText = "Остаток на начало"; // Текст, который ищем
+
+    if (!confirm(`Ты точно хочешь удалить ВСЕ записи за ${targetDate} с текстом "${targetText}"?`)) return;
+
+    const btn = document.querySelector('button[onclick="runEmergencyCleanup()"]');
+    btn.innerText = "⏳ СКАНИРУЮ БАЗУ...";
+    btn.disabled = true;
+
+    let count = 0;
+    const updates = {};
+
+    // Проходим по всем категориям
+    stockCatsAll.forEach(cat => {
+        if (!data[cat]) return;
+        Object.entries(data[cat]).forEach(([key, val]) => {
+            // Если дата совпадает И в примечании есть этот текст
+            if (val.date && val.date.includes(targetDate)) {
+                if (val.note && val.note.includes(targetText)) {
+                    updates[`/${cat}/${key}`] = null; // Помечаем на удаление
+                    count++;
+                }
+            }
+        });
+    });
+
+    if (count === 0) {
+        alert("Ничего не найдено! Возможно, дата или текст отличаются.");
+        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (31.01)";
+        btn.disabled = false;
+        return;
+    }
+
+    if (confirm(`⚠️ НАЙДЕНО ${count} ЗАПИСЕЙ-ДУБЛЕЙ!\n\nУдалить их навсегда?`)) {
+        btn.innerText = "🗑️ УДАЛЯЮ...";
+        try {
+            await db.update(updates);
+            alert(`✅ УСПЕХ! Удалено ${count} записей. Сайт должен ожить.`);
+            location.reload();
+        } catch (e) {
+            alert("Ошибка: " + e);
+            btn.innerText = "ОШИБКА";
+        }
+    } else {
+        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (31.01)";
+        btn.disabled = false;
+    }
+}
+  
 </script></body></html>
