@@ -43,7 +43,7 @@ const gRawActive=()=>{const s=new Set();if(data.Stock_Raw){const m={};Object.val
 const getPayMsg=()=>{const t=new Date(),y=t.getFullYear(),m=t.getMonth(),d=t.getDate(),g=(k)=>{let n=new Date(y,m,k),w=n.getDay();if(w===0)return k-2;if(w===6)return k-1;return k};if(d===g(5))return "💰 СЕГОДНЯ ЗАРПЛАТА";if(d===g(15))return "💸 СЕГОДНЯ АВАНС";return null};
 function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';const m=getPayMsg(),a=m?`<div class="pay-alert">${m}</div>`:'';const lBtn=`<button onclick="firebase.auth().signOut()" style="position:absolute;top:10px;right:10px;background:#fee2e2;color:red;border:1px solid #fca5a5;border-radius:8px;padding:5px 10px;font-weight:900;z-index:90">ВЫЙТИ</button>`;
 let ab=isAdmin?`<button onclick="tryAdmin()" style="background:#fee2e2;color:red;border:1px solid #fca5a5;width:100%;margin-top:15px;padding:15px;border-radius:12px;font-weight:900">🔓 ВЫХОД АДМИН</button>`:`<button onclick="runEmergencyCleanup()" style="width:100%; padding:20px; background:red; color:white; font-weight:bold; font-size:18px; margin-bottom:20px; border-radius:10px; border:4px solid yellow;">
-    🧹 УДАЛИТЬ ФЛУД (31.01)
+    🧹 УДАЛИТЬ ФЛУД (30.01)
 </button>
 <button onclick="tryAdmin()" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;width:100%;margin-top:15px;padding:15px;border-radius:12px;font-weight:900">🔐 АДМИНИСТРАТОР</button>`;
 gID('cnt').innerHTML=lBtn+a+`<div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div><div class="dash-grid"><div class="dash-item home-folder" onclick="setCat('StockRoot')"><span>📂 СКЛАД</span></div><div class="dash-item home-folder" onclick="setCat('ProdSub')"><span>🛠️ ПРОИЗВОДСТВО</span></div><div class="dash-item home-folder" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div><div class="dash-item home-folder" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ ОТЧЕТ</span></div></div>${ab}`;updNav()}
@@ -167,7 +167,7 @@ async function renameItem(o,c){const n=prompt('Новое имя:',o);if(!n||n==
 function printPage(m){D.body.className=m==='cons'?'p-cons':'p-modal';window.print();setTimeout(()=>D.body.className='',500)}
   // === СКРИПТ ОЧИСТКИ (УДАЛИТЬ ПОСЛЕ ИСПОЛЬЗОВАНИЯ) ===
 async function runEmergencyCleanup() {
-    const targetDate = "2026-01-31"; // Дата флуда (из твоего скриншота)
+    const targetDate = "2026-01-30"; // Дата флуда (из твоего скриншота)
     const targetText = "Остаток на начало"; // Текст, который ищем
 
     if (!confirm(`Ты точно хочешь удалить ВСЕ записи за ${targetDate} с текстом "${targetText}"?`)) return;
@@ -195,7 +195,7 @@ async function runEmergencyCleanup() {
 
     if (count === 0) {
         alert("Ничего не найдено! Возможно, дата или текст отличаются.");
-        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (31.01)";
+        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (30.01)";
         btn.disabled = false;
         return;
     }
@@ -211,7 +211,7 @@ async function runEmergencyCleanup() {
             btn.innerText = "ОШИБКА";
         }
     } else {
-        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (31.01)";
+        btn.innerText = "🧹 УДАЛИТЬ ФЛУД (30.01)";
         btn.disabled = false;
     }
 }
