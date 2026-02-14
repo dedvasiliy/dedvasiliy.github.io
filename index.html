@@ -168,7 +168,7 @@ function printPage(m){D.body.className=m==='cons'?'p-cons':'p-modal';window.prin
   // === СКРИПТ ОЧИСТКИ (УДАЛИТЬ ПОСЛЕ ИСПОЛЬЗОВАНИЯ) ===
 async function runEmergencyCleanup() {
     const targetDate = "2026-01-30"; // Дата флуда (из твоего скриншота)
-    const targetText = "Остаток на начало"; // Текст, который ищем
+    const targetText = "Остаток на конец"; // Текст, который ищем
 
     if (!confirm(`Ты точно хочешь удалить ВСЕ записи за ${targetDate} с текстом "${targetText}"?`)) return;
 
