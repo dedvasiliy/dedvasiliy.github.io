@@ -217,4 +217,92 @@ function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Го�
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty ${t[n]>=0?'val-pos':'val-neg'}">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rRaw(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty ${t[n]>=0?'val-pos':'val-neg'}">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Stock_Raw','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Stock_Raw','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{let k=v.name;if(k)t[k]=(t[k]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const val=t[k];let alarm=val<0;if(cur==='Пленка'&&val<50)alarm=!0;if(cur==='Скотч 360 грамм'&&val<30)alarm=!0;if(cur==='Пакеты'&&val<3000)alarm=!0;if(cur==='Стрейч пленка'&&val<5)alarm=!0;if(cur==='Термо лента'&&val<5)alarm=!0;let u='кг',dv=Math.round(val);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=val.toFixed(1);if(cur==='Пленка'){dv=val.toFixed(2);u='кг'}if(cur==='Стрейч пленка'){dv=val.toFixed(2);u='шт'}h+=`<div class="item-card ${alarm?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty ${val>=0?'val-pos':'val-neg'}">${dv} <small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`});c.innerHTML=h+'</div>'}
+  // --- ВСТАВЛЯТЬ В САМОМ НИЗУ ПЕРЕД </script> ---
+
+// 1. Функция для отрисовки ФАСОВКИ
+function rFas(c) {
+  const d = data.Фасовка || {};
+  let h = `<div class="z-head" style="margin-bottom:10px">ЖУРНАЛ ФАСОВКИ</div>`;
+  const k = Object.keys(d).sort((a, b) => (d[b].date + d[b].ts).localeCompare(d[a].date + d[a].ts)); // Сортировка: новые сверху
+
+  if (k.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:20px;color:#999">Нет записей</div>';
+    return;
+  }
+
+  k.forEach(id => {
+    const v = d[id];
+    // Собираем список продукции красиво
+    let out = '';
+    if (v.outputItems) {
+      v.outputItems.forEach(i => out += `<div class="j-row"><span class="j-dots">${i.name} (${i.size})</span><span class="j-val">${i.count} шт</span></div>`);
+    } else {
+      out = `<div class="j-row"><span class="j-dots">${v.name || 'Продукция'}</span><span class="j-val">${v.vyhod || 0} шт</span></div>`;
+    }
+
+    h += `<div class="j-card">
+            <div class="j-head" style="display:flex;justify-content:space-between">
+                <span>ФАСОВКА</span>
+                <span style="font-weight:400;color:#64748b">${fd2(v.date)}</span>
+            </div>
+            <div class="j-sub" style="border-bottom:1px dashed #eee;margin-bottom:5px">Пленка: ${v.filmName || 'Не указано'} (${v.vzial}кг)</div>
+            <div class="j-body">${out}</div>
+            ${corrMode ? `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:5px;font-size:10px" onclick="delFas('${id}')">УДАЛИТЬ ЗАПИСЬ</button>` : ''}
+          </div>`;
+  });
+  c.innerHTML = h;
+}
+
+// 2. Универсальная функция для ЦЕХОВ (Крупорушка, Вибро, ЗШМ)
+function rWorkshopCommon(c, typeKey) {
+  const cfg = WS_CFG[typeKey]; // Берем настройки (название базы)
+  const dbName = cfg.db;
+  const d = data[dbName] || {};
+  let h = `<div class="z-head" style="margin-bottom:10px">ЖУРНАЛ: ${cfg.title.toUpperCase()}</div>`;
+  
+  const k = Object.keys(d).sort((a, b) => (d[b].date + d[b].ts).localeCompare(d[a].date + d[a].ts));
+
+  if (k.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:20px;color:#999">Нет записей</div>';
+    return;
+  }
+
+  k.forEach(id => {
+    const v = d[id];
+    let out = '';
+    // Если есть список продукции (новый формат)
+    if (v.items) {
+      v.items.forEach(i => {
+         let w = (i.q * i.w) + (i.l || 0);
+         out += `<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${w} кг</span></div>`;
+      });
+    }
+    
+    // Кнопка удаления вызывает разные функции в зависимости от цеха
+    let delFn = '';
+    if (typeKey === 'KRUP') delFn = `delKrup('${id}')`;
+    if (typeKey === 'VIBRO') delFn = `delVibro('${id}')`;
+    if (typeKey === 'ZSHM') delFn = `delZSHM('${id}')`;
+
+    h += `<div class="j-card">
+            <div class="j-head" style="color:var(--s);display:flex;justify-content:space-between">
+                <span>СМЕНА</span>
+                <span style="font-weight:400;color:#64748b">${fd2(v.date)}</span>
+            </div>
+            <div class="j-sub" style="color:#333;font-weight:700">Вход: ${v.rawMix || 'Сырьё'}</div>
+            <div class="j-body">${out}</div>
+            <div style="font-size:10px;color:#999;margin-top:5px;text-align:right">Опер: ${v.operator || '-'}</div>
+            ${corrMode ? `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:5px;font-size:10px" onclick="${delFn}">УДАЛИТЬ СМЕНУ</button>` : ''}
+          </div>`;
+  });
+  c.innerHTML = h;
+}
+
+// 3. Связки (чтобы программа знала, кого вызывать)
+function rKrup(c) { rWorkshopCommon(c, 'KRUP'); }
+function rVibro(c) { rWorkshopCommon(c, 'VIBRO'); }
+function rZSHM(c) { rWorkshopCommon(c, 'ZSHM'); }
+
+// --- КОНЕЦ ВСТАВКИ ---
+
 </script></body></html>
