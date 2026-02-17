@@ -287,4 +287,118 @@ function rZSHM(c){rWork(c,'ZSHM_Report','ЗШМ')}
 function rWork(c,db,t){const d=data[db]||{};let h='';Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([k,v])=>{let ts=v.timeStart||'??:??',te=v.timeEnd||'??:??',op=v.operator||'?',as=v.assistant||'-';h+=`<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:14px;color:#000;">${t} [${fd2(v.date)}]</div><div style="font-size:10px;color:#666">🕒 ${ts} — ${te}</div><div style="font-size:10px;color:#666">👤 ${op} / ${as}</div></div>${corrMode?`<button onclick="delWorkshopReportFull('${db}','${k}')" style="border:none;background:none;color:red;font-size:16px">🗑️</button>`:''}</div><div class="rep-raw" style="font-size:11px;color:#444;margin-bottom:2px">${v.rawMix||'-'}</div><div class="rep-sep"></div>`;if(v.items)v.items.forEach(i=>{let add=i.l>0?` <span style="color:#f59e0b">+${i.l}кг</span>`:'';h+=`<div class="rep-row"><span class="rep-name">${i.n}</span><span class="val-blue">+${i.q}м × ${i.w}кг${add}</span></div>`});if(v.consumed){h+=`<div class="rep-sep"></div>`;v.consumed.forEach(i=>{h+=`<div class="rep-row"><span class="rep-name">${i.n}</span><span style="font-weight:900;color:#000">${i.q}шт</span></div>`})}h+=`</div>`});c.innerHTML=h||'<div style="text-align:center;padding:20px;color:#999">Порожньо</div>'}
 function rArchPack(c){const d=data.ArchPackIn||{};let h='';Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([k,v])=>{h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХІД ПАКУВАННЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div>${v.name} — <b>${v.amount}</b></div><div style="font-size:10px;color:#666">${v.category}</div></div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="delInvoiceFull('ArchPackIn','${k}')">ВИДАЛИТИ</button>`:''}</div>`});c.innerHTML=h||'<div style="text-align:center;padding:20px;color:#999">Порожньо</div>'}
 function printPage(t){window.print()}
+// --- ИСПРАВЛЕНИЕ ОТГРУЗКИ ---
+async function sShip(){
+  // 1. Считываем данные формы
+  const d=gID('hD').value, nm=gID('hNum').value, ag=gID('hAg').value, dv=d+"T12:00:00Z";
+  const sc=gID('s_hC'), c=(sc&&sc.value==='NEW')?gID('i_hC').value:(sc?sc.value:'');
+  const sf=gID('s_hMyFop'), myFop=(sf&&sf.value==='NEW')?gID('i_hMyFop').value:(sf?sf.value:'');
+  
+  if(!c)return alert('Оберіть отримувача!');
+
+  // 2. Собираем товары из корзины
+  document.querySelectorAll('.bulk-q').forEach(i=>{
+      const n=i.getAttribute('data-n'),ct=i.getAttribute('data-cat'),v=parseFloat(i.value),k=n+'::'+ct;
+      if(v>0)shipBasket[k]={w:v,c:ct,n:n};else delete shipBasket[k]
+  });
+  
+  const it=[];let tw=0;
+  Object.values(shipBasket).forEach(v=>{it.push({n:v.n,w:v.w,c:v.c});tw+=v.w});
+  
+  if(it.length===0)return alert('Кошик порожній! Виберіть товари.');
+
+  // 3. Формируем окно ПРЕДВАРИТЕЛЬНОГО ПРОСМОТРА (ПЕРЕВІРКА)
+  let h=`<div id="shipPrev">
+    <div style="font-weight:bold;text-transform:uppercase;margin-bottom:5px;text-align:center;font-size:14px;color:#000">ВИДАТКОВА НАКЛАДНА № ${nm||'___'}</div>
+    <div style="margin-bottom:10px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:#f8fafc;padding:5px;border:1px solid #eee"><b>Постачальник:</b><br>${myFop||'-'}</div>
+        <div style="background:#f8fafc;padding:5px;border:1px solid #eee"><b>Отримувач:</b><br>${c}</div>
+    </div>`;
+  
+  if(ag)h+=`<div style="font-size:12px;margin-bottom:10px;text-align:center"><b>Угода:</b> ${ag}</div>`;
+  
+  h+=`<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:10px;border:1px solid #ccc">
+    <tr style="background:#eee;font-weight:bold;text-align:center">
+        <td style="border:1px solid #ccc;padding:2px">№</td>
+        <td style="border:1px solid #ccc;padding:2px">Товар</td>
+        <td style="border:1px solid #ccc;padding:2px">К-ть</td>
+        <td style="border:1px solid #ccc;padding:2px">Од</td>
+    </tr>`;
+  
+  it.forEach((x,idx)=>{
+      h+=`<tr>
+        <td style="border:1px solid #ccc;padding:2px;text-align:center">${idx+1}</td>
+        <td style="border:1px solid #ccc;padding:2px">${x.n}</td>
+        <td style="border:1px solid #ccc;padding:2px;text-align:center;font-weight:bold">${x.w}</td>
+        <td style="border:1px solid #ccc;padding:2px;text-align:center">${x.c==='Готовая'?'шт':'кг'}</td>
+      </tr>`
+  });
+  
+  h+=`</table>
+  <div style="text-align:right;font-weight:900;font-size:14px;margin-top:10px">ВСЬОГО: ${tw}</div>
+  
+  <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <button class="btn-main" onclick="execShip(false)" style="background:#059669;border:1px solid #047857">💾 ПРОСТО СПИСАТИ</button>
+    <button class="btn-main" onclick="execShip(true)" style="background:#4338ca;border:1px solid #3730a3">🖨️ ДРУК + СПИСАТИ</button>
+  </div>
+  <button class="btn-main" onclick="openModal('ship')" style="background:#fff;color:#333;border:1px solid #ccc;margin-top:10px">🔙 ПОВЕРНУТИСЯ</button>
+  </div>`;
+
+  // Сохраняем временные данные для функции execShip
+  window.tempShipData={it,c,nm,dv,myFop,tw,ag}; 
+  
+  // Показываем это в модальном окне
+  gID('mB').innerHTML=h; 
+  gID('mT').innerText='ПЕРЕВІРКА'; 
+  gID('mdl').style.display='flex';
+}
+
+async function execShip(doPrint){
+  const dObj=window.tempShipData; if(!dObj)return; const{it,c,nm,dv,myFop,tw,ag}=dObj;
+  
+  // Блокируем кнопки
+  const btns=document.querySelectorAll('#shipPrev button'); btns.forEach(b=>{b.disabled=!0;b.innerText='...'});
+
+  try{
+    const lk=db.child('ArchInvoices').push().key,u={};
+    
+    // Запись в архив накладных
+    u['/ArchInvoices/'+lk]={date:dv,client:c,num:nm,agreement:ag,items:it.map(x=>x.n+"|"+x.w+"|"+(x.c==='Готовая'?'шт':'кг')+"|"+x.c),supplierName:myFop,ts:new Date().toISOString()};
+    
+    // Списание товаров
+    it.forEach(i=>{
+        u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:dv,note:`Отгр: ${c} №${nm}`,fLink:lk,ts:new Date().toISOString()}
+    });
+
+    // Списание стрейча (авто)
+    if(useStretch){
+        const q=parseFloat((tw/5000).toFixed(2));
+        if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:dv,note:`(авто) Відвантаження ${c}`,fLink:lk,ts:new Date().toISOString()}
+    }
+
+    // Сохранение поставщика
+    if(myFop&&myFop!=='ПОСТАЧАЛЬНИК'){
+        let fopExists=!1;
+        if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===myFop)fopExists=!0});
+        if(!fopExists)u['/Suppliers/'+db.child('Suppliers').push().key]={name:myFop}
+    }
+
+    await db.update(u);
+
+    if(doPrint){
+      printShipInvoice(dObj,lk); // Печать
+    } else {
+      closeModal(); // Закрыть
+      alert('Збережено!');
+    }
+    
+    // Очистка
+    document.querySelectorAll('.bulk-q').forEach(i=>i.value=''); window.shipBasket={};
+
+  }catch(e){
+      alert("Помилка: "+e);
+      btns.forEach(b=>b.disabled=!1);
+  }
+}
+
 </script></body></html>
