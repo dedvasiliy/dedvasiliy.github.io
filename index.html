@@ -230,7 +230,6 @@ async function execShip(doPrint){
     await db.update(u);
     if(doPrint){
       printShipInvoice(dObj,lk);
-      // Ми НЕ закриваємо вікно автоматично при друку, щоб людина встигла натиснути "Друк" у системному вікні
     } else {
       closeModal();
       alert('Збережено!');
@@ -247,7 +246,6 @@ function printShipInvoice(d,id){
   h+=`</tbody></table><div style="margin-top:10px;text-align:right;font-weight:900;font-size:14px">Всього: ${d.tw}</div><div style="margin-top:30px;display:flex;justify-content:space-between;font-size:12px"><div>Відвантажив: ________________</div><div>Отримав: ________________</div></div>`;
   gID('print-view').innerHTML=h; 
   printPage('invoice');
-  // closeModal() звідси прибрано спеціально!
 }
 async function sInc(){const ss=gID('s_iS'),s=(ss.value==='NEW')?gID('i_iS').value:ss.value,sn=gID('s_iN'),n=(sn.value==='NEW')?gID('i_iN').value:sn.value,a=parseFloat(gID('iA').value),nm=gID('iNum').value;if(!a)return;
 askConfirm(`ПРИХІД ТОВАРУ (КУПОВАНА)\nПостачальник: ${s}\nТовар: ${n}\nВага: ${a} кг\nНакл: ${nm}`,async()=>{
@@ -280,4 +278,5 @@ function rVibro(c){rWork(c,'Vibro_Report','Вібростіл')}
 function rZSHM(c){rWork(c,'ZSHM_Report','ЗШМ')}
 function rWork(c,db,t){const d=data[db]||{};let h='';Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([k,v])=>{let ts=v.timeStart||'??:??',te=v.timeEnd||'??:??',op=v.operator||'?',as=v.assistant||'-';h+=`<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:14px;color:#000;">${t} [${fd2(v.date)}]</div><div style="font-size:10px;color:#666">🕒 ${ts} — ${te}</div><div style="font-size:10px;color:#666">👤 ${op} / ${as}</div></div>${corrMode?`<button onclick="delWorkshopReportFull('${db}','${k}')" style="border:none;background:none;color:red;font-size:16px">🗑️</button>`:''}</div><div class="rep-raw" style="font-size:11px;color:#444;margin-bottom:2px">${v.rawMix||'-'}</div><div class="rep-sep"></div>`;if(v.items)v.items.forEach(i=>{let add=i.l>0?` <span style="color:#f59e0b">+${i.l}кг</span>`:'';h+=`<div class="rep-row"><span class="rep-name">${i.n}</span><span class="val-blue">+${i.q}м × ${i.w}кг${add}</span></div>`});if(v.consumed){h+=`<div class="rep-sep"></div>`;v.consumed.forEach(i=>{h+=`<div class="rep-row"><span class="rep-name">${i.n}</span><span style="font-weight:900;color:#000">${i.q}шт</span></div>`})}h+=`</div>`});c.innerHTML=h||'<div style="text-align:center;padding:20px;color:#999">Порожньо</div>'}
 function rArchPack(c){const d=data.ArchPackIn||{};let h='';Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date)).forEach(([k,v])=>{h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХІД ПАКУВАННЯ</div><div class="j-sub">${fd2(v.date)}</div><div class="j-title">${v.supplier}</div><div class="j-body"><div>${v.name} — <b>${v.amount}</b></div><div style="font-size:10px;color:#666">${v.category}</div></div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="delInvoiceFull('ArchPackIn','${k}')">ВИДАЛИТИ</button>`:''}</div>`});c.innerHTML=h||'<div style="text-align:center;padding:20px;color:#999">Порожньо</div>'}
+function printPage(t){window.print()}
 </script></body></html>
