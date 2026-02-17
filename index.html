@@ -37,8 +37,15 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 #confContent {margin:15px 0;background:#f8fafc;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;color:#334155;text-align:left;max-height:60vh;overflow-y:auto;white-space:pre-wrap}
 .compact-row {padding:1px 4px!important; min-height:24px!important; font-size:10px!important; border-bottom:1px solid #f1f5f9;}
 .compact-row input {padding:0 4px!important; height:20px!important; font-size:11px!important; border:1px solid #cbd5e1;}
+@media (min-width: 800px) {
+body { max-width: 500px; margin: 0 auto; box-shadow: 0 0 30px rgba(0,0,0,0.15); border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; min-height: 100vh; background: #fff; }
+.bottom-nav { max-width: 500px; left: 50%; transform: translateX(-50%); border-radius: 20px 20px 0 0; border: 1px solid #cbd5e1; border-bottom: none; width: 100%; }
+#lockScreen { max-width: 500px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 30px rgba(0,0,0,0.15); }
+.modal { align-items: center; padding-top: 20px; }
+#confMdl { align-items: center; }
+}
 @media print{@page{margin:5mm;size:A4;}
-body{background:#fff;padding:0;color:#000;height:auto;overflow:visible}
+body{background:#fff;padding:0;color:#000;height:auto;overflow:visible;max-width:none!important;margin:0!important;border:none!important;box-shadow:none!important;}
 #lockScreen,.bottom-nav,.dash-item,.btn-main,.logo-box,#corrCtls,.history-btn,.corr-btn,#navM,#navB,.del-rep-btn,.close-modal-btn,.smart-wrap,input,select,.z-head,.item-grid,#act,#cnt,#mdl,#confMdl{display:none!important}
 #print-view {display: block !important; position: absolute; top: 0; left: 0; width: 100%; min-height: 100%; margin: 0; padding: 0; background: white; z-index: 9999;}
 .page-break { page-break-before: always; }
@@ -215,8 +222,9 @@ async function sShip(){
   if(ag)h+=`<div style="font-size:12px;margin-bottom:10px;text-align:center"><b>Угода:</b> ${ag}</div>`;
   h+=`<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:10px;border:1px solid #ccc"><tr style="background:#eee;font-weight:bold;text-align:center"><td style="border:1px solid #ccc;padding:2px">№</td><td style="border:1px solid #ccc;padding:2px">Товар</td><td style="border:1px solid #ccc;padding:2px">К-ть</td><td style="border:1px solid #ccc;padding:2px">Од</td></tr>`;
   it.forEach((x,idx)=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px;text-align:center">${idx+1}</td><td style="border:1px solid #ccc;padding:2px">${x.n}</td><td style="border:1px solid #ccc;padding:2px;text-align:center;font-weight:bold">${x.w}</td><td style="border:1px solid #ccc;padding:2px;text-align:center">${x.c==='Готовая'?'шт':'кг'}</td></tr>`});
-  h+=`</table><div style="text-align:right;font-weight:900;font-size:14px;margin-top:10px">ВСЬОГО: ${tw}</div><div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="execShip(false)" style="background:#059669;border:1px solid #047857">💾 ПРОСТО СПИСАТИ</button><button class="btn-main" onclick="execShip(true)" style="background:#4338ca;border:1px solid #3730a3">🖨️ ДРУК + СПИСАТИ</button></div></div>`;
-  window.tempShipData={it,c,nm,dv,myFop,tw,ag}; gID('mB').innerHTML=h; gID('mT').innerText='ПЕРЕВІРКА'; gID('mdl').style.display='flex';
+  h+=`</tbody></table><div style="margin-top:10px;text-align:right;font-weight:900;font-size:14px">Всього: ${d.tw}</div><div style="margin-top:30px;display:flex;justify-content:space-between;font-size:12px"><div>Відвантажив: ________________</div><div>Отримав: ________________</div></div>`;
+  gID('print-view').innerHTML=h; 
+  printPage('invoice');
 }
 async function execShip(doPrint){
   const dObj=window.tempShipData; if(!dObj)return; const{it,c,nm,dv,myFop,tw,ag}=dObj;
