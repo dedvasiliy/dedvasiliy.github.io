@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Склад v770 "Commander"</title>
+<title>Склад v760 "Commander"</title>
 <script>window.onerror=function(m,u,l){alert("ПОМИЛКА:\n"+m+"\nРядок: "+l);return false;};</script>
 <link rel="icon" type="image/png" sizes="192x192" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
 <style>
@@ -91,10 +91,6 @@ const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https:/
 if(!firebase.apps.length)firebase.initializeApp(cfg);
 const db=firebase.database().ref('production'),auth=firebase.auth();
 let cur='Home',data={},aId=null,archSub='',corrMode=!1,isLogged=!1,isAdmin=!1,corrCtx={},useStretch=!1,shipBasket={},calCurMonth=new Date(),pendingAction=null;
-// --- НОВІ ЗМІННІ ДЛЯ ПРАЙСУ ---
-let priceMode = 'opt'; // 'opt' | 'roz'
-let priceEdit = false;
-
 // Оновлений список категорій (Stock_Archive будемо вантажити окремо)
 const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','Timesheet_Notes','PriceList','Suppliers'];
 
@@ -120,7 +116,6 @@ auth.onAuthStateChanged(user=>{
 function initAppData(){
     renderHome();
     // Підписуємось тільки на активні склади (без архівів і старих звітів)
-    // PriceList тут обов'язково, щоб працювали нові функції прайса
     const activePaths=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','PriceList','Suppliers','System_Settings'];
     activePaths.forEach(path=>{
         db.child(path).on('value', s=>{
@@ -139,14 +134,15 @@ function askConfirm(h,a){gID('confContent').innerHTML=h;pendingAction=a;gID('con
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null}
 function doConfirm(){if(pendingAction)pendingAction();closeConf()}
 window.delRec=async(c,i)=>{askConfirm(`ВИДАЛИТИ ЗАПИС?\nКатегорія: ${c}\nID: ${i}`,async()=>{await db.child(c).child(i).remove();closeModal()})};
-// --- Хелпери видалення ---
+// Кінець першої частини
+// --- Хелпери видалення (Працюють так само, але безпечніше) ---
 window.delInvoiceFull=async(c,i)=>{askConfirm(`ВИДАЛИТИ НАКЛАДНУ?\nТип: ${c}\nУВАГА: Всі рухи товарів будуть скасовані!`,async()=>{const u={};u[`/${c}/${i}`]=null;stockCatsAll.forEach(s=>{if(data[s])Object.entries(data[s]).forEach(([k,v])=>{if(v.fLink===i)u[`/${s}/${k}`]=null})});try{await db.update(u)}catch(e){alert("Err:"+e)}})};
 window.delWorkshopReportFull=async(n,i)=>{askConfirm(`ВИДАЛИТИ ЗВІТ ВИРОБНИЦТВА?\nЦех: ${n}\nУВАГА: Всі рухи (сировина, продукція, мішки) будуть скасовані!`,async()=>{const u={};u[`/${n}/${i}`]=null;stockCatsAll.forEach(s=>{if(data[s])Object.entries(data[s]).forEach(([k,v])=>{if(v.fLink===i)u[`/${s}/${k}`]=null})});try{await db.update(u);alert("Видалено")}catch(e){alert("Err:"+e)}})};
 window.delFasFull=async(i)=>{askConfirm(`ВИДАЛИТИ ЗВІТ ФАСУВАННЯ?\nУВАГА: Всі рухи (сировина, пачки, плівка) будуть скасовані!`,async()=>{const u={};u['/Фасовка/'+i]=null;stockCatsAll.forEach(c=>{if(data[c])Object.entries(data[c]).forEach(([k,v])=>{if(v.fLink===i)u[`/${c}/${k}`]=null})});try{await db.update(u);alert("Скасовано")}catch(e){alert("Err:"+e)}})};
 window.delFas=i=>window.delRec('Фасовка',i);
 window.delArchRec=(c,i)=>window.delRec(c,i);
 
-// Служебные списки
+// Служебные списки (без змін)
 const bP_RAW=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
 const bP_FAS=["Арнаутка 1/0.9 1","Арнаутка 1/0.9 2","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кук.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшоно 1/0.9","Рис дл 1/0.9","Рис кр 1/0.9","Рис пр 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
 const szs=["300×400","370×500","400×500","420×550"],mths=["СІЧ","ЛЮТ","БЕР","КВІ","ТРА","ЧЕР","ЛИП","СЕР","ВЕР","ЖОВ","ЛИС","ГРУ"];
@@ -156,7 +152,7 @@ function closeModal(){gID('mdl').style.display='none';aId=null}
 function toggleF(i){const e=gID(i);e.style.display=e.style.display==='block'?'none':'block'}
 function toggleC(i,b){const e=gID(i);if(e.style.display==='block'){e.style.display='none';b.style.background='#fff';b.style.borderColor='#e2e8f0'}else{e.style.display='block';b.style.background='#eef2ff';b.style.borderColor='var(--p)'}}
 
-// Хелперы списков
+// Хелперы списков (без змін)
 const gP=c=>{let i=[];if(c==='WeightStock'||c==='Stock_DV')i=bP_RAW;else if(c==='Готовая')i=bP_FAS;else i=[];const s=new Set(i);const k=(c==='WeightStock')?'WeightStock':(c==='Stock_DV'?'Stock_DV':(c==='Stock_Feed'?'Stock_Feed':(c==='Stock_Raw'?'Stock_Raw':(c==='Stock_Semi'?'Stock_Semi':'Готовая'))));if(data[k])Object.values(data[k]).forEach(v=>s.add(v.name));return Array.from(s).filter(x=>x).sort()};
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort()};
 const gPack=c=>{const s=new Set();if(c==='Пакеты')szs.forEach(x=>s.add(x));if(c==='Скотч')s.add('Скотч 360 грамм');if(c==='Пленка')bP_RAW.forEach(x=>s.add(x));const k=c==='Скотч'?'Скотч 360 грамм':c;if(data[k])Object.values(data[k]).forEach(v=>{if(v.name)s.add(v.name)});return Array.from(s).filter(x=>x).sort()};
@@ -196,7 +192,7 @@ function setCat(c){
     cur=c; D.body.classList.add('nav-active');
     const a=gID('act'),ct=gID('cnt'); a.innerHTML='';
 
-    // ЛІНИВЕ ЗАВАНТАЖЕННЯ
+    // ЛІНИВЕ ЗАВАНТАЖЕННЯ: Перевіряємо, чи потрібні архівні дані
     if(c==='Invoices' || c==='ArchSubIn' || c==='ArchSubOut'){
         ensureData(['ArchIncoming','ArchInvoices']);
     } else if (c==='ProdSub' || c==='Фасовка' || c==='Kruporushka' || c==='Vibro' || c==='ZSHM'){
@@ -214,7 +210,7 @@ function setCat(c){
     } else if(c==='TsCal'){
         ct.innerHTML=`<div class="z-head">ОБЕРІТЬ СПІВРОБІТНИКА</div><div id="tsList" class="item-grid" style="grid-template-columns:repeat(3,1fr)"></div>`;loadData()
     } else if(c==='StockRoot'){
-        // ТУТ ПРИБРАНО кнопку StockArchive (Вона тепер в Сировині)
+        // Тут ПРИБРАНО кнопку StockArchive
         let btns=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХІД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ВІДВАНТАЖЕННЯ</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:15px">🔧 КОРЕКЦІЯ</button>`:'';
         ct.innerHTML=`${btns}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАНА ПРОДУКЦІЯ (ФАСОВКА)</div><div class="dash-item" onclick="setCat('WeightStock')">КУПОВАНА ПРОДУКЦІЯ ВАГОВА (КУПОВАНА)</div><div class="dash-item" onclick="setCat('Stock_DV')">СКЛАД ГОТОВОЇ ВАГОВОЇ ПРОДУКЦІЇ З ВИРОБНИЦТВА (ДВ)</div><div class="dash-item" onclick="setCat('Stock_Feed')">ВІДХОДИ З ВИРОБНИЦТВА (КОРМА)</div><div class="dash-item" onclick="setCat('Stock_Raw')">СИРОВИНА (ЗЕРНО) СИРОВИННІ СКЛАДИ</div><div class="dash-item" onclick="setCat('Stock_Semi')">НАПІВФАБРИКАТ</div><div class="dash-item" onclick="setCat('PackSub')">ПАКУВ. МАТ.</div><div class="dash-item" onclick="setCat('Invoices')">АРХІВ НАКЛАДНИХ</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`
     } else if(c==='Stock_Raw'){
@@ -245,6 +241,7 @@ function loadData(){
     // Ця функція тепер просто диспетчер рендерингу
     checkAutoClose();
     const c=gID('cnt');
+    // Обробляємо Stock_Raw окремо, бо ми змінили його контейнер
     if(cur==='Stock_Raw') { rRaw(gID('rawList')); return; }
 
     if(!c||['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet'].includes(cur))return;
@@ -264,198 +261,68 @@ function loadData(){
     else rGen(c)
 }
 function toggleInput(i){const s=gID('s_'+i),n=gID('i_'+i);if(s.value==='NEW'){s.style.display='none';n.style.display='block';n.focus()}else n.style.display='none'}
-// --- ЛОГІКА ПРАЙС-ЛИСТА (НОВА) ---
-function rPriceList(c) {
-    // 1. Збираємо товари по категоріях
-    const cats = {
-        'Готовая': { t: '📦 ФАСОВКА', i: [] },
-        'WeightStock': { t: '⚖️ КУПОВАНА', i: [] },
-        'Stock_DV': { t: '🏭 СКЛАД ДВ', i: [] },
-        'Stock_Feed': { t: '🍂 КОРМА', i: [] }
-    };
-    Object.keys(cats).forEach(k => {
-        if (data[k]) Object.values(data[k]).forEach(v => {
-            if (v.name && !cats[k].i.includes(v.name)) cats[k].i.push(v.name);
-        });
-        cats[k].i.sort();
-    });
+function drawShipItem(s){let p=s.split('|');if(p.length<2&&s.includes(':'))p=s.split(':');let n=p[0],a=p[1],u=p[2],c=p[3],l='';if(c==='Готовая')l='(фас)';else if(c==='WeightStock')l='(куп)';else if(c==='Stock_DV')l='(дв)';else if(c==='Stock_Feed')l='(корм)';let lh=l?`<span style="color:var(--blue);font-size:10px;margin-left:4px">${l}</span>`:'';if(!u)u=bP_RAW.includes(n)?'шт':'кг';return `<div class="j-row"><span class="j-dots">${n}${lh}</span><span class="j-val">${a}${u}</span></div>`}
 
-    const prices = {};
-    if (data.PriceList) Object.values(data.PriceList).forEach(v => prices[v.name] = v);
+function rPriceList(c){const s=new Set();['WeightStock','Stock_DV','Stock_Feed','Stock_Raw','Готовая'].forEach(cat=>{if(data[cat])Object.values(data[cat]).forEach(v=>{if(v.name)s.add(v.name)})});const items=Array.from(s).sort();const prices={};if(data.PriceList)Object.values(data.PriceList).forEach(v=>prices[v.name]=v.price);let h=`<div class="item-grid" style="grid-template-columns:1fr">`;items.forEach(n=>{const p=prices[n]||'';h+=`<div class="item-card compact-row" style="display:grid;grid-template-columns:2fr 1fr;align-items:center;text-align:left"><div style="font-weight:700;font-size:13px;color:#1e293b">${n}</div><input type="number" placeholder="Грн" value="${p}" onchange="savePrice('${n}',this.value)" style="width:100%;font-weight:900;color:var(--p);border:1px solid #cbd5e1;border-radius:8px"></div>`});c.innerHTML=h+`</div>`}
+async function savePrice(n,p){const v=parseFloat(p);if(isNaN(v))return;let id=null;if(data.PriceList)Object.entries(data.PriceList).forEach(([k,val])=>{if(val.name===n)id=k});const u={};if(id)u[`/PriceList/${id}/price`]=v;else u[`/PriceList/${db.child('PriceList').push().key}`]={name:n,price:v};await db.update(u)}
 
-    // 2. Шапка: Перемикач + Кнопки
-    let h = `<div style="position:sticky;top:0;background:#f8fafc;z-index:10;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:10px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
-            <button onclick="setPriceMode('opt')" class="btn-main" style="margin:0;padding:8px;font-size:12px;background:${priceMode==='opt'?'var(--p)':'#fff'};color:${priceMode==='opt'?'#fff':'var(--p)'};border:1px solid var(--p)">🏭 ОПТ</button>
-            <button onclick="setPriceMode('roz')" class="btn-main" style="margin:0;padding:8px;font-size:12px;background:${priceMode==='roz'?'#ec4899':'#fff'};color:${priceMode==='roz'?'#fff':'#ec4899'};border:1px solid #ec4899">🏪 РОЗДРІБ</button>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:900;font-size:14px;color:#334155">${priceMode==='opt'?'ЦІНИ: ОПТ':'ЦІНИ: РОЗДРІБ'}</div>
-            <div>
-                ${!priceEdit ? 
-                `<button onclick="togglePriceEdit(true)" class="btn-main" style="width:auto;margin:0;padding:6px 12px;font-size:11px;background:#3b82f6">✏️ РЕДАГУВАТИ</button>` : 
-                `<button onclick="savePricesBatch()" class="btn-main" style="width:auto;margin:0;padding:6px 12px;font-size:11px;background:#16a34a">💾 ЗБЕРЕГТИ</button>`}
-            </div>
-        </div>
-    </div><div style="padding-bottom:50px">`;
+// Логика Табеля
+function addTimeRow(p="",r=""){const i=Date.now()+Math.random(),s=gID('gTS')?gID('gTS').value:'08:00',e=gID('gTE')?gID('gTE').value:'17:00';gID('tsRows').insertAdjacentHTML('beforeend',`<div class="ts-row" id="tr_${i}"><button class="btn-mini" onclick="this.classList.toggle('absent-active');this.classList.toggle('red')">(-)</button><input type="text" id="tn_${i}" class="ts-name-inp" placeholder="Прізвище" value="${p}"><input type="number" id="rate_${i}" class="ts-rate-inp" placeholder="грн" value="${r}"><input type="time" id="ts_${i}" value="${s}" class="ts-time-inp"><input type="time" id="te_${i}" value="${e}" class="ts-time-inp"><button class="btn-mini red" onclick="removeTimeRow('${i}')">×</button></div>`)}
+function removeTimeRow(i){gID('tr_'+i).remove();saveCurrentCrewToLocal()}
+function saveCurrentCrewToLocal(){const r=gID('tsRows').children,c=[];for(let w of r){const i=w.id.split('_')[1],n=gID('tn_'+i).value.trim(),ra=gID('rate_'+i).value.trim();if(n)c.push({name:n,rate:ra})}localStorage.setItem('activeCrew',JSON.stringify(c))}
+async function saveTimesheetBatch(){const d=gID('gTD').value,r=gID('tsRows').children,u={},dv=d+"T12:00:00Z",ts=new Date().toISOString(),c=[];let k=0;for(let w of r){const i=w.id.split('_')[1],n=gID('tn_'+i).value.trim(),rt=parseFloat(gID('rate_'+i).value)||0;if(!n)continue;c.push({name:n,rate:gID('rate_'+i).value});const a=w.querySelector('.btn-mini').classList.contains('absent-active'),s=gID('ts_'+i).value,e=gID('te_'+i).value;let pay=0;if(!a&&s&&e&&rt>0){const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);let dr=(eh*60+em)-(sh*60+sm);if(dr<0)dr+=24*60;pay=Math.round((dr/60)*rt)}const key=db.child('Timesheet').push().key;u['/Timesheet/'+key]={date:dv,name:n,s:s,e:e,absent:a,ts:ts,rate:rt,pay:pay};k++}if(k===0)return alert("Порожньо");if(confirm(`Зберегти табель за ${d}?`)){try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(c));alert("Збережено!")}catch(e){alert("Err:"+e)}}}
+function renderTsList(c){const r=data.Timesheet,n=new Set();if(r)Object.values(r).forEach(v=>n.add(v.name));let h='';Array.from(n).sort().forEach(x=>{h+=`<div class="item-card" onclick="openPersCal('${x}')" style="cursor:pointer;position:relative"><div class="item-title" style="font-size:12px;margin-bottom:0;height:auto;padding:10px 0">${x}</div><div class="ts-del-tile" onclick="event.stopPropagation();delPersonHistory('${x}')" style="display:${isAdmin?'flex':'none'}">×</div></div>`});const t=c||gID('tsList');if(t)t.innerHTML=h||'<div style="grid-column:1/-1;text-align:center;color:#999;padding:20px">Немає даних</div>'}
+async function delPersonHistory(n){if(confirm(`Видалити історію: ${n}?`)){const u={};if(data.Timesheet)Object.entries(data.Timesheet).forEach(([k,v])=>{if(v.name===n)u['/Timesheet/'+k]=null});await db.update(u)}}
+function openPersCal(n){calCurMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);renderPersCalGrid(n)}
+function changeCalMonth(d,n){calCurMonth.setMonth(calCurMonth.getMonth()+d);renderPersCalGrid(n)}
+function renderPersCalGrid(n){const y=calCurMonth.getFullYear(),m=calCurMonth.getMonth(),mn=mths[m],td=new Date(),dim=new Date(y,m+1,0).getDate(),fd=new Date(y,m,1).getDay()||7,sh={},nts=[];let tPay=0;if(data.Timesheet)Object.entries(data.Timesheet).forEach(([k,v])=>{if(v.name===n&&v.date){const d=new Date(v.date);if(d.getFullYear()===y&&d.getMonth()===m){sh[d.getDate()]={...v,id:k};tPay+=(v.pay||0)}}});if(data.Timesheet_Notes)Object.entries(data.Timesheet_Notes).forEach(([id,v])=>{if(v.name===n&&v.date){const d=new Date(v.date);if(d.getFullYear()===y&&d.getMonth()===m)nts.push({...v,day:d.getDate(),id:id})}});nts.sort((a,b)=>a.day-b.day);let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:10px;border-radius:10px;border:1px solid #e2e8f0"><button onclick="changeCalMonth(-1, '${n}')" style="border:none;background:0 0;font-size:20px;color:#334155">◀</button><div style="font-weight:900;color:#0f172a">${mn} ${y}</div><button onclick="changeCalMonth(1, '${n}')" style="border:none;background:0 0;font-size:20px;color:#334155">▶</button></div><div class="cal-grid"><div class="cal-head">ПН</div><div class="cal-head">ВТ</div><div class="cal-head">СР</div><div class="cal-head">ЧТ</div><div class="cal-head">ПТ</div><div class="cal-head" style="color:#ef4444">СБ</div><div class="cal-head" style="color:#ef4444">НД</div>`;for(let i=1;i<fd;i++)h+=`<div></div>`;for(let d=1;d<=dim;d++){let cur=new Date(y,m,d),dow=cur.getDay(),isW=(dow===0||dow===6),cl=isW?"cal-date weekend":"cal-date";if(y===td.getFullYear()&&m===td.getMonth()&&d===td.getDate())cl+=" today";let o='',sid=sh[d]?sh[d].id:'';if(sh[d]){const s=sh[d];if(s.absent)o=`<div class="cal-overlay pearl-pink-text">ВІДГУЛ</div>`;else o=`<div class="cal-overlay pearl-green-text"><div>${s.s||''}</div><div>${s.e||''}</div></div>`}h+=`<div class="cal-cell" onclick="openDayModal('${n}','${y}-${m+1}-${d}','${sid}')"><div class="${cl}">${d}</div>${o}</div>`}h+=`</div><div style="margin-top:10px;background:#ecfdf5;padding:10px;border-radius:10px;border:1px solid #a7f3d0;text-align:center;font-weight:900;color:#065f46">ЗАРПЛАТА ЗА ${mn}: ${tPay} грн</div><div style="margin-top:15px;background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:10px"><div style="font-size:12px;font-weight:900;color:#64748b;margin-bottom:5px;text-transform:uppercase">Записи</div>`;if(nts.length===0)h+=`<div style="font-size:12px;color:#999;text-align:center">Немає записів</div>`;else nts.forEach(x=>{h+=`<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed #eee;padding:5px 0;font-size:13px"><div style="color:#333"><b style="color:var(--p)">${x.day}.</b> ${x.note}</div><button onclick="delTsNote('${x.id}','${n}')" style="display:${isAdmin?'block':'none'};border:none;background:none;color:red;font-weight:bold">×</button></div>`});h+=`</div><button class="btn-main" onclick="closeModal()" style="margin-top:15px;background:#64748b">ЗАКРИТИ</button>`;gID('mT').innerText=n;gID('mB').innerHTML=h;gID('mdl').style.display='flex'}
+function openDayModal(n,d,sid){if(!isAdmin)return;let h=`<div style="text-align:center;font-weight:900;color:#333;margin-bottom:10px;font-size:16px">${d}</div>`;if(sid){const s=data.Timesheet[sid];h+=`<div style="background:#f8fafc;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:15px"><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:5px">РЕДАГУВАННЯ ЗМІНИ</div><div style="display:flex;gap:5px;align-items:center;justify-content:center;margin-bottom:10px"><input type="time" id="edS" value="${s.s}" class="ts-time-inp" style="width:80px"><span style="font-weight:bold">-</span><input type="time" id="edE" value="${s.e}" class="ts-time-inp" style="width:80px"></div><div style="text-align:center;font-size:12px;margin-bottom:10px">Тариф: <b>${s.rate}</b> грн/год</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button class="btn-main" onclick="saveShiftEdit('${sid}','${n}')" style="margin:0">ПЕРЕРАХУВАТИ</button><button class="btn-main" onclick="delShift('${sid}','${n}')" style="margin:0;background:#fee2e2;color:red;border:1px solid #fca5a5">ВИДАЛИТИ</button></div></div>`}h+=`<div style="border-top:1px dashed #ccc;padding-top:10px"><label class="l-t">ДОДАТИ НОТАТКУ (АВАНС)</label><input type="text" id="newNote" placeholder="Наприклад: Аванс 500"><button class="btn-main" onclick="addTsNoteDirect('${n}','${d}')" style="background:#e0e7ff;color:var(--p)">ДОДАТИ ЗАПИС</button></div>`;gID('mB').innerHTML=h;gID('mT').innerText=n;gID('mdl').style.display='flex'}
+async function saveShiftEdit(id,n){const s=gID('edS').value,e=gID('edE').value,rec=data.Timesheet[id],rt=rec.rate||0;let pay=0;if(s&&e&&rt>0){const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);let dr=(eh*60+em)-(sh*60+sm);if(dr<0)dr+=24*60;pay=Math.round((dr/60)*rt)}await db.child('Timesheet').child(id).update({s:s,e:e,pay:pay});openPersCal(n)}
+async function delShift(id,n){if(!confirm('Видалити зміну?'))return;await db.child('Timesheet').child(id).remove();openPersCal(n)}
+async function addTsNoteDirect(n,d){const t=gID('newNote').value;if(!t)return;const u={};u['/Timesheet_Notes/'+db.child('Timesheet_Notes').push().key]={name:n,date:d,note:t};await db.update(u);openPersCal(n)}
+async function delTsNote(id,n){if(!confirm('Видалити запис?'))return;await db.child('Timesheet_Notes').child(id).remove();openPersCal(n)}
+window.prepareHistPrint=(c,k,mKey,title)=>{const l=[];if(data[c])Object.entries(data[c]).filter(([i,v])=>v.name===k).forEach(([i,v])=>{let n=v.note||'Запис';if(v.supplier)n='Прихід: '+v.supplier;if(v.client)n='Відвантаження: '+v.client;if(v.date.startsWith(mKey))l.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:i,isFix:v.isFix})});l.sort((a,b)=>(a.d+a.ts).localeCompare(b.d+b.ts));let ph=`<h3>📜 ${k}: ${title}</h3><div id="print-cols" style="display:block">`;const drawR=(v)=>{let vShow=v.a;if(c==='Пленка'||c==='Стрейч пленка')vShow=v.a.toFixed(2);else if(c==='Скотч 360 грамм')vShow=v.a.toFixed(1);let u=(c==='Пленка')?'кг':'шт';return`<div class="p-row"><span>${fd2(v.d)} ${v.n}</span><b>${vShow}${u}</b></div>`};l.forEach(v=>ph+=drawR(v));ph+=`</div>`;gID('print-view').innerHTML=ph;printPage('modal')};
 
-    // 3. Список товарів
-    Object.keys(cats).forEach(key => {
-        if (cats[key].i.length > 0) {
-            h += `<div class="z-head" style="margin-top:15px;text-align:left;padding-left:10px">${cats[key].t}</div>`;
-            cats[key].i.forEach(n => {
-                const pObj = prices[n] || {};
-                let val = '';
-                if(priceMode === 'opt') val = pObj.priceOpt !== undefined ? pObj.priceOpt : (pObj.price || '');
-                else val = pObj.priceRoz !== undefined ? pObj.priceRoz : '';
-
-                h += `<div class="item-card compact-row" style="display:grid;grid-template-columns:2fr 1fr;align-items:center;text-align:left;padding:5px!important">
-                    <div style="font-weight:700;font-size:12px;color:#1e293b">${n}</div>
-                    ${priceEdit ? 
-                    `<input type="number" class="price-inp" data-name="${n}" placeholder="0.00" value="${val}" style="width:100%;font-weight:900;color:var(--p);border:1px solid #cbd5e1;border-radius:8px;text-align:center">` : 
-                    `<div style="font-weight:900;font-size:14px;color:#0f172a;text-align:right">${val ? val + ' ₴' : '-'}</div>`}
-                </div>`;
-            });
-        }
-    });
-    c.innerHTML = h + `</div>`;
-}
-
-function setPriceMode(m) { priceMode = m; loadData(); }
-function togglePriceEdit(s) { priceEdit = s; loadData(); }
-
-async function savePricesBatch() {
-    const inputs = document.querySelectorAll('.price-inp');
-    const updates = {};
-    const currentPrices = data.PriceList || {};
-    const nameToId = {};
-    Object.entries(currentPrices).forEach(([k, v]) => nameToId[v.name] = k);
-
-    inputs.forEach(inp => {
-        const name = inp.getAttribute('data-name');
-        const val = parseFloat(inp.value);
-        let id = nameToId[name];
-        let key = id ? `/PriceList/${id}` : `/PriceList/${db.child('PriceList').push().key}`;
-        const field = priceMode === 'opt' ? 'priceOpt' : 'priceRoz';
-        
-        if (!updates[key]) updates[key] = { name: name };
-        if (id && currentPrices[id]) updates[key] = { ...currentPrices[id] };
-        
-        if (!isNaN(val)) {
-            updates[key][field] = val;
-            if(priceMode === 'opt') updates[key]['price'] = val; 
-        }
-    });
-    try { await db.update(updates); priceEdit = false; alert("Ціни збережено!"); loadData(); } catch (e) { alert("Помилка: " + e); }
-}
-
-// --- ЛОГІКА ВІДВАНТАЖЕННЯ (НОВА) ---
-function loadBulk(c){document.querySelectorAll('.bulk-q').forEach(i=>{const n=i.getAttribute('data-n'),ct=i.getAttribute('data-cat'),v=parseFloat(i.value),k=n+'::'+ct;if(v>0)shipBasket[k]={w:v,c:ct,n:n};else delete shipBasket[k]});const bs=document.querySelectorAll('#shipBtns button');bs.forEach(b=>{let t=b.innerText,a=!1;if(c==='Готовая'&&t.includes('ФАСОВКА'))a=!0;if(c==='WeightStock'&&t.includes('КУПОВАНА'))a=!0;if(c==='Stock_DV'&&t.includes('ДВ'))a=!0;if(c==='Stock_Feed'&&t.includes('КОРМА'))a=!0;if(a){b.style.background='#eef2ff';b.style.borderColor='var(--p)'}else{b.style.background='#fff';b.style.borderColor='#ccc'}});const s={};Object.values(data[c]||{}).forEach(v=>{if(v)s[v.name]=(s[v.name]||0)+v.amount});let h=`<div class="item-grid" style="grid-template-columns:repeat(3,1fr)">`;Object.keys(s).sort().forEach(n=>{const v=s[n];if(v>0){const k=n+'::'+c,sv=shipBasket[k]?shipBasket[k].w:'';h+=`<div class="item-card" style="padding:5px"><div class="item-title" style="height:20px">${n}</div><div style="font-size:10px;color:#888;margin-bottom:2px">Зал: ${Math.round(v)}</div><input type="number" class="bulk-q" data-n="${n}" data-cat="${c}" placeholder="0" style="width:100%" value="${sv}"></div>`}});gID('shpR').innerHTML=h+`</div>`}
-
-async function sShip(){
-    const d=gID('hD').value, nm=gID('hNum').value, ag=gID('hAg').value, dv=d+"T12:00:00Z";
-    const sc=gID('s_hC'), c=(sc&&sc.value==='NEW')?gID('i_hC').value:(sc?sc.value:'');
-    const sf=gID('s_hMyFop'), myFop=(sf&&sf.value==='NEW')?gID('i_hMyFop').value:(sf?sf.value:'');
+// Функція Історії
+function showH(c,k){
+    // Важливо: завантажуємо архіви, якщо їх ще немає
+    if(c==='Stock_Raw'||c==='Stock_Archive') ensureData('Stock_Archive');
+    if(c==='WeightStock'||c==='Готовая') ensureData(['ArchInvoices','ArchIncoming']);
     
-    // Зчитуємо режим ціни з радіо-кнопок (додамо їх у розмітку пізніше)
-    const pModeEl = document.querySelector('input[name="shipPriceMode"]:checked');
-    const shipPriceMode = pModeEl ? pModeEl.value : 'opt';
-
-    if(!c)return alert('Оберіть отримувача!');
-    document.querySelectorAll('.bulk-q').forEach(i=>{
-        const n=i.getAttribute('data-n'),ct=i.getAttribute('data-cat'),v=parseFloat(i.value),k=n+'::'+ct;
-        if(v>0)shipBasket[k]={w:v,c:ct,n:n};else delete shipBasket[k]
+    const t=gID('mT'),b=gID('mB');t.innerText=k;
+    const l=[];
+    if(data[c])Object.entries(data[c]).filter(([i,v])=>v.name===k).forEach(([i,v])=>{
+        let n=v.note||'Запис';
+        if(v.supplier)n='Прихід: '+v.supplier;
+        if(v.client)n='Відвантаження: '+v.client;
+        l.push({d:v.date,ts:v.ts||'',n:n,a:v.amount,id:i,isFix:v.isFix, realName: v.name, fLink: v.fLink}) // додав fLink для звіту по партії
     });
-    
-    const it=[]; let tw=0, totalMoney=0;
-    const pricesDB = {};
-    if(data.PriceList) Object.values(data.PriceList).forEach(v => pricesDB[v.name] = v);
+    const cm=new Date().toISOString().slice(0,7),ar={},cl=[];
+    l.forEach(v=>{const m=v.d.slice(0,7);if(m===cm)cl.push(v);else{if(!ar[m])ar[m]=[];ar[m].push(v)}});
+    cl.sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts));
+    let h='<div style="margin-top:10px">';
+    const sm=Object.keys(ar).sort().reverse();
+    if(cl.length>0){
+        let sumP=0,sumM=0;
+        cl.forEach(x=>{if(x.a>0)sumP+=x.a;else sumM+=Math.abs(x.a)});
+        let sP=Math.round(sumP),sM=Math.round(sumM);
+        if(c==='Пленка'||c==='Стрейч пленка'){sP=sumP.toFixed(2);sM=sumM.toFixed(2)}else if(c==='Скотч 360 грамм'){sP=sumP.toFixed(1);sM=sumM.toFixed(1)}
+        h+=`<div style="font-size:10px;color:#94a3b8;font-weight:800;margin-bottom:5px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center"><span>Поточний місяць (${mths[new Date().getMonth()]})</span><div><span style="margin-right:10px"><span style="color:#2563eb">+${sP}</span> / <span style="color:#dc2626">-${sM}</span></span><button class="btn-main" style="width:auto;padding:4px 8px;font-size:10px;display:inline-block;margin:0" onclick="prepareHistPrint('${c}','${k}','${cm}','${mths[new Date().getMonth()]}')">🖨️</button></div></div><div style="display:flex;flex-direction:column;gap:0;">`;
+        cl.forEach(v=>{h+=renderHistRow(c,v)});
+        h+='</div>'}else h+=`<div style="text-align:center;padding:20px;color:#999">Порожньо</div>`;
+    if(sm.length>0){h+=`<div class="arch-y-grid" style="margin-top:20px;margin-bottom:15px;border-top:2px dashed #e2e8f0;padding-top:15px"><div style="grid-column:1/-1;font-size:10px;font-weight:900;color:#94a3b8;text-align:center;text-transform:uppercase;margin-bottom:5px">Архів минулих місяців</div>`;sm.forEach(k=>{const[y,m]=k.split('-'),nm=mths[parseInt(m)-1];let sumP=0,sumM=0;ar[k].forEach(x=>{if(x.a>0)sumP+=x.a;else sumM+=Math.abs(x.a)});let sP=Math.round(sumP),sM=Math.round(sumM);if(c==='Пленка'||c==='Стрейч пленка'){sP=sumP.toFixed(2);sM=sumM.toFixed(2)}else if(c==='Скотч 360 грамм'){sP=sumP.toFixed(1);sM=sumM.toFixed(1)}h+=`<div class="arch-tile-y" style="font-size:12px;padding:10px 5px;background:#f1f5f9;color:#64748b;box-shadow:none;border:1px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center;cursor:default"><div onclick="toggleF('h_${k}')" style="flex-grow:1;text-align:left;cursor:pointer">📁 ${nm} ${y} <span style="font-size:10px;margin-left:5px"><span style="color:#2563eb">+${sP}</span> / <span style="color:#dc2626">-${sM}</span></span></div><button class="btn-main" style="width:auto;padding:4px 8px;font-size:10px;margin:0" onclick="prepareHistPrint('${c}','${t.innerText}','${k}','${nm} ${y}')">🖨️</button></div>`});h+=`</div>`;sm.forEach(k=>{h+=`<div id="h_${k}" class="arch-content" style="border-left:2px solid #ccc;padding-left:10px;margin-bottom:10px">`;ar[k].sort((a,b)=>(b.d+b.ts).localeCompare(a.d+a.ts)).forEach(v=>{h+=renderHistRow(c,v)});h+=`</div>`})}b.innerHTML=h;gID('mdl').style.display='flex'}
 
-    Object.values(shipBasket).forEach(v=>{
-        let pObj = pricesDB[v.n] || {};
-        // Вибір ціни залежно від режиму
-        let price = shipPriceMode === 'opt' 
-            ? (pObj.priceOpt !== undefined ? pObj.priceOpt : (pObj.price || 0))
-            : (pObj.priceRoz !== undefined ? pObj.priceRoz : 0);
-            
-        let sum = price * v.w;
-        it.push({n:v.n, w:v.w, c:v.c, p: price, s: sum});
-        tw+=v.w;
-        totalMoney += sum;
-    });
-    
-    if(!it.length)return alert('Порожньо');
-    
-    let h=`<div id="shipPrev">
-        <div style="font-weight:bold;text-transform:uppercase;margin-bottom:5px;text-align:center;font-size:14px">ВИДАТКОВА НАКЛАДНА № ${nm||'___'}</div>
-        <div style="margin-bottom:5px;text-align:center;font-size:12px;color:#666">Тариф: ${shipPriceMode==='opt'?'ОПТ':'РОЗДРІБ'}</div>
-        <div style="margin-bottom:10px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div style="background:#f8fafc;padding:5px;border:1px solid #eee"><b>Постачальник:</b><br>${myFop||'-'}</div>
-            <div style="background:#f8fafc;padding:5px;border:1px solid #eee"><b>Отримувач:</b><br>${c}</div>
-        </div>`;
-    if(ag)h+=`<div style="font-size:12px;margin-bottom:10px;text-align:center"><b>Угода:</b> ${ag}</div>`;
-    
-    h+=`<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:10px;border:1px solid #ccc">
-        <tr style="background:#eee;font-weight:bold;text-align:center">
-            <td style="border:1px solid #ccc;padding:2px">№</td>
-            <td style="border:1px solid #ccc;padding:2px">Товар</td>
-            <td style="border:1px solid #ccc;padding:2px">К-ть</td>
-            <td style="border:1px solid #ccc;padding:2px">Ціна</td>
-            <td style="border:1px solid #ccc;padding:2px">Сума</td>
-        </tr>`;
-    it.forEach((x,idx)=>{
-        h+=`<tr><td style="border:1px solid #ccc;padding:2px;text-align:center">${idx+1}</td><td style="border:1px solid #ccc;padding:2px">${x.n}</td><td style="border:1px solid #ccc;padding:2px;text-align:center;font-weight:bold">${x.w} ${x.c==='Готовая'?'шт':'кг'}</td><td style="border:1px solid #ccc;padding:2px;text-align:right">${x.p > 0 ? x.p.toFixed(2) : '-'}</td><td style="border:1px solid #ccc;padding:2px;text-align:right;font-weight:bold">${x.s > 0 ? x.s.toFixed(2) : '-'}</td></tr>`
-    });
-    h+=`</tbody></table>
-    <div style="margin-top:10px;text-align:right;font-weight:900;font-size:14px">Всього вага: ${tw.toFixed(2)}</div>
-    <div style="margin-top:2px;text-align:right;font-weight:900;font-size:16px;color:#059669">Сума: ${totalMoney.toFixed(2)} грн</div>
-    <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button class="btn-main" onclick="execShip(false)" style="background:#059669;border:1px solid #047857">💾 СПИСАТИ</button>
-        <button class="btn-main" onclick="execShip(true)" style="background:#4338ca;border:1px solid #3730a3">🖨️ ДРУК</button>
-    </div></div>`;
-    window.tempShipData={it,c,nm,dv,myFop,tw,ag,totalMoney, mode: shipPriceMode};
-    gID('mB').innerHTML=h; gID('mT').innerText='ПЕРЕВІРКА'; gID('mdl').style.display='flex'
-}
+function renderHistRow(c,v){
+    if(v.a===0&&(v.n.includes('Остаток')||v.n.includes('Закрытие')||v.n.includes('Начало')||v.n.includes('Конец'))){const isStart=v.n.toLowerCase().includes('начало'),color=isStart?'#15803d':'#be123c',bg=isStart?'#dcfce7':'#fee2e2',icon=isStart?'🚀':'🏁';return `<div style="background:${bg};padding:8px;border-radius:8px;margin:4px 0;font-size:12px;color:${color};border:1px solid ${color};font-weight:900;text-align:center;"><div style="font-size:10px;opacity:0.8;margin-bottom:2px">${fd2(v.d)}</div>${icon} ${v.n}${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;font-size:14px;color:red;float:right">🗑️</button>`:''}</div>`}
+    if(v.isFix)return `<div style="background:#fffbeb;padding:10px;border-radius:8px;margin:5px 0;font-size:12px;color:#92400e;display:flex;justify-content:space-between;align-items:center;border:1px solid #fcd34d;"><span style="font-weight:700">📌 ${v.n}</span><span style="font-size:10px;color:#b45309">${fd2(v.d)}</span>${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;font-size:14px;margin-left:5px">🗑️</button>`:''}</div>`;
+    const p=v.a>0?'+':'',vd=(c==='Стрейч пленка')?v.a.toFixed(2):(c==='Пакеты'||c==='Термо лента'?Math.round(v.a):v.a.toFixed(1));const valClass=v.a>=0?'val-blue':'val-red';
+    let repBtn='';if(v.a>0&&(c==='Stock_Raw'||c==='WeightStock'||c==='Stock_Archive')){repBtn=`<button onclick="genBatchReport('${c}', '${(v.realName||v.n).replace(/'/g, "\\'")}', '${v.d}', ${v.a})" style="border:none;background:#4f46e5;color:#fff;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-left:5px;cursor:pointer">📄</button>`;}
+    return `<div style="display:flex;align-items:center;border-bottom:1px solid #f1f5f9;justify-content:space-between;padding:2px 0"><div style="padding:8px 0;width:55%"><div style="font-weight:600;color:#1e293b;font-size:13px">${v.n}</div><div style="font-size:10px;color:#94a3b8">${fd2(v.d)}</div></div><div style="text-align:right;font-weight:800;font-size:14px;width:35%;display:flex;align-items:center;justify-content:flex-end" class="${valClass}">${p}${vd}${repBtn}</div><div style="width:10%;text-align:center">${corrMode?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;font-size:16px;color:red">🗑️</button>`:''}</div></div>`}
 
-async function execShip(doPrint){
-    const dObj=window.tempShipData; if(!dObj)return; 
-    const{it,c,nm,dv,myFop,tw,ag}=dObj;
-    const btns=document.querySelectorAll('#shipPrev button'); btns.forEach(b=>{b.disabled=!0;b.innerText='...'});
-    try{
-        const lk=db.child('ArchInvoices').push().key,u={};
-        const itemsStr = it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);
-        u['/ArchInvoices/'+lk]={date:dv,client:c,num:nm,agreement:ag,items:itemsStr,supplierName:myFop,ts:new Date().toISOString(), totalSum: dObj.totalMoney, priceMode: dObj.mode};
-        it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:dv,note:`Отгр: ${c} №${nm}`,fLink:lk,ts:new Date().toISOString()}});
-        if(useStretch){const q=parseFloat((tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:dv,note:`(авто) Відвантаження ${c}`,fLink:lk,ts:new Date().toISOString()}}
-        if(myFop&&myFop!=='ПОСТАЧАЛЬНИК'){let fopExists=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===myFop)fopExists=!0});if(!fopExists)u['/Suppliers/'+db.child('Suppliers').push().key]={name:myFop}}
-        await db.update(u);
-        if(doPrint){printShipInvoice(dObj,lk);} else {closeModal();alert('Збережено!');}
-        document.querySelectorAll('.bulk-q').forEach(i=>i.value=''); window.shipBasket={};
-    }catch(e){alert("Помилка: "+e);btns.forEach(b=>b.disabled=!1)}
-}
-
-function printShipInvoice(d,id){
-    const ms=['Січня','Лютого','Березня','Квітня','Травня','Червня','Липня','Серпня','Вересня','Жовтня','Листопада','Грудня'];
-    const dt=new Date(d.dv),day=dt.getDate(),m=ms[dt.getMonth()],y=dt.getFullYear();
-    let h=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:5px">Видаткова накладна № ${d.nm||'___'} від ${day} ${m} ${y} р</div>`;
-    if(d.ag)h+=`<div style="text-align:center;font-size:12px;margin-bottom:5px">Угода: ${d.ag}</div>`;
-    h+=`<div style="border-bottom:1px dashed #000;margin-bottom:10px"></div>
-    <div style="margin-bottom:10px;font-size:12px;line-height:1.4;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div><b>Постачальник:</b><br>${d.myFop||'-'}</div>
-        <div><b>Отримувач:</b><br>${d.c}</div>
-    </div>
-    <table id="inv-table"><thead><tr><th style="width:20px">№</th><th>Товар</th><th style="width:50px">К-ть</th><th style="width:30px">Од</th><th style="width:50px">Ціна</th><th style="width:60px">Сума</th></tr></thead><tbody>`;
-    d.it.forEach((x,idx)=>{h+=`<tr><td>${idx+1}</td><td class="l">${x.n}</td><td>${x.w}</td><td>${x.c==='Готовая'?'шт':'кг'}</td><td>${x.p > 0 ? x.p.toFixed(2) : '-'}</td><td>${x.s > 0 ? x.s.toFixed(2) : '-'}</td></tr>`});
-    h+=`</tbody></table><div style="margin-top:10px;text-align:right;font-weight:900;font-size:14px">Всього: ${d.tw.toFixed(2)}</div>
-    <div style="text-align:right;font-weight:900;font-size:16px;margin-top:5px">Сума до сплати: ${d.totalMoney.toFixed(2)} грн</div>
-    <div style="margin-top:40px;display:flex;justify-content:space-between;font-size:12px"><div>Відвантажив: ________________</div><div>Отримав: ________________</div></div>`;
-    gID('print-view').innerHTML=h;printPage('invoice')
-}
-
-// --- Рендеринг (Склади) ---
+// Рендеринг розділів
 function rInvD(c){const k=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[k]||{},t={};Object.entries(d).forEach(([i,v])=>{if(!v.date)return;const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth();if(!t[y])t[y]={m:{}};if(!t[y].m[m])t[y].m[m]=[];t[y].m[m].push({...v,id:i})});let h='';Object.keys(t).sort((a,b)=>b-a).forEach(y=>{h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('y${y}')">${y}</div></div><div id="y${y}" class="arch-content"><div class="arch-m-grid">`;Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div class="arch-tile-m" onclick="toggleF('m${y}${m}')">${mths[m]}</div>`});h+=`</div>`;Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div id="m${y}${m}" class="arch-content" style="grid-column:1/-1;">`;t[y].m[m].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{if(k==='ArchIncoming'){h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХІД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`;if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`);else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`;h+=`</div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${k}','${v.id}')">ВИДАЛИТИ</button>`:''}</div>`}else{h+=`<div class="j-card"><div class="j-head">ВІДВАНТАЖЕННЯ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`;if(v.items)v.items.forEach(i=>h+=drawShipItem(i));h+=`</div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${k}','${v.id}')">ВИДАЛИТИ</button>`:''}</div>`}});h+=`</div>`});h+=`</div>`});c.innerHTML=h||'Порожньо'}
 function rInvC(c){const k=(archSub==='In'?'ArchIncoming':'ArchInvoices'),d=data[k]||{},t={};Object.entries(d).forEach(([i,v])=>{if(!v.date)return;const dt=new Date(v.date),y=dt.getFullYear(),m=dt.getMonth(),cl=v.client||v.supplier||'Без імені';if(!t[y])t[y]={m:{}};if(!t[y].m[m])t[y].m[m]={cl:{}};if(!t[y].m[m].cl[cl])t[y].m[m].cl[cl]=[];t[y].m[m].cl[cl].push({...v,id:i})});let h='';Object.keys(t).sort((a,b)=>b-a).forEach(y=>{h+=`<div class="arch-y-grid"><div class="arch-tile-y" onclick="toggleF('cy${y}')">${y}</div></div><div id="cy${y}" class="arch-content"><div class="arch-m-grid">`;Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div class="arch-tile-m" onclick="toggleF('cm${y}${m}')">${mths[m]}</div>`});h+=`</div>`;Object.keys(t[y].m).sort((a,b)=>b-a).forEach(m=>{h+=`<div id="cm${y}${m}" class="arch-content" style="grid-column:1/-1;">`;Object.keys(t[y].m[m].cl).sort().forEach(n=>{const id=`c${y}${m}${n.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g,'')}`,cnt=t[y].m[m].cl[n].length;h+=`<div class="arch-tile-c" style="margin-bottom:2px" onclick="toggleF('${id}')">${n}<div class="arch-badge">${cnt}</div></div><div id="${id}" class="arch-content" style="margin-bottom:10px;border-left:2px solid var(--p);padding-left:5px;">`;t[y].m[m].cl[n].sort((a,b)=>(b.date+b.ts).localeCompare(a.date+a.ts)).forEach(v=>{if(k==='ArchIncoming'){h+=`<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХІД</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.supplier}</div><div class="j-body">`;if(v.items)v.items.forEach(i=>h+=`<div class="j-row"><span class="j-dots">${i.n}</span><span class="j-val">${i.w}кг</span></div>`);else h+=`<div class="j-row"><span class="j-dots">${v.name}</span><span class="j-val">${v.amount}кг</span></div>`;h+=`</div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${k}','${v.id}')">ВИДАЛИТИ</button>`:''}</div>`}else{h+=`<div class="j-card"><div class="j-head">ВІДВАНТАЖЕННЯ</div><div class="j-sub">${fd2(v.date)} №${v.num||'Б/Н'}</div><div class="j-title">${v.client}</div><div class="j-body">`;if(v.items)v.items.forEach(i=>h+=drawShipItem(i));h+=`</div>${corrMode?`<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="event.stopPropagation();delInvoiceFull('${k}','${v.id}')">ВИДАЛИТИ</button>`:''}</div>`}});h+=`</div>`});h+=`</div>`});h+=`</div>`});c.innerHTML=h||'Порожньо'}
-function drawShipItem(s){let p=s.split('|');if(p.length<2&&s.includes(':'))p=s.split(':');let n=p[0],a=p[1],u=p[2],c=p[3],l='';if(c==='Готовая')l='(фас)';else if(c==='WeightStock')l='(куп)';else if(c==='Stock_DV')l='(дв)';else if(c==='Stock_Feed')l='(корм)';let lh=l?`<span style="color:var(--blue);font-size:10px;margin-left:4px">${l}</span>`:'';if(!u)u=bP_RAW.includes(n)?'шт':'кг';return `<div class="j-row"><span class="j-dots">${n}${lh}</span><span class="j-val">${a}${u}</span></div>`}
+
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty ${t[n]>=0?'val-pos':'val-neg'}">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty ${t[n]>=0?'val-pos':'val-neg'}">${Math.round(t[n])}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rRaw(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{h+=`<div class="item-card ${t[n]<0?'alarm-blink':''}"><div class="item-title">${n}</div><div class="item-qty ${t[n]>=0?'val-pos':'val-neg'}">${Math.round(t[n])}</div><div style="display:flex;gap:2px;margin-top:4px"><button class="history-btn" onclick="showH('Stock_Raw','${n}')" style="width:100%">📜</button>${isAdmin?`<button class="history-btn" onclick="archiveRawBatch('${n}')" style="width:auto;background:#e0f2fe;color:#0369a1">📦</button>`:''}</div><button class="corr-btn" onclick="openModal('corr','Stock_Raw','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
@@ -483,6 +350,7 @@ const ti=gID('mT'),b=gID('mB'),td=new Date().toISOString().split('T')[0];aId=nul
 if(WS_CFG[t]){renderWorkshopModal(t,ti,b,td);gID('mdl').style.display='flex';return}
 if(arguments.length===2&&(t!=='corr'))aId=a1;
 
+// Логіка відкриття різних вікон
 if(t==='corr'){const c=a1,n=a2;corrCtx={cat:c,name:n};ti.innerText='Корекція: '+n;b.innerHTML=`<div style="margin-bottom:15px;background:#f8fafc;padding:10px;border-radius:10px;border:1px solid #e2e8f0"><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:5px">УПРАВЛІННЯ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #cbd5e1;padding:8px;font-size:11px" onclick="renameItem('${n}','${c}')">✏️ ІМ'Я</button><button class="btn-main" style="background:#fee2e2;color:red;border:1px solid #fca5a5;padding:8px;font-size:11px" onclick="delItemBatch('${n}','${c}')">🗑️ ВИДАЛИТИ</button></div></div><hr style="border:none;border-top:1px dashed #cbd5e1;margin:10px 0"><label class="l-t">ДАТА</label><input type="date" id="cD" value="${td}"><label class="l-t">ЗМІНИТИ ЗАЛИШОК (+/-)</label><div style="display:flex;gap:5px"><input type="number" id="cA" placeholder="0"><button onclick="gID('cA').value *= -1" style="width:50px;font-weight:900;background:#eef2ff;border:1px solid #cbd5e1;border-radius:10px">+/-</button></div><label class="l-t">ПРИЧИНА</label><input type="text" id="cR" placeholder="Наприклад: переоблік"><button class="btn-main" id="btnS" onclick="sCorr()" style="margin-top:10px">ЗБЕРЕГТИ</button>`}
 else if(t==='fas'){ti.innerText='Фасування (Мульти)';b.innerHTML=`<label class="l-t">ДАТА</label><input type="date" id="fD" value="${td}"><div class="z-head" style="margin-top:10px">СИРОВИНА (ВХІД)</div><div class="z-col-h" style="grid-template-columns:25% 45% 20% 10%"><div>ЗВІДКИ</div><div>ЩО</div><div>КГ</div><div></div></div><div id="fasRows"></div><button class="btn-main" style="background:#fff;color:var(--p);border:1px solid #e2e8f0;padding:8px;font-size:11px" onclick="addFasRow()">+ ДОДАТИ СИРОВИНУ</button><div class="z-head" style="margin-top:15px;background:#eef2ff;color:var(--p)">ГОТОВА ПРОДУКЦІЯ (ВИХІД)</div><div class="z-col-h" style="grid-template-columns:45% 25% 20% 10%"><div>НАЗВА</div><div>ПАКЕТ</div><div>ШТ</div><div></div></div><div id="fasOutRows"></div><button class="btn-main" style="background:#fff;color:var(--p);border:1px solid #e2e8f0;padding:8px;font-size:11px" onclick="addFasOutRow()">+ ДОДАТИ ПРОДУКЦІЮ</button><div style="margin-top:15px;border-top:1px dashed #e2e8f0;padding-top:10px"><label class="l-t">ВЗЯВ ПЛІВКИ (через +)</label><input type="text" id="fVz" placeholder="5+2.5"><label class="l-t">ЗАЛИШОК ПЛІВКИ</label><input type="number" id="fOs" placeholder="Залишок"></div><button class="btn-main" id="btnS" onclick="sFas()">ЗБЕРЕГТИ</button>`;setTimeout(()=>{addFasRow();addFasOutRow()},100)}
 else if(t==='addRaw'){ti.innerText='Прихід Сировини';b.innerHTML=`Дата:<input type="date" id="rD" value="${td}">Назва:${makeSelect('rN','Stock_Raw','Назва')}Постачальник:${makeSelect('rSupp','','Постачальник',gRawActive(),'+ НОВИЙ')}Вага (кг):<input type="number" id="rA"><button class="btn-main" id="btnS" onclick="sRawInc()">ПРИЙНЯТИ</button>`}
@@ -490,13 +358,7 @@ else if(t==='inc'){ti.innerText='ПРИХІД НА СКЛАД';b.innerHTML=`<div
 else if(t==='addMatPack'){ti.innerText='ПРИХІД ПАКУВАННЯ';b.innerHTML=`<div class="g2"><div><label class="l-t">ДАТА</label><input type="date" id="pD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="pNum" placeholder="№"></div></div><div style="margin-bottom:5px"><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSelect('pS','ArchPackIn','Постачальник',gPackS(),'+ НОВИЙ')}</div><div style="margin-bottom:5px"><label class="l-t">СКЛАД ПРИЙОМУ</label><select id="pCat" onchange="updPackList()"><option value="Пакеты">Пакети</option><option value="Пленка">Плівка</option><option value="Скотч 360 грамм">Скотч</option><option value="Мешки">Мішки</option><option value="Нитки">Нитки</option><option value="Этикетка">Етикетка</option><option value="Стрейч пленка">Стрейч плівка</option><option value="Термо лента">Термо стрічка</option></select></div><div style="margin-bottom:5px"><label class="l-t">ПРОДУКЦІЯ</label><div id="pProdCont"></div></div><div style="margin-bottom:15px"><label class="l-t" id="pALbl">КІЛЬКІСТЬ (ШТ)</label><input type="number" id="pA" placeholder="0"></div><button class="btn-main" style="margin-top:10px;background:var(--s)" onclick="sPack()">ПРИЙНЯТИ</button>`;setTimeout(updPackList,100)}
 else if(t==='ship'){
 useStretch=!1;shipBasket={};ti.innerText='ВІДВАНТАЖЕННЯ ЗІ СКЛАДУ';
-b.innerHTML=`<div class="g3"><div><label class="l-t">ДАТА</label><input type="date" id="hD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="hNum" placeholder="№"></div><div><label class="l-t">УГОДА</label><input type="text" id="hAg" placeholder="№"></div></div><div class="g2" style="margin:5px 0"><div><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSelect('hMyFop','Suppliers','Постачальник',null,'+ НОВИЙ')}</div><div><label class="l-t">ОТРИМУВАЧ</label>${makeSelect('hC','ArchInvoices','Отримувач',gCl(),'+ НОВИЙ')}</div></div>
-<div style="background:#f0f9ff;padding:5px;border:1px solid #bae6fd;border-radius:6px;margin-bottom:10px;display:flex;justify-content:center;gap:15px;align-items:center">
-  <span style="font-weight:bold;font-size:12px;color:#0369a1">ТАРИФ:</span>
-  <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="radio" name="shipPriceMode" value="opt" checked> 🏭 ОПТ</label>
-  <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px"><input type="radio" name="shipPriceMode" value="roz"> 🏪 РОЗДРІБ</label>
-</div>
-<div class="z-head">ЗВІДКИ ВАНТАЖИМО:</div><div id="shipBtns" class="dash-grid" style="margin-bottom:10px;grid-template-columns:1fr 1fr"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Готовая')">ФАСОВКА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('WeightStock')">КУПОВАНА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_DV')">ДВ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_Feed')">КОРМА</button></div><div id="shpR"></div><div style="margin-top:10px;border-top:1px dashed #cbd5e1;padding-top:10px"><button id="btnStr" class="btn-main" onclick="toggleStr(this)" style="background:#f1f5f9;color:#333;border:1px solid #cbd5e1">СТРЕЙЧ: НІ</button></div><button class="btn-main" id="btnS" onclick="sShip()" style="margin-top:15px;background:var(--d)">ВІДВАНТАЖИТИ</button>`}
+b.innerHTML=`<div class="g3"><div><label class="l-t">ДАТА</label><input type="date" id="hD" value="${td}"></div><div><label class="l-t">№ НАКЛ</label><input type="text" id="hNum" placeholder="№"></div><div><label class="l-t">УГОДА</label><input type="text" id="hAg" placeholder="№"></div></div><div class="g2" style="margin:5px 0"><div><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSelect('hMyFop','Suppliers','Постачальник',null,'+ НОВИЙ')}</div><div><label class="l-t">ОТРИМУВАЧ</label>${makeSelect('hC','ArchInvoices','Отримувач',gCl(),'+ НОВИЙ')}</div></div><div class="z-head">ЗВІДКИ ВАНТАЖИМО:</div><div id="shipBtns" class="dash-grid" style="margin-bottom:10px;grid-template-columns:1fr 1fr"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Готовая')">ФАСОВКА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('WeightStock')">КУПОВАНА</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_DV')">ДВ</button><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc;padding:8px" onclick="loadBulk('Stock_Feed')">КОРМА</button></div><div id="shpR"></div><div style="margin-top:10px;border-top:1px dashed #cbd5e1;padding-top:10px"><button id="btnStr" class="btn-main" onclick="toggleStr(this)" style="background:#f1f5f9;color:#333;border:1px solid #cbd5e1">СТРЕЙЧ: НІ</button></div><button class="btn-main" id="btnS" onclick="sShip()" style="margin-top:15px;background:var(--d)">ВІДВАНТАЖИТИ</button>`}
 else if(t==='fixBal'){ti.innerText='Фіксація залишків';b.innerHTML=`<p style="font-size:12px;color:#666">Зафіксувати залишки на початок дня?</p><input type="date" id="fixDate" value="${td}"><button class="btn-main" id="btnFix" onclick="sFixBal()" style="background:#f59e0b">ЗБЕРЕГТИ МІТКУ</button>`}
 else if(t==='dayRep'){ti.innerText='Денний звіт';b.innerHTML=`<label class="l-t">ДАТА</label><input type="date" id="repDate" value="${td}" style="margin-bottom:15px"><button class="btn-main" onclick="genDayReport()">СФОРМУВАТИ</button>`}
 else if(t==='monthRep'){ti.innerText='МІСЯЧНИЙ ЗВІТ';b.innerHTML=`<label class="l-t">ОБЕРІТЬ МІСЯЦЬ</label><input type="month" id="repMth" value="${td.slice(0,7)}" style="margin-bottom:15px"><button class="btn-main" onclick="genMonthReport()" style="background:#4338ca">📊 ПОКАЗАТИ ЗВІТ</button>`}
@@ -679,6 +541,6 @@ async function genBatchReport(cat, name, startDate, startAmount){
     gID('mdl').style.display = 'flex';
 }
 
-async function sFixBal(){const d=gID('fixDate').value;if(!d)return alert('Дату!');const ds=d+"T00:00:00.000Z",u={},b=gID('btnFix');b.disabled=!0;b.innerText="...";let k=0;stockCatsAll.forEach(c=>{if(!data[c])return;const s={};Object.values(data[c]).forEach(v=>s.add(v.name));Object.keys(s).forEach(n=>{const a=s[n];if(Math.abs(a)>.01){u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:ds,ts:ds,note:`🟢 ОСТАТОК: ${Math.round(a)}`,isFix:!0};k++}})});try{await db.update(u);alert("Готово");closeModal()}catch(e){alert(e);b.disabled=!1;b.innerText="СОХРАНИТЬ"}}
+async function sFixBal(){const d=gID('fixDate').value;if(!d)return alert('Дату!');const ds=d+"T00:00:00.000Z",u={},b=gID('btnFix');b.disabled=!0;b.innerText="...";let k=0;stockCatsAll.forEach(c=>{if(!data[c])return;const s={};Object.values(data[c]).forEach(v=>s[v.name]=(s[v.name]||0)+v.amount);Object.keys(s).forEach(n=>{const a=s[n];if(Math.abs(a)>.01){u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:ds,ts:ds,note:`🟢 ОСТАТОК: ${Math.round(a)}`,isFix:!0};k++}})});try{await db.update(u);alert("Готово");closeModal()}catch(e){alert(e);b.disabled=!1;b.innerText="СОХРАНИТЬ"}}
 async function runArchive(){const d=gID('archDate').value;if(!d||!confirm(`СВЕРТКА БАЗЫ (ОПАСНО)\nУдалит все старые записи, но сохранит остатки.\n\nПродолжить?`))return;const b=gID('btnArch'),cd=d+"T00:00:00.000Z",u={};b.disabled=!0;b.innerText="...";let f=0,l=0;stockCatsAll.forEach(c=>{if(!data[c])return;const s={};Object.entries(data[c]).forEach(([k,v])=>{if(v.date<cd){s[v.name]=(s[v.name]||0)+v.amount;u[`/${c}/${k}`]=null;l++}});Object.keys(s).forEach(n=>{const a=s[n];if(Math.abs(a)>.01){u[`/${c}/${db.child(c).push().key}`]={name:n,amount:a,date:cd,ts:new Date().toISOString(),note:`🟢 СВЕРТКА БАЗЫ`,isFix:!0};f++}})});['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report','ArchInvoices','ArchIncoming','ArchPackIn'].forEach(c=>{if(!data[c])return;Object.entries(data[c]).forEach(([k,v])=>{if(v.date<cd){u[`/${c}/${k}`]=null;l++}})});try{await db.update(u);alert("Готово");closeModal()}catch(e){alert(e);b.disabled=!1;b.innerText="СВЕРНУТЬ БАЗУ"}}
 </script></body></html>
