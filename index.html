@@ -847,4 +847,120 @@ async function genBatchReport(cat,name,startDate,startAmount){ensureData(['Krup_
 
 async function sFixBal(){const d=gID('fixDate').value;if(!d)return alert('Дату!');const ds=d+"T00:00:00.000Z",u={},b=gID('btnFix');b.disabled=!0;b.innerText="...";let k=0;stockCatsAll.forEach(c=>{if(!data[c])return;const s={};Object.values(data[c]).forEach(v=>{if(v.name)s[v.name]=(s[v.name]||0)+v.amount});Object.keys(s).forEach(n=>{const a=s[n];if(Math.abs(a)>.01){u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:ds,ts:ds,note:`🟢 ОСТАТОК: ${Math.round(a)}`,isFix:!0};k++}})});try{await db.update(u);alert("Готово");closeModal()}catch(e){alert(e);b.disabled=!1;b.innerText="СОХРАНИТЬ"}}
 async function runArchive(){const d=gID('archDate').value;if(!d||!confirm(`СВЕРТКА БАЗЫ (ОПАСНО)\nУдалит все старые записи, но сохранит остатки.\n\nПродолжить?`))return;const b=gID('btnArch'),cd=d+"T00:00:00.000Z",u={};b.disabled=!0;b.innerText="...";let f=0,l=0;stockCatsAll.forEach(c=>{if(!data[c])return;const s={};Object.entries(data[c]).forEach(([k,v])=>{if(v.date<cd){s[v.name]=(s[v.name]||0)+v.amount;u[`/${c}/${k}`]=null;l++}});Object.keys(s).forEach(n=>{const a=s[n];if(Math.abs(a)>.01){u[`/${c}/${db.child(c).push().key}`]={name:n,amount:a,date:cd,ts:new Date().toISOString(),note:`🟢 СВЕРТКА БАЗЫ`,isFix:!0};f++}})});['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report','ArchInvoices','ArchIncoming','ArchPackIn'].forEach(c=>{if(!data[c])return;Object.entries(data[c]).forEach(([k,v])=>{if(v.date<cd){u[`/${c}/${k}`]=null;l++}})});try{await db.update(u);alert("Готово");closeModal()}catch(e){alert(e);b.disabled=!1;b.innerText="СВЕРНУТЬ БАЗУ"}}
+    // --- ДОДАТКОВІ ФУНКЦІЇ (ВИПРАВЛЕННЯ ПОМИЛОК) ---
+
+function openModal(t, a, b) {
+    gID('mdl').style.display = 'flex';
+    const m = gID('mB'), h = gID('mT'), d = new Date().toISOString().split('T')[0];
+    m.innerHTML = ''; aId = a;
+
+    if (t === 'inc') {
+        h.innerText = 'ПРИХІД ТОВАРУ (КУПОВАНА)';
+        const sl = gBuyS();
+        m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">ДАТА</label><input type="date" id="iD" value="${d}"></div><div style="margin-bottom:10px"><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSmart('iS', sl, 'Оберіть...')}</div><div style="margin-bottom:10px"><label class="l-t">НАЗВА ТОВАРУ</label>${makeSmart('iN', gP('WeightStock'), 'Назва')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="margin-bottom:10px"><label class="l-t">ВАГА (КГ)</label><input type="number" id="iA" placeholder="0"></div><div style="margin-bottom:10px"><label class="l-t">НАКЛАДНА №</label><input type="text" id="iNum" placeholder="---"></div></div><button class="btn-main" onclick="sInc()">ЗБЕРЕГТИ</button>`;
+    } 
+    else if (t === 'ship') {
+        h.innerText = 'ВІДВАНТАЖЕННЯ';
+        const cl = gCl();
+        loadBulk(cur === 'StockRoot' ? 'Готовая' : cur);
+        m.innerHTML = `<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px;border:1px solid #e2e8f0"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div><label class="l-t">ДАТА</label><input type="date" id="hD" value="${d}"></div><div><label class="l-t">НАКЛАДНА №</label><input type="text" id="hNum" placeholder="Б/Н"></div></div><div style="margin-bottom:10px"><label class="l-t">ОТРИМУВАЧ</label>${makeSmart('hC', cl, 'Клієнт...')}</div><div style="margin-bottom:10px"><label class="l-t">УГОДА / ПРИМІТКА</label><input type="text" id="hAg" placeholder="Додатково..."></div><div style="margin-bottom:10px"><label class="l-t">ПОСТАЧАЛЬНИК (НАШ ФОП)</label>${makeSmart('hMyFop', (data.Suppliers ? Object.values(data.Suppliers).map(x=>x.name) : []), 'ПОСТАЧАЛЬНИК')}</div><div style="margin-bottom:10px;display:flex;gap:10px;align-items:center"><label class="l-t" style="margin:0">ЦІНА:</label><label><input type="radio" name="shipPriceMode" value="opt" ${priceMode==='opt'?'checked':''}> ОПТ</label><label><input type="radio" name="shipPriceMode" value="roz" ${priceMode==='roz'?'checked':''}> РОЗДРІБ</label></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px"><button onclick="toggleStr(this)" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;color:#333">СТРЕЙЧ: НІ</button></div></div><div id="shipBtns" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:5px;margin-bottom:5px"><button class="btn-main" onclick="loadBulk('Готовая')" style="flex-shrink:0;width:auto;padding:8px;font-size:10px;margin:0">ФАСОВКА</button><button class="btn-main" onclick="loadBulk('WeightStock')" style="flex-shrink:0;width:auto;padding:8px;font-size:10px;margin:0">КУПОВАНА</button><button class="btn-main" onclick="loadBulk('Stock_DV')" style="flex-shrink:0;width:auto;padding:8px;font-size:10px;margin:0">ДВ</button><button class="btn-main" onclick="loadBulk('Stock_Feed')" style="flex-shrink:0;width:auto;padding:8px;font-size:10px;margin:0">КОРМА</button></div><div id="shpR" style="max-height:250px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:5px;background:#f9fafb"></div><button class="btn-main" onclick="sShip()" style="margin-top:10px">ДАЛІ</button>`;
+    } 
+    else if (t === 'addRaw') {
+        h.innerText = 'ПРИХІД СИРОВИНИ';
+        const sl = gBuyS();
+        m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">ДАТА</label><input type="date" id="rD" value="${d}"></div><div style="margin-bottom:10px"><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSmart('rSupp', sl, 'Оберіть...')}</div><div style="margin-bottom:10px"><label class="l-t">СИРОВИНА</label>${makeSmart('rN', bP_RAW, 'Назва')}</div><div style="margin-bottom:10px"><label class="l-t">ВАГА (КГ)</label><input type="number" id="rA" placeholder="0"></div><button class="btn-main" onclick="sRawInc()">ЗБЕРЕГТИ</button>`;
+    } 
+    else if (t === 'addMatPack') {
+        h.innerText = 'ПРИХІД МАТЕРІАЛІВ';
+        const ps = gPackS();
+        m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">КАТЕГОРІЯ</label><select id="pCat" class="smart-sel" onchange="updPackList()"><option value="Пленка">Плівка</option><option value="Пакеты">Пакеты</option><option value="Скотч 360 грамм">Скотч</option><option value="Мешки">Мешки</option><option value="Нитки">Нитки</option><option value="Этикетка">Этикетка</option><option value="Стрейч пленка">Стрейч</option><option value="Термо лента">Термо</option></select></div><div style="margin-bottom:10px"><label class="l-t">ДАТА</label><input type="date" id="pD" value="${d}"></div><div style="margin-bottom:10px"><label class="l-t">ПОСТАЧАЛЬНИК</label>${makeSmart('pS', ps, 'Оберіть...')}</div><div style="margin-bottom:10px"><label class="l-t">ТОВАР</label><div id="pProdCont"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="margin-bottom:10px"><label class="l-t" id="pALbl">КІЛЬКІСТЬ</label><input type="number" id="pA" placeholder="0"></div><div style="margin-bottom:10px"><label class="l-t">НАКЛАДНА №</label><input type="text" id="pNum" placeholder="---"></div></div><button class="btn-main" onclick="sPack()">ЗБЕРЕГТИ</button>`;
+        setTimeout(updPackList, 100);
+    } 
+    else if (t === 'fas') {
+        h.innerText = 'ЦЕХ ФАСУВАННЯ';
+        m.innerHTML = `<div style="border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div><label class="l-t">ДАТА</label><input type="date" id="fD" value="${d}"></div><div><label class="l-t">ЗАЛ. ПЛІВКИ (КГ)</label><input type="number" id="fOs" placeholder="0" style="background:#eef2ff;border-color:var(--p)"></div></div><div><label class="l-t">ВЗЯЛИ ПЛІВКИ (КГ)</label><input type="text" id="fVz" placeholder="Напр: 5+5+2.5"></div></div><div class="z-head">СИРОВИНА</div><div class="z-col-h"><div>СКЛАД</div><div>НАЗВА</div><div>КГ</div><div></div></div><div id="fasRows"></div><button class="btn-main" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:15px;font-size:10px" onclick="addFasRow()">+ ДОДАТИ СИРОВИНУ</button><div class="z-head">ВИХІД ГОТОВОЇ</div><div class="z-col-h"><div>НАЗВА</div><div>РОЗМ</div><div>ШТ</div><div></div></div><div id="fasOutRows"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px solid var(--s);margin-bottom:15px;font-size:10px" onclick="addFasOutRow()">+ ДОДАТИ ПРОДУКЦІЮ</button><button class="btn-main" id="btnS" onclick="sFas()">ЗБЕРЕГТИ ЗВІТ</button>`;
+        setTimeout(() => { addFasRow(); addFasOutRow(); }, 100);
+    } 
+    else if (t === 'corr') {
+        h.innerText = 'КОРЕКЦІЯ ЗАЛИШКУ';
+        corrCtx = { cat: a, name: b };
+        m.innerHTML = `<div style="text-align:center;font-weight:900;margin-bottom:10px">${b}</div><div style="margin-bottom:10px"><label class="l-t">ДАТА</label><input type="date" id="cD" value="${d}"></div><div style="margin-bottom:10px"><label class="l-t">НОВИЙ ЗАЛИШОК</label><input type="number" id="cA" placeholder="0"></div><div style="margin-bottom:10px"><label class="l-t">ПРИЧИНА</label><input type="text" id="cR" placeholder="Інвентаризація..."></div><button class="btn-main" id="btnS" onclick="sCorr()">ЗБЕРЕГТИ</button><div style="margin-top:15px;border-top:1px dashed #ccc;padding-top:10px"><button class="btn-main" style="background:#fff;color:#334155;border:1px solid #ccc;margin-bottom:5px" onclick="renameItem('${b}','${a}')">✏️ ПЕРЕЙМЕНУВАТИ</button><button class="btn-main" style="background:#fee2e2;color:red;border:1px solid #fca5a5" onclick="delItemBatch('${b}','${a}')">🗑️ ВИДАЛИТИ КАРТКУ</button></div>`;
+    } 
+    else if (t === 'KRUP' || t === 'VIBRO' || t === 'ZSHM') { renderWorkshopModal(t, h, m, d); } 
+    else if (t === 'dayRep') { h.innerText = 'ДЕННИЙ ЗВІТ'; m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">ДАТА ЗВІТУ</label><input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМУВАТИ</button>`; }
+    else if (t === 'monthRep') { h.innerText = 'МІСЯЧНИЙ ЗВІТ'; m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">ОБЕРІТЬ МІСЯЦЬ</label><input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">📊 ПОКАЗАТИ ЗВІТ</button>`; }
+    else if (t === 'fix') { h.innerText = 'ФІКСАЦІЯ ЗАЛИШКІВ'; m.innerHTML = `<div style="margin-bottom:10px;color:red;font-size:12px">Це створить точку відліку на кінець обраного дня.</div><label class="l-t">ДАТА ФІКСАЦІЇ</label><input type="date" id="fixDate" value="${d}"><button class="btn-main" id="btnFix" onclick="sFixBal()" style="margin-top:10px">СОХРАНИТЬ</button>`; }
+    else if (t === 'arch') { h.innerText = 'ЗГОРТАННЯ БАЗИ'; m.innerHTML = `<div style="margin-bottom:10px;color:red;font-size:12px">УВАГА: Всі записи до цієї дати будуть видалені, але залишки збережуться.</div><label class="l-t">ДАТА ЗГОРТАННЯ</label><input type="date" id="archDate"><button class="btn-main" id="btnArch" onclick="runArchive()" style="margin-top:10px;background:red">ЗГОРНУТИ</button>`; }
+    else if (t === 'closeMonth') { h.innerText = 'ЗАКРИТТЯ МІСЯЦЯ'; m.innerHTML = `<div style="margin-bottom:10px"><label class="l-t">ОСТАННІЙ ДЕНЬ МІСЯЦЯ</label><input type="date" id="cmDate"></div><div style="font-size:11px;color:#666;margin-bottom:10px">Ця дія зафіксує залишки на кінець обраного дня та перенесе їх на початок наступного.</div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">✅ ЗАПИСАТИ ЗАЛИШКИ</button>`; }
+}
+
+function rFas(c) {
+    const d = data.Фасовка || {}, l = Object.entries(d).sort((a, b) => b[1].date.localeCompare(a[1].date));
+    let h = `<div class="z-head">ЦЕХ ФАСУВАННЯ</div>`;
+    l.forEach(([k, v]) => {
+        let det = '';
+        if (v.items) v.items.forEach(i => det += `<div>- ${i.name}: ${i.amount}кг</div>`);
+        else det = `<div>- ${v.rawItem}</div>`;
+        let out = '';
+        if (v.outputItems) v.outputItems.forEach(o => out += `<div style="color:var(--p);font-weight:700">+ ${o.name}: ${o.count}шт</div>`);
+        else out = `<div style="color:var(--p);font-weight:700">+ ${v.name}: ${v.vyhod}шт</div>`;
+        h += `<div class="card" onclick="toggleF('d_${k}')"><div style="display:flex;justify-content:space-between;font-weight:900;font-size:13px"><span>${fd2(v.date)}</span><span>${v.filmName || 'Плівка'} -${Math.abs(v.vzial - v.ostatok).toFixed(1)}кг</span></div><div id="d_${k}" style="display:none;margin-top:5px;font-size:12px;border-top:1px dashed #ccc;padding-top:5px">${det}<div style="margin:5px 0;border-bottom:1px dashed #eee"></div>${out}<div style="margin-top:5px;font-size:10px;color:#999">ID: ${k}</div>${isAdmin ? `<button class="btn-main" style="background:red;padding:5px;font-size:10px;width:auto;margin-top:5px" onclick="delFasFull('${k}')">ВИДАЛИТИ ЗАПИС</button>` : ''}</div></div>`;
+    });
+    c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Порожньо</div>';
+}
+
+function rKrup(c) { rWorkshopList(c, 'KRUP'); }
+function rVibro(c) { rWorkshopList(c, 'VIBRO'); }
+function rZSHM(c) { rWorkshopList(c, 'ZSHM'); }
+
+function rWorkshopList(c, type) {
+    const cfg = WS_CFG[type], d = data[cfg.db] || {}, l = Object.entries(d).sort((a, b) => b[1].date.localeCompare(a[1].date));
+    let h = `<div class="z-head">${cfg.title}</div>`;
+    l.forEach(([k, v]) => {
+        let out = '';
+        if (v.items) v.items.forEach(i => out += `<div>• ${i.n}: ${Math.round((i.q * i.w) + (i.l || 0))}кг</div>`);
+        h += `<div class="card" onclick="toggleF('w_${k}')"><div style="display:flex;justify-content:space-between;font-weight:900;font-size:13px"><span>${fd2(v.date)}</span><span>${v.operator || '-'}</span></div><div id="w_${k}" style="display:none;margin-top:5px;font-size:12px;border-top:1px dashed #ccc;padding-top:5px"><div style="color:#059669;font-weight:700;margin-bottom:3px">Вхід: ${v.rawMix}</div><div style="color:var(--p);font-weight:700">${out}</div>${isAdmin ? `<button class="btn-main" style="background:red;padding:5px;font-size:10px;width:auto;margin-top:5px" onclick="delWorkshopReportFull('${cfg.db}','${k}')">ВИДАЛИТИ</button>` : ''}</div></div>`;
+    });
+    c.innerHTML = h || '<div style="text-align:center;padding:20px;color:#999">Порожньо</div>';
+}
+
+function rConsolidated(c) {
+    c.innerHTML = `<div class="z-head">ЗВЕДЕНИЙ ЗВІТ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px"><div class="dash-item" onclick="openModal('dayRep')">📅 ДЕННИЙ ЗВІТ</div><div class="dash-item" onclick="openModal('monthRep')">📊 МІСЯЧНИЙ ЗВІТ</div></div>${isAdmin ? `<div style="margin-top:20px;border-top:2px solid #e2e8f0;padding-top:10px"><div class="z-head" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5">АДМІНІСТРУВАННЯ</div><div class="dash-grid"><div class="dash-item" onclick="openModal('fix')">📍 ФІКС. ЗАЛИШКІВ</div><div class="dash-item" onclick="openModal('closeMonth')">✅ ЗАКРИТТЯ МІСЯЦЯ</div><div class="dash-item" onclick="openModal('arch')">📦 ЗГОРТАННЯ БАЗИ</div></div></div>` : ''}`;
+}
+
+function rArchPack(c) {
+    const d = data.ArchPackIn || {}, l = Object.entries(d).sort((a, b) => b[1].date.localeCompare(a[1].date));
+    let h = `<div class="z-head">АРХІВ ПАКУВАННЯ</div>`;
+    l.forEach(([k, v]) => {
+        h += `<div class="j-card"><div class="j-head" style="color:var(--s)">ПРИХІД ПАКУВАННЯ</div><div class="j-sub">${fd2(v.date)} №${v.num || '-'}</div><div class="j-title">${v.name}</div><div class="j-body"><div class="j-row"><span class="j-dots">${v.category}</span><span class="j-val">${v.amount} шт</span></div><div class="j-row"><span class="j-dots">Постачальник</span><span class="j-val">${v.supplier}</span></div></div>${isAdmin ? `<button class="btn-main" style="background:#fee2e2;color:red;margin-top:5px;padding:8px" onclick="delArchRec('ArchPackIn','${k}')">ВИДАЛИТИ</button>` : ''}</div>`;
+    });
+    c.innerHTML = h || 'Порожньо';
+}
+
+function renderTsList(c) {
+    const s = new Set();
+    if (data.Timesheet) Object.values(data.Timesheet).forEach(v => { if (v.crew) v.crew.forEach(x => { if (x.name) s.add(x.name) }) });
+    let h = ''; Array.from(s).sort().forEach(n => h += `<div class="dash-item" onclick="showTsCal('${n}')">${n}</div>`);
+    gID('tsList').innerHTML = h;
+}
+
+function addTimeRow(n = '', r = '') {
+    const i = Date.now() + Math.random();
+    gID('tsRows').insertAdjacentHTML('beforeend', `<div class="ts-row" id="tr_${i}"><button class="btn-mini" onclick="toggleAbs(this)">A</button><input type="text" class="ts-name-inp" placeholder="Ім'я" value="${n}"><input type="number" class="ts-rate-inp" placeholder="Ставка" value="${r}"><input type="time" class="ts-time-inp" value="08:00"><input type="time" class="ts-time-inp" value="17:00"><div style="position:relative"><button class="ts-del-tile" onclick="document.getElementById('tr_${i}').remove()">×</button></div></div>`);
+}
+
+function toggleAbs(b) { b.classList.toggle('absent-active'); }
+
+async function saveTimesheetBatch() {
+    const d = gID('gTD').value, rs = gID('tsRows').children, c = [];
+    if (!rs.length) return alert('Пусто');
+    for (let r of rs) {
+        const n = r.querySelector('.ts-name-inp').value.trim(), rt = r.querySelector('.ts-rate-inp').value, t1 = r.querySelectorAll('.ts-time-inp')[0].value, t2 = r.querySelectorAll('.ts-time-inp')[1].value, abs = r.querySelector('.btn-mini').classList.contains('absent-active');
+        if (n) c.push({ name: n, rate: rt, start: t1, end: t2, absent: abs });
+    }
+    const k = d; localStorage.setItem('activeCrew', JSON.stringify(c));
+    try { await db.child('Timesheet').child(k).set({ date: d, crew: c }); alert('Табель збережено!'); } catch (e) { alert(e); }
+}
+</script></body></html>
+
 </script></body></html>
