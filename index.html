@@ -24,6 +24,9 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 .item-card{background:#fff;border-radius:8px;padding:6px 2px;text-align:center;box-shadow:0 2px 5px #00000014;border:1px solid #cbd5e1;position:relative;display:flex;flex-direction:column;justify-content:space-between}
 .item-title{font-size:8px;font-weight:900;text-transform:uppercase;color:#1e293b;margin-bottom:2px;height:22px;overflow:hidden;line-height:1.1;word-break:break-word}
 .item-qty{font-size:12px;font-weight:900;color:#000;margin-bottom:2px}
+.compact-grid .item-card{padding:3px 2px;min-height:30px}
+.compact-grid .item-title{height:auto;margin-bottom:2px;font-size:8px;line-height:1}
+.compact-grid .item-qty{font-size:11px;margin-bottom:0}
 .alarm-blink{background:#fee2e2!important;border:2px solid #ef4444!important;color:#b91c1c!important;animation:blink .8s infinite alternate}
 @keyframes blink{0%{border-color:red;opacity:1}100%{border-color:#fca5a5;opacity:.6}}
 .val-pos{color:#2563eb!important}.val-neg{color:#dc2626!important}
@@ -78,11 +81,11 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .t-box{border:2px solid #000!important;font-weight:900!important;font-size:10px!important;padding:2px!important}
 
   /* НОВІ СТИЛІ ДЛЯ ЗВЕДЕНОГО ЗВІТУ (ДВІ КОЛОНКИ) */
-  .rep-print-container{display:flex;width:100%;gap:20px;font-size:14px;line-height:1.1}
+  .rep-print-container{display:flex;width:100%;gap:20px;font-size:12px;line-height:1.1}
   .rep-col{flex:1;width:50%}
-  .rep-cat-title{font-weight:900;text-transform:uppercase;border-bottom:2px solid #000;margin-top:10px;margin-bottom:5px;padding-bottom:2px}
-  .rep-item{display:flex;justify-content:space-between;border-bottom:1px dashed #ccc;padding:1px 0}
-  .rep-item-name{font-weight:600}
+  .rep-cat-title{font-weight:900;text-transform:uppercase;border-bottom:2px solid #000;margin-top:10px;margin-bottom:5px;padding-bottom:2px;font-size:13px}
+  .rep-item{padding:1px 0}
+  .rep-item-name{font-weight:600;margin-right:4px}
   .rep-item-val{font-weight:900}
 }
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:500px;margin:0 auto;left:auto;right:auto;transform:none}}
@@ -338,27 +341,30 @@ function rConsolidated(c){
  let h=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:15px"><button class="btn-main" onclick="openModal('dayRep')" style="background:#0f172a;font-size:10px;margin:0">ДЕННИЙ ЗВІТ</button><button class="btn-main" onclick="openModal('monthRep')" style="background:#0f172a;font-size:10px;margin:0">МІСЯЧНИЙ</button><button class="btn-main" onclick="printConsolidated()" style="background:var(--s);font-size:10px;margin:0">🖨️ ДРУК ЗВІТУ</button></div>`;
  const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount;}})}});
  const drawCat=(name,key)=>{
-  if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid" style="grid-template-columns:1fr 1fr">`,has=!1;
+  if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,has=!1;
   Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});
   ch+='</div>';return has?ch:'';
  };
  h+=drawCat('Фасована продукція','Готовая')+drawCat('Покупна продукція','WeightStock')+drawCat('Власне виробництво','Stock_DV')+drawCat('Відходи виробництва','Stock_Feed')+drawCat('Сировина','Stock_Raw')+drawCat('П/Ф','Stock_Semi');
- const pk=['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];
- let ph=`<div class="cat-head">Упаковка</div><div class="item-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;
- pk.forEach(k=>{if(r[k]){Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}})}});
- ph+='</div>';if(hp)h+=ph;
+ const pk={'Пленка':'Плівка','Пакеты':'Пакети','Скотч 360 грамм':'Скотч','Мешки':'Мішки','Нитки':'Нитки','Этикетка':'Етикетка','Стрейч пленка':'Стрейч плівка','Термо лента':'Термо стрічка'};
+ Object.keys(pk).forEach(k=>{
+  if(r[k]){
+   let ph=`<div class="cat-head">${pk[k]}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;
+   Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});
+   ph+='</div>';if(hp)h+=ph;
+  }
+ });
  if(isAdmin)h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:20px"><button class="btn-main" onclick="openModal('arch')" style="background:red">ЗГОРТАННЯ</button><button class="btn-main" onclick="openModal('closeMonth')" style="background:orange;color:#000">ЗАКРИТИ МІСЯЦЬ</button></div>`;
  c.innerHTML=h;
 }
 
 window.printConsolidated=function(){
  const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount}})}});
- const bL=(t,k)=>{if(!r[k])return '';let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>`<div class="rep-item"><span class="rep-item-name">${n}</span><span class="rep-item-val">${(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n])}</span></div>`);if(!i.length)return '';return `<div class="rep-cat-title">${t}</div>`+i.join('')};
- let L=bL('Фасована продукція','Готовая')+bL('Покупна продукція','WeightStock')+bL('Власне виробництво','Stock_DV')+bL('Відходи виробництва','Stock_Feed');
- let R=bL('П/Ф','Stock_Semi')+bL('Сировина','Stock_Raw');
- const pk=['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];let pi=[];
- pk.forEach(k=>{if(r[k])Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).forEach(n=>{pi.push(`<div class="rep-item"><span class="rep-item-name">${n}</span><span class="rep-item-val">${(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n])}</span></div>`)})});
- if(pi.length)R+=`<div class="rep-cat-title">Упаковка</div>`+pi.join('');
+ const bL=(t,k,u)=>{if(!r[k])return '';let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>`<div class="rep-item"><span class="rep-item-name">${n}</span><span class="rep-item-val">${(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n])}${u}</span></div>`);if(!i.length)return '';return `<div class="rep-cat-title">${t}</div>`+i.join('')};
+ let L=bL('Фасована продукція','Готовая','шт')+bL('Покупна продукція','WeightStock','кг')+bL('Власне виробництво','Stock_DV','кг')+bL('Відходи виробництва','Stock_Feed','кг');
+ let R=bL('П/Ф','Stock_Semi','кг')+bL('Сировина','Stock_Raw','кг');
+ const pk={'Пленка':{n:'Плівка',u:'кг'},'Пакеты':{n:'Пакети',u:'шт'},'Скотч 360 грамм':{n:'Скотч',u:'шт'},'Мешки':{n:'Мішки',u:'шт'},'Нитки':{n:'Нитки',u:'шт'},'Этикетка':{n:'Етикетка',u:'шт'},'Стрейч пленка':{n:'Стрейч плівка',u:'шт'},'Термо лента':{n:'Термо стрічка',u:'шт'}};
+ Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});
  let ds=new Date().toLocaleDateString('uk-UA'),h=`<div style="text-align:center;font-weight:900;font-size:18px;margin-bottom:10px">ЗВЕДЕНИЙ ЗВІТ ЗАЛИШКІВ (${ds})</div><div class="rep-print-container"><div class="rep-col">${L}</div><div class="rep-col">${R}</div></div>`;
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
