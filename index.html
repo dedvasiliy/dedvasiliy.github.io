@@ -392,27 +392,46 @@ window.printConsolidated=function(){
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
 
-// ОНОВЛЕНО: СЕРВІСНА ФУНКЦІЯ ДЛЯ ВИДАЛЕННЯ ДУБЛІВ НУЛЬОВИХ ЗАЛИШКІВ
-window.runZeroCleanup=async function(){
+// ОНОВЛЕНО: БЕЗПЕЧНЕ ВИДАЛЕННЯ ДУБЛІКАТІВ ПОРЦІЯМИ (БАТЧАМИ) ДЛЯ УНИКНЕННЯ ПОМИЛКИ WRITE_TOO_BIG
+window.runZeroCleanup = async function() {
  if(!confirm('Видалити дублікати нульових залишків по всій базі? Це очистить історію від сміття.')) return;
  if(prompt('Введіть CLEAN для підтвердження:')!=='CLEAN') return;
- const u={};
- let c=0;
- stockCatsAll.forEach(cat=>{
-  if(data[cat]){
-   const s=new Set();
-   Object.entries(data[cat]).forEach(([k,v])=>{
-    if(Math.abs(v.amount)<0.001){
-     const h=`${v.date}_${v.name}_${v.note||''}`;
-     if(s.has(h)){u[`/${cat}/${k}`]=null;c++;}
-     else s.add(h);
+
+ let toDelete = [];
+ stockCatsAll.forEach(cat => {
+  if(data[cat]) {
+   const s = new Set();
+   Object.entries(data[cat]).forEach(([k, v]) => {
+    if(Math.abs(v.amount) < 0.001) {
+     const h = `${v.date}_${v.name}_${v.note||''}`;
+     if(s.has(h)) {
+      toDelete.push(`/${cat}/${k}`);
+     } else {
+      s.add(h);
+     }
     }
    });
   }
  });
- if(c>0){
-  try{await db.update(u);alert(`Успішно! Видалено сміття: ${c} записів. База стала легшою.`)}catch(e){alert(e)}
- }else{alert('База чиста, дублікатів не знайдено!')}
+
+ if(toDelete.length > 0) {
+  alert(`Знайдено ${toDelete.length} дублікатів. Починаємо видалення безпечними порціями... Будь ласка, зачекайте.`);
+  const batchSize = 400; // Порція безпечного розміру для Firebase
+  try {
+   for (let i = 0; i < toDelete.length; i += batchSize) {
+    const chunk = toDelete.slice(i, i + batchSize);
+    const u = {};
+    chunk.forEach(path => { u[path] = null; });
+    await db.update(u);
+   }
+   alert(`Успішно! Видалено сміття: ${toDelete.length} записів. База стала набагато легшою.`);
+   loadData();
+  } catch(e) {
+   alert('Помилка при видаленні: ' + e.message);
+  }
+ } else {
+  alert('База чиста, дублікатів не знайдено!');
+ }
 };
 
 async function archiveRawBatch(n){if(!confirm(`Заархівувати партію "${n}"?`))return;const k=db.child('Stock_Archive').push().key,u={},d=data.Stock_Raw||{};let t=0;Object.entries(d).forEach(([id,v])=>{if(v.name===n){t+=v.amount;u['/Stock_Raw/'+id]=null}});u['/Stock_Archive/'+k]={name:n,amount:t,date:new Date().toISOString(),note:'Архів партії'};if(Object.keys(u).length>1){await db.update(u);alert('Партію заархівовано')}}
