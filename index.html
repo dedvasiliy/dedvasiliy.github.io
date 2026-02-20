@@ -455,4 +455,69 @@ async function archiveRawBatch(n){if(!confirm(`Заархівувати парт
 function rRawArch(c){const d=data.Stock_Archive||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card" style="display:flex;justify-content:space-between"><div><b>${v.name}</b>: ${v.amount.toFixed(2)} кг</div>${isAdmin?`<button onclick="delRec('Stock_Archive','${i}')" style="color:red;border:none;background:0 0">DEL</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
 async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введіть ARCHIVE для згортання бази до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Згортання'}})}});if(Object.keys(u).length){await db.update(u);alert('Успішно згорнуто')}closeModal()}
 async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введіть CLOSE для закриття')!=='CLOSE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers'].includes(c)){const cd=data[c]||{};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d)u[`/${c}/${k}`]=null})}});if(Object.keys(u).length){await db.update(u);alert('Місяць закрито, залишки обнулено')}closeModal()}
+  // ====== ТОТАЛЬНЫЙ КЛИНЕР (ВРЕМЕННЫЙ КОД) ======
+window.runTotalCleanup = async function() {
+ if(!confirm('УВАГА! Видалити всі нульові стартові залишки (148 тис+ записів)?')) return;
+ if(prompt('Введіть FIRE для старту:')!=='FIRE') return;
+
+ let toDelete = [];
+ stockCatsAll.forEach(cat => {
+  if(data[cat]) {
+   Object.entries(data[cat]).forEach(([k, v]) => {
+    // Шукаємо ТІЛЬКИ нулі
+    if(Math.abs(v.amount) < 0.001) {
+     let note = (v.note || '').toLowerCase();
+     // Шукаємо ключові слова з твоїх скріншотів
+     if(note.includes('початок') || note.includes('начало') || note.includes('залишок') || note.includes('остаток')) {
+      toDelete.push(`/${cat}/${k}`);
+     }
+    }
+   });
+  }
+ });
+
+ const total = toDelete.length;
+ if(total === 0) return alert('Сміття не знайдено!');
+
+ // Створюємо чорний екран матриці
+ const prog = document.createElement('div');
+ prog.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;z-index:99999;flex-direction:column;font-family:monospace;';
+ prog.innerHTML = `<div>🔥 ТОТАЛЬНА ЧИСТКА 🔥</div><div id="clCount" style="margin-top:20px;font-size:40px">0 / ${total}</div><div style="font-size:14px;color:#aaa;margin-top:20px;text-align:center">НЕ ЗАКРИВАЙТЕ ВКЛАДКУ!<br>Firebase перетравлює дані пачками по 100...</div>`;
+ document.body.appendChild(prog);
+
+ const counter = document.getElementById('clCount');
+ const batchSize = 100; // Жорстко по 100 штук, щоб Firebase не видав WRITE_TOO_BIG
+ let processed = 0;
+
+ try {
+  for (let i = 0; i < total; i += batchSize) {
+   const chunk = toDelete.slice(i, i + batchSize);
+   const u = {};
+   chunk.forEach(path => { u[path] = null; });
+   
+   await db.update(u); // Відправляємо пачку
+   processed += chunk.length;
+   counter.innerText = `${processed} / ${total}`;
+   
+   // Пауза 200 мілісекунд між пачками
+   await new Promise(r => setTimeout(r, 200));
+  }
+  
+  document.body.removeChild(prog);
+  alert(`Успішно згоріло ${total} записів сміття! База ідеально чиста.`);
+  loadData();
+ } catch(e) {
+  document.body.removeChild(prog);
+  alert('Помилка: ' + e.message);
+ }
+};
+
+// Створюємо плаваючу червону кнопку поверх усього екрану
+const fireBtn = document.createElement('button');
+fireBtn.innerHTML = '🔥 ТОТАЛЬНА ЧИСТКА';
+fireBtn.style.cssText = 'position:fixed;bottom:80px;right:10px;background:red;color:white;font-weight:900;padding:15px;border:none;border-radius:12px;box-shadow:0 5px 15px rgba(255,0,0,0.5);z-index:9900;';
+fireBtn.onclick = runTotalCleanup;
+document.body.appendChild(fireBtn);
+// ====== КІНЕЦЬ КЛІНЕРА ======
+
 </script></body></html>
