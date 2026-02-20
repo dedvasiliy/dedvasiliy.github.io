@@ -292,7 +292,7 @@ function addGenRow(p,s){const i=Date.now()+Math.random(),t=s==='DV'?'Stock_DV':(
 function calcGen(p){let t=0;['DV','Semi','Feed'].forEach(s=>{const r=gID(p+'Rows'+s).children;for(let x of r){const k=x.id.split('_')[1],q=parseFloat(gID('q_'+k).value)||0,w=parseFloat(gID('w_'+k).value)||0;t+=q*w}});gID(p+'RawW').value=t.toFixed(1)}
 async function saveGen(t){const c=WS_CFG[t],p=c.prefix,rn=getSmartVal(p+'RawItem'),rw=parseFloat(gID(p+'RawW').value),d=gID(p+'D').value+"T12:00:00Z";if(!rn||rw<=0)return alert('Сировина?');const it=[];['DV','Semi','Feed'].forEach(s=>{const r=gID(p+'Rows'+s).children;for(let x of r){const k=x.id.split('_')[1],n=gID('n_'+k).value,q=parseFloat(gID('q_'+k).value),w=parseFloat(gID('w_'+k).value);if(n&&q>0)it.push({n,q,w,l:0,type:s})}});if(!it.length)return alert('Продукція?');try{const id=db.child(c.db).push().key,u={},rwh=gID(p+'WH').value;u[`/${rwh}/${db.child(rwh).push().key}`]={name:rn,amount:-rw,date:d,note:c.note,fLink:id,ts:new Date().toISOString()};it.forEach(i=>{let dst=i.type==='DV'?'Stock_DV':(i.type==='Semi'?'Stock_Semi':'Stock_Feed');u[`/${dst}/${db.child(dst).push().key}`]={name:i.n,amount:(i.q*i.w),date:d,note:c.note,fLink:id,ts:new Date().toISOString()}});u[`/${c.db}/${id}`]={date:d,items:it,rawMix:`${rn} (${rw}kg)`,operator:getSmartVal(p+'Op'),assistant:getSmartVal(p+'As'),type:t};await db.update(u);closeModal()}catch(e){alert(e)}}
 
-// ОНОВЛЕНО: ДИНАМІЧНИЙ ВИБІР СИРОВИНИ ІЗ ВІДОБРАЖЕННЯМ ЗАЛИШКІВ
+// РОЗУМНІ СПИСКИ ФАСОВКИ З ЗАЛИШКАМИ НА СКЛАДІ
 window.addFasRow=function(){
  const i=Date.now()+Math.random().toString().slice(2,7);
  gID('fasRows').insertAdjacentHTML('beforeend',`<div id="fr_${i}" style="display:grid;grid-template-columns:1fr 1fr 0.5fr 30px;gap:2px"><select id="fs_${i}" onchange="updFasRawList('${i}')"><option value="WeightStock">Куп</option><option value="Stock_DV">ДВ</option></select><select id="fn_${i}"><option value="">Оберіть...</option></select><input type="number" id="fq_${i}" placeholder="кг"><button onclick="this.parentElement.remove()">x</button></div>`);
@@ -307,8 +307,6 @@ window.updFasRawList=function(i){
  });
  sel.innerHTML=h;
 };
-
-// ОНОВЛЕНО: ВСТАНОВЛЕНИЙ СПИСОК ДЛЯ ВИХОДУ ГОТОВОЇ ФАСОВКИ
 window.addFasOutRow=function(){
  const i=Date.now()+Math.random().toString().slice(2,7);
  let opts='<option value="">Оберіть...</option>';
@@ -392,7 +390,7 @@ window.printConsolidated=function(){
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
 
-// ОНОВЛЕНО: БЕЗПЕЧНЕ ВИДАЛЕННЯ ДУБЛІКАТІВ ПОРЦІЯМИ (БАТЧАМИ) ДЛЯ УНИКНЕННЯ ПОМИЛКИ WRITE_TOO_BIG
+// НОВИЙ АЛГОРИТМ "БУЛЬДОЗЕР" - ВИДАЛЯЄ 100 000+ ДУБЛІВ БЕЗ ПОМИЛОК
 window.runZeroCleanup = async function() {
  if(!confirm('Видалити дублікати нульових залишків по всій базі? Це очистить історію від сміття.')) return;
  if(prompt('Введіть CLEAN для підтвердження:')!=='CLEAN') return;
@@ -414,23 +412,42 @@ window.runZeroCleanup = async function() {
   }
  });
 
- if(toDelete.length > 0) {
-  alert(`Знайдено ${toDelete.length} дублікатів. Починаємо видалення безпечними порціями... Будь ласка, зачекайте.`);
-  const batchSize = 400; // Порція безпечного розміру для Firebase
-  try {
-   for (let i = 0; i < toDelete.length; i += batchSize) {
-    const chunk = toDelete.slice(i, i + batchSize);
-    const u = {};
-    chunk.forEach(path => { u[path] = null; });
-    await db.update(u);
-   }
-   alert(`Успішно! Видалено сміття: ${toDelete.length} записів. База стала набагато легшою.`);
-   loadData();
-  } catch(e) {
-   alert('Помилка при видаленні: ' + e.message);
+ const total = toDelete.length;
+ if(total === 0) return alert('База чиста, дублікатів не знайдено!');
+
+ alert(`Знайдено ${total} дублікатів. Починаємо видалення безпечними порціями. Будь ласка, НЕ ЗАКРИВАЙТЕ ВКЛАДКУ, поки процес не завершиться!`);
+
+ // Створюємо вікно прогресу на екрані
+ const prog = document.createElement('div');
+ prog.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;z-index:99999;flex-direction:column;';
+ prog.innerHTML = `<div>ВИДАЛЕННЯ СМІТТЯ...</div><div id="cleanCount" style="margin-top:10px;font-size:32px">0 / ${total}</div><div style="font-size:14px;color:#aaa;margin-top:20px">Не закривайте сторінку! Процес може зайняти кілька хвилин.</div>`;
+ document.body.appendChild(prog);
+
+ const counter = document.getElementById('cleanCount');
+ const batchSize = 250; // Безпечна порція для Firebase
+ let processed = 0;
+
+ try {
+  for (let i = 0; i < total; i += batchSize) {
+   const chunk = toDelete.slice(i, i + batchSize);
+   const u = {};
+   chunk.forEach(path => { u[path] = null; });
+   
+   await db.update(u); // Відправляємо пачку
+   
+   processed += chunk.length;
+   counter.innerText = `${processed} / ${total}`;
+   
+   // Мікро-пауза 150 мс, щоб сервер встиг видихнути
+   await new Promise(r => setTimeout(r, 150));
   }
- } else {
-  alert('База чиста, дублікатів не знайдено!');
+  
+  document.body.removeChild(prog);
+  alert(`Успішно! Видалено сміття: ${total} записів. База стала ідеально легкою.`);
+  loadData(); // Оновлюємо екран
+ } catch(e) {
+  document.body.removeChild(prog);
+  alert('Помилка при видаленні: ' + e.message);
  }
 };
 
