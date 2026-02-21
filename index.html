@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="uk" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v775</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="uk" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v776</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#0f172a;--w:#fff}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:2px;padding-bottom:60px;color:var(--t);overflow-x:hidden;width:100vw}
@@ -13,8 +13,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .card{background:var(--w);border-radius:16px;padding:10px;margin-bottom:6px;box-shadow:0 2px 4px -1px #00000014;border:1px solid #e2e8f0;position:relative;width:100%}
 .btn-main{background:var(--p);color:#fff;border:none;width:100%;padding:12px;font-size:12px;font-weight:800;border-radius:12px;margin:4px 0;text-transform:uppercase;box-shadow:0 4px 10px #4338ca33;transition:.2s;cursor:pointer}
 .btn-main:active{transform:translateY(1px);box-shadow:none}
-.btn-main:disabled{background:#94a3b8}
+.btn-main:disabled{background:#94a3b8;opacity:0.7}
 .bottom-nav{display:none;position:fixed;bottom:5px;left:5px;right:5px;background:#fff;border-radius:20px;box-shadow:0 10px 40px -5px #00000033;padding:5px;z-index:900;grid-template-columns:1fr 1fr;gap:5px;border:1px solid #cbd5e1}
+.nav-active .bottom-nav{display:grid}
 .bottom-nav button{background:0 0;border:none;padding:10px;border-radius:14px;color:#64748b;font-weight:900;font-size:11px;text-transform:uppercase;transition:.2s}
 .bottom-nav button.nav-btn-active{background:#e0e7ff;color:var(--p)}
 input,select{width:100%;padding:0 5px;margin:2px 0;border:1px solid #94a3b8;border-radius:8px;font-size:12px;height:35px;background:#fff;font-weight:700;color:#0f172a}
@@ -133,7 +134,7 @@ const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStoc
 
 function closeModal(){gID('mdl').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
-function doConfirm(){if(pendingAction)pendingAction();closeConf();}
+function doConfirm(){if(pendingAction)pendingAction();} 
 
 auth.onAuthStateChanged(u=>{if(u){gID('lockScreen').classList.add('lock-hidden');D.body.classList.add('nav-active');isLogged=!0;if(localStorage.getItem('admT')==='1')isAdmin=!0;initAppData()}else{gID('lockScreen').classList.remove('lock-hidden');D.body.classList.remove('nav-active');isLogged=!1;isAdmin=!1;gID('cnt').innerHTML='';data={}}});
 function initAppData(){renderHome();stockCatsAll.forEach(p=>{db.child(p).on('value',s=>{data[p]=s.val()||{};if(cur!=='Home')loadData()})});db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}})}
@@ -142,7 +143,7 @@ function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrM
 
 function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМІН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМІН</button>`;
- const ver=`<div class="ver-info">v 775<br>${document.lastModified}</div>`;
+ const ver=`<div class="ver-info">v 776<br>${document.lastModified}</div>`;
  gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВИХІД</button>
  <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
  <div class="dash-grid">
@@ -156,7 +157,6 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
-
 function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
  if(c==='Home'){renderHome();return}
  if(['Invoices','ArchSubIn','ArchSubOut'].includes(c))ensureData(['ArchIncoming','ArchInvoices']);
@@ -174,8 +174,13 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  else if(c==='Stock_Raw'){ct.innerHTML=(isAdmin?`<button class="btn-main" style="background:#e0f2fe;color:#0369a1;margin-bottom:10px" onclick="setCat('StockArchive')">🗄️ АРХІВ</button>`:'')+`<div class="z-head">СИРОВИНА</div><div id="rawList">...</div>`;if(isAdmin&&!corrMode)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s);padding:8px" onclick="openModal('addRaw')">ПРИХІД</button>`}
  else if(c==='PackSub'){if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">ПРИХІД</button>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛІВКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТИ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МІШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЕТИКЕТКА</div><div class="dash-item" onclick="setCat('Стрейч пленка')">СТРЕЙЧ</div><div class="dash-item" onclick="setCat('Термо лента')">ТЕРМО</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="background:#f1f5f9;color:#64748b">АРХІВ</div></div>`}
  else if(c==='ProdSub'){ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">ФАСУВАННЯ</div><div class="dash-item" onclick="setCat('Kruporushka')">КРУПОРУШКА</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">ВІБРОСТІЛ</div></div>`;if(isAdmin)ct.innerHTML+=`<button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХІД СИРОВИНИ</button>`}
- else if(c==='Фасовка'){if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВИЙ</button>`}
- else if(['Kruporushka','Vibro','ZSHM'].includes(c)){const k={'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[c];if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('workshop','${k}')">НОВИЙ</button>`}
+ else if(c==='Фасовка'){
+  gID('act').innerHTML=`<div style="display:grid;grid-template-columns:${isAdmin?'1fr 1fr':'1fr'};gap:5px;padding:4px"><button class="btn-main" style="background:#475569;margin:0" onclick="setCat('ProdSub')">⬅ НАЗАД</button>${isAdmin?`<button class="btn-main" style="background:var(--p);margin:0" onclick="openModal('fas')">НОВИЙ</button>`:''}</div>`;
+ }
+ else if(['Kruporushka','Vibro','ZSHM'].includes(c)){
+  const k={'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[c];
+  gID('act').innerHTML=`<div style="display:grid;grid-template-columns:${isAdmin?'1fr 1fr':'1fr'};gap:5px;padding:4px"><button class="btn-main" style="background:#475569;margin:0" onclick="setCat('ProdSub')">⬅ НАЗАД</button>${isAdmin?`<button class="btn-main" style="background:var(--p);margin:0" onclick="openModal('workshop','${k}')">НОВИЙ</button>`:''}</div>`;
+ }
  else if(c==='PriceList'){ct.innerHTML='<div class="z-head">💰 ПРАЙС</div><div id="priceListCont">...</div>';rPriceList(gID('priceListCont'))}
  else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">ПРИХОДИ</div><div class="dash-item" onclick="setCat('ArchSubOut')">ВІДВАНТАЖЕННЯ</div></div>`;
  else if(['ArchSubIn','ArchSubOut'].includes(c)){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ЗА ДАТОЮ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ЗА ІМ'ЯМ</div></div>`}
@@ -262,7 +267,7 @@ function rWorkshopList(c,k){
    hRaw += `<div>Основа: ${v.rawBase.n} ${v.rawBase.w}кг</div>`; totalRaw += v.rawBase.w; 
   } else if(v.rawMix) { 
    hRaw += `<div>Основа (стара): ${v.rawMix}</div>`; 
-   // Витягуємо всі цифри з тексту та плюсуємо їх
+   // Витягуємо всі цифри з тексту та плюсуємо їх (виправлено баг з 2895.5 + 200)
    let matches = String(v.rawMix).match(/\d+(?:\.\d+)?/g);
    if(matches) { matches.forEach(num => totalRaw += parseFloat(num)); }
   }
@@ -361,7 +366,7 @@ function numToWords(n){
  const u_f=['','одна','дві','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];
  const t1=['десять','одинадцять','дванадцять','тринадцять','чотирнадцять','п\'ятнадцять','шістнадцять','сімнадцять','вісімнадцять','дев\'ятнадцять'];
  const t2=['','','двадцять','тридцять','сорок','п\'ятдесят','шістдесят','сімдесят','вісімдесят','дев\'яносто'];
- const h=['','сто','двісті','триста','чотириста','п\'ятсот','шістсот','сімсот','вісімсот','дев\'ятсот'];
+ const h=['','сто','двісті','триста','чотириста','п\'ятдесят','шістдесят','сімсот','вісімсот','дев\'ятсот'];
  let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');
  if(ip===0)return `Нуль гривень ${fs} копійок`;
  function gg(n,isFem){
@@ -432,7 +437,6 @@ function updPackList(){const c=gID('pCat').value;let l=[];if(c==='Пленка')
 async function sCorr(){const c=corrCtx.cat,n=corrCtx.name,d=gID('cD').value+"T12:00:00Z",na=parseFloat(gID('cA').value),r=gID('cR').value;if(isNaN(na))return alert('Число?');let cur=0;if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===n)cur+=v.amount});const diff=na-cur;if(Math.abs(diff)<0.001)return alert('Не змінилось');try{await db.child(c).push({name:n,amount:diff,date:d,note:`Кор: ${r}`,ts:new Date().toISOString()});closeModal()}catch(e){alert(e)}}
 async function renameItem(oldN,cat){const newN=prompt("Нова назва:",oldN);if(!newN||newN===oldN)return;if(!confirm(`Перейменувати "${oldN}" -> "${newN}"?`))return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===oldN)u[`/${cat}/${k}/name`]=newN});if(Object.keys(u).length){await db.update(u);closeModal();alert('ОК')}else alert('Не знайдено')}
 async function delItemBatch(nm,cat){if(!confirm(`ВИДАЛИТИ ВСЮ ІСТОРІЮ "${nm}"? ЦЕ НЕЗВОРОТНЬО!`))return;if(prompt('Введіть DELETE')!=='DELETE')return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===nm)u[`/${cat}/${k}`]=null});if(Object.keys(u).length){await db.update(u);closeModal();alert('Видалено')}else alert('Не знайдено')}
-
 // --- НОВИЙ ЦЕХ ФАСОВКИ ---
 window.calcFilm=function(){
  const vz=gID('fVz').value.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
@@ -493,7 +497,7 @@ window.previewFas=function(){
  
  const vz=gID('fVz').value, os=parseFloat(gID('fOs').value)||0, vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0), fU=Math.max(0,vt-os);
  
- // Розумний фільтр: якщо продукт "Арнаутка 1/0.9 1" або 2, шукаємо плівку без цифр в кінці
+ // Розумний фільтр плівки
  let mN = oi[0].n;
  if(mN === 'Арнаутка 1/0.9 1' || mN === 'Арнаутка 1/0.9 2') mN = 'Арнаутка 1/0.9';
  
@@ -519,7 +523,9 @@ window.previewFas=function(){
  
  gID('confContent').innerHTML=html; gID('confMdl').style.display='flex';
  
- window.pendingAction=async function(){
+ pendingAction=async function(){
+  const btn = document.querySelector('#confBox .btn-main[style*="green"]');
+  if(btn) { btn.innerText = '⏳...'; btn.disabled = true; }
   try{
    const id=db.child('Фасовка').push().key, u={}, ts=new Date().toISOString();
    const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s})), dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));
@@ -531,8 +537,15 @@ window.previewFas=function(){
    
    if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'Авто',fLink:id,ts:ts};
    
-   await db.update(u); closeConf(); closeModal(); setCat('Фасовка');
-  }catch(e){alert(e)}
+   await db.update(u); 
+   closeConf(); 
+   closeModal(); 
+   setCat('Фасовка'); // Миттєве оновлення історії
+  }catch(e){
+   alert(e)
+  }finally{
+   if(btn) { btn.innerText = 'ТАК'; btn.disabled = false; }
+  }
  };
 };
 
@@ -655,7 +668,9 @@ window.previewWorkshop = function(k){
 
  gID('confContent').innerHTML=html; gID('confMdl').style.display='flex';
 
- window.pendingAction=async function(){
+ pendingAction=async function(){
+  const btn = document.querySelector('#confBox .btn-main[style*="green"]');
+  if(btn) { btn.innerText = '⏳...'; btn.disabled = true; }
   try{
    const id=db.child(c.db).push().key, u={}, tsStr=new Date().toISOString();
    const itemsDb = out.map(x=> ({type:x.type, n:x.n, q:x.b, w:x.w, l:x.r}));
@@ -672,8 +687,15 @@ window.previewWorkshop = function(k){
     u[`/${cat}/${db.child(cat).push().key}`]={name:x.n,amount:x.wght,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr}
    });
 
-   await db.update(u); closeConf(); closeModal(); setCat(cur);
-  }catch(e){alert(e)}
+   await db.update(u); 
+   closeConf(); 
+   closeModal(); 
+   setCat(cur); // Миттєве оновлення історії
+  }catch(e){
+   alert(e)
+  }finally{
+   if(btn) { btn.innerText = 'ТАК'; btn.disabled = false; }
+  }
  };
 };
 
