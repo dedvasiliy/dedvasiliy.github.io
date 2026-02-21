@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="uk" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v771</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="uk" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v775</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#0f172a;--w:#fff}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:2px;padding-bottom:60px;color:var(--t);overflow-x:hidden;width:100vw}
@@ -17,7 +17,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .bottom-nav{display:none;position:fixed;bottom:5px;left:5px;right:5px;background:#fff;border-radius:20px;box-shadow:0 10px 40px -5px #00000033;padding:5px;z-index:900;grid-template-columns:1fr 1fr;gap:5px;border:1px solid #cbd5e1}
 .bottom-nav button{background:0 0;border:none;padding:10px;border-radius:14px;color:#64748b;font-weight:900;font-size:11px;text-transform:uppercase;transition:.2s}
 .bottom-nav button.nav-btn-active{background:#e0e7ff;color:var(--p)}
-body.nav-active .bottom-nav{display:grid}
 input,select{width:100%;padding:0 5px;margin:2px 0;border:1px solid #94a3b8;border-radius:8px;font-size:12px;height:35px;background:#fff;font-weight:700;color:#0f172a}
 input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px solid #e0e7ff}
 .item-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
@@ -27,12 +26,17 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 .compact-grid .item-card{padding:3px 2px;min-height:30px}
 .compact-grid .item-title{height:auto;margin-bottom:2px;font-size:8px;line-height:1}
 .compact-grid .item-qty{font-size:11px;margin-bottom:0}
+
+/* СИГНАЛЬНА ІНДИКАЦІЯ */
 .alarm-blink{background:#fee2e2!important;border:2px solid #ef4444!important;color:#b91c1c!important;animation:blink .8s infinite alternate}
 @keyframes blink{0%{border-color:red;opacity:1}100%{border-color:#fca5a5;opacity:.6}}
 .val-pos{color:#2563eb!important}.val-neg{color:#dc2626!important}
+
+/* МОДАЛЬНІ ВІКНА */
 .modal{display:none;position:fixed;inset:0;background:#000000b3;z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.modal-box{background:#fff;width:98%;max-width:400px;border-radius:16px;max-height:96vh;display:flex;flex-direction:column}
-.modal-body{overflow-y:auto;padding:10px}
+.modal-box{background:#fff;width:98%;max-width:400px;border-radius:16px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-bottom:1px solid #e2e8f0;background:#fff;z-index:10}
+.modal-body{overflow-y:auto;padding:10px;flex:1}
 .rep-card{background:#fff;border-radius:16px;padding:8px 12px;margin-bottom:8px;box-shadow:0 2px 5px #0000000d;border:1px solid #e2e8f0}
 .j-card{background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:0 2px 4px -1px #00000014;border:1px solid #e2e8f0}
 .j-head{font-weight:900;font-size:13px;color:var(--p);margin-bottom:4px}
@@ -55,14 +59,36 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 .ver-info{position:absolute;top:40px;left:15px;font-size:9px;color:#64748b;font-weight:900;z-index:100}
 .mini-inv{width:100%;border-collapse:collapse;font-size:9px;margin-top:8px;cursor:pointer;background:#fafafa}
 .mini-inv th,.mini-inv td{border:1px solid #ddd;padding:2px;text-align:center}
+
+/* СТИЛІ ДЛЯ ФАСОВКИ ТА ЗВІТІВ ЦЕХІВ */
+.fas-card, .ws-card {background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-bottom: 8px;}
+.fas-row {display: grid; grid-template-columns: 1fr 1.5fr 60px 30px; gap: 4px; margin-bottom: 5px; align-items: center;}
+.fas-row-out {display: grid; grid-template-columns: 1.5fr 60px 1fr 30px; gap: 4px; margin-bottom: 5px; align-items: center;}
+.fas-film-row {display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;}
+.fas-inp, .ws-inp {height: 32px; font-size: 11px; padding: 0 4px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%;}
+.fas-lbl, .ws-lbl {font-size: 9px; font-weight: 900; color: #64748b; margin-bottom: 2px; text-transform: uppercase; display: block;}
+.conf-report {background: #fff; padding: 15px; border-radius: 8px; font-size: 12px; line-height: 1.5; border: 1px solid #e2e8f0; text-align: left; font-family: monospace;}
+.conf-title {font-weight: 900; text-align: center; font-size: 14px; margin-bottom: 10px;}
+.conf-sec {border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;}
+.conf-sec b {color: #047857;}
+
+/* СТИЛІ ДЛЯ НОВИХ ЦЕХІВ (Крупорушка, Вібро, ЗШМ) */
+.ws-row-out {display: grid; grid-template-columns: 1.5fr 40px 60px 50px 30px; gap: 2px; margin-bottom: 5px; align-items: center;}
+
+/* АКОРДЕОН ІСТОРІЇ (ГРУПУВАННЯ ПО МІСЯЦЯХ) */
+.month-group {border: 1px solid #cbd5e1; border-radius: 12px; margin-bottom: 8px; overflow: hidden; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+.month-head {background: #f8fafc; padding: 12px 15px; font-weight: 900; font-size: 13px; color: var(--p); cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
+.month-head:active {background: #f1f5f9;}
+.month-body {display: none; padding: 10px; border-top: 1px solid #cbd5e1; background: #fff;}
+.month-body.open {display: block;}
+
 #print-view{display:none;background:#fff;width:100%;height:100%;position:fixed;top:0;left:0;z-index:9999;padding:10px;overflow-y:auto;color:#000}
 
+/* СТИЛІ ДРУКУ ТА НАКЛАДНОЇ - НЕ ЗМІНЮВАТИ */
 @media print{
   body *{visibility:hidden}
   #print-view,#print-view *{visibility:visible}
   #print-view{position:absolute;top:0;left:0;display:block;width:100%}
-  
-  /* СТИЛІ НАКЛАДНОЇ - НЕ ЗМІНЕНО */
   .pr-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:9px;border:2px solid #000!important;table-layout:fixed}
   .pr-table thead{display:table-header-group!important}
   .pr-table tbody{display:table-row-group!important}
@@ -79,8 +105,6 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .t-row td{border:none!important;padding-top:6px!important;height:auto!important}
   .t-lbl{text-align:right!important;padding-right:4px!important;font-weight:900;font-size:10px}
   .t-box{border:2px solid #000!important;font-weight:900!important;font-size:10px!important;padding:2px!important}
-
-  /* НОВІ СТИЛІ ДЛЯ ЗВЕДЕНОГО ЗВІТУ (ДВІ КОЛОНКИ, 12px) */
   .rep-print-container{display:flex;width:100%;gap:20px;font-size:12px;line-height:1.1}
   .rep-col{flex:1;width:50%}
   .rep-cat-title{font-weight:900;text-transform:uppercase;border-bottom:2px solid #000;margin-top:10px;margin-bottom:5px;padding-bottom:2px;font-size:13px}
@@ -94,12 +118,12 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 <div id="lockScreen"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo"><div class="lock-title">ОБЛІК</div><input type="email" id="appEmail" class="lock-inp" placeholder="Email"><input type="password" id="appPass" class="lock-inp" placeholder="Пароль"><button class="btn-main" style="max-width:250px" onclick="tryLogin()">УВІЙТИ</button><div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div></div>
 <div id="act"></div><div id="cnt"></div>
 <div class="bottom-nav"><button id="navM" onclick="renderHome()">МЕНЮ</button><button id="navB" onclick="goBack()">НАЗАД</button></div>
-<div id="mdl" class="modal"><div class="modal-box"><div style="display:flex;justify-content:space-between;padding:10px 15px;border-bottom:1px solid #eee"><h4 id="mT" style="margin:0;font-size:15px;font-weight:900"></h4><button onclick="closeModal()" style="border:none;background:0 0;font-size:20px;color:#999">✕</button></div><div id="mB" class="modal-body"></div></div></div>
-<div id="confMdl" class="modal"><div id="confBox" class="modal-box" style="text-align:center;padding:20px"><h3 style="margin:0 0 10px">ПІДТВЕРДЖЕННЯ</h3><div id="confContent" style="background:#f1f5f9;padding:10px;text-align:left;max-height:60vh;overflow-y:auto;white-space:pre-wrap;font-size:12px;margin-bottom:15px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeConf()" style="background:#ccc;color:#333">НІ</button><button class="btn-main" onclick="doConfirm()" style="background:green">ТАК</button></div></div></div>
+<div id="mdl" class="modal"><div class="modal-box"><div class="modal-header"><h4 id="mT" style="margin:0;font-size:15px;font-weight:900"></h4><button onclick="closeModal()" style="border:none;background:#fee2e2;color:#dc2626;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer">✕ ЗАКРИТИ</button></div><div id="mB" class="modal-body"></div></div></div>
+<div id="confMdl" class="modal"><div id="confBox" class="modal-box" style="text-align:center;padding:20px"><h3 style="margin:0 0 10px">ПІДТВЕРДЖЕННЯ</h3><div id="confContent" class="conf-report" style="max-height:60vh;overflow-y:auto;margin-bottom:15px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeConf()" style="background:#ccc;color:#333">НІ</button><button class="btn-main" onclick="doConfirm()" style="background:green">ТАК</button></div></div></div>
 <div id="print-view"></div>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script>
-const WS_CFG={'VIBRO':{title:'Вібростіл',db:'Vibro_Report',prefix:'v',note:'Вібро'},'KRUP':{title:'Крупорушка',db:'Krup_Report',prefix:'k',note:'Крупорушка'},'ZSHM':{title:'ЗШМ Зміна',db:'ZSHM_Report',prefix:'z',note:'ЗШМ'}};
+const WS_CFG={'VIBRO':{title:'ВІБРОСТІЛ',db:'Vibro_Report',prefix:'v',note:'Вібро'},'KRUP':{title:'КРУПОРУШКА',db:'Krup_Report',prefix:'k',note:'Крупорушка'},'ZSHM':{title:'ЗШМ',db:'ZSHM_Report',prefix:'z',note:'ЗШМ'}};
 const D=document,gID=i=>D.getElementById(i);
 const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
 if(!firebase.apps.length)firebase.initializeApp(cfg);
@@ -107,7 +131,9 @@ const db=firebase.database().ref('production'),auth=firebase.auth();
 let cur='Home',data={},aId=null,archSub='',corrMode=!1,isLogged=!1,isAdmin=!1,corrCtx={},useStretch=!1,shipBasket={},pendingAction=null,priceMode='opt',priceEdit=!1;
 const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','PriceList','Suppliers','ArchInvoices','ArchIncoming','ArchPackIn'];
 
-function closeModal(){gID('mdl').style.display='none';gID('confMdl').style.display='none';}
+function closeModal(){gID('mdl').style.display='none';}
+function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
+function doConfirm(){if(pendingAction)pendingAction();closeConf();}
 
 auth.onAuthStateChanged(u=>{if(u){gID('lockScreen').classList.add('lock-hidden');D.body.classList.add('nav-active');isLogged=!0;if(localStorage.getItem('admT')==='1')isAdmin=!0;initAppData()}else{gID('lockScreen').classList.remove('lock-hidden');D.body.classList.remove('nav-active');isLogged=!1;isAdmin=!1;gID('cnt').innerHTML='';data={}}});
 function initAppData(){renderHome();stockCatsAll.forEach(p=>{db.child(p).on('value',s=>{data[p]=s.val()||{};if(cur!=='Home')loadData()})});db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}})}
@@ -116,8 +142,7 @@ function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrM
 
 function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМІН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМІН</button>`;
- const ver=`<div class="ver-info">v 771<br>${document.lastModified}</div>`;
- const cleanBtn=isAdmin?`<button class="btn-main" onclick="runZeroCleanup()" style="background:red;margin-top:15px;box-shadow:0 4px 10px rgba(220,38,38,0.3)">🧹 ОЧИСТИТИ ДУБЛІ</button>`:'';
+ const ver=`<div class="ver-info">v 775<br>${document.lastModified}</div>`;
  gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВИХІД</button>
  <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
  <div class="dash-grid">
@@ -126,7 +151,7 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 ЗВЕДЕНИЙ</span></div>
   <div class="dash-item" onclick="setCat('PriceList')"><span>💰 ПРАЙС</span></div>
- </div>${cleanBtn}`;updNav()}
+ </div>`;updNav()}
 
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
@@ -150,7 +175,7 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  else if(c==='PackSub'){if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">ПРИХІД</button>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛІВКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТИ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МІШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЕТИКЕТКА</div><div class="dash-item" onclick="setCat('Стрейч пленка')">СТРЕЙЧ</div><div class="dash-item" onclick="setCat('Термо лента')">ТЕРМО</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="background:#f1f5f9;color:#64748b">АРХІВ</div></div>`}
  else if(c==='ProdSub'){ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">ФАСУВАННЯ</div><div class="dash-item" onclick="setCat('Kruporushka')">КРУПОРУШКА</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">ВІБРОСТІЛ</div></div>`;if(isAdmin)ct.innerHTML+=`<button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХІД СИРОВИНИ</button>`}
  else if(c==='Фасовка'){if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('fas')">НОВИЙ</button>`}
- else if(['Kruporushka','Vibro','ZSHM'].includes(c)){const k={'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[c];if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('${k}')">НОВИЙ</button>`}
+ else if(['Kruporushka','Vibro','ZSHM'].includes(c)){const k={'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[c];if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--p)" onclick="openModal('workshop','${k}')">НОВИЙ</button>`}
  else if(c==='PriceList'){ct.innerHTML='<div class="z-head">💰 ПРАЙС</div><div id="priceListCont">...</div>';rPriceList(gID('priceListCont'))}
  else if(c==='Invoices')ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">ПРИХОДИ</div><div class="dash-item" onclick="setCat('ArchSubOut')">ВІДВАНТАЖЕННЯ</div></div>`;
  else if(['ArchSubIn','ArchSubOut'].includes(c)){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ЗА ДАТОЮ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ЗА ІМ'ЯМ</div></div>`}
@@ -161,29 +186,145 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
 function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet'].includes(cur))return;
  if(cur==='Stock_Raw')rRaw(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else rGen(c)}
 
-const gP=c=>{let i=[];if(['WeightStock','Stock_DV'].includes(c))i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];else if(c==='Готовая')i=["Арнаутка 1/0.9 1","Арнаутка 1/0.9 2","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кук.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшоно 1/0.9","Рис дл 1/0.9","Рис кр 1/0.9","Рис пр 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];const s=new Set(i),k=c==='WeightStock'?'WeightStock':(c==='Stock_DV'?'Stock_DV':(c==='Stock_Feed'?'Stock_Feed':(c==='Stock_Raw'?'Stock_Raw':(c==='Stock_Semi'?'Stock_Semi':'Готовая'))));if(data[k])Object.values(data[k]).forEach(v=>s.add(v.name));return Array.from(s).filter(x=>x).sort()};
+const gP=c=>{
+ let i=[];
+ if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
+ else if(c==='Готовая')i=["Арнаутка 1/0.9 1","Арнаутка 1/0.9 2","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кук.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшоно 1/0.9","Рис дл 1/0.9","Рис кр 1/0.9","Рис пр 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
+ const s=new Set(i),k=c==='WeightStock'?'WeightStock':(c==='Stock_DV'?'Stock_DV':(c==='Stock_Feed'?'Stock_Feed':(c==='Stock_Raw'?'Stock_Raw':(c==='Stock_Semi'?'Stock_Semi':'Готовая'))));
+ if(data[k])Object.values(data[k]).forEach(v=>{if(v.name)s.add(v.name)});
+ return Array.from(s).filter(x=>x).sort();
+};
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort()},gPackS=()=>{const s=new Set();if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.supplier)s.add(v.supplier)});return Array.from(s).filter(x=>x).sort()},gBuyS=()=>{const s=new Set();if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier&&v.type==='GOODS')s.add(v.supplier)});return Array.from(s).filter(x=>x).sort()};
 const toggleCorr=()=>{if(!isAdmin)return;corrMode=!corrMode;updCorrBtn();loadData()},updCorrBtn=()=>{const t=gID('corrTile');if(t){t.innerText=corrMode?'КОРЕКЦІЯ: ВКЛ':'🔧 КОРЕКЦІЯ';t.style.background=corrMode?'#fef3c7':'#fff';t.style.color=corrMode?'#d97706':'var(--p)'}const c=gID('corrCtls');if(c)c.innerHTML=''};
 
-function showH(c,n){const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k})});r.sort((a,b)=>(b.date+(b.ts||'00:00')).localeCompare(a.date+(a.ts||'00:00')));let h=`<div style="font-weight:900;text-align:center">${n}</div>`;if(['Stock_Raw','Stock_Archive'].includes(c)){const l=r[0]||r.find(x=>x.amount>0);if(l)h+=`<button class="btn-main" onclick="genBatchReport('${c}','${n}','${l.date}',${l.amount})" style="background:#0f172a;font-size:10px;margin-bottom:10px">📄 ЗВІТ ПАРТІЇ</button>`}if(!r.length)h+='<div style="text-align:center;color:#999">Пусто</div>';else r.forEach(v=>{const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';h+=`<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${v.note||'-'}</div></div>`});gID('mT').innerText='ІСТОРІЯ';gID('mB').innerHTML=h;gID('mdl').style.display='flex'}
+// ГЕНЕРАТОР ГАРМОШКИ ДЛЯ ІСТОРІЇ (ПО МІСЯЦЯХ)
+function rMonthGroup(list, renderRowFn) {
+ if(!list.length) return '<div style="text-align:center;color:#999;padding:20px">Порожньо</div>';
+ const groups = {};
+ const curM = new Date().toISOString().substring(0,7);
+ list.forEach(item => {
+  const m = (item._date || item.date || '2000-01').substring(0,7);
+  if(!groups[m]) groups[m] = [];
+  groups[m].push(item);
+ });
+ const mN = {'01':'Січень','02':'Лютий','03':'Березень','04':'Квітень','05':'Травень','06':'Червень','07':'Липень','08':'Серпень','09':'Вересень','10':'Жовтень','11':'Листопад','12':'Грудень'};
+ let h = '';
+ Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(m => {
+  const [yy, mm] = m.split('-');
+  const title = `${mN[mm]} ${yy}`;
+  const isOpen = (m === curM) ? 'open' : '';
+  h += `<div class="month-group"><div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')"><span>📅 ${title}</span><span>▼</span></div><div class="month-body ${isOpen}">${groups[m].map(renderRowFn).join('')}</div></div>`;
+ });
+ return h;
+}
+
+function showH(c,n){const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});r.sort((a,b)=>b.id.localeCompare(a.id));let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${n}</div>`;if(['Stock_Raw','Stock_Archive'].includes(c)){const l=r[0]||r.find(x=>x.amount>0);if(l)h+=`<button class="btn-main" onclick="genBatchReport('${c}','${n}','${l.date}',${l.amount})" style="background:#0f172a;font-size:10px;margin-bottom:10px">📄 ЗВІТ ПАРТІЇ</button>`}
+ h+=rMonthGroup(r, v=>{const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${v.note||'-'}</div></div>`});
+ gID('mT').innerText='ІСТОРІЯ';gID('mB').innerHTML=h;gID('mdl').style.display='flex'}
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="history-btn" onclick="showH('Готовая','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','Готовая','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="history-btn" onclick="showH('WeightStock','${n}')">📜</button><button class="corr-btn" onclick="openModal('corr','WeightStock','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rRaw(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><div style="display:flex;gap:2px"><button class="history-btn" onclick="showH('Stock_Raw','${n}')" style="width:100%">📜</button>${isAdmin?`<button class="history-btn" onclick="archiveRawBatch('${n}')" style="width:auto;background:#e0f2fe">📦</button>`:''}</div><button class="corr-btn" onclick="openModal('corr','Stock_Raw','${n}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{if(v.name)t[v.name]=(t[v.name]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const v=t[k];let a=v<0;if(cur==='Пленка'&&v<50)a=!0;if(cur==='Скотч 360 грамм'&&v<30)a=!0;if(cur==='Пакеты'&&v<3000)a=!0;let u='кг',dv=Math.round(v);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=v.toFixed(1);if(cur==='Пленка'){dv=v.toFixed(2);u='кг'}h+=`<div class="item-card ${a?'alarm-blink':''}"><div class="item-title">${k}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${dv}<small style="font-size:10px">${u}</small></div><button class="history-btn" onclick="showH('${cur}','${k}')">📜</button><button class="corr-btn" onclick="openModal('corr','${cur}','${k}')">±</button></div>`});c.innerHTML=h+'</div>'}
-function rFas(c){const d=data['Фасовка']||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div style="font-size:11px">Плівка: ${v.filmName||'-'} (Вз: ${v.vzial||0}, Зал: ${v.ostatok||0})</div><div style="margin-top:5px;font-size:11px"><b>Сировина:</b><br>${v.items?v.items.map(x=>`${x.name}: ${x.amount}кг`).join('<br>'):''}</div><div style="margin-top:5px;font-size:11px"><b>Вихід:</b><br>${v.outputItems?v.outputItems.map(x=>`${x.name} (${x.size}): ${x.count}шт`).join('<br>'):''}</div>${isAdmin?`<button onclick="delRec('Фасовка','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">DEL</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
-function rWorkshopList(c,k){const dbN=WS_CFG[k].db,d=data[dbN]||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')} | ${WS_CFG[k].title}</div><div style="font-size:11px">Опер: ${v.operator||'-'} | Пом: ${v.assistant||'-'}</div><div style="margin-top:5px;font-size:11px"><b>Сировина:</b> ${v.rawMix||'-'}</div><div style="margin-top:5px;font-size:11px"><b>Вихід:</b><br>${v.items?v.items.map(x=>`${x.n} (${x.type}): ${x.q}шт x ${x.w}кг`).join('<br>'):''}</div>${isAdmin?`<button onclick="delRec('${dbN}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">DEL</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
-function rArchPack(c){const d=data.ArchPackIn||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${i}')" style="color:red;border:none;background:0 0">DEL</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
+
+function rFas(c){
+ const d=data['Фасовка']||{}, l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ c.innerHTML = rMonthGroup(l, v => {
+  const dt=v.date.split('T')[0].split('-').reverse().join('.');
+  const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');
+  let rRaw=''; if(v.items)v.items.forEach(x=>{rRaw+=`<div style="display:flex;justify-content:space-between"><span>${x.name}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'вл.вир'})</span></span></div>`});
+  let rOut=''; let pk=0, sz=''; if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between"><span>${x.name}</span><span>${x.count}шт</span></div>`; pk+=x.count; if(!sz) sz=x.size;});
+  let packs=0; if(v.outputItems && v.outputItems.length>0) { const k=v.outputItems[0].name==="Кутя"?19.8:9.9; packs=Math.round(pk/k); }
+  const vt=v.vzial?String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0):0;
+  let filmUsed = Math.abs(vt - (v.ostatok||0));
+  return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)">
+   <div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${mName}</span></div>
+   <div class="conf-sec" style="margin-top:0;border:none"><b>сырьё:</b></div>${rRaw}
+   <div class="conf-sec"><b>готовая продукция:</b></div>${rOut}
+   <div class="conf-sec"><b>расход упаковки:</b></div>
+   <div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz||'-'}</span><span>${packs}шт</span></div>
+   <div style="display:flex;justify-content:space-between"><span>Плёнка: ${mName}</span><span>${filmUsed.toFixed(2)}кг</span></div>
+   ${isAdmin?`<button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;margin-top:10px;width:100%;font-weight:900;cursor:pointer">ВИДАЛИТИ</button>`:''}</div>`;
+ });
+}
+
+function rWorkshopList(c,k){
+ const dbN=WS_CFG[k].db, d=data[dbN]||{};
+ const l=Object.entries(d).map(([id,v])=>({...v, id, _date: (v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ 
+ c.innerHTML = rMonthGroup(l, v => {
+  const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');
+  const tStart = v.timeStart||'08:00', tEnd = v.timeEnd||'17:00';
+  const op = v.operator||'-', as = v.assistant||'-';
+  
+  let hRaw = ''; let totalRaw = 0;
+  // Сумісність з новими та старими форматами основи
+  if(v.rawBase) { 
+   hRaw += `<div>Основа: ${v.rawBase.n} ${v.rawBase.w}кг</div>`; totalRaw += v.rawBase.w; 
+  } else if(v.rawMix) { 
+   hRaw += `<div>Основа (стара): ${v.rawMix}</div>`; 
+   // Витягуємо всі цифри з тексту та плюсуємо їх
+   let matches = String(v.rawMix).match(/\d+(?:\.\d+)?/g);
+   if(matches) { matches.forEach(num => totalRaw += parseFloat(num)); }
+  }
+  
+  if(v.rawAdd && v.rawAdd.length) {
+   v.rawAdd.forEach(x => { hRaw += `<div>Добавка: ${x.n} ${x.w}кг</div>`; totalRaw += x.w; });
+  }
+  
+  let hOutDV='', hOutSemi='', hOutFeed=''; let totalDV = 0;
+  if(v.items) {
+   v.items.forEach(x => {
+    let q = x.q || 0, w = x.w || 0, l = x.l || 0;
+    let typ = x.type || 'DV'; // Для старих записів все кидаємо в DV
+    let wght = (q * w) + l;
+    if(!wght && x.amount) wght = parseFloat(x.amount)||0; // Якщо вага була в amount (старий формат)
+    
+    let row = '';
+    if(q && w) row = `<div>${x.n||x.name} ${q}м×${w}кг${l?'+'+l+'кг':''}</div>`;
+    else row = `<div>${x.n||x.name} ${wght}кг</div>`;
+    
+    if(typ==='DV') { hOutDV += row; totalDV += wght; }
+    else if(typ==='Semi') hOutSemi += row;
+    else if(typ==='Feed') hOutFeed += row;
+   });
+  }
+  let outBlock = '';
+  if(hOutDV) outBlock += `<div class="conf-sec"><b>власне виробництво:</b></div>${hOutDV}`;
+  if(hOutSemi) outBlock += `<div class="conf-sec"><b>напівфабрикат:</b></div>${hOutSemi}`;
+  if(hOutFeed) outBlock += `<div class="conf-sec"><b>відходи:</b></div>${hOutFeed}`;
+  
+  let percent = totalRaw > 0 ? ((totalDV / totalRaw) * 100).toFixed(1) : 0;
+  
+  return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)">
+   <div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div>
+   <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div>
+   <div style="text-align:center;margin-bottom:5px">${op} | ${as}</div>
+   <div class="conf-sec" style="margin-top:0;border:none"><b>сырьё:</b></div>${hRaw}
+   ${outBlock}
+   <div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div>
+   <div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой продукции:</span><span>${percent}%</span></div>
+   ${isAdmin?`<button onclick="delRec('${dbN}','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;margin-top:10px;width:100%;font-weight:900;cursor:pointer">ВИДАЛИТИ</button>`:''}
+  </div>`;
+ });
+}
+
+function rArchPack(c){
+ const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">DEL</button>`:''}</div>`);
+}
 
 function rInvD(c){rInvGen(c,'date')}
 function rInvC(c){rInvGen(c,'client')}
 function rInvGen(c,key){
- const k=archSub==='In'?'ArchIncoming':'ArchInvoices',d=data[k]||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';
- l.forEach(([i,v])=>{
+ const k=archSub==='In'?'ArchIncoming':'ArchInvoices', d=data[k]||{};
+ const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ c.innerHTML = rMonthGroup(l, v => {
+  const i = v.id;
   if(k==='ArchInvoices'){
    let rows='';
    if(v.items)v.items.forEach((it,idx)=>{if(idx<4){const p=it.split('|');rows+=`<tr><td>${idx+1}</td><td style="text-align:left">${p[0].substring(0,12)}..</td><td>${p[1]}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`}});
    if(v.items&&v.items.length>4)rows+=`<tr><td colspan="4">...</td></tr>`;
-   h+=`<div class="j-card" onclick="viewInvoice('${i}')" style="padding:8px">
+   return `<div class="j-card" onclick="viewInvoice('${i}')" style="padding:8px">
     <div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${v.num||'-'}</div>
     <div style="font-size:11px;font-weight:700;margin-bottom:2px">${v.client||'-'}</div>
     <table class="mini-inv"><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Сума</th></tr>${rows}</table>
@@ -191,10 +332,9 @@ function rInvGen(c,key){
     ${isAdmin?`<button onclick="event.stopPropagation();delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px;width:100%">ВИДАЛИТИ</button>`:''}
    </div>`;
   }else{
-   h+=`<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.supplier}</div><div style="font-size:10px;color:#666">№${v.num||'-'}</div><div style="font-size:10px;margin-top:5px"><b>${v.name}</b>: ${v.amount}</div>${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">DEL</button>`:''}</div>`;
+   return `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.supplier}</div><div style="font-size:10px;color:#666">№${v.num||'-'}</div><div style="font-size:10px;margin-top:5px"><b>${v.name}</b>: ${v.amount}</div>${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">DEL</button>`:''}</div>`;
   }
  });
- c.innerHTML=h||'Пусто';
 }
 
 window.viewInvoice=function(id){
@@ -244,16 +384,23 @@ function numToWords(n){
 function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=new Date().toISOString().split('T')[0];m.innerHTML='';aId=a;
  if(t==='inc'){h.innerText='ПРИХІД (КУПОВАНА)';m.innerHTML=`<div style="margin-bottom:10px">ДАТА <input type="date" id="iD" value="${d}"></div><div style="margin-bottom:10px">ПОСТАЧАЛЬНИК ${makeSmart('iS',gBuyS(),'Оберіть...')}</div><div style="margin-bottom:10px">ТОВАР ${makeSmart('iN',gP('WeightStock'),'Назва')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>ВАГА (КГ) <input type="number" id="iA"></div><div>НАКЛ № <input type="text" id="iNum"></div></div><button class="btn-main" onclick="sInc()">ЗБЕРЕГТИ</button>`}
  else if(t==='ship'){
-  shipBasket={};
-  h.innerText='ВІДВАНТАЖЕННЯ';
+  shipBasket={}; h.innerText='ВІДВАНТАЖЕННЯ';
   m.innerHTML=`<div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${d}"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum"></div><div><span class="lbl-small">УГОДА</span><input type="text" id="hAg"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАЧАЛЬНИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАЧАЛЬНИК')}</div><div><span class="lbl-small">ОТРИМУВАЧ</span>${makeSmart('hC',gCl(),'Клієнт...')}</div></div><div class="grid-3" style="align-items:end;margin-top:5px"><button id="btnOpt" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt')">ОПТ</button><button id="btnRoz" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz')">РОЗДРІБ</button><button id="btnStr" class="btn-sel" onclick="toggleStr(this)">СТРЕЙЧ: НІ</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 ЗГОРНУТИ / РОЗГОРНУТИ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАНА</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНА</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ВЛАСНЕ</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ВІДХОДИ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛІ</button>`;
   loadBulk(cur==='StockRoot'?'Готовая':cur);
  }
  else if(t==='addRaw'){h.innerText='ПРИХІД СИРОВИНИ';m.innerHTML=`<div>ДАТА <input type="date" id="rD" value="${d}"></div><div>ПОСТАЧАЛЬНИК ${makeSmart('rSupp',gBuyS(),'Оберіть')}</div><div>СИРОВИНА ${makeSmart('rN',gP('Stock_Raw'),'Назва')}</div><div>ВАГА <input type="number" id="rA"></div><button class="btn-main" onclick="sRawInc()">ЗБЕРЕГТИ</button>`}
  else if(t==='addMatPack'){h.innerText='ПРИХІД МАТЕРІАЛІВ';m.innerHTML=`<div>КАТЕГОРІЯ <select id="pCat" class="smart-sel" onchange="updPackList()"><option value="Пленка">Плівка</option><option value="Пакеты">Пакеты</option><option value="Скотч 360 грамм">Скотч</option><option value="Мешки">Мешки</option><option value="Нитки">Нитки</option><option value="Этикетка">Этикетка</option><option value="Стрейч пленка">Стрейч</option><option value="Термо лента">Термо</option></select></div><div>ДАТА <input type="date" id="pD" value="${d}"></div><div>ПОСТАЧАЛЬНИК ${makeSmart('pS',gPackS(),'Оберіть')}</div><div>ТОВАР <div id="pProdCont"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>КІЛЬКІСТЬ <input type="number" id="pA"></div><div>НАКЛ № <input type="text" id="pNum"></div></div><button class="btn-main" onclick="sPack()">ЗБЕРЕГТИ</button>`;setTimeout(updPackList,100)}
- else if(t==='fas'){h.innerText='ФАСУВАННЯ';m.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div>ДАТА <input type="date" id="fD" value="${d}"></div><div>ЗАЛ. ПЛІВКИ <input type="number" id="fOs"></div></div><div>ВЗЯЛИ ПЛІВКИ (5+5...) <input type="text" id="fVz"></div><div class="z-head">СИРОВИНА</div><div id="fasRows"></div><button class="btn-main" style="background:#fff;color:#000;border:1px solid #ccc" onclick="addFasRow()">+ СИРОВИНА</button><div class="z-head">ВИХІД</div><div id="fasOutRows"></div><button class="btn-main" style="background:#fff;color:#000;border:1px solid #ccc" onclick="addFasOutRow()">+ ПРОДУКЦІЯ</button><button class="btn-main" onclick="sFas()">ЗБЕРЕГТИ</button>`;setTimeout(()=>{addFasRow();addFasOutRow()},100)}
+ else if(t==='fas'){
+  h.innerText='ФАСУВАННЯ СМІНА';
+  m.innerHTML=`<div class="fas-card"><span class="fas-lbl">ДАТА</span><input type="date" id="fD" class="fas-inp" value="${d}"></div><div class="z-head">СИРОВИНА</div><div id="fasRows"></div><button class="btn-main" style="background:#fff;color:var(--p);border:1px dashed var(--p);margin-bottom:10px" onclick="addFasRow()">+ ДОДАТИ СИРОВИНУ</button><div class="z-head">ГОТОВА ПРОДУКЦІЯ</div><div id="fasOutRows"></div><button class="btn-main" style="background:#fff;color:var(--p);border:1px dashed var(--p)" onclick="addFasOutRow()">+ ДОДАТИ ПРОДУКЦІЮ</button><div class="z-head">ПЛІВКА</div><div class="fas-card fas-film-row"><div><span class="fas-lbl">ВЗЯЛИ (5+5)</span><input type="text" id="fVz" class="fas-inp" placeholder="кг" oninput="calcFilm()"></div><div><span class="fas-lbl">ЗАЛИШОК</span><input type="number" id="fOs" class="fas-inp" placeholder="кг" oninput="calcFilm()"></div><div><span class="fas-lbl">ВИТРАТА</span><input type="text" id="fUsed" class="fas-inp" placeholder="0 кг" readonly style="background:#e2e8f0;font-weight:900;color:var(--p)"></div></div><button class="btn-main" onclick="previewFas()">ЗБЕРЕГТИ СМІНУ</button>`;
+  setTimeout(()=>{addFasRow();addFasOutRow()},100);
+ }
+ else if(t==='workshop'){
+  const c=WS_CFG[a]; h.innerText=c.title;
+  m.innerHTML=`<div class="ws-card"><div class="grid-3"><div><span class="ws-lbl">ДАТА</span><input type="date" id="wsD" class="ws-inp" value="${d}"></div><div><span class="ws-lbl">ПОЧАТОК</span><input type="time" id="wsTS" class="ws-inp" value="08:00"></div><div><span class="ws-lbl">КІНЕЦЬ</span><input type="time" id="wsTE" class="ws-inp" value="17:00"></div></div><div class="grid-2" style="margin-top:5px"><div><span class="ws-lbl">ОПЕРАТОР</span>${makeSmart('wsOp',getHistoryDeep('operator'),'Прізвище')}</div><div><span class="ws-lbl">ПОМІЧНИК</span>${makeSmart('wsAs',getHistoryDeep('assistant'),'Прізвище')}</div></div></div><div class="z-head">ОСНОВНА СИРОВИНА</div><div id="wsMainRows"></div><button class="btn-main" style="background:#fff;color:#0369a1;border:1px dashed #0369a1;margin-bottom:10px" onclick="addWsMainRow()">+ ДОДАТИ ОСНОВУ</button><div class="z-head">ДОБАВКА</div><div id="wsAddRows"></div><button class="btn-main" style="background:#fff;color:#d97706;border:1px dashed #d97706;margin-bottom:10px" onclick="addWsAddRow()">+ ДОДАТИ ДОБАВКУ</button><div class="z-head">ВИХІД: ВЛАСНЕ ВИРОБНИЦТВО</div><div id="wsOutDV"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('DV')">+ ДОДАТИ ВЛАСНЕ</button><div class="z-head">ВИХІД: НАПІВФАБРИКАТ</div><div id="wsOutSemi"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('Semi')">+ ДОДАТИ П/Ф</button><div class="z-head">ВИХІД: ВІДХОДИ</div><div id="wsOutFeed"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('Feed')">+ ДОДАТИ ВІДХОДИ</button><button class="btn-main" onclick="previewWorkshop('${a}')">ЗБЕРЕГТИ СМІНУ</button>`;
+  setTimeout(()=>{addWsMainRow();addWsOutRow('DV');},50);
+ }
  else if(t==='corr'){h.innerText='КОРЕКЦІЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${b}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВИЙ ЗАЛИШОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">ЗБЕРЕГТИ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${b}','${a}')">ПЕРЕЙМЕНУВАТИ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${b}','${a}')">ВИДАЛИТИ КАРТКУ</button></div>`}
- else if(['KRUP','VIBRO','ZSHM'].includes(t))renderWorkshopModal(t,h,m,d);
  else if(t==='dayRep'){h.innerText='ДЕННИЙ ЗВІТ';m.innerHTML=`<div>ДАТА <input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМУВАТИ</button>`}
  else if(t==='monthRep'){h.innerText='МІСЯЧНИЙ ЗВІТ';m.innerHTML=`<div>МІСЯЦЬ <input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">СФОРМУВАТИ</button>`}
  else if(t==='fix'){h.innerText='ФІКСАЦІЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
@@ -281,41 +428,256 @@ function printShipInvoice(d){
 async function sInc(){const d=gID('iD').value+"T12:00:00Z",s=getSmartVal('iS'),n=getSmartVal('iN'),a=parseFloat(gID('iA').value),nm=gID('iNum').value;if(!s||!n||!a)return alert('Заповніть поля');try{const k=db.child('ArchIncoming').push().key,u={};u['/ArchIncoming/'+k]={date:d,supplier:s,name:n,amount:a,num:nm,type:'GOODS',ts:new Date().toISOString()};u['/WeightStock/'+db.child('WeightStock').push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
 async function sRawInc(){const d=gID('rD').value+"T12:00:00Z",s=getSmartVal('rSupp'),n=getSmartVal('rN'),a=parseFloat(gID('rA').value);if(!s||!n||!a)return alert('Дані?');try{const k=db.child('ArchIncoming').push().key,u={};u['/ArchIncoming/'+k]={date:d,supplier:s,name:n,amount:a,type:'RAW',ts:new Date().toISOString()};u['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
 async function sPack(){const cat=gID('pCat').value,d=gID('pD').value+"T12:00:00Z",s=getSmartVal('pS'),n=getSmartVal('pProd'),a=parseFloat(gID('pA').value),nm=gID('pNum').value;if(!s||!n||!a)return alert('Дані?');try{const k=db.child('ArchPackIn').push().key,u={};u['/ArchPackIn/'+k]={date:d,supplier:s,name:n,amount:a,category:cat,num:nm,ts:new Date().toISOString()};u['/'+cat+'/'+db.child(cat).push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
-function updPackList(){const c=gID('pCat').value;let l=[];if(c==='Пленка')l=["Пленка 300х400","Пленка 370х500","Пленка 400х500","Пленка 420х550"];else if(c==='Пакеты')l=["300x400","370x500","400x500","420x550"];else if(c==='Мешки')l=["Мешок 25кг","Мешок 50кг","Мешок белый"];else if(c==='Нитки')l=["Нитки"];else if(c==='Этикетка')l=["Этикетка"];else if(c==='Стрейч пленка')l=["Стрейч пленка"];else if(c==='Термо лента')l=["Термо лента"];else if(c==='Скотч 360 грамм')l=["Скотч 360 грамм"];const s=new Set(l);if(data[c])Object.values(data[c]).forEach(v=>s.add(v.name));gID('pProdCont').innerHTML=makeSmart('pProd',Array.from(s).sort(),'Товар')}
+function updPackList(){const c=gID('pCat').value;let l=[];if(c==='Пленка')l=["Пленка 300х400","Пленка 370х500","Пленка 400х500","Пленка 420х550"];else if(c==='Пакеты')l=["300x400","370x500","400x500","420x550"];else if(c==='Мешки')l=["Мешок 25кг","Мешок 50кг","Мешок белый"];else if(c==='Нитки')l=["Нитки"];else if(c==='Этикетка')l=["Этикетка"];else if(c==='Стрейч пленка')l=["Стрейч пленка"];else if(c==='Термо лента')l=["Термо лента"];else if(c==='Скотч 360 грамм')l=["Скотч 360 грамм"];const s=new Set(l);if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s.add(v.name.replace(/х/gi, 'x'))});gID('pProdCont').innerHTML=makeSmart('pProd',Array.from(s).sort(),'Товар')}
 async function sCorr(){const c=corrCtx.cat,n=corrCtx.name,d=gID('cD').value+"T12:00:00Z",na=parseFloat(gID('cA').value),r=gID('cR').value;if(isNaN(na))return alert('Число?');let cur=0;if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===n)cur+=v.amount});const diff=na-cur;if(Math.abs(diff)<0.001)return alert('Не змінилось');try{await db.child(c).push({name:n,amount:diff,date:d,note:`Кор: ${r}`,ts:new Date().toISOString()});closeModal()}catch(e){alert(e)}}
 async function renameItem(oldN,cat){const newN=prompt("Нова назва:",oldN);if(!newN||newN===oldN)return;if(!confirm(`Перейменувати "${oldN}" -> "${newN}"?`))return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===oldN)u[`/${cat}/${k}/name`]=newN});if(Object.keys(u).length){await db.update(u);closeModal();alert('ОК')}else alert('Не знайдено')}
 async function delItemBatch(nm,cat){if(!confirm(`ВИДАЛИТИ ВСЮ ІСТОРІЮ "${nm}"? ЦЕ НЕЗВОРОТНЬО!`))return;if(prompt('Введіть DELETE')!=='DELETE')return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===nm)u[`/${cat}/${k}`]=null});if(Object.keys(u).length){await db.update(u);closeModal();alert('Видалено')}else alert('Не знайдено')}
 
-function renderWorkshopModal(t,te,be,td){const c=WS_CFG[t],p=c.prefix;te.innerText=c.title;be.innerHTML=`<div style="margin-bottom:10px">ДАТА <input type="date" id="${p}D" value="${td}"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><div>ОПЕРАТОР ${makeSmart(p+'Op',getHistoryDeep('operator'),'Прізвище')}</div><div>ПОМІЧНИК ${makeSmart(p+'As',getHistoryDeep('assistant'),'Прізвище')}</div></div><div style="background:#f9fafb;padding:5px;border:1px solid #eee;margin:5px 0"><b>СИРОВИНА</b><select id="${p}WH" class="smart-sel" onchange="updGenRaw('${p}')"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw" ${t!=='VIBRO'?'selected':''}>Сировина</option><option value="Stock_DV">ДВ</option></select><div id="${p}RawCont"></div><input type="number" id="${p}RawW" placeholder="Кг" readonly style="background:#eee"></div><div class="z-head">ПРОДУКЦІЯ (ДВ)</div><div id="${p}RowsDV"></div><button class="btn-main" onclick="addGenRow('${p}','DV')" style="background:#fff;color:blue;border:1px solid blue">+ РЯД</button><div class="z-head">П/Ф</div><div id="${p}RowsSemi"></div><button class="btn-main" onclick="addGenRow('${p}','Semi')" style="background:#fff;color:orange;border:1px solid orange">+ РЯД</button><div class="z-head">КОРМА</div><div id="${p}RowsFeed"></div><button class="btn-main" onclick="addGenRow('${p}','Feed')" style="background:#fff;color:brown;border:1px solid brown">+ РЯД</button><button class="btn-main" onclick="saveGen('${t}')" id="btnS">ЗБЕРЕГТИ</button>`;setTimeout(()=>{updGenRaw(p);addGenRow(p,'DV');addGenRow(p,'Semi');addGenRow(p,'Feed')},50)}
-function updGenRaw(p){const w=gID(p+'WH').value,m={};if(data[w])Object.values(data[w]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});gID(p+'RawCont').innerHTML=makeSmart(p+'RawItem',Object.keys(m).sort(),'Назва')}
-function addGenRow(p,s){const i=Date.now()+Math.random(),t=s==='DV'?'Stock_DV':(s==='Semi'?'Stock_Semi':'Stock_Feed'),ss=new Set();if(data[t])Object.values(data[t]).forEach(v=>ss.add(v.name));let o=`<option value="">Обрати</option>`;Array.from(ss).sort().forEach(x=>o+=`<option value="${x}">${x}</option>`);gID(p+'Rows'+s).insertAdjacentHTML('beforeend',`<div class="dyn-row" id="${p}r_${i}" style="display:grid;grid-template-columns:1fr 0.5fr 0.5fr 30px;gap:2px;margin-bottom:2px"><select id="n_${i}" class="smart-sel" style="font-size:10px">${o}</select><input type="number" id="q_${i}" placeholder="шт" oninput="calcGen('${p}')"><input type="number" id="w_${i}" placeholder="кг" oninput="calcGen('${p}')"><button onclick="this.parentElement.remove();calcGen('${p}')" style="background:red;color:white;border:none">x</button></div>`)}
-function calcGen(p){let t=0;['DV','Semi','Feed'].forEach(s=>{const r=gID(p+'Rows'+s).children;for(let x of r){const k=x.id.split('_')[1],q=parseFloat(gID('q_'+k).value)||0,w=parseFloat(gID('w_'+k).value)||0;t+=q*w}});gID(p+'RawW').value=t.toFixed(1)}
-async function saveGen(t){const c=WS_CFG[t],p=c.prefix,rn=getSmartVal(p+'RawItem'),rw=parseFloat(gID(p+'RawW').value),d=gID(p+'D').value+"T12:00:00Z";if(!rn||rw<=0)return alert('Сировина?');const it=[];['DV','Semi','Feed'].forEach(s=>{const r=gID(p+'Rows'+s).children;for(let x of r){const k=x.id.split('_')[1],n=gID('n_'+k).value,q=parseFloat(gID('q_'+k).value),w=parseFloat(gID('w_'+k).value);if(n&&q>0)it.push({n,q,w,l:0,type:s})}});if(!it.length)return alert('Продукція?');try{const id=db.child(c.db).push().key,u={},rwh=gID(p+'WH').value;u[`/${rwh}/${db.child(rwh).push().key}`]={name:rn,amount:-rw,date:d,note:c.note,fLink:id,ts:new Date().toISOString()};it.forEach(i=>{let dst=i.type==='DV'?'Stock_DV':(i.type==='Semi'?'Stock_Semi':'Stock_Feed');u[`/${dst}/${db.child(dst).push().key}`]={name:i.n,amount:(i.q*i.w),date:d,note:c.note,fLink:id,ts:new Date().toISOString()}});u[`/${c.db}/${id}`]={date:d,items:it,rawMix:`${rn} (${rw}kg)`,operator:getSmartVal(p+'Op'),assistant:getSmartVal(p+'As'),type:t};await db.update(u);closeModal()}catch(e){alert(e)}}
+// --- НОВИЙ ЦЕХ ФАСОВКИ ---
+window.calcFilm=function(){
+ const vz=gID('fVz').value.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
+ const os=parseFloat(gID('fOs').value)||0;
+ const u=Math.max(0, vz-os);
+ gID('fUsed').value=u.toFixed(2)+' кг';
+};
 
-// РОЗУМНІ СПИСКИ ФАСОВКИ З ЗАЛИШКАМИ НА СКЛАДІ
 window.addFasRow=function(){
  const i=Date.now()+Math.random().toString().slice(2,7);
- gID('fasRows').insertAdjacentHTML('beforeend',`<div id="fr_${i}" style="display:grid;grid-template-columns:1fr 1fr 0.5fr 30px;gap:2px"><select id="fs_${i}" onchange="updFasRawList('${i}')"><option value="WeightStock">Куп</option><option value="Stock_DV">ДВ</option></select><select id="fn_${i}"><option value="">Оберіть...</option></select><input type="number" id="fq_${i}" placeholder="кг"><button onclick="this.parentElement.remove()">x</button></div>`);
+ gID('fasRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="fr_${i}">
+  <select id="fs_${i}" class="fas-inp" onchange="updFasRawList('${i}')"><option value="WeightStock">Покупна</option><option value="Stock_DV">Вл. Вир.</option></select>
+  <select id="fn_${i}" class="fas-inp"><option value="">Оберіть...</option></select>
+  <input type="number" id="fq_${i}" class="fas-inp" placeholder="кг">
+  <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
  setTimeout(()=>updFasRawList(i),50);
 };
+
 window.updFasRawList=function(i){
  const src=gID('fs_'+i).value, sel=gID('fn_'+i), m={};
  if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});
  let h='<option value="">Оберіть...</option>';
  Object.keys(m).sort().forEach(k=>{
-  if(Math.round(m[k])>0) h+=`<option value="${k}">${k} (${Math.round(m[k])} кг)</option>`;
+  if(Math.round(m[k])>0) h+=`<option value="${k}">${k} [${Math.round(m[k])} кг]</option>`;
  });
  sel.innerHTML=h;
 };
+
 window.addFasOutRow=function(){
  const i=Date.now()+Math.random().toString().slice(2,7);
- let opts='<option value="">Оберіть...</option>';
+ let opts='<option value="">Продукт...</option>';
  gP('Готовая').forEach(p=>opts+=`<option value="${p}">${p}</option>`);
- gID('fasOutRows').insertAdjacentHTML('beforeend',`<div id="fo_${i}" style="display:grid;grid-template-columns:1fr 1fr 0.5fr 30px;gap:2px"><select id="on_${i}">${opts}</select><select id="os_${i}"><option>300×400</option><option>370×500</option><option>400×500</option><option>420×550</option></select><input type="number" id="oq_${i}" placeholder="шт"><button onclick="this.parentElement.remove()">x</button></div>`);
+ let pkOpts='<option value="">Пакет...</option>';
+ const pkSet=new Set(["300x400","370x500","400x500","420x550"]);
+ if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi, 'x'))});
+ Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${p}">${p}</option>`);
+ gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}">
+  <select id="on_${i}" class="fas-inp">${opts}</select>
+  <input type="number" id="oq_${i}" class="fas-inp" placeholder="шт">
+  <select id="os_${i}" class="fas-inp">${pkOpts}</select>
+  <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
 };
 
-async function sFas(){const d=gID('fD').value+"T12:00:00Z",ri=[],oi=[];let tp=0,tv=0;for(let x of gID('fasRows').children){const k=x.id.split('_')[1],n=gID('fn_'+k).value,q=parseFloat(gID('fq_'+k).value),s=gID('fs_'+k).value;if(n&&q){ri.push({name:n,amount:q,source:s});tp+=q}}for(let x of gID('fasOutRows').children){const k=x.id.split('_')[1],n=gID('on_'+k).value,sz=gID('os_'+k).value,q=parseFloat(gID('oq_'+k).value);if(n&&q){oi.push({name:n,size:sz,count:q});tv+=q}}if(!ri.length||!oi.length)return alert('Пусто');try{const id=db.child('Фасовка').push().key,u={},ts=new Date().toISOString(),vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),pu=Math.abs(vt-os);u['/Фасовка/'+id]={date:d,items:ri,outputItems:oi,vzial:vt,ostatok:os,filmName:oi[0].name};ri.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d,note:'Фас',fLink:id,ts:ts}});oi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d,note:'Фас',fLink:id,ts:ts};const k=i.name==="Кутя"?19.8:9.9;u['/Пакеты/'+db.child('Пакеты').push().key]={name:i.size,amount:-Math.round(i.count/k),date:d,note:'Авто',fLink:id,ts:ts}});if(pu>0)u['/Пленка/'+db.child('Пленка').push().key]={name:oi[0].name,amount:-pu,date:d,note:'Авто',fLink:id,ts:ts};await db.update(u);closeModal()}catch(e){alert(e)}}
+window.previewFas=function(){
+ const d=gID('fD').value, ds=d.split('-').reverse().join('.');
+ const ri=[], oi=[];
+ for(let x of gID('fasRows').children){
+  const k=x.id.split('_')[1], n=gID('fn_'+k).value, q=parseFloat(gID('fq_'+k).value), s=gID('fs_'+k).value;
+  if(n&&q)ri.push({n,q,s});
+ }
+ for(let x of gID('fasOutRows').children){
+  const k=x.id.split('_')[1], n=gID('on_'+k).value, q=parseFloat(gID('oq_'+k).value), sz=gID('os_'+k).value;
+  if(n&&q&&sz)oi.push({n,q,sz});
+ }
+ if(!ri.length||!oi.length) return alert('Увага: Заповніть сировину та готову продукцію!');
+ 
+ const vz=gID('fVz').value, os=parseFloat(gID('fOs').value)||0, vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0), fU=Math.max(0,vt-os);
+ 
+ // Розумний фільтр: якщо продукт "Арнаутка 1/0.9 1" або 2, шукаємо плівку без цифр в кінці
+ let mN = oi[0].n;
+ if(mN === 'Арнаутка 1/0.9 1' || mN === 'Арнаутка 1/0.9 2') mN = 'Арнаутка 1/0.9';
+ 
+ let hRaw='', hOut='', pk={};
+ ri.forEach(x=>{
+  hRaw+=`<div>${x.n} ${x.q}кг <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'вл.вир'})</span></div>`;
+ });
+ oi.forEach(x=>{
+  hOut+=`<div style="display:flex;justify-content:space-between"><span>${x.n}</span><span>${x.q}шт</span></div>`;
+  const coeff = x.n==="Кутя" ? 19.8 : 9.9;
+  pk[x.sz] = (pk[x.sz]||0) + Math.round(x.q/coeff);
+ });
+ let hPk='';
+ Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz}</span><span>${pk[sz]}шт</span></div>`});
+ 
+ const html=`
+  <div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${mN}</span></div>
+  <div class="conf-sec"><b>сырьё:</b></div>${hRaw}
+  <div class="conf-sec"><b>готовая продукция:</b></div>${hOut}
+  <div class="conf-sec"><b>расход упаковки:</b></div>${hPk}
+  <div style="display:flex;justify-content:space-between"><span>Плёнка: ${mN}</span><span>${fU.toFixed(2)}кг</span></div>
+ `;
+ 
+ gID('confContent').innerHTML=html; gID('confMdl').style.display='flex';
+ 
+ window.pendingAction=async function(){
+  try{
+   const id=db.child('Фасовка').push().key, u={}, ts=new Date().toISOString();
+   const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s})), dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));
+   u['/Фасовка/'+id]={date:d+"T12:00:00Z",items:dbRi,outputItems:dbOi,vzial:vt,ostatok:os,filmName:mN};
+   
+   dbRi.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});
+   dbOi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});
+   Object.keys(pk).forEach(sz=>{u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'Авто',fLink:id,ts:ts}});
+   
+   if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'Авто',fLink:id,ts:ts};
+   
+   await db.update(u); closeConf(); closeModal(); setCat('Фасовка');
+  }catch(e){alert(e)}
+ };
+};
 
+// --- НОВІ ЦЕХИ: КРУПОРУШКА, ВІБРОСТІЛ, ЗШМ (ДИНАМІЧНА ЛОГІКА ТА ЗВІТИ) ---
+window.updWsRawList = function(i, pfx){
+ const src = gID(pfx+'s_'+i).value, sel = gID(pfx+'n_'+i), m = {};
+ if(data[src]) Object.values(data[src]).forEach(v=>{ if(v.name) m[v.name] = (m[v.name]||0) + v.amount; });
+ let h = '<option value="">Оберіть...</option>';
+ Object.keys(m).sort().forEach(k => {
+  if(Math.round(m[k])>0) h+=`<option value="${k}">${k} [${Math.round(m[k])} кг]</option>`;
+ });
+ sel.innerHTML = h;
+};
+
+window.calcWsMain = function() {
+ let tOut = 0;
+ ['DV','Semi','Feed'].forEach(t => {
+  for(let r of gID('wsOut'+t).children) {
+   const i = r.id.split('_')[1];
+   const b = parseFloat(gID('wob_'+i).value) || 0;
+   const w = parseFloat(gID('wow_'+i).value) || 0;
+   const rem = parseFloat(gID('wor_'+i).value) || 0;
+   tOut += (b * w) + rem;
+  }
+ });
+ let tAdd = 0;
+ for(let r of gID('wsAddRows').children) {
+  const i = r.id.split('_')[1];
+  tAdd += parseFloat(gID('waq_'+i).value) || 0;
+ }
+ const mainW = Math.max(0, tOut - tAdd);
+ const mRows = gID('wsMainRows').querySelectorAll('.main-raw-q');
+ if(mRows.length > 0) mRows[0].value = mainW.toFixed(1);
+};
+
+window.addWsMainRow = function() {
+ const i = Date.now() + Math.random().toString().slice(2,7);
+ const isFirst = gID('wsMainRows').children.length === 0;
+ gID('wsMainRows').insertAdjacentHTML('beforeend', `<div class="fas-row" id="wm_${i}">
+  <select id="wms_${i}" class="ws-inp" onchange="updWsRawList('${i}','wm')"><option value="Stock_Raw">Сировина</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">Вл. Вир.</option><option value="WeightStock">Покупна</option></select>
+  <select id="wmn_${i}" class="ws-inp"><option value="">Оберіть...</option></select>
+  <input type="number" id="wmq_${i}" class="ws-inp main-raw-q" placeholder="кг" ${isFirst ? 'readonly style="background:#e2e8f0;font-weight:bold;color:var(--p)"' : 'oninput="calcWsMain()"'} >
+  <button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
+ setTimeout(()=>updWsRawList(i, 'wm'), 50);
+};
+
+window.addWsAddRow = function() {
+ const i = Date.now() + Math.random().toString().slice(2,7);
+ gID('wsAddRows').insertAdjacentHTML('beforeend', `<div class="fas-row" id="wa_${i}">
+  <select id="was_${i}" class="ws-inp" onchange="updWsRawList('${i}','wa')"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сировина</option><option value="Stock_DV">Вл. Вир.</option><option value="WeightStock">Покупна</option></select>
+  <select id="wan_${i}" class="ws-inp"><option value="">Оберіть...</option></select>
+  <input type="number" id="waq_${i}" class="ws-inp" placeholder="кг" oninput="calcWsMain()">
+  <button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
+ setTimeout(()=>updWsRawList(i, 'wa'), 50);
+};
+
+window.addWsOutRow = function(t) {
+ const i = Date.now() + Math.random().toString().slice(2,7);
+ const cat = t==='DV'?'Stock_DV':(t==='Semi'?'Stock_Semi':'Stock_Feed');
+ let opts = '<option value="">Назва...</option>';
+ gP(cat).forEach(p => opts += `<option value="${p}">${p}</option>`);
+ gID('wsOut'+t).insertAdjacentHTML('beforeend', `<div class="ws-row-out" id="wo_${i}" data-t="${t}">
+  <select id="won_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Нова назва:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВИЙ...</option></select>
+  <input type="number" id="wob_${i}" class="ws-inp" placeholder="міш" oninput="calcWsMain()">
+  <select id="wow_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Вага мішка (кг):');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''} calcWsMain()"><option value="">кг...</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="NEW" style="color:blue">НОВИЙ...</option></select>
+  <input type="number" id="wor_${i}" class="ws-inp" placeholder="зал" oninput="calcWsMain()">
+  <button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
+};
+
+window.previewWorkshop = function(k){
+ const c=WS_CFG[k], d=gID('wsD').value, ds=d.split('-').reverse().join('.');
+ const ts=gID('wsTS').value, te=gID('wsTE').value, op=getSmartVal('wsOp')||'-', as=getSmartVal('wsAs')||'-';
+ const main=[], add=[], out=[]; let tMain=0, tAdd=0, tDV=0;
+
+ for(let x of gID('wsMainRows').children){
+  const i=x.id.split('_')[1], s=gID('wms_'+i).value, n=gID('wmn_'+i).value, q=parseFloat(gID('wmq_'+i).value);
+  if(n&&q>0) { main.push({s,n,q}); tMain+=q; }
+ }
+ for(let x of gID('wsAddRows').children){
+  const i=x.id.split('_')[1], s=gID('was_'+i).value, n=gID('wan_'+i).value, q=parseFloat(gID('waq_'+i).value);
+  if(n&&q>0) { add.push({s,n,q}); tAdd+=q; }
+ }
+ ['DV','Semi','Feed'].forEach(type=>{
+  for(let x of gID('wsOut'+type).children){
+   const i=x.id.split('_')[1], n=gID('won_'+i).value, b=parseFloat(gID('wob_'+i).value)||0, w=parseFloat(gID('wow_'+i).value)||0, r=parseFloat(gID('wor_'+i).value)||0;
+   if(n && (b>0 || r>0)) { const wght=(b*w)+r; out.push({type, n, b, w, r, wght}); if(type==='DV') tDV+=wght; }
+  }
+ });
+
+ if(!main.length || !out.length) return alert('Увага: Заповніть основу та вихід продукції!');
+
+ const tRaw = tMain + tAdd;
+ const pct = tRaw > 0 ? ((tDV/tRaw)*100).toFixed(1) : 0;
+ const lS = {'Stock_Raw':'сировина','Stock_Semi':'п/ф','WeightStock':'пок.пр','Stock_DV':'вл.вир'};
+
+ let hRaw='';
+ main.forEach(x=> hRaw+=`<div>Основа: ${x.n} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
+ add.forEach(x=> hRaw+=`<div>Добавка: ${x.n} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
+
+ let hDV='', hSemi='', hFeed='';
+ out.forEach(x=> {
+  const str = `<div style="display:flex;justify-content:space-between"><span>${x.n}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;
+  if(x.type==='DV') hDV+=str; else if(x.type==='Semi') hSemi+=str; else hFeed+=str;
+ });
+
+ const html=`
+  <div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div>
+  <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
+  <div style="text-align:center;margin-bottom:5px">${op} | ${as}</div>
+  <div class="conf-sec" style="margin-top:0;border:none"><b>сырьё:</b></div>${hRaw}
+  ${hDV?`<div class="conf-sec"><b>власне виробництво:</b></div>${hDV}`:''}
+  ${hSemi?`<div class="conf-sec"><b>напівфабрикат:</b></div>${hSemi}`:''}
+  ${hFeed?`<div class="conf-sec"><b>відходи:</b></div>${hFeed}`:''}
+  <div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${tRaw}кг</span></div>
+  <div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой продукции:</span><span>${pct}%</span></div>
+ `;
+
+ gID('confContent').innerHTML=html; gID('confMdl').style.display='flex';
+
+ window.pendingAction=async function(){
+  try{
+   const id=db.child(c.db).push().key, u={}, tsStr=new Date().toISOString();
+   const itemsDb = out.map(x=> ({type:x.type, n:x.n, q:x.b, w:x.w, l:x.r}));
+   const rawBase = main[0] ? {n:main[0].n, w:main[0].q, s:main[0].s} : null;
+   const rawAdd = add.map(x=> ({n:x.n, w:x.q, s:x.s}));
+
+   u['/'+c.db+'/'+id]={ date: d+"T12:00:00Z", timeStart: ts, timeEnd: te, operator: op, assistant: as, items: itemsDb, rawBase: rawBase, rawAdd: rawAdd };
+
+   main.forEach(x=> { u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr} });
+   add.forEach(x=> { u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr} });
+
+   out.forEach(x=> {
+    const cat = x.type==='DV'?'Stock_DV':(x.type==='Semi'?'Stock_Semi':'Stock_Feed');
+    u[`/${cat}/${db.child(cat).push().key}`]={name:x.n,amount:x.wght,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr}
+   });
+
+   await db.update(u); closeConf(); closeModal(); setCat(cur);
+  }catch(e){alert(e)}
+ };
+};
+
+// --- ІНШІ ЗВІТИ ТА ФУНКЦІЇ ---
 function genDayReport(){const d=gID('repDate').value;if(!d)return;const ds=d.split('-').reverse().join('.'),r={inc:[],out:[],used:[],prod:[],pack:{}};const add=(a,n,v,u,s)=>{r[a].push({n,v,u,s})};if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.date.startsWith(d))add('inc',v.name,v.amount,v.type==='RAW'?'кг':'кг',v.supplier)});if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.date.startsWith(d))add('inc',v.name,v.amount,'шт',v.supplier)});if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>{if(v.date.startsWith(d))v.items.forEach(i=>{const p=i.split('|');add('out',p[0],parseFloat(p[1]),p[2],v.client)})});['Фасовка','Vibro_Report','Krup_Report','ZSHM_Report'].forEach(k=>{if(data[k])Object.values(data[k]).forEach(v=>{if(v.date.startsWith(d)){if(v.items)v.items.forEach(i=>add('used',i.name||i.n,i.amount||((i.q*i.w)+(i.l||0)),'кг',v.type||'Фас'));if(v.outputItems)v.outputItems.forEach(o=>add('prod',o.name,o.count,'шт','Фас'));else if(v.vyhod)add('prod',v.name,v.vyhod,'шт','Фас');if(k!=='Фасовка'&&v.items)v.items.forEach(i=>add('prod',i.n,(i.q*i.w)+(i.l||0),'кг',v.type))}})});['Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка'].forEach(c=>{if(data[c])Object.values(data[c]).forEach(v=>{if(v.date.startsWith(d)&&v.amount<0&&v.note&&v.note.includes('Авто')){if(!r.pack[c])r.pack[c]=[];r.pack[c].push({n:v.name,v:Math.abs(v.amount)})}})});const bl=t=>`<span style="color:blue">${t}</span>`,rd=t=>`<span style="color:red">${t}</span>`;let h=`<div style="font-weight:900;text-align:center">ЗВІТ ${ds}</div><hr>`;h+=`<b>📥 ПРИХІД</b><br>`+(r.inc.length?r.inc.map(x=>bl(`+${x.n} ${x.v}${x.u}`)).join('<br>'):'-')+'<br>';h+=`<b>🚚 ВІДВАНТАЖЕННЯ</b><br>`+(r.out.length?r.out.map(x=>rd(`-${x.n} ${x.v}${x.u}`)).join('<br>'):'-')+'<br>';h+=`<b>🔨 ВИРОБНИЦТВО</b><br>`+(r.prod.length?r.prod.map(x=>bl(`+${x.n} ${x.v}${x.u}`)).join('<br>'):'-')+'<br>';h+=`<b>📦 МАТЕРІАЛИ (АВТО)</b><br>`;Object.keys(r.pack).forEach(k=>{h+=`<u>${k}</u>: `+r.pack[k].map(x=>rd(`${x.v}`)).join(', ')+'<br>'});gID('print-view').innerHTML=h;gID('mB').innerHTML=h+`<button class="btn-main" onclick="window.print()">ДРУК</button>`}
 function genMonthReport(){const m=gID('repMth').value;if(!m)return alert('Місяць?');const[y,mt]=m.split('-'),sd=`${y}-${mt}-01`,ed=`${y}-${mt}-31`;const res={};stockCatsAll.forEach(c=>{if(data[c])Object.values(data[c]).forEach(v=>{if(v.name){if(!res[c])res[c]={};if(!res[c][v.name])res[c][v.name]={s:0,i:0,o:0};const a=v.amount,vd=v.date.split('T')[0];if(vd<sd)res[c][v.name].s+=a;else if(vd<=ed){if(a>0)res[c][v.name].i+=a;else res[c][v.name].o+=Math.abs(a)}}})});let h=`<div style="text-align:center;font-weight:900">ЗВІТ: ${m}</div><table style="width:100%;font-size:10px;border-collapse:collapse" border="1"><tr><td>НАЗВА</td><td>ПОЧ</td><td>ПРИХ</td><td>ВИТР</td><td>КІН</td></tr>`;Object.keys(res).forEach(c=>{h+=`<tr><td colspan="5" style="background:#eee"><b>${c}</b></td></tr>`;Object.keys(res[c]).forEach(n=>{const i=res[c][n],e=i.s+i.i-i.o;if(Math.abs(i.s)+i.i+i.o>0.1)h+=`<tr><td>${n}</td><td>${Math.round(i.s)}</td><td>${Math.round(i.i)}</td><td>${Math.round(i.o)}</td><td><b>${Math.round(e)}</b></td></tr>`})});gID('print-view').innerHTML=h+'</table>';gID('mB').innerHTML=h+`</table><button class="btn-main" onclick="window.print()">ДРУК</button>`}
 
@@ -390,134 +752,8 @@ window.printConsolidated=function(){
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
 
-// НОВИЙ АЛГОРИТМ "БУЛЬДОЗЕР" - ВИДАЛЯЄ 100 000+ ДУБЛІВ БЕЗ ПОМИЛОК
-window.runZeroCleanup = async function() {
- if(!confirm('Видалити дублікати нульових залишків по всій базі? Це очистить історію від сміття.')) return;
- if(prompt('Введіть CLEAN для підтвердження:')!=='CLEAN') return;
-
- let toDelete = [];
- stockCatsAll.forEach(cat => {
-  if(data[cat]) {
-   const s = new Set();
-   Object.entries(data[cat]).forEach(([k, v]) => {
-    if(Math.abs(v.amount) < 0.001) {
-     const h = `${v.date}_${v.name}_${v.note||''}`;
-     if(s.has(h)) {
-      toDelete.push(`/${cat}/${k}`);
-     } else {
-      s.add(h);
-     }
-    }
-   });
-  }
- });
-
- const total = toDelete.length;
- if(total === 0) return alert('База чиста, дублікатів не знайдено!');
-
- alert(`Знайдено ${total} дублікатів. Починаємо видалення безпечними порціями. Будь ласка, НЕ ЗАКРИВАЙТЕ ВКЛАДКУ, поки процес не завершиться!`);
-
- // Створюємо вікно прогресу на екрані
- const prog = document.createElement('div');
- prog.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;z-index:99999;flex-direction:column;';
- prog.innerHTML = `<div>ВИДАЛЕННЯ СМІТТЯ...</div><div id="cleanCount" style="margin-top:10px;font-size:32px">0 / ${total}</div><div style="font-size:14px;color:#aaa;margin-top:20px">Не закривайте сторінку! Процес може зайняти кілька хвилин.</div>`;
- document.body.appendChild(prog);
-
- const counter = document.getElementById('cleanCount');
- const batchSize = 250; // Безпечна порція для Firebase
- let processed = 0;
-
- try {
-  for (let i = 0; i < total; i += batchSize) {
-   const chunk = toDelete.slice(i, i + batchSize);
-   const u = {};
-   chunk.forEach(path => { u[path] = null; });
-   
-   await db.update(u); // Відправляємо пачку
-   
-   processed += chunk.length;
-   counter.innerText = `${processed} / ${total}`;
-   
-   // Мікро-пауза 150 мс, щоб сервер встиг видихнути
-   await new Promise(r => setTimeout(r, 150));
-  }
-  
-  document.body.removeChild(prog);
-  alert(`Успішно! Видалено сміття: ${total} записів. База стала ідеально легкою.`);
-  loadData(); // Оновлюємо екран
- } catch(e) {
-  document.body.removeChild(prog);
-  alert('Помилка при видаленні: ' + e.message);
- }
-};
-
 async function archiveRawBatch(n){if(!confirm(`Заархівувати партію "${n}"?`))return;const k=db.child('Stock_Archive').push().key,u={},d=data.Stock_Raw||{};let t=0;Object.entries(d).forEach(([id,v])=>{if(v.name===n){t+=v.amount;u['/Stock_Raw/'+id]=null}});u['/Stock_Archive/'+k]={name:n,amount:t,date:new Date().toISOString(),note:'Архів партії'};if(Object.keys(u).length>1){await db.update(u);alert('Партію заархівовано')}}
 function rRawArch(c){const d=data.Stock_Archive||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card" style="display:flex;justify-content:space-between"><div><b>${v.name}</b>: ${v.amount.toFixed(2)} кг</div>${isAdmin?`<button onclick="delRec('Stock_Archive','${i}')" style="color:red;border:none;background:0 0">DEL</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
 async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введіть ARCHIVE для згортання бази до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Згортання'}})}});if(Object.keys(u).length){await db.update(u);alert('Успішно згорнуто')}closeModal()}
 async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введіть CLOSE для закриття')!=='CLOSE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers'].includes(c)){const cd=data[c]||{};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d)u[`/${c}/${k}`]=null})}});if(Object.keys(u).length){await db.update(u);alert('Місяць закрито, залишки обнулено')}closeModal()}
-  // ====== ТОТАЛЬНЫЙ КЛИНЕР (ВРЕМЕННЫЙ КОД) ======
-window.runTotalCleanup = async function() {
- if(!confirm('УВАГА! Видалити всі нульові стартові залишки (148 тис+ записів)?')) return;
- if(prompt('Введіть FIRE для старту:')!=='FIRE') return;
-
- let toDelete = [];
- stockCatsAll.forEach(cat => {
-  if(data[cat]) {
-   Object.entries(data[cat]).forEach(([k, v]) => {
-    // Шукаємо ТІЛЬКИ нулі
-    if(Math.abs(v.amount) < 0.001) {
-     let note = (v.note || '').toLowerCase();
-     // Шукаємо ключові слова з твоїх скріншотів
-     if(note.includes('початок') || note.includes('начало') || note.includes('залишок') || note.includes('остаток')) {
-      toDelete.push(`/${cat}/${k}`);
-     }
-    }
-   });
-  }
- });
-
- const total = toDelete.length;
- if(total === 0) return alert('Сміття не знайдено!');
-
- // Створюємо чорний екран матриці
- const prog = document.createElement('div');
- prog.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);color:#22c55e;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;z-index:99999;flex-direction:column;font-family:monospace;';
- prog.innerHTML = `<div>🔥 ТОТАЛЬНА ЧИСТКА 🔥</div><div id="clCount" style="margin-top:20px;font-size:40px">0 / ${total}</div><div style="font-size:14px;color:#aaa;margin-top:20px;text-align:center">НЕ ЗАКРИВАЙТЕ ВКЛАДКУ!<br>Firebase перетравлює дані пачками по 100...</div>`;
- document.body.appendChild(prog);
-
- const counter = document.getElementById('clCount');
- const batchSize = 100; // Жорстко по 100 штук, щоб Firebase не видав WRITE_TOO_BIG
- let processed = 0;
-
- try {
-  for (let i = 0; i < total; i += batchSize) {
-   const chunk = toDelete.slice(i, i + batchSize);
-   const u = {};
-   chunk.forEach(path => { u[path] = null; });
-   
-   await db.update(u); // Відправляємо пачку
-   processed += chunk.length;
-   counter.innerText = `${processed} / ${total}`;
-   
-   // Пауза 200 мілісекунд між пачками
-   await new Promise(r => setTimeout(r, 200));
-  }
-  
-  document.body.removeChild(prog);
-  alert(`Успішно згоріло ${total} записів сміття! База ідеально чиста.`);
-  loadData();
- } catch(e) {
-  document.body.removeChild(prog);
-  alert('Помилка: ' + e.message);
- }
-};
-
-// Створюємо плаваючу червону кнопку поверх усього екрану
-const fireBtn = document.createElement('button');
-fireBtn.innerHTML = '🔥 ТОТАЛЬНА ЧИСТКА';
-fireBtn.style.cssText = 'position:fixed;bottom:80px;right:10px;background:red;color:white;font-weight:900;padding:15px;border:none;border-radius:12px;box-shadow:0 5px 15px rgba(255,0,0,0.5);z-index:9900;';
-fireBtn.onclick = runTotalCleanup;
-document.body.appendChild(fireBtn);
-// ====== КІНЕЦЬ КЛІНЕРА ======
-
 </script></body></html>
