@@ -266,7 +266,8 @@ function rMonthGroup(list, renderRowFn) {
 }
 
 function showH(c,n){
- const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});r.sort((a,b)=>b.id.localeCompare(a.id));
+ const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
+ r.sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${n}</div>`;
  if(['Stock_Raw','Stock_Archive'].includes(c)){
   const l=r[0]||r.find(x=>x.amount>0);
@@ -285,7 +286,7 @@ function rRaw(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forE
 function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{if(v.name)t[v.name]=(t[v.name]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const v=t[k];let a=v<0;if(cur==='Пленка'&&v<50)a=!0;if(cur==='Скотч 360 грамм'&&v<30)a=!0;if(cur==='Пакеты'&&v<3000)a=!0;let u='кг',dv=Math.round(v);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=v.toFixed(1);if(cur==='Пленка'){dv=v.toFixed(2);u='кг'}h+=`<div class="item-card ${a?'alarm-blink':''}" onclick="if(!corrMode)showH('${cur}','${esc(k)}')"><div class="item-title">${k}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${dv}<small style="font-size:10px">${u}</small></div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','${cur}','${esc(k)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
 function rFas(c){
- const d=data['Фасовка']||{}, l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ const d=data['Фасовка']||{}, l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => {
   const dt=v.date.split('T')[0].split('-').reverse().join('.');
   const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');
@@ -307,7 +308,7 @@ function rFas(c){
 
 function rWorkshopList(c,k){
  const dbN=WS_CFG[k].db, d=data[dbN]||{};
- const l=Object.entries(d).map(([id,v])=>({...v, id, _date: (v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ const l=Object.entries(d).map(([id,v])=>({...v, id, _date: (v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  
  c.innerHTML = rMonthGroup(l, v => {
   const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');
@@ -365,7 +366,7 @@ function rWorkshopList(c,k){
 }
 
 function rArchPack(c){
- const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">УДАЛИТЬ</button>`:''}</div>`);
 }
 
@@ -373,7 +374,7 @@ function rInvD(c){rInvGen(c,'date')}
 function rInvC(c){rInvGen(c,'client')}
 function rInvGen(c,key){
  const k=archSub==='In'?'ArchIncoming':'ArchInvoices', d=data[k]||{};
- const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>b.id.localeCompare(a.id));
+ const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => {
   const i = v.id;
   if(k==='ArchInvoices'){
@@ -392,7 +393,6 @@ function rInvGen(c,key){
   }
  });
 }
-
 window.viewInvoice=function(id){
  const v=data.ArchInvoices[id];if(!v)return;
  const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
@@ -815,7 +815,6 @@ window.addWsOutRow = function(t) {
   <button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
  </div>`);
 };
-
 window.previewWorkshop = function(k){
  const c=WS_CFG[k], d=gID('wsD').value, ds=d.split('-').reverse().join('.');
  const ts=gID('wsTS').value, te=gID('wsTE').value, op=getSmartVal('wsOp')||'-', as=getSmartVal('wsAs')||'-';
@@ -999,6 +998,17 @@ window.editPrice=function(id,n,p,o,r){
 window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r});closeModal()}catch(e){alert(e)}};
 window.delPrice=async function(i){if(confirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
 
+window.printPriceList = function() {
+ const d = data.PriceList || {};
+ const items = Object.values(d).sort((a,b)=>a.name.localeCompare(b.name));
+ let h = `<div style="text-align:center;font-weight:900;font-size:18px;margin-bottom:15px;color:#000">ПРАЙС-ЛИСТ</div><table style="width:100%;border-collapse:collapse;font-size:12px;color:#000" border="1"><thead><tr><th style="padding:4px;text-align:left">Наименование</th><th style="padding:4px">Опт</th><th style="padding:4px">Розница</th></tr></thead><tbody>`;
+ items.forEach(v => {
+  h += `<tr><td style="padding:4px">${v.printName || v.name}</td><td style="padding:4px;text-align:center;font-weight:bold">${v.priceOpt||(v.price||0)}</td><td style="padding:4px;text-align:center;font-weight:bold">${v.priceRoz||0}</td></tr>`;
+ });
+ h += `</tbody></table>`;
+ gID('print-view').innerHTML = h; window.print(); setTimeout(()=>gID('print-view').innerHTML='',800);
+};
+
 function rPriceList(c){
  if(!isAdmin){c.innerHTML='<div style="text-align:center;padding:20px">Только для админа</div>';return}
  const d=data.PriceList||{}, cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};
@@ -1013,7 +1023,7 @@ function rPriceList(c){
   else if(f.has(v.name))cats['Отходы производства'].push({i,v});
   else cats['Прочее'].push({i,v});
  });
- let h=`<button class="btn-main" onclick="openAddPrice()" style="margin-bottom:10px">+ ТОВАР В ПРАЙС</button>`;
+ let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" onclick="openAddPrice()" style="margin:0">+ ТОВАР В ПРАЙС</button><button class="btn-main" onclick="printPriceList()" style="background:#0f172a;margin:0">🖨️ ПЕЧАТЬ ПРАЙСА</button></div>`;
  Object.keys(cats).forEach(k=>{if(cats[k].length){
   h+=`<div class="cat-head">${k}</div>`;
   cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{
@@ -1045,12 +1055,20 @@ function rConsolidated(c){
 
 window.printConsolidated=function(){
  const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount}})}});
- const bL=(t,k,u)=>{if(!r[k])return '';let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>`<div class="rep-item"><span class="rep-item-name">${n}</span><span class="rep-item-val">${(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n])}${u}</span></div>`);if(!i.length)return '';return `<div class="rep-cat-title">${t}</div>`+i.join('')};
+ const bL=(t,k,u)=>{
+  if(!r[k])return '';
+  let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
+   let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
+   return `<div style="font-size:12px;font-weight:normal;margin-bottom:2px">${n} <b>${val}${u}</b></div>`;
+  });
+  if(!i.length)return '';
+  return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px">${t}</div>`+i.join('');
+ };
  let L=bL('Фасованная продукция','Готовая','шт')+bL('Покупная продукция','WeightStock','кг')+bL('ДВ вес','Stock_DV','кг')+bL('Отходы производства','Stock_Feed','кг');
  let R=bL('П/Ф','Stock_Semi','кг')+bL('Сырье','Stock_Raw','кг');
  const pk={'Пленка':{n:'Пленка',u:'кг'},'Пакеты':{n:'Пакеты',u:'шт'},'Скотч 360 грамм':{n:'Скотч',u:'шт'},'Мешки':{n:'Мешки',u:'шт'},'Нитки':{n:'Нитки',u:'шт'},'Этикетка':{n:'Этикетка',u:'шт'},'Стрейч пленка':{n:'Стрейч пленка',u:'шт'},'Термо лента':{n:'Термо лента',u:'шт'}};
  Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});
- let ds=new Date().toLocaleDateString('ru-RU'),h=`<div style="text-align:center;font-weight:900;font-size:18px;margin-bottom:10px">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div class="rep-print-container"><div class="rep-col">${L}</div><div class="rep-col">${R}</div></div>`;
+ let ds=new Date().toLocaleDateString('ru-RU'),h=`<div style="text-align:center;font-weight:900;font-size:18px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;width:100%;gap:20px;color:#000"><div style="flex:1;width:50%">${L}</div><div style="flex:1;width:50%">${R}</div></div>`;
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
 
