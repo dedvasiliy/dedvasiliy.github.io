@@ -101,6 +101,7 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 .dr-hint {font-size:10px; color:#64748b; font-weight:800; text-align:right;}
 
 #print-view{display:none;background:#fff;width:100%;height:100%;position:fixed;top:0;left:0;z-index:9999;padding:10px;overflow-y:auto;color:#000}
+
 @media print{
   html, body { height: auto !important; overflow: visible !important; margin: 0; padding: 0; }
   body > * { display: none !important; }
@@ -133,8 +134,6 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 }
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:500px;margin:0 auto;left:auto;right:auto;transform:none}}
 </style></head>
-
-</style></head>
 <body>
 <div id="lockScreen"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo"><div class="lock-title">УЧЕТ</div><input type="email" id="appEmail" class="lock-inp" placeholder="Email"><input type="password" id="appPass" class="lock-inp" placeholder="Пароль"><button class="btn-main" style="max-width:250px" onclick="tryLogin()">ВОЙТИ</button><div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div></div>
 <div id="act"></div><div id="cnt"></div>
@@ -159,6 +158,7 @@ let invSet = {
 }; 
 
 const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','PriceList','Suppliers','ArchInvoices','ArchIncoming','ArchPackIn','InvoiceSettings'];
+
 function closeModal(){gID('mdl').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
 function doConfirm(){if(pendingAction)pendingAction();} 
@@ -196,7 +196,6 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
 
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','InvSettings':'Invoices'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
-
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
 
 function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
@@ -1070,12 +1069,44 @@ window.delPrice=async function(i){if(confirm('Удалить?')){await db.child(
 
 window.printPriceList = function() {
  const d = data.PriceList || {};
- const items = Object.values(d).sort((a,b)=>a.name.localeCompare(b.name));
- let h = `<div style="text-align:center;font-weight:900;font-size:14px;margin-bottom:13px;color:#000">ПРАЙС-ЛИСТ</div><table style="width:100%;border-collapse:collapse;font-size:12px;color:#000";line-height:0.8 border="1"><thead><tr><th style="padding:0.5px;text-align:left">Наименование</th><th style="padding:0.5px">Опт</th><th style="padding:0.5px">Розница</th></tr></thead><tbody>`;
- items.forEach(v => {
-  h += `<tr><td style="padding:0.5px">${v.printName || v.name}</td><td style="padding:0.5px;text-align:center;font-weight:bold">${v.priceOpt||(v.price||0)}</td><td style="padding:0.5px;text-align:center;font-weight:bold">${v.priceRoz||0}</td></tr>`;
+ const cats = {'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};
+ const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));
+ const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));
+ const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));
+ const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));
+ 
+ Object.entries(d).forEach(([i,v])=>{
+  let po=parseFloat(v.priceOpt||v.price||0), pr=parseFloat(v.priceRoz||0);
+  if(po===0 && pr===0) return; 
+  if(g.has(v.name))cats['Фасованная продукция'].push({v, po, pr});
+  else if(w.has(v.name))cats['Покупная продукция'].push({v, po, pr});
+  else if(dv.has(v.name))cats['ДВ вес'].push({v, po, pr});
+  else if(f.has(v.name))cats['Отходы производства'].push({v, po, pr});
+  else cats['Прочее'].push({v, po, pr});
  });
- h += `</tbody></table>`;
+
+ const ds = new Date().toLocaleDateString('ru-RU');
+ let h = `<div style="font-family:sans-serif; color:#000;">`;
+ h += `<div style="font-weight:900;font-size:18px;margin-bottom:15px;text-align:center;">ПРАЙС-ЛИСТ от ${ds}</div>`;
+ 
+ Object.keys(cats).forEach(k => {
+  if(!cats[k].length) return;
+  cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name));
+  
+  h += `<div style="font-weight:bold; font-size:16px; margin-top:15px; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px; display:inline-block; padding-right:30px;">${k}</div>`;
+  h += `<table style="border-collapse:collapse; font-size:12px; line-height:1.1; margin-bottom:10px; width:auto;">`;
+  h += `<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 15px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 15px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 15px;">Розница</th></tr></thead><tbody>`;
+  
+  cats[k].forEach(item => {
+   let n = item.v.printName || item.v.name;
+   let opt = item.po > 0 ? item.po : '-';
+   let roz = item.pr > 0 ? item.pr : '-';
+   h += `<tr><td style="padding:2px 15px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 15px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 15px; border-bottom:1px dashed #eee;">${roz}</td></tr>`;
+  });
+  h += `</tbody></table>`;
+ });
+ 
+ h += `</div>`;
  gID('print-view').innerHTML = h; window.print(); setTimeout(()=>gID('print-view').innerHTML='',800);
 };
 
