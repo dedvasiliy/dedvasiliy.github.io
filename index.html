@@ -101,11 +101,11 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 .dr-hint {font-size:10px; color:#64748b; font-weight:800; text-align:right;}
 
 #print-view{display:none;background:#fff;width:100%;height:100%;position:fixed;top:0;left:0;z-index:9999;padding:10px;overflow-y:auto;color:#000}
-
 @media print{
-  body *{visibility:hidden}
-  #print-view,#print-view *{visibility:visible}
-  #print-view{position:absolute;top:0;left:0;display:block;width:100%}
+  html, body { height: auto !important; overflow: visible !important; margin: 0; padding: 0; }
+  body > * { display: none !important; }
+  #print-view { display: block !important; position: relative !important; width: 100%; height: auto !important; margin: 0; padding: 0; }
+  
   .pr-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:9px;table-layout:fixed}
   .pr-table thead{display:table-header-group!important}
   .pr-table tbody{display:table-row-group!important}
@@ -117,7 +117,7 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .pr-table th:nth-child(3),.pr-table td:nth-child(3){width:10%}
   .pr-table th:nth-child(4),.pr-table td:nth-child(4){width:5%}
   .pr-table th:nth-child(5),.pr-table td:nth-child(5){width:10%}
-  .pr-table th:nth-child(6),.pr-table td:nth-child(6){width:15%}
+  .pr-table th:last-child,.pr-table td:last-child{width:15%}
   .t-row td{border:none!important;padding-top:6px!important;height:auto!important}
   .t-lbl{text-align:right!important;padding-right:4px!important;font-weight:900;font-size:10px}
   .t-box{font-weight:900!important;font-size:10px!important;padding:2px!important}
@@ -132,6 +132,8 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .dr-qty {color:#000;}
 }
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:500px;margin:0 auto;left:auto;right:auto;transform:none}}
+</style></head>
+
 </style></head>
 <body>
 <div id="lockScreen"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo"><div class="lock-title">УЧЕТ</div><input type="email" id="appEmail" class="lock-inp" placeholder="Email"><input type="password" id="appPass" class="lock-inp" placeholder="Пароль"><button class="btn-main" style="max-width:250px" onclick="tryLogin()">ВОЙТИ</button><div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div></div>
@@ -157,7 +159,6 @@ let invSet = {
 }; 
 
 const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','PriceList','Suppliers','ArchInvoices','ArchIncoming','ArchPackIn','InvoiceSettings'];
-
 function closeModal(){gID('mdl').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
 function doConfirm(){if(pendingAction)pendingAction();} 
@@ -195,6 +196,7 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
 
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','InvSettings':'Invoices'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
+
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
 
 function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
@@ -389,7 +391,18 @@ function rInvGen(c,key){
     ${isAdmin?`<button onclick="event.stopPropagation();delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px;width:100%">УДАЛИТЬ</button>`:''}
    </div>`;
   }else{
-   return `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.supplier}</div><div style="font-size:10px;color:#666">№${v.num||'-'}</div><div style="font-size:10px;margin-top:5px"><b>${v.name}</b>: ${v.amount}</div>${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`;
+   let itmsHtml = '';
+   if(v.items) {
+       v.items.forEach(x => { itmsHtml += `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${x.n}</span><span style="font-weight:bold">${x.a}кг</span></div>`; });
+   } else {
+       itmsHtml = `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${v.name}</span><span style="font-weight:bold">${v.amount}кг</span></div>`;
+   }
+   return `<div class="j-card">
+    <div class="j-head" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px"><span>${v.date.split('T')[0].split('-').reverse().join('.')}</span><span>№${v.num||'-'}</span></div>
+    <div style="font-size:13px;margin:5px 0;color:var(--p);font-weight:900">${v.supplier||'-'}</div>
+    ${itmsHtml}
+    ${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:1px solid #fee2e2;background:#fee2e2;border-radius:6px;padding:4px;margin-top:8px;width:100%;font-weight:900">УДАЛИТЬ НАКЛАДНУЮ</button>`:''}
+   </div>`;
   }
  });
 }
@@ -475,14 +488,33 @@ function parseTags(txt, d) {
            .replace(/\[СУММА_ПРОПИСЬЮ\]/g, numToWords(d.sum||0));
 }
 
+window.addIncRow = function(cat, containerId, prefix){
+ const i=Date.now()+Math.random().toString().slice(2,7);
+ let opts='<option value="">Выберите...</option>';
+ gP(cat).forEach(p=>opts+=`<option value="${p}">${p}</option>`);
+ gID(containerId).insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="ir_${i}" style="grid-template-columns: 2fr 1fr 30px; margin-bottom:5px;">
+  <select id="${prefix}n_${i}" class="fas-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select>
+  <input type="number" id="${prefix}a_${i}" class="fas-inp" placeholder="кг">
+  <button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+ </div>`);
+};
+
 function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=new Date().toISOString().split('T')[0];m.innerHTML='';aId=a;
- if(t==='inc'){h.innerText='ПРИХОД (ПОКУПНАЯ)';m.innerHTML=`<div style="margin-bottom:10px">ДАТА <input type="date" id="iD" value="${d}"></div><div style="margin-bottom:10px">ПОСТАВЩИК ${makeSmart('iS',gBuyS(),'Выберите...')}</div><div style="margin-bottom:10px">ТОВАР ${makeSmart('iN',gP('WeightStock'),'Название')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>ВЕС (КГ) <input type="number" id="iA"></div><div>НАКЛ № <input type="text" id="iNum"></div></div><button class="btn-main" onclick="sInc()">СОХРАНИТЬ</button>`}
+ if(t==='inc'){
+  h.innerText='ПРИХОД (ПОКУПНАЯ)';
+  m.innerHTML=`<div class="grid-3" style="margin-bottom:10px;align-items:end"><div><span class="lbl-small">ДАТА</span><input type="date" id="iD" value="${d}"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="iNum"></div><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('iS',gBuyS(),'Выберите...')}</div></div><div class="z-head">ТОВАРЫ</div><div id="incRows"></div><button class="btn-main" onclick="addIncRow('WeightStock','incRows','iN')" style="background:#fff;color:var(--p);border:1px dashed var(--p);margin-bottom:10px">+ ДОБАВИТЬ ТОВАР</button><button class="btn-main" onclick="sInc()">СОХРАНИТЬ</button>`;
+  setTimeout(()=>addIncRow('WeightStock','incRows','iN'),50);
+ }
  else if(t==='ship'){
   shipBasket={}; h.innerText='ОТГРУЗКА';
   m.innerHTML=`<div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${d}"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div class="grid-3" style="align-items:end;margin-top:5px"><button id="btnOpt" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt')">ОПТ</button><button id="btnRoz" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz')">РОЗНИЦА</button><button id="btnStr" class="btn-sel" onclick="toggleStr(this)">СТРЕЙЧ: НЕТ</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button>`;
   loadBulk(cur==='StockRoot'?'Готовая':cur);
  }
- else if(t==='addRaw'){h.innerText='ПРИХОД СЫРЬЯ';m.innerHTML=`<div>ДАТА <input type="date" id="rD" value="${d}"></div><div>ПОСТАВЩИК ${makeSmart('rSupp',gBuyS(),'Выберите')}</div><div>СЫРЬЕ ${makeSmart('rN',gP('Stock_Raw'),'Название')}</div><div>ВЕС <input type="number" id="rA"></div><button class="btn-main" onclick="sRawInc()">СОХРАНИТЬ</button>`}
+ else if(t==='addRaw'){
+  h.innerText='ПРИХОД СЫРЬЯ';
+  m.innerHTML=`<div class="grid-3" style="margin-bottom:10px;align-items:end"><div><span class="lbl-small">ДАТА</span><input type="date" id="rD" value="${d}"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="rNum"></div><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('rSupp',gBuyS(),'Выберите...')}</div></div><div class="z-head">СЫРЬЕ</div><div id="rawRows"></div><button class="btn-main" onclick="addIncRow('Stock_Raw','rawRows','rN')" style="background:#fff;color:var(--p);border:1px dashed var(--p);margin-bottom:10px">+ ДОБАВИТЬ СЫРЬЕ</button><button class="btn-main" onclick="sRawInc()">СОХРАНИТЬ</button>`;
+  setTimeout(()=>addIncRow('Stock_Raw','rawRows','rN'),50);
+ }
  else if(t==='addMatPack'){h.innerText='ПРИХОД МАТЕРИАЛОВ';m.innerHTML=`<div>КАТЕГОРИЯ <select id="pCat" class="smart-sel" onchange="updPackList()"><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option><option value="Скотч 360 грамм">Скотч</option><option value="Мешки">Мешки</option><option value="Нитки">Нитки</option><option value="Этикетка">Этикетка</option><option value="Стрейч пленка">Стрейч</option><option value="Термо лента">Термо</option></select></div><div>ДАТА <input type="date" id="pD" value="${d}"></div><div>ПОСТАВЩИК ${makeSmart('pS',gPackS(),'Выберите')}</div><div>ТОВАР <div id="pProdCont"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>КОЛИЧЕСТВО <input type="number" id="pA"></div><div>НАКЛ № <input type="text" id="pNum"></div></div><button class="btn-main" onclick="sPack()">СОХРАНИТЬ</button>`;setTimeout(updPackList,100)}
  else if(t==='fas'){
   h.innerText='ФАСОВКА СМЕНА';
@@ -630,8 +662,40 @@ window.printShipInvoice=function(d){
 window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},800)};
 async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={}}catch(e){alert(e)}}
 
-async function sInc(){const d=gID('iD').value+"T12:00:00Z",s=getSmartVal('iS'),n=getSmartVal('iN'),a=parseFloat(gID('iA').value),nm=gID('iNum').value;if(!s||!n||!a)return alert('Заполните поля');try{const k=db.child('ArchIncoming').push().key,u={};u['/ArchIncoming/'+k]={date:d,supplier:s,name:n,amount:a,num:nm,type:'GOODS',ts:new Date().toISOString()};u['/WeightStock/'+db.child('WeightStock').push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
-async function sRawInc(){const d=gID('rD').value+"T12:00:00Z",s=getSmartVal('rSupp'),n=getSmartVal('rN'),a=parseFloat(gID('rA').value);if(!s||!n||!a)return alert('Данные?');try{const k=db.child('ArchIncoming').push().key,u={};u['/ArchIncoming/'+k]={date:d,supplier:s,name:n,amount:a,type:'RAW',ts:new Date().toISOString()};u['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
+async function sInc(){
+ const d=gID('iD').value+"T12:00:00Z",s=getSmartVal('iS'),nm=gID('iNum').value;
+ if(!s||!nm) return alert('Заполните поставщика и номер накладной');
+ const itms=[];
+ for(let x of gID('incRows').children){
+  const i=x.id.split('_')[1], n=gID('iNn_'+i).value, a=parseFloat(gID('iNa_'+i).value);
+  if(n&&a>0) itms.push({n,a});
+ }
+ if(!itms.length) return alert('Добавьте товар с весом');
+ try{
+  const k=db.child('ArchIncoming').push().key, u={}, ts=new Date().toISOString();
+  u['/ArchIncoming/'+k]={date:d,supplier:s,num:nm,type:'GOODS',ts:ts,items:itms.map(x=>({n:x.n, a:x.a}))};
+  itms.forEach(x=>{u['/WeightStock/'+db.child('WeightStock').push().key]={name:x.n,amount:x.a,date:d,note:'Приход',fLink:k,ts:ts}});
+  await db.update(u); closeModal();
+ }catch(e){alert(e)}
+}
+
+async function sRawInc(){
+ const d=gID('rD').value+"T12:00:00Z",s=getSmartVal('rSupp'),nm=gID('rNum').value;
+ if(!s||!nm) return alert('Заполните поставщика и номер накладной');
+ const itms=[];
+ for(let x of gID('rawRows').children){
+  const i=x.id.split('_')[1], n=gID('rNn_'+i).value, a=parseFloat(gID('rNa_'+i).value);
+  if(n&&a>0) itms.push({n,a});
+ }
+ if(!itms.length) return alert('Добавьте сырье с весом');
+ try{
+  const k=db.child('ArchIncoming').push().key, u={}, ts=new Date().toISOString();
+  u['/ArchIncoming/'+k]={date:d,supplier:s,num:nm,type:'RAW',ts:ts,items:itms.map(x=>({n:x.n, a:x.a}))};
+  itms.forEach(x=>{u['/Stock_Raw/'+db.child('Stock_Raw').push().key]={name:x.n,amount:x.a,date:d,note:'Приход сырья',fLink:k,ts:ts}});
+  await db.update(u); closeModal();
+ }catch(e){alert(e)}
+}
+
 async function sPack(){const cat=gID('pCat').value,d=gID('pD').value+"T12:00:00Z",s=getSmartVal('pS'),n=getSmartVal('pProd'),a=parseFloat(gID('pA').value),nm=gID('pNum').value;if(!s||!n||!a)return alert('Данные?');try{const k=db.child('ArchPackIn').push().key,u={};u['/ArchPackIn/'+k]={date:d,supplier:s,name:n,amount:a,category:cat,num:nm,ts:new Date().toISOString()};u['/'+cat+'/'+db.child(cat).push().key]={name:n,amount:a,date:d,note:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);closeModal()}catch(e){alert(e)}}
 function updPackList(){const c=gID('pCat').value;let l=[];if(c==='Пленка')l=["Пленка 300х400","Пленка 370х500","Пленка 400х500","Пленка 420х550"];else if(c==='Пакеты')l=["300x400","370x500","400x500","420x550"];else if(c==='Мешки')l=["Мешок 25кг","Мешок 50кг","Мешок белый"];else if(c==='Нитки')l=["Нитки"];else if(c==='Этикетка')l=["Этикетка"];else if(c==='Стрейч пленка')l=["Стрейч пленка"];else if(c==='Термо лента')l=["Термо лента"];else if(c==='Скотч 360 грамм')l=["Скотч 360 грамм"];const s=new Set(l);if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s.add(v.name.replace(/х/gi, 'x'))});gID('pProdCont').innerHTML=makeSmart('pProd',Array.from(s).sort(),'Товар')}
 async function sCorr(){const c=corrCtx.cat,n=corrCtx.name,d=gID('cD').value+"T12:00:00Z",na=parseFloat(gID('cA').value),r=gID('cR').value;if(isNaN(na))return alert('Число?');let cur=0;if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===n)cur+=v.amount});const diff=na-cur;if(Math.abs(diff)<0.001)return alert('Не изменилось');try{await db.child(c).push({name:n,amount:diff,date:d,note:`Кор: ${r}`,ts:new Date().toISOString()});closeModal()}catch(e){alert(e)}}
@@ -910,7 +974,13 @@ function genDayReport(){
   const catLabels = {'Stock_DV':'ДВ вес','Stock_Semi':'полуфабрикат','Stock_Feed':'отходы','Stock_Raw':'сырье','WeightStock':'покупная','Готовая':'фасованная продукция'};
 
   if(data.ArchIncoming) Object.values(data.ArchIncoming).forEach(v => {
-     if(v.date && v.date.startsWith(d)) { let n = v.name; addV(rInc, n, v.amount, 'кг', n); }
+     if(v.date && v.date.startsWith(d)) { 
+         if(v.items) {
+             v.items.forEach(it => addV(rInc, it.n, it.a, 'кг', it.n));
+         } else if(v.name) {
+             addV(rInc, v.name, v.amount, 'кг', v.name); 
+         }
+     }
   });
   if(data.ArchPackIn) Object.values(data.ArchPackIn).forEach(v => {
      if(v.date && v.date.startsWith(d)) {
