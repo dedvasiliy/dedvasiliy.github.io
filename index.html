@@ -1160,7 +1160,7 @@ window.printConsolidated=function(){
   if(!r[k])return '';
   let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
    let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
-   return `<div style="font-size:16px;font-weight:normal;margin-bottom:0px;line-height:0.9">${n} <b>${val}${u}</b></div>`;
+   return `<div style="font-size:16px;font-weight:normal;margin-bottom:0px;line-height:0.9">${n} <b style="margin-left:15px;">${val}${u}</b></div>`;
   });
   if(!i.length)return '';
   return `<div style="font-size:18px;font-weight:bold;margin-top:5px;margin-bottom:0px;line-height:1.0">${t}</div>`+i.join('');
