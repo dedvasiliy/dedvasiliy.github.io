@@ -1331,16 +1331,16 @@ window.printConsolidated=function(){
   if(!r[k])return '';
   let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
    let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
-   return `<div style="font-size:16px;font-weight:normal;margin-bottom:0px;line-height:0.9">${n} <b style="margin-left:15px;">${val}${u}</b></div>`;
+   return `<div style="font-size:13px;font-weight:normal;margin-bottom:1px;line-height:1">${n} <b style="margin-left:15px;">${val}${u}</b></div>`;
   });
   if(!i.length)return '';
-  return `<div style="font-size:18px;font-weight:bold;margin-top:5px;margin-bottom:0px;line-height:1.0">${t}</div>`+i.join('');
+  return `<div style="font-size:15px;font-weight:bold;margin-top:8px;margin-bottom:5px;line-height:1.0">${t}</div>`+i.join('');
  };
  let L=bL('Фасованная продукция','Готовая','шт')+bL('Покупная продукция','WeightStock','кг')+bL('ДВ вес','Stock_DV','кг')+bL('Отходы производства','Stock_Feed','кг');
  let R=bL('П/Ф','Stock_Semi','кг')+bL('Сырье','Stock_Raw','кг');
  const pk={'Пленка':{n:'Пленка',u:'кг'},'Пакеты':{n:'Пакеты',u:'шт'},'Скотч 360 грамм':{n:'Скотч',u:'шт'},'Мешки':{n:'Мешки',u:'шт'},'Нитки':{n:'Нитки',u:'шт'},'Этикетка':{n:'Этикетка',u:'шт'},'Стрейч пленка':{n:'Стрейч пленка',u:'шт'},'Термо лента':{n:'Термо лента',u:'шт'}};
  Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});
- let ds=new Date().toLocaleDateString('ru-RU'),h=`<div style="text-align:center;font-weight:900;font-size:18px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;width:100%;gap:20px;color:#000"><div style="flex:1;width:50%">${L}</div><div style="flex:1;width:50%">${R}</div></div>`;
+ let ds=new Date().toLocaleDateString('ru-RU'),h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:13px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;width:100%;gap:20px;color:#000"><div style="flex:1;width:50%">${L}</div><div style="flex:1;width:50%">${R}</div></div>`;
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
 
