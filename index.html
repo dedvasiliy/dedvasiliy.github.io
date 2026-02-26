@@ -1408,10 +1408,10 @@ window.printConsolidated=function(){
   if(!r[k])return '';
   let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
    let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
-   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${n}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
+   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:0px;line-height:1.0"><span>${n}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
   });
   if(!i.length)return '';
-  return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');
+  return `<div style="font-size:14px;font-weight:bold;margin-top:6px;margin-bottom:2px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');
  };
  let L=bL('Фасованная продукция','Готовая','шт')+bL('Покупная продукция','WeightStock','кг')+bL('ДВ вес','Stock_DV','кг')+bL('Отходы производства','Stock_Feed','кг');
  let R=bL('П/Ф','Stock_Semi','кг')+bL('Сырье','Stock_Raw','кг');
@@ -1419,8 +1419,8 @@ window.printConsolidated=function(){
  Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});
  let ds=new Date().toLocaleDateString('ru-RU');
  
- // Изменения в строке ниже: добавлено justify-content:flex-start (прижать к левому краю) и gap:100px (расстояние между колонками)
- let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;
+ // Изменения в строке ниже: добавлено justify-content:flex-start (прижать к левому краю) и gap:150px (расстояние между колонками)
+ let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:10px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;
  
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
