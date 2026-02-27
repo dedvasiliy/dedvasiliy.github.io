@@ -849,6 +849,112 @@ window.saveInvSet=async function(){
  const u={tblBrd:gID('isBrd').checked, vLin:gID('isV').checked, hLin:gID('isH').checked, fSize:gID('isF').value, colW:gID('isColW').value, rowH:gID('isRowH').value, xtraTop:gID('isTop').value, xtraBot:gID('isBot').value};
  try{await db.child('InvoiceSettings').set(u); invSet=u; closeModal(); alert('Шаблон сохранен');}catch(e){alert(e);}
 };
+function loadBulk(c){
+ D.querySelectorAll('.bulk-q').forEach(i=>{const n=i.dataset.n,ct=i.dataset.cat,v=parseFloat(i.value),k=n+'::'+ct;if(v>0)shipBasket[k]={w:v,c:ct,n:n};else delete shipBasket[k]});
+ const bs=D.querySelectorAll('#shipBtns button');
+ bs.forEach(b=>{let t=b.innerText,a=!1;if(c==='Готовая'&&t.includes('ФАСОВАННАЯ'))a=!0;if(c==='WeightStock'&&t.includes('ПОКУПНАЯ'))a=!0;if(c==='Stock_DV'&&t.includes('ДВ ВЕС'))a=!0;if(c==='Stock_Feed'&&t.includes('ОТХОДЫ'))a=!0;b.className='btn-sel '+(a?'active':'')});
+ const s={};if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s[v.name]=(s[v.name]||0)+v.amount});
+ let h=`<div class="item-grid">`;
+ Object.keys(s).sort().forEach(n=>{
+  const v=s[n];
+  if(v>0){
+   const k=n+'::'+c, sv=shipBasket[k]?shipBasket[k].w:'';
+   const isFilled = sv>0?'tile-filled':'';
+   let prcHtml = '';
+   if(data.PriceList){
+    const pObj = Object.values(data.PriceList).find(x=>x.name===n);
+    if(pObj) {
+     let prVal = priceMode==='opt' ? (pObj.priceOpt!==undefined?pObj.priceOpt:(pObj.price||0)) : (pObj.priceRoz!==undefined?pObj.priceRoz:0);
+     if(prVal > 0) prcHtml = `<div class="pulsing-price">${prVal}</div>`;
+    }
+   }
+   h+=`<div class="item-card ${isFilled}"><div class="item-title">${n}</div>${prcHtml}<div style="font-size:10px;color:#888;margin-bottom:2px">Ост:${Math.round(v)}</div><input type="number" class="bulk-q" data-n="${n}" data-cat="${c}" style="width:100%;height:25px;text-align:center;font-weight:900" value="${sv}" oninput="if(this.value>0)this.parentElement.classList.add('tile-filled');else this.parentElement.classList.remove('tile-filled'); updShipTotal();"></div>`
+  }
+ });
+ gID('shpR').innerHTML=h+`</div>`
+}
+
+window.setPriceMode=function(m){
+ priceMode=m; gID('btnOpt').className='btn-sel '+(m==='opt'?'active':''); gID('btnRoz').className='btn-sel '+(m==='roz'?'active':'');
+ const ab = Array.from(D.querySelectorAll('#shipBtns button')).find(b=>b.classList.contains('active'));
+ let ac = 'Готовая';
+ if(ab){
+  if(ab.innerText.includes('ПОКУПНАЯ')) ac='WeightStock';
+  if(ab.innerText.includes('ДВ ВЕС')) ac='Stock_DV';
+  if(ab.innerText.includes('ОТХОДЫ')) ac='Stock_Feed';
+ }
+ loadBulk(ac);
+};
+
+function toggleStr(b){useStretch=!useStretch;b.className='btn-sel '+(useStretch?'active':'');b.innerText=useStretch?'СТРЕЙЧ: ДА':'СТРЕЙЧ: НЕТ'}
+
+async function sShip(){
+    const d=gID('hD').value,nm=gID('hNum').value,ag=gID('hAg').value,dv=d+"T12:00:00Z",c=getSmartVal('hC'),mf=getSmartVal('hMyFop'),pm=priceMode;
+    if(!c)return alert('Получатель?');
+    saveShipDraft();
+    const it=[];let tw=0,tm=0,pdb={};
+    if(data.PriceList)Object.values(data.PriceList).forEach(v=>pdb[v.name]=v);
+    Object.values(shipBasket).forEach(v=>{let po=pdb[v.n]||{},pr=pm==='opt'?(po.priceOpt!==undefined?po.priceOpt:(po.price||0)):(po.priceRoz!==undefined?po.priceRoz:0),sm=pr*v.w;it.push({n:v.n,w:v.w,c:v.c,p:pr,s:sm});tw+=v.w;tm+=sm});
+    if(!it.length)return alert('Пусто');
+    
+    const dtObj=new Date(dv), dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();
+    
+    let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${nm||'---'}</b> (${pm==='opt'?'ОПТ':'РОЗНИЦА'})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${mf||'-'}<br><b>Кому:</b> ${c}<br><b>Сделка:</b> ${ag||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>ЦЕНА</td><td>СУММА</td></tr>`;
+    it.forEach(x=>{h+=`<tr><td>${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.p}</td><td>${x.s.toFixed(2)}</td></tr>`});
+    h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всего:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToShipBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="execShip()" style="margin:0">СПИСАТЬ</button><button class="btn-main" onclick="printAndConfirm()" style="background:#0f172a;margin:0">ПЕЧАТЬ</button></div>`;
+    
+    window.tempShipData={it,c,nm,dv,mf,tw,ag,tm,mode:pm};
+    gID('shipBuilder').style.display='none';
+    gID('shipPreview').innerHTML=h;
+    gID('shipPreview').style.display='block';
+    gID('mT').innerText='ПРОВЕРКА';
+}
+
+window.backToShipBuilder = function() {
+    gID('shipPreview').style.display='none';
+    gID('shipBuilder').style.display='block';
+    gID('mT').innerText='ОТГРУЗКА';
+}
+
+window.printShipInvoice=function(d){
+ if(!d)return;
+ const dt=new Date(d.dv), dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
+ let tw=0;
+ const bT=invSet.tblBrd?'2px solid #000':'none', bI=invSet.tblBrd?'1px solid #000':'none';
+ const bV=invSet.vLin?'1px solid #000':'none', bH=invSet.hLin?'1px solid #000':'none';
+ const fS=invSet.fSize||'11px', colW=(invSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=invSet.rowH||'14px';
+ 
+ let dData={num:d.nm, dateStr:dStr, sup:d.mf, cli:d.c, agr:d.ag, cnt:d.it.length, sum:d.tm};
+ 
+ let styleBlock=`<style>
+  .pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
+  .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;}
+  .pr-table th {border-top:${bT}; border-bottom:${bI};}
+  .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};}
+  .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;}
+  .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};}
+  .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};}
+  .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};}
+  .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};}
+  .pr-table tr:last-child td {border-bottom:${bT};}
+ </style>`;
+ 
+ let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraTop, dData)+`</div>`;
+ h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>`;
+ d.it.forEach((x,idx)=>{
+  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${parseFloat(x.p).toFixed(2)}</td><td>${parseFloat(x.s).toFixed(2)}</td></tr>`;
+  tw+=x.w;
+ });
+ h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${parseFloat(d.tm||0).toFixed(2)}</td></tr>`;
+ h+=`</tbody></table>`;
+ h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraBot, dData)+`</div>`;
+ 
+ gID('print-view').innerHTML=h; window.print(); setTimeout(()=>gID('print-view').innerHTML='',800);
+};
+
+window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},800)};
+
+async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){alert(e)}}
 
 window.previewInc = function() {
     const d=gID('iD').value, s=getSmartVal('iS'), nm=gID('iNum').value;
@@ -1408,7 +1514,7 @@ window.printConsolidated=function(){
   if(!r[k])return '';
   let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
    let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
-   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:1px;line-height:1.1"><span>${n}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
+   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${n}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
   });
   if(!i.length)return '';
   return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');
@@ -1419,8 +1525,8 @@ window.printConsolidated=function(){
  Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});
  let ds=new Date().toLocaleDateString('ru-RU');
  
- // Изменения в строке ниже: добавлено justify-content:flex-start (прижать к левому краю) и gap:200px (расстояние между колонками)
- let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:10px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;
+ // Изменения в строке ниже: добавлено justify-content:flex-start (прижать к левому краю) и gap:100px (расстояние между колонками)
+ let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;
  
  gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);
 }
