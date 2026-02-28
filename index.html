@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v782</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v783</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#000;--w:#fff}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:2px;padding-bottom:60px;color:var(--t);overflow-x:hidden;width:100vw}
@@ -131,7 +131,6 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .dr-hint {color:#555; margin-left:5px;}
   .dr-qty {color:#000;}
 
-  /* Стили для месячного отчета */
   .page-break { page-break-before: always; }
   .m-rep-table { width:100%; border-collapse:collapse; font-size:9px; margin-bottom:1px; color:#000; }
   .m-rep-table th, .m-rep-table td { border:1px solid #000; padding:1px; text-align:center; }
@@ -194,11 +193,13 @@ function initAppData(){
 
 function tryLogin(){const e=gID('appEmail').value,p=gID('appPass').value;if(!e||!p)return alert('Введите данные');auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message))}
 function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrMode=!1;renderHome();return alert('Админ выключен')}const p=prompt('Пароль:');if(p==='3011'){isAdmin=!0;localStorage.setItem('admT','1');renderHome();alert('Админ включен')}}
-const esc = s => s ? String(s).replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+
+// Обновленная функция экранирования кавычек - теперь ничего не замкнет!
+const esc = s => s ? String(s).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
 
 function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМИН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМИН</button>`;
- const ver=`<div class="ver-info">v 782<br>${document.lastModified}</div>`;
+ const ver=`<div class="ver-info">v 783<br>${document.lastModified}</div>`;
  gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
  <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
  <div class="dash-grid">
@@ -207,10 +208,11 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ</span></div>
   <div class="dash-item" onclick="setCat('PriceList')"><span>💰 ПРАЙС</span></div>
-  ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТР. ПЕЧАТИ</span></div>` : ''}
+  ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТР. ПЕЧАТИ</span></div>
+  <div class="dash-item" onclick="setCat('Contractors')"><span>👥 КОНТРАГЕНТЫ</span></div>` : ''}
  </div>`;updNav()}
 
-function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','PrintSettings':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
+function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','PrintSettings':'Home','Contractors':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
 
@@ -220,6 +222,7 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
  if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div></div>`;}
+ else if(c==='Contractors'){ct.innerHTML='<div class="z-head">👥 КОНТРАГЕНТЫ</div><div id="contractorsList">Загрузка...</div>'; ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Suppliers']);}
  else if(c==='Timesheet'){const td=new Date().toISOString().split('T')[0];
   if(isAdmin){ct.innerHTML=`<div class="card"><div style="text-align:center;font-weight:900;margin-bottom:10px">ТАБЕЛЬ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input type="date" id="gTD" value="${td}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><input type="time" id="gTS" value="08:00"><input type="time" id="gTE" value="17:00"></div></div><div id="tsRows"></div><button class="btn-main" onclick="addTimeRow()" style="background:#fff;color:var(--p);border:1px solid #ccc">+ ЧЕЛОВЕКА</button><button class="btn-main" onclick="saveTimesheetBatch()">СОХРАНИТЬ</button></div><button class="btn-main" onclick="setCat('TsCal')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p)">📅 КАЛЕНДАРЬ</button>`;setTimeout(()=>{const s=localStorage.getItem('activeCrew');if(s){const n=JSON.parse(s);if(n.length)n.forEach(x=>typeof x==='object'?addTimeRow(x.name,x.rate):addTimeRow(x));else addTimeRow()}else addTimeRow()},50)}
   else ct.innerHTML=`<div class="z-head">ТАБЕЛЬ</div><button class="btn-main" onclick="setCat('TsCal')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p)">📅 КАЛЕНДАРЬ</button>`
@@ -250,7 +253,81 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
 }
 
 function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings'].includes(cur))return;
- if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else rGen(c)}
+ if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
+function rContractors(c){
+ const clients=new Set(), suppliers=new Set();
+ if(data.ArchInvoices) Object.values(data.ArchInvoices).forEach(v=>{if(v.client)clients.add(v.client)});
+ if(data.ArchIncoming) Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier)suppliers.add(v.supplier)});
+ if(data.ArchPackIn) Object.values(data.ArchPackIn).forEach(v=>{if(v.supplier)suppliers.add(v.supplier)});
+ if(data.Suppliers) Object.values(data.Suppliers).forEach(v=>{if(v.name)suppliers.add(v.name)});
+ 
+ let h=`<div class="cat-head">КЛИЕНТЫ (ПОКУПАТЕЛИ)</div>`;
+ Array.from(clients).sort().forEach(n=>{
+  h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;">
+       <div style="font-weight:900;font-size:12px">${esc(n)}</div>
+       <button onclick="renameContractor('${esc(n)}', 'client')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:900;margin-left:10px;flex-shrink:0">ИЗМЕНИТЬ</button>
+      </div>`;
+ });
+ 
+ h+=`<div class="cat-head" style="margin-top:20px">ПОСТАВЩИКИ / НАШИ ФОП</div>`;
+ Array.from(suppliers).sort().forEach(n=>{
+  h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;">
+       <div style="font-weight:900;font-size:12px">${esc(n)}</div>
+       <button onclick="renameContractor('${esc(n)}', 'supplier')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:900;margin-left:10px;flex-shrink:0">ИЗМЕНИТЬ</button>
+      </div>`;
+ });
+ 
+ c.innerHTML = h || '<div style="text-align:center;padding:20px">Пусто</div>';
+}
+
+window.renameContractor = async function(oldEscaped, type) {
+ // Возвращаем реальные символы для поиска в БД
+ const oldN = String(oldEscaped).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+ const newN = prompt("ВВЕДИТЕ НОВОЕ НАЗВАНИЕ (можно использовать кавычки):", oldN);
+ if(!newN || newN === oldN) return;
+ if(!confirm(`Точно переименовать\n"${oldN}"\nв\n"${newN}"\nвезде в базе? Это затронет все архивы накладных.`)) return;
+ 
+ const u = {};
+ if(type === 'client') {
+  if(data.ArchInvoices) {
+   Object.entries(data.ArchInvoices).forEach(([k,v])=>{
+    if(v.client === oldN) u[`/ArchInvoices/${k}/client`] = newN;
+   });
+  }
+ } else {
+  if(data.ArchIncoming) {
+   Object.entries(data.ArchIncoming).forEach(([k,v])=>{
+    if(v.supplier === oldN) u[`/ArchIncoming/${k}/supplier`] = newN;
+   });
+  }
+  if(data.ArchPackIn) {
+   Object.entries(data.ArchPackIn).forEach(([k,v])=>{
+    if(v.supplier === oldN) u[`/ArchPackIn/${k}/supplier`] = newN;
+   });
+  }
+  if(data.Suppliers) {
+   Object.entries(data.Suppliers).forEach(([k,v])=>{
+    if(v.name === oldN) u[`/Suppliers/${k}/name`] = newN;
+   });
+  }
+  if(data.ArchInvoices) {
+   Object.entries(data.ArchInvoices).forEach(([k,v])=>{
+    if(v.supplierName === oldN) u[`/ArchInvoices/${k}/supplierName`] = newN;
+   });
+  }
+ }
+ 
+ if(Object.keys(u).length > 0) {
+  try {
+   await db.update(u);
+   alert('Успешно переименовано во всей базе!');
+   loadData();
+  } catch(e) { alert(e); }
+ } else {
+  alert('Записей для обновления не найдено.');
+ }
+};
+
 const gP=c=>{
  let i=[];
  if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
@@ -283,20 +360,22 @@ function rMonthGroup(list, renderRowFn) {
  });
  return h;
 }
+
 function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
  r.sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
- let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${n}</div>`;
+ let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${esc(n)}</div>`;
  if(['Stock_Raw','Stock_Archive'].includes(c)){
   let btns = `<button class="btn-main" onclick="genBatchReport('${c}','${esc(n)}')" style="background:#0f172a;font-size:10px;margin:0;width:auto;flex:1">📄 ОТЧЕТ ПАРТИИ</button>`;
   if(isAdmin && c==='Stock_Raw') btns+=`<button class="btn-main" onclick="archiveRawBatch('${esc(n)}')" style="background:#e0f2fe;color:#0369a1;font-size:10px;margin:0;width:auto;flex:1;border:1px solid #bae6fd">📦 В АРХИВ</button>`;
   if(btns) h+=`<div style="display:flex;gap:5px;margin-bottom:10px">${btns}</div>`;
  }
- h+=rMonthGroup(r, v=>{const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${v.note||'-'}</div></div>`});
+ h+=rMonthGroup(r, v=>{const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${esc(v.note)||'-'}</div></div>`});
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').style.display='flex'
 }
 
-window.genBatchReport = function(c, n) { /* Код genBatchReport без изменений, оставляем как есть */
+window.genBatchReport = function(c, n) {
+ const rawName = String(n).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
  gID('mT').innerText = 'ЗАГРУЗКА...';
  gID('mB').innerHTML = '<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных из цехов...</div>';
  gID('mdl').style.display = 'flex';
@@ -309,7 +388,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
   
   if(data[c]) {
    Object.values(data[c]).forEach(v => {
-    if(v.name === n && v.amount > 0) {
+    if(v.name === rawName && v.amount > 0) {
      totalIn += v.amount;
      let vd = v.date ? v.date.split('T')[0] : '2000-01-01';
      inRecords.push({d: vd, a: v.amount});
@@ -327,7 +406,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
   if(!hIn) hIn = `<div style="font-size:11px;color:#64748b;text-align:center">Нет данных о приходе</div>`;
 
   const pDate = (d) => d ? d.split('T')[0] : '2000-01-01';
-  const searchN = String(n).toLowerCase();
+  const searchN = String(rawName).toLowerCase();
 
   const pWs = (dbN, title) => {
    if(!data[dbN]) return;
@@ -376,7 +455,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
        if(!w && x.amount) w = parseFloat(x.amount)||0;
        if(w>0) { 
         let nm = x.n||x.name||'';
-        oS += `${nm} (${w}кг)<br>`; 
+        oS += `${esc(nm)} (${w}кг)<br>`; 
         let isDV = x.type === 'DV';
         if(!x.type && !/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) isDV = true;
         if(isDV) { shiftDV += w; sumDV[nm] = (sumDV[nm]||0) + w; }
@@ -417,7 +496,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
      if(u > 0) {
       let oS = '';
       if(v.outputItems) v.outputItems.forEach(x => { 
-        oS += `${x.name} (${x.count}шт)<br>`; 
+        oS += `${esc(x.name)} (${x.count}шт)<br>`; 
         sumFas[x.name] = (sumFas[x.name]||0) + x.count;
       });
       let otherRawTotal = shiftTotalRaw - u;
@@ -444,7 +523,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
    let otherRawHtml = '';
    if (r.otherRaws && r.otherRaws.length > 0) {
        r.otherRaws.forEach(add => {
-           otherRawHtml += `<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span style="flex:1">Добавка: ${add.n}</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${add.w} кг</span></div>`;
+           otherRawHtml += `<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span style="flex:1">Добавка: ${esc(add.n)}</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${add.w} кг</span></div>`;
        });
    } else if (r.otherRaw > 0) {
        otherRawHtml = `<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span>Добавка (другое сырье):</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${r.otherRaw} кг</span></div>`;
@@ -472,15 +551,15 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
   
   if(Object.keys(sumDV).length > 0) {
     sumHtml += `<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВАЯ ПРОДУКЦИЯ (ДВ):</div>`;
-    Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${k}</span><b>${v} кг</b></div>`; });
+    Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`; });
   }
   if(Object.keys(sumOther).length > 0) {
     sumHtml += `<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;
-    Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${k}</span><b>${v} кг</b></div>`; });
+    Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`; });
   }
   if(Object.keys(sumFas).length > 0) {
     sumHtml += `<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;
-    Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${k}</span><b>${v} шт</b></div>`; });
+    Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => { sumHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`; });
   }
   
   sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД (ДВ):</span><span>${avgPct}%</span></div>
@@ -488,7 +567,7 @@ window.genBatchReport = function(c, n) { /* Код genBatchReport без изм�
 
   let otherRawTotalHtml = totalOtherRaw > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${totalOtherRaw} кг</b></div>` : '';
 
-  let h = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px;text-transform:uppercase">${n}</div>
+  let h = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px;text-transform:uppercase">${esc(n)}</div>
   <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px;margin-bottom:10px;">
    <div style="text-align:center;font-size:11px;font-weight:900;color:#047857;margin-bottom:4px">ПРИХОДЫ СЫРЬЯ:</div>
    ${hIn}
@@ -517,31 +596,30 @@ window.printBatchReport = function() {
  setTimeout(()=>gID('print-view').innerHTML='', 800);
 };
 
-function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
+function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
-function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('WeightStock','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','WeightStock','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
+function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('WeightStock','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','WeightStock','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
-function rRawWH(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Stock_Raw','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Stock_Raw','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
+function rRawWH(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Stock_Raw','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Stock_Raw','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
-function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{if(v.name)t[v.name]=(t[v.name]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const v=t[k];let a=v<0;if(cur==='Пленка'&&v<50)a=!0;if(cur==='Скотч 360 грамм'&&v<30)a=!0;if(cur==='Пакеты'&&v<3000)a=!0;let u='кг',dv=Math.round(v);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=v.toFixed(1);if(cur==='Пленка'){dv=v.toFixed(2);u='кг'}h+=`<div class="item-card ${a?'alarm-blink':''}" onclick="if(!corrMode)showH('${cur}','${esc(k)}')"><div class="item-title">${k}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${dv}<small style="font-size:10px">${u}</small></div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','${cur}','${esc(k)}')">±</button></div>`});c.innerHTML=h+'</div>'}
-
+function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{if(v.name)t[v.name]=(t[v.name]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const v=t[k];let a=v<0;if(cur==='Пленка'&&v<50)a=!0;if(cur==='Скотч 360 грамм'&&v<30)a=!0;if(cur==='Пакеты'&&v<3000)a=!0;let u='кг',dv=Math.round(v);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=v.toFixed(1);if(cur==='Пленка'){dv=v.toFixed(2);u='кг'}h+=`<div class="item-card ${a?'alarm-blink':''}" onclick="if(!corrMode)showH('${cur}','${esc(k)}')"><div class="item-title">${esc(k)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${dv}<small style="font-size:10px">${u}</small></div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','${cur}','${esc(k)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 function rFas(c){
  const d=data['Фасовка']||{}, l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => {
   const dt=v.date.split('T')[0].split('-').reverse().join('.');
   const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');
-  let rRaw=''; if(v.items)v.items.forEach(x=>{rRaw+=`<div style="display:flex;justify-content:space-between"><span>${x.name}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`});
-  let rOut=''; let pk=0, sz=''; if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between"><span>${x.name}</span><span>${x.count}шт</span></div>`; pk+=x.count; if(!sz) sz=x.size;});
+  let rRaw=''; if(v.items)v.items.forEach(x=>{rRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`});
+  let rOut=''; let pk=0, sz=''; if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.count}шт</span></div>`; pk+=x.count; if(!sz) sz=x.size;});
   let packs=0; if(v.outputItems && v.outputItems.length>0) { const k=v.outputItems[0].name==="Кутя"?19.8:9.9; packs=Math.round(pk/k); }
   const vt=v.vzial?String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0):0;
   let filmUsed = Math.abs(vt - (v.ostatok||0));
   return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)">
-   <div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${mName}</span></div>
+   <div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${esc(mName)}</span></div>
    <div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${rRaw}
    <div class="conf-sec"><b>готовая продукция:</b></div>${rOut}
    <div class="conf-sec"><b>расход упаковки:</b></div>
    <div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz||'-'}</span><span>${packs}шт</span></div>
-   <div style="display:flex;justify-content:space-between"><span>Пленка: ${mName}</span><span>${filmUsed.toFixed(2)}кг</span></div>
+   <div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mName)}</span><span>${filmUsed.toFixed(2)}кг</span></div>
    ${isAdmin?`<button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;margin-top:10px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button>`:''}</div>`;
  });
 }
@@ -557,15 +635,15 @@ function rWorkshopList(c,k){
   
   let hRaw = ''; let totalRaw = 0;
   if(v.rawBase) { 
-   hRaw += `<div>Основа: ${v.rawBase.n} ${v.rawBase.w}кг</div>`; totalRaw += v.rawBase.w; 
+   hRaw += `<div>Основа: ${esc(v.rawBase.n)} ${v.rawBase.w}кг</div>`; totalRaw += v.rawBase.w; 
   } else if(v.rawMix) { 
-   hRaw += `<div>Основа (старая): ${v.rawMix}</div>`; 
+   hRaw += `<div>Основа (старая): ${esc(v.rawMix)}</div>`; 
    let matches = String(v.rawMix).match(/\d+(?:\.\d+)?/g);
    if(matches) { matches.forEach(num => totalRaw += parseFloat(num)); }
   }
   
   if(v.rawAdd && v.rawAdd.length) {
-   v.rawAdd.forEach(x => { hRaw += `<div>Добавка: ${x.n} ${x.w}кг</div>`; totalRaw += x.w; });
+   v.rawAdd.forEach(x => { hRaw += `<div>Добавка: ${esc(x.n)} ${x.w}кг</div>`; totalRaw += x.w; });
   }
   
   let hOutDV='', hOutSemi='', hOutFeed=''; let totalDV = 0;
@@ -581,8 +659,8 @@ function rWorkshopList(c,k){
     if(!x.type && /(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) isDV = false;
 
     let row = '';
-    if(q && w) row = `<div>${nm} ${q}м×${w}кг${l?'+'+l+'кг':''}</div>`;
-    else row = `<div>${nm} ${wght}кг</div>`;
+    if(q && w) row = `<div>${esc(nm)} ${q}м×${w}кг${l?'+'+l+'кг':''}</div>`;
+    else row = `<div>${esc(nm)} ${wght}кг</div>`;
     
     if(isDV) { hOutDV += row; totalDV += wght; }
     else if(typ==='Semi' || /(сечк|полуфабрикат)/i.test(nm)) hOutSemi += row;
@@ -599,7 +677,7 @@ function rWorkshopList(c,k){
   return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)">
    <div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div>
    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div>
-   <div style="text-align:center;margin-bottom:5px">${op} | ${as}</div>
+   <div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div>
    <div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}
    ${outBlock}
    <div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div>
@@ -611,7 +689,7 @@ function rWorkshopList(c,k){
 
 function rArchPack(c){
  const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
- c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">УДАЛИТЬ</button>`:''}</div>`);
+ c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${esc(v.name)} (${v.amount})</div><div>${esc(v.supplier)}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">УДАЛИТЬ</button>`:''}</div>`);
 }
 
 function rNameGroup(list, renderRowFn, isIncoming) {
@@ -625,7 +703,7 @@ function rNameGroup(list, renderRowFn, isIncoming) {
  let h = '';
  Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(n => {
   groups[n].sort((a,b)=> b._date.localeCompare(a._date));
-  h += `<div class="month-group"><div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')"><span>👤 ${n}</span><span>▼</span></div><div class="month-body">${groups[n].map(renderRowFn).join('')}</div></div>`;
+  h += `<div class="month-group"><div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')"><span>👤 ${esc(n)}</span><span>▼</span></div><div class="month-body">${groups[n].map(renderRowFn).join('')}</div></div>`;
  });
  return h;
 }
@@ -641,11 +719,11 @@ function rInvGen(c,key){
   const i = v.id;
   if(k==='ArchInvoices'){
    let rows='';
-   if(v.items)v.items.forEach((it,idx)=>{if(idx<4){const p=it.split('|');rows+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(p[0]).substring(0,12)}..</td><td>${p[1]}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`}});
+   if(v.items)v.items.forEach((it,idx)=>{if(idx<4){const p=it.split('|');rows+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]).substring(0,12))}..</td><td>${p[1]}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`}});
    if(v.items&&v.items.length>4)rows+=`<tr><td colspan="4">...</td></tr>`;
    return `<div class="j-card" onclick="viewInvoice('${i}')" style="padding:8px">
-    <div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${v.num||'-'} ${v.priceMode==='bn'?'<span style="color:#dc2626;float:right">Б/Н</span>':''}</div>
-    <div style="font-size:11px;font-weight:700;margin-bottom:2px">${v.client||'-'}</div>
+    <div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${esc(v.num)||'-'} ${v.priceMode==='bn'?'<span style="color:#dc2626;float:right">Б/Н</span>':''}</div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:2px">${esc(v.client)||'-'}</div>
     <table class="mini-inv"><tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Сумма</th></tr>${rows}</table>
     <div style="text-align:right;font-size:10px;font-weight:900;margin-top:4px">Всего: ${parseFloat(v.totalSum||0).toFixed(2)}</div>
     ${isAdmin?`<button onclick="event.stopPropagation();delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px;width:100%">УДАЛИТЬ</button>`:''}
@@ -653,13 +731,13 @@ function rInvGen(c,key){
   }else{
    let itmsHtml = '';
    if(v.items) {
-       v.items.forEach(x => { itmsHtml += `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${x.n}</span><span style="font-weight:bold">${x.a}кг</span></div>`; });
+       v.items.forEach(x => { itmsHtml += `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span style="font-weight:bold">${x.a}кг</span></div>`; });
    } else {
-       itmsHtml = `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${v.name}</span><span style="font-weight:bold">${v.amount}кг</span></div>`;
+       itmsHtml = `<div style="font-size:12px;display:flex;justify-content:space-between"><span>${esc(v.name)}</span><span style="font-weight:bold">${v.amount}кг</span></div>`;
    }
    return `<div class="j-card">
-    <div class="j-head" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px"><span>${v.date.split('T')[0].split('-').reverse().join('.')}</span><span>№${v.num||'-'}</span></div>
-    <div style="font-size:13px;margin:5px 0;color:var(--p);font-weight:900">${v.supplier||'-'}</div>
+    <div class="j-head" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px"><span>${v.date.split('T')[0].split('-').reverse().join('.')}</span><span>№${esc(v.num)||'-'}</span></div>
+    <div style="font-size:13px;margin:5px 0;color:var(--p);font-weight:900">${esc(v.supplier)||'-'}</div>
     ${itmsHtml}
     ${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:1px solid #fee2e2;background:#fee2e2;border-radius:6px;padding:4px;margin-top:8px;width:100%;font-weight:900">УДАЛИТЬ НАКЛАДНУЮ</button>`:''}
    </div>`;
@@ -680,16 +758,12 @@ window.viewInvoice=function(id){
  let tw=0;
  const isBN = v.priceMode === 'bn';
  
- let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${v.num||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${v.supplierName||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${v.client}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${v.agreement||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${v.address||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+ let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
  if(v.items)v.items.forEach((it,idx)=>{
     const p=it.split('|'); tw+=parseFloat(p[1])||0; 
     let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
-    if(isBN) {
-        // Для предпросмотра в архиве Б/Н выводим цену без ПДВ
-        prc = prc / 1.2;
-        sum = sum / 1.2;
-    }
-    h+=`<tr><td style="text-align:center">${idx+1}</td><td>${getPrintName(p[0])}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;
+    if(isBN) { prc = prc / 1.2; sum = sum / 1.2; }
+    h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;
  });
  
  let total = parseFloat(v.totalSum||0);
@@ -739,7 +813,7 @@ window.reprintInv=function(id){
   const p=it.split('|'); tw+=parseFloat(p[1])||0; 
   let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
   if(isBN) { prc = prc / 1.2; sum = sum / 1.2; }
-  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(p[0])}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
+  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
  });
  
  if(isBN){
@@ -783,22 +857,21 @@ function numToWords(n){
 
 function parseTags(txt, d) {
  if(!txt) return '';
- return txt.replace(/\[НОМЕР\]/g, d.num || '---')
-           .replace(/\[ДАТА\]/g, d.dateStr || '---')
-           .replace(/\[ПОСТАВЩИК\]/g, d.sup || '-/-')
-           .replace(/\[КЛИЕНТ\]/g, d.cli || '-/-')
-           .replace(/\[СДЕЛКА\]/g, d.agr || '-/-')
-           .replace(/\[АДРЕСА\]/g, d.addr || '-/-')
+ return txt.replace(/\[НОМЕР\]/g, esc(d.num) || '---')
+           .replace(/\[ДАТА\]/g, esc(d.dateStr) || '---')
+           .replace(/\[ПОСТАВЩИК\]/g, esc(d.sup) || '-/-')
+           .replace(/\[КЛИЕНТ\]/g, esc(d.cli) || '-/-')
+           .replace(/\[СДЕЛКА\]/g, esc(d.agr) || '-/-')
+           .replace(/\[АДРЕСА\]/g, esc(d.addr) || '-/-')
            .replace(/\[КОЛ_ВО_ПОЗИЦИЙ\]/g, d.cnt || '0')
            .replace(/\[ОБЩАЯ_СУММА\]/g, parseFloat(d.sum||0).toFixed(2))
            .replace(/\[СУММА_ПДВ_ПРОПИСЬЮ\]/g, numToWords(d.sumVAT||0))
            .replace(/\[СУММА_ПРОПИСЬЮ\]/g, numToWords(d.sum||0));
 }
-
 window.addIncRow = function(cat, containerId, prefix, type){
  const i=Date.now()+Math.random().toString().slice(2,7);
  let opts='<option value="">Выберите...</option>';
- gP(cat).forEach(p=>opts+=`<option value="${p}">${p}</option>`);
+ gP(cat).forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);
  const onInp = type==='inc' ? 'updIncTotal(); saveIncDraft();' : 'updRawTotal(); saveRawDraft();';
  gID(containerId).insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="${prefix}r_${i}" style="grid-template-columns: 2fr 1fr 30px; margin-bottom:5px;">
   <select id="${prefix}n_${i}" class="fas-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''} ${onInp}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select>
@@ -820,6 +893,7 @@ window.saveShipDraft = function() {
     };
     localStorage.setItem('shipDraft', JSON.stringify(draft));
 };
+
 window.updShipTotal = function() {
     let sum = 0;
     D.querySelectorAll('.bulk-q').forEach(i=>{ sum += parseFloat(i.value)||0; });
@@ -902,7 +976,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
   } else { shipBasket = {}; priceMode = 'opt'; useStretch = false; }
 
   h.innerText='ОТГРУЗКА';
-  m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span><input type="text" id="hAddr" value="${dAddr}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
+  m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span><input type="text" id="hAddr" value="${esc(dAddr)}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
   
   setTimeout(()=>{
       if(dMf) { const sm = gID('s_hMyFop'), im = gID('i_hMyFop'); let fo = Array.from(sm.options).find(o=>o.value===dMf); if(fo) sm.value=dMf; else { sm.value='NEW'; sm.style.display='none'; im.style.display='block'; im.value=dMf; } }
@@ -936,7 +1010,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
   m.innerHTML=`<div class="ws-card"><div class="grid-3"><div><span class="ws-lbl">ДАТА</span><input type="date" id="wsD" class="ws-inp" value="${d}"></div><div><span class="ws-lbl">НАЧАЛО</span><input type="time" id="wsTS" class="ws-inp" value="08:00"></div><div><span class="ws-lbl">КОНЕЦ</span><input type="time" id="wsTE" class="ws-inp" value="17:00"></div></div><div class="grid-2" style="margin-top:5px"><div><span class="ws-lbl">ОПЕРАТОР</span>${makeSmart('wsOp',getHistoryDeep('operator'),'Фамилия')}</div><div><span class="ws-lbl">ПОМОЩНИК</span>${makeSmart('wsAs',getHistoryDeep('assistant'),'Фамилия')}</div></div></div><div class="z-head">ОСНОВНОЕ СЫРЬЕ</div><div id="wsMainRows"></div><button class="btn-main" style="background:#fff;color:#0369a1;border:1px dashed #0369a1;margin-bottom:10px" onclick="addWsMainRow()">+ ДОБАВИТЬ ОСНОВУ</button><div class="z-head">ДОБАВКА</div><div id="wsAddRows"></div><button class="btn-main" style="background:#fff;color:#d97706;border:1px dashed #d97706;margin-bottom:10px" onclick="addWsAddRow()">+ ДОБАВИТЬ ДОБАВКУ</button><div class="z-head">ВЫХОД: ДВ ВЕС</div><div id="wsOutDV"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('DV')">+ ДОБАВИТЬ ДВ ВЕС</button><div class="z-head">ВЫХОД: ПОЛУФАБРИКАТ</div><div id="wsOutSemi"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('Semi')">+ ДОБАВИТЬ П/Ф</button><div class="z-head">ВЫХОД: ОТХОДЫ</div><div id="wsOutFeed"></div><button class="btn-main" style="background:#fff;color:var(--s);border:1px dashed var(--s);margin-bottom:10px" onclick="addWsOutRow('Feed')">+ ДОБАВИТЬ ОТХОДЫ</button><button class="btn-main" onclick="previewWorkshop('${a}')">СОХРАНИТЬ СМЕНУ</button>`;
   setTimeout(()=>{addWsMainRow();addWsOutRow('DV');},50);
  }
- else if(t==='corr'){h.innerText='КОРРЕКЦИЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${b}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВЫЙ ОСТАТОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">СОХРАНИТЬ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${esc(b)}','${a}')">ПЕРЕИМЕНОВАТЬ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${esc(b)}','${a}')">УДАЛИТЬ КАРТОЧКУ</button></div>`}
+ else if(t==='corr'){h.innerText='КОРРЕКЦИЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${esc(b)}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВЫЙ ОСТАТОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">СОХРАНИТЬ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${esc(b)}','${a}')">ПЕРЕИМЕНОВАТЬ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${esc(b)}','${a}')">УДАЛИТЬ КАРТОЧКУ</button></div>`}
  else if(t==='dayRep'){h.innerText='ДНЕВНОЙ ОТЧЕТ';m.innerHTML=`<div>ДАТА <input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`}
  else if(t==='monthRep'){h.innerText='МЕСЯЧНЫЙ ОТЧЕТ';m.innerHTML=`<div>МЕСЯЦ <input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">СФОРМИРОВАТЬ</button>`}
  else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
@@ -1037,7 +1111,7 @@ function loadBulk(c){
      if(prVal > 0) prcHtml = `<div class="pulsing-price">${prVal}</div>`;
     }
    }
-   h+=`<div class="item-card ${isFilled}"><div class="item-title">${n}</div>${prcHtml}<div style="font-size:10px;color:#888;margin-bottom:2px">Ост:${Math.round(v)}</div><input type="number" class="bulk-q" data-n="${n}" data-cat="${c}" style="width:100%;height:25px;text-align:center;font-weight:900" value="${sv}" oninput="if(this.value>0)this.parentElement.classList.add('tile-filled');else this.parentElement.classList.remove('tile-filled'); updShipTotal();"></div>`
+   h+=`<div class="item-card ${isFilled}"><div class="item-title">${esc(n)}</div>${prcHtml}<div style="font-size:10px;color:#888;margin-bottom:2px">Ост:${Math.round(v)}</div><input type="number" class="bulk-q" data-n="${esc(n)}" data-cat="${c}" style="width:100%;height:25px;text-align:center;font-weight:900" value="${sv}" oninput="if(this.value>0)this.parentElement.classList.add('tile-filled');else this.parentElement.classList.remove('tile-filled'); updShipTotal();"></div>`
   }
  });
  gID('shpR').innerHTML=h+`</div>`
@@ -1076,11 +1150,11 @@ async function sShip(){
     const dtObj=new Date(dv), dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();
     const isBN = pm === 'bn';
     
-    let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${nm||'---'}</b> (${isBN?'Б/Н':(pm==='opt'?'ОПТ':'РОЗНИЦА')})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${mf||'-'}<br><b>Кому:</b> ${c}<br><b>Сделка:</b> ${ag||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>${isBN?'ЦЕНА (БЕЗ ПДВ)':'ЦЕНА'}</td><td>${isBN?'СУММА (БЕЗ ПДВ)':'СУММА'}</td></tr>`;
+    let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${esc(nm)||'---'}</b> (${isBN?'Б/Н':(pm==='opt'?'ОПТ':'РОЗНИЦА')})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${esc(mf)||'-'}<br><b>Кому:</b> ${esc(c)}<br><b>Сделка:</b> ${esc(ag)||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>${isBN?'ЦЕНА (БЕЗ ПДВ)':'ЦЕНА'}</td><td>${isBN?'СУММА (БЕЗ ПДВ)':'СУММА'}</td></tr>`;
     it.forEach(x=>{
         let prc = isBN ? x.p/1.2 : x.p;
         let sum = isBN ? x.s/1.2 : x.s;
-        h+=`<tr><td>${getPrintName(x.n)}</td><td>${x.w}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`
+        h+=`<tr><td>${esc(getPrintName(x.n))}</td><td>${x.w}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`
     });
     
     if(isBN) {
@@ -1140,7 +1214,7 @@ window.printShipInvoice=function(d){
  d.it.forEach((x,idx)=>{
   let prc = isBN ? x.p/1.2 : x.p;
   let sum = isBN ? x.s/1.2 : x.s;
-  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
+  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(x.n))}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
   tw+=x.w;
  });
  
@@ -1174,8 +1248,8 @@ window.previewInc = function() {
     if(!itms.length) return alert('Добавьте товар с весом');
     const dtObj=new Date(d), dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();
 
-    let h=`<div style="text-align:center"><b>ПРИХОД (ПОКУПНАЯ)</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${s}<br><b>Накладная:</b> ${nm}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td style="text-align:center">ВЕС (кг)</td></tr>`;
-    itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${x.n}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td></tr>`});
+    let h=`<div style="text-align:center"><b>ПРИХОД (ПОКУПНАЯ)</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td style="text-align:center">ВЕС (кг)</td></tr>`;
+    itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td></tr>`});
     h+=`<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td></tr></table>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToIncBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sInc()" style="margin:0">СОХРАНИТЬ</button></div>`;
 
@@ -1204,8 +1278,8 @@ window.previewRaw = function() {
     if(!itms.length) return alert('Добавьте сырье с весом');
     const dtObj=new Date(d), dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();
 
-    let h=`<div style="text-align:center"><b>ПРИХОД СЫРЬЯ</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${s}<br><b>Накладная:</b> ${nm}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ</td><td style="text-align:center">ВЕС (кг)</td></tr>`;
-    itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${x.n}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td></tr>`});
+    let h=`<div style="text-align:center"><b>ПРИХОД СЫРЬЯ</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ</td><td style="text-align:center">ВЕС (кг)</td></tr>`;
+    itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td></tr>`});
     h+=`<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td></tr></table>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToRawBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sRawInc()" style="margin:0">СОХРАНИТЬ</button></div>`;
 
@@ -1284,7 +1358,7 @@ window.updFasRawList=function(i){
  if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});
  let h='<option value="">Выберите...</option>';
  Object.keys(m).sort().forEach(k=>{
-  if(Math.round(m[k])>0) h+=`<option value="${k}">${k} [${Math.round(m[k])} кг]</option>`;
+  if(Math.round(m[k])>0) h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;
  });
  sel.innerHTML=h;
 };
@@ -1292,11 +1366,11 @@ window.updFasRawList=function(i){
 window.addFasOutRow=function(){
  const i=Date.now()+Math.random().toString().slice(2,7);
  let opts='<option value="">Продукт...</option>';
- gP('Готовая').forEach(p=>opts+=`<option value="${p}">${p}</option>`);
+ gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);
  let pkOpts='<option value="">Пакет...</option>';
  const pkSet=new Set(["300x400","370x500","400x500","420x550"]);
  if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi, 'x'))});
- Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${p}">${p}</option>`);
+ Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);
  gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}">
   <select id="on_${i}" class="fas-inp">${opts}</select>
   <input type="number" id="oq_${i}" class="fas-inp" placeholder="шт">
@@ -1325,22 +1399,22 @@ window.previewFas=function(){
  
  let hRaw='', hOut='', pk={};
  ri.forEach(x=>{
-  hRaw+=`<div>${x.n} ${x.q}кг <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></div>`;
+  hRaw+=`<div>${esc(x.n)} ${x.q}кг <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></div>`;
  });
  oi.forEach(x=>{
-  hOut+=`<div style="display:flex;justify-content:space-between"><span>${x.n}</span><span>${x.q}шт</span></div>`;
+  hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.q}шт</span></div>`;
   const coeff = x.n==="Кутя" ? 19.8 : 9.9;
   pk[x.sz] = (pk[x.sz]||0) + Math.round(x.q/coeff);
  });
  let hPk='';
- Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz}</span><span>${pk[sz]}шт</span></div>`});
+ Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт</span></div>`});
  
  const html=`
-  <div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${mN}</span></div>
+  <div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div>
   <div class="conf-sec"><b>сырье:</b></div>${hRaw}
   <div class="conf-sec"><b>готовая продукция:</b></div>${hOut}
   <div class="conf-sec"><b>расход упаковки:</b></div>${hPk}
-  <div style="display:flex;justify-content:space-between"><span>Пленка: ${mN}</span><span>${fU.toFixed(2)}кг</span></div>
+  <div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг</span></div>
  `;
  
  gID('confContent').innerHTML=html; gID('confMdl').style.display='flex';
@@ -1376,7 +1450,7 @@ window.updWsRawList = function(i, pfx){
  if(data[src]) Object.values(data[src]).forEach(v=>{ if(v.name) m[v.name] = (m[v.name]||0) + v.amount; });
  let h = '<option value="">Выберите...</option>';
  Object.keys(m).sort().forEach(k => {
-  if(Math.round(m[k])>0) h+=`<option value="${k}">${k} [${Math.round(m[k])} кг]</option>`;
+  if(Math.round(m[k])>0) h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;
  });
  sel.innerHTML = h;
 };
@@ -1429,7 +1503,7 @@ window.addWsOutRow = function(t) {
  const i = Date.now() + Math.random().toString().slice(2,7);
  const cat = t==='DV'?'Stock_DV':(t==='Semi'?'Stock_Semi':'Stock_Feed');
  let opts = '<option value="">Название...</option>';
- gP(cat).forEach(p => opts += `<option value="${p}">${p}</option>`);
+ gP(cat).forEach(p => opts += `<option value="${esc(p)}">${esc(p)}</option>`);
  gID('wsOut'+t).insertAdjacentHTML('beforeend', `<div class="ws-row-out" id="wo_${i}" data-t="${t}">
   <select id="won_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select>
   <input type="number" id="wob_${i}" class="ws-inp" placeholder="меш" oninput="calcWsMain()">
@@ -1466,19 +1540,19 @@ window.previewWorkshop = function(k){
  const lS = {'Stock_Raw':'сырье','Stock_Semi':'п/ф','WeightStock':'пок.пр','Stock_DV':'ДВ вес'};
 
  let hRaw='';
- main.forEach(x=> hRaw+=`<div>Основа: ${x.n} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
- add.forEach(x=> hRaw+=`<div>Добавка: ${x.n} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
+ main.forEach(x=> hRaw+=`<div>Основа: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
+ add.forEach(x=> hRaw+=`<div>Добавка: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);
 
  let hDV='', hSemi='', hFeed='';
  out.forEach(x=> {
-  const str = `<div style="display:flex;justify-content:space-between"><span>${x.n}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;
+  const str = `<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;
   if(x.type==='DV') hDV+=str; else if(x.type==='Semi') hSemi+=str; else hFeed+=str;
  });
 
  const html=`
   <div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div>
   <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
-  <div style="text-align:center;margin-bottom:5px">${op} | ${as}</div>
+  <div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div>
   <div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}
   ${hDV?`<div class="conf-sec"><b>ДВ вес:</b></div>${hDV}`:''}
   ${hSemi?`<div class="conf-sec"><b>полуфабрикат:</b></div>${hSemi}`:''}
@@ -1586,7 +1660,7 @@ function genDayReport(){
   });
 
   const fmt = (x) => {
-     let r = `<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${x.n}</span><span class="dr-qty">${x.v % 1 === 0 ? x.v : x.v.toFixed(2)}${x.u}</span></div>`;
+     let r = `<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v % 1 === 0 ? x.v : x.v.toFixed(2)}${x.u}</span></div>`;
      if (x.src && x.dest && x.dest !== 'Авто' && x.dest !== 'Фас') r += `<div class="dr-hint" style="width:100%; text-align:right; margin-top:-2px; font-size:10px; color:#64748b;">(${x.src} -> ${x.dest})</div>`;
      r += `</div>`; return r;
   };
@@ -1647,7 +1721,7 @@ function genMonthReport(){
         let u = (c==='Готовая' || ['Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(c)) ? ' шт' : ' кг';
         let fmt = (v) => (c==='Пленка'||c==='Скотч 360 грамм') ? v.toFixed(2) : Math.round(v);
         
-        rows+=`<tr><td>${n}</td><td>${fmt(d.s)}${u}</td><td>${fmt(d.i)}${u}</td><td>${fmt(d.o)}${u}</td><td><b>${fmt(d.e)}${u}</b></td></tr>`;
+        rows+=`<tr><td>${esc(n)}</td><td>${fmt(d.s)}${u}</td><td>${fmt(d.i)}${u}</td><td>${fmt(d.o)}${u}</td><td><b>${fmt(d.e)}${u}</b></td></tr>`;
       });
       if(rows) {
         h+=`<tr><td colspan="5" class="m-rep-cat">${catNames[c]||c}</td></tr>` + rows;
@@ -1671,16 +1745,22 @@ function genMonthReport(){
     `<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;
 }
 
-function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${x}">${x}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`}
+function makeSmart(id,l,p){
+  let o=`<option value="">${p}</option>`;
+  l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);
+  o+=`<option value="NEW" style="color:blue">NEW...</option>`;
+  return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;
+}
+
 function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
 function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
 function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
 
 window.delRec=async (c,i)=>{if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;const u={};u[`/${c}/${i}`]=null;stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});try{await db.update(u);alert('Удалено, товар возвращен')}catch(e){alert(e)}};
 
-function addTimeRow(n='',r=''){const i=Date.now()+Math.random();gID('tsRows').insertAdjacentHTML('beforeend',`<div class="ts-row" id="tr_${i}" style="display:grid;grid-template-columns:1fr 80px 30px;gap:2px;margin-bottom:2px"><input type="text" id="tn_${i}" placeholder="ФИО" value="${n}"><input type="number" id="trate_${i}" placeholder="Ставка" value="${r}"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none">x</button></div>`)}
+function addTimeRow(n='',r=''){const i=Date.now()+Math.random();gID('tsRows').insertAdjacentHTML('beforeend',`<div class="ts-row" id="tr_${i}" style="display:grid;grid-template-columns:1fr 80px 30px;gap:2px;margin-bottom:2px"><input type="text" id="tn_${i}" placeholder="ФИО" value="${esc(n)}"><input type="number" id="trate_${i}" placeholder="Ставка" value="${r}"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none">x</button></div>`)}
 async function saveTimesheetBatch(){const d=gID('gTD').value,s=gID('gTS').value,e=gID('gTE').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value);if(n&&rt>0){cr.push({name:n,rate:rt});t+=rt;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:rt,ts:new Date().toISOString()}}});if(!cr.length)return alert('Пусто');try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! Всего: '+t)}catch(err){alert(err)}}
-function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${v.name}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
+function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${esc(v.name)}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
 
 window.openAddPrice=function(){
  aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';
@@ -1689,7 +1769,7 @@ window.openAddPrice=function(){
 
 window.editPrice=function(id,n,p,o,r,b){
  aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';
- const sN=String(n).replace(/"/g,'&quot;'), sP=String(p||'').replace(/"/g,'&quot;');
+ const sN=esc(n), sP=esc(p||'');
  gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`
 };
 
@@ -1733,7 +1813,7 @@ window.printPriceList = function() {
   h += `<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 10px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Розница</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 10px;">Б/Н</th></tr></thead><tbody>`;
   
   cats[k].forEach(item => {
-   let n = item.v.printName || item.v.name;
+   let n = esc(item.v.printName || item.v.name);
    let opt = item.po > 0 ? item.po : '-';
    let roz = item.pr > 0 ? item.pr : '-';
    let bn = item.pb > 0 ? item.pb : '-';
@@ -1766,7 +1846,7 @@ function rPriceList(c){
   cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{
    let p_opt = v.priceOpt||(v.price||0);
    let p_bn = v.priceBN||p_opt;
-   h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${v.name}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${v.printName}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`
+   h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${esc(v.name)}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${esc(v.printName)}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`
   });
  }});c.innerHTML=h;
 }
@@ -1776,7 +1856,7 @@ function rConsolidated(c){
  const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount;}})}});
  const drawCat=(name,key)=>{
   if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,has=!1;
-  Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});
+  Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});
   ch+='</div>';return has?ch:'';
  };
  h+=drawCat('Фасованная продукция','Готовая')+drawCat('Покупная продукция','WeightStock')+drawCat('ДВ вес','Stock_DV')+drawCat('Отходы производства','Stock_Feed')+drawCat('Сырье','Stock_Raw')+drawCat('П/Ф','Stock_Semi');
@@ -1784,7 +1864,7 @@ function rConsolidated(c){
  Object.keys(pk).forEach(k=>{
   if(r[k]){
    let ph=`<div class="cat-head">${pk[k]}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;
-   Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});
+   Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});
    ph+='</div>';if(hp)h+=ph;
   }
  });
@@ -1797,7 +1877,7 @@ window.printConsolidated=function(){
   if(!r[k])return '';
   let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{
    let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);
-   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${n}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
+   return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${esc(n)}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;
   });
   if(!i.length)return '';
   return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');
@@ -1828,7 +1908,7 @@ function rRawArch(c){
   const v=t[n];
   has=true;
   h+=`<div class="item-card" onclick="showH('Stock_Archive','${esc(n)}')">
-   <div class="item-title">${n}</div>
+   <div class="item-title">${esc(n)}</div>
    <div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div>
   </div>`;
  });
