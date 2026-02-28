@@ -600,6 +600,22 @@ function rArchPack(c){
  const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">УДАЛИТЬ</button>`:''}</div>`);
 }
+function rNameGroup(list, renderRowFn, isIncoming) {
+ if(!list.length) return '<div style="text-align:center;color:#999;padding:20px">Пусто</div>';
+ const groups = {};
+ list.forEach(item => {
+  const n = isIncoming ? (item.supplier || 'Неизвестно') : (item.client || 'Неизвестно');
+  if(!groups[n]) groups[n] = [];
+  groups[n].push(item);
+ });
+ let h = '';
+ Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(n => {
+  // Внутри папки клиента сортируем его накладные по дате (свежие сверху)
+  groups[n].sort((a,b)=> b._date.localeCompare(a._date));
+  h += `<div class="month-group"><div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')"><span>👤 ${n}</span><span>▼</span></div><div class="month-body">${groups[n].map(renderRowFn).join('')}</div></div>`;
+ });
+ return h;
+}
 
 function rInvD(c){rInvGen(c,'date')}
 
@@ -607,8 +623,9 @@ function rInvC(c){rInvGen(c,'client')}
 
 function rInvGen(c,key){
  const k=archSub==='In'?'ArchIncoming':'ArchInvoices', d=data[k]||{};
- const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
- c.innerHTML = rMonthGroup(l, v => {
+ const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]}));
+ 
+ const renderRow = v => {
   const i = v.id;
   if(k==='ArchInvoices'){
    let rows='';
@@ -635,7 +652,14 @@ function rInvGen(c,key){
     ${isAdmin?`<button onclick="delRec('${k}','${i}')" style="color:red;border:1px solid #fee2e2;background:#fee2e2;border-radius:6px;padding:4px;margin-top:8px;width:100%;font-weight:900">УДАЛИТЬ НАКЛАДНУЮ</button>`:''}
    </div>`;
   }
- });
+ };
+
+ if (key === 'date') {
+     l.sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
+     c.innerHTML = rMonthGroup(l, renderRow);
+ } else {
+     c.innerHTML = rNameGroup(l, renderRow, k==='ArchIncoming');
+ }
 }
 
 window.viewInvoice=function(id){
