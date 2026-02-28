@@ -293,7 +293,7 @@ window.genBatchReport = function(c, n) {
  ensureData(['Krup_Report', 'Vibro_Report', 'ZSHM_Report', 'Фасовка']);
 
  setTimeout(() => {
-  let rep = [], totalUsed = 0, totalDV = 0;
+  let rep = [], totalUsed = 0, totalOtherRaw = 0, totalDV = 0;
   let inRecords = [], totalIn = 0;
   let sumDV = {}, sumOther = {}, sumFas = {};
   
@@ -325,12 +325,39 @@ window.genBatchReport = function(c, n) {
     const vD = pDate(v.date);
     if(vD >= dStart) {
      let u = 0;
-     if(v.rawMix && typeof v.rawMix === 'string' && v.rawMix.toLowerCase().includes(searchN)) {
+     let shiftTotalRaw = 0;
+     let otherRaws = [];
+
+     if(v.rawMix && typeof v.rawMix === 'string') {
        let matches = v.rawMix.match(/\d+(?:\.\d+)?/g);
-       if(matches) { matches.forEach(num => u += parseFloat(num)); }
+       if(matches) { matches.forEach(num => shiftTotalRaw += parseFloat(num)); }
+       if(v.rawMix.toLowerCase().includes(searchN)) {
+         if(matches) { matches.forEach(num => u += parseFloat(num)); }
+       }
+       if(shiftTotalRaw - u > 0) {
+         otherRaws.push({n: 'Сырье (старая запись)', w: shiftTotalRaw - u});
+       }
      }
-     if(v.rawBase && v.rawBase.n && v.rawBase.n.toLowerCase() === searchN) u += v.rawBase.w;
-     if(v.rawAdd) v.rawAdd.forEach(x => { if(x.n && x.n.toLowerCase() === searchN) u += x.w; });
+
+     if(v.rawBase) {
+       shiftTotalRaw += v.rawBase.w;
+       if(v.rawBase.n && v.rawBase.n.toLowerCase() === searchN) {
+           u += v.rawBase.w;
+       } else {
+           otherRaws.push({n: v.rawBase.n, w: v.rawBase.w});
+       }
+     }
+     
+     if(v.rawAdd) {
+       v.rawAdd.forEach(x => { 
+         shiftTotalRaw += x.w;
+         if(x.n && x.n.toLowerCase() === searchN) {
+             u += x.w; 
+         } else {
+             otherRaws.push({n: x.n, w: x.w});
+         }
+       });
+     }
 
      if(u > 0) {
       let oS = '', shiftDV = 0;
@@ -346,7 +373,11 @@ window.genBatchReport = function(c, n) {
         else { sumOther[nm] = (sumOther[nm]||0) + w; }
        }
       });
-      rep.push({ dt: v.date, dFmt: vD.split('-').reverse().join('.'), shop: title, used: u, oS: oS, shiftDV: shiftDV });
+      
+      let otherRawTotal = shiftTotalRaw - u;
+      if (otherRawTotal < 0) otherRawTotal = 0;
+
+      rep.push({ dt: v.date, dFmt: vD.split('-').reverse().join('.'), shop: title, used: u, otherRaw: otherRawTotal, otherRaws: otherRaws, oS: oS, shiftDV: shiftDV });
      }
     }
    });
@@ -361,14 +392,27 @@ window.genBatchReport = function(c, n) {
     const vD = pDate(v.date);
     if(vD >= dStart) {
      let u = 0;
-     if(v.items) v.items.forEach(x => { if(x.name && x.name.toLowerCase() === searchN) u += Math.abs(x.amount); });
+     let shiftTotalRaw = 0;
+     let otherRaws = [];
+     
+     if(v.items) v.items.forEach(x => { 
+         let amt = Math.abs(x.amount);
+         shiftTotalRaw += amt;
+         if(x.name && x.name.toLowerCase() === searchN) {
+             u += amt; 
+         } else {
+             otherRaws.push({n: x.name, w: amt});
+         }
+     });
      if(u > 0) {
       let oS = '';
       if(v.outputItems) v.outputItems.forEach(x => { 
         oS += `${x.name} (${x.count}шт)<br>`; 
         sumFas[x.name] = (sumFas[x.name]||0) + x.count;
       });
-      rep.push({ dt: v.date, dFmt: vD.split('-').reverse().join('.'), shop: 'ФАСОВКА', used: u, oS: oS, shiftDV: 0 });
+      let otherRawTotal = shiftTotalRaw - u;
+      if (otherRawTotal < 0) otherRawTotal = 0;
+      rep.push({ dt: v.date, dFmt: vD.split('-').reverse().join('.'), shop: 'ФАСОВКА', used: u, otherRaw: otherRawTotal, otherRaws: otherRaws, oS: oS, shiftDV: 0 });
      }
     }
    });
@@ -380,15 +424,29 @@ window.genBatchReport = function(c, n) {
   rep.forEach(r => {
    totalUsed += r.used;
    totalDV += r.shiftDV;
-   let pct = r.used > 0 && r.shiftDV > 0 ? ((r.shiftDV / r.used) * 100).toFixed(1) : 0;
+   if (r.otherRaw) totalOtherRaw += r.otherRaw;
+
+   let shiftTotalInput = r.used + (r.otherRaw || 0);
+   let pct = shiftTotalInput > 0 && r.shiftDV > 0 ? ((r.shiftDV / shiftTotalInput) * 100).toFixed(1) : 0;
+   
    let pctHtml = pct > 0 ? `<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Выход готовой (ДВ): ${pct}%</div>` : '';
    
+   let otherRawHtml = '';
+   if (r.otherRaws && r.otherRaws.length > 0) {
+       r.otherRaws.forEach(add => {
+           otherRawHtml += `<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span style="flex:1">Добавка: ${add.n}</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${add.w} кг</span></div>`;
+       });
+   } else if (r.otherRaw > 0) {
+       otherRawHtml = `<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span>Добавка (другое сырье):</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${r.otherRaw} кг</span></div>`;
+   }
+
    rows += `<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)">
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;">
      <span style="font-weight:900">${r.dFmt}</span><span style="color:var(--p);font-weight:900">${r.shop}</span>
     </div>
-    <div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:2px;"><span>Ушло сырья:</span> <span class="val-neg" style="font-weight:900">${r.used} кг</span></div>
-    <div style="font-size:12px;margin-bottom:4px"><b>Получено:</b><br>${r.oS || '-'}</div>
+    <div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:2px;"><span>Ушло сырья (эта партия):</span> <span class="val-neg" style="font-weight:900">${r.used} кг</span></div>
+    ${otherRawHtml}
+    <div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено:</b><br>${r.oS || '-'}</div>
     ${pctHtml}
    </div>`;
   });
@@ -396,7 +454,8 @@ window.genBatchReport = function(c, n) {
   if(!rows) rows = `<div style="text-align:center;padding:15px;color:#64748b;font-weight:900">Движений по партии не найдено</div>`;
 
   let curOstatok = totalIn - totalUsed;
-  let avgPct = totalUsed > 0 && totalDV > 0 ? ((totalDV / totalUsed) * 100).toFixed(1) : 0;
+  let totalInputAll = totalUsed + totalOtherRaw;
+  let avgPct = totalInputAll > 0 && totalDV > 0 ? ((totalDV / totalInputAll) * 100).toFixed(1) : 0;
 
   let sumHtml = `<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;">
     <div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px">ИТОГОВЫЙ ВЫХОД ПАРТИИ</div>`;
@@ -417,6 +476,8 @@ window.genBatchReport = function(c, n) {
   sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД (ДВ):</span><span>${avgPct}%</span></div>
   </div>`;
 
+  let otherRawTotalHtml = totalOtherRaw > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${totalOtherRaw} кг</b></div>` : '';
+
   let h = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px;text-transform:uppercase">${n}</div>
   <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px;margin-bottom:10px;">
    <div style="text-align:center;font-size:11px;font-weight:900;color:#047857;margin-bottom:4px">ПРИХОДЫ СЫРЬЯ:</div>
@@ -426,7 +487,8 @@ window.genBatchReport = function(c, n) {
   <div id="batchRows" style="max-height:40vh;overflow-y:auto;margin-bottom:5px;padding-right:2px">${rows}</div>
   ${sumHtml}
   <div style="border-top:2px solid #e2e8f0;padding-top:8px;font-size:12px;">
-   <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Всего израсходовано:</b> <b class="val-neg">${totalUsed} кг</b></div>
+   <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Израсходовано (эта партия):</b> <b class="val-neg">${totalUsed} кг</b></div>
+   ${otherRawTotalHtml}
    <div style="display:flex;justify-content:space-between;margin-bottom:4px;border-top:1px dashed #cbd5e1;padding-top:6px;margin-top:4px;font-size:14px"><b>ОСТАТОК СЫРЬЯ:</b> <b style="color:#0f172a">${curOstatok} кг</b></div>
   </div>
   <button class="btn-main" onclick="printBatchReport()" style="background:#0f172a;margin-top:5px">🖨️ ПЕЧАТЬ ОТЧЕТА</button>`;
