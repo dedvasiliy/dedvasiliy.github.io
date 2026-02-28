@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v781</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v782</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#000;--w:#fff}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:2px;padding-bottom:60px;color:var(--t);overflow-x:hidden;width:100vw}
@@ -165,8 +165,14 @@ let invSet = {
   xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' 
 }; 
 
-const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','PriceList','Suppliers','ArchInvoices','ArchIncoming','ArchPackIn','InvoiceSettings'];
+let invSetBN = { 
+  tblBrd: true, vLin: true, hLin: true, fSize: '11px', 
+  colW: '5,55,10,10,10,10', rowH: '14px',
+  xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', 
+  xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА] грн.\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' 
+};
 
+const stockCatsAll=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Timesheet','PriceList','Suppliers','ArchInvoices','ArchIncoming','ArchPackIn','InvoiceSettings','InvoiceSettingsBN'];
 function closeModal(){gID('mdl').style.display='none';gID('mQty').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
 function doConfirm(){if(pendingAction)pendingAction();} 
@@ -179,6 +185,7 @@ function initAppData(){
     db.child(p).on('value',s=>{
       data[p]=s.val()||{};
       if(p==='InvoiceSettings' && data[p].xtraTop!==undefined){ invSet=data[p]; }
+      if(p==='InvoiceSettingsBN' && data[p].xtraTop!==undefined){ invSetBN=data[p]; }
       if(cur!=='Home') loadData();
     })
   });
@@ -188,9 +195,10 @@ function initAppData(){
 function tryLogin(){const e=gID('appEmail').value,p=gID('appPass').value;if(!e||!p)return alert('Введите данные');auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message))}
 function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrMode=!1;renderHome();return alert('Админ выключен')}const p=prompt('Пароль:');if(p==='3011'){isAdmin=!0;localStorage.setItem('admT','1');renderHome();alert('Админ включен')}}
 const esc = s => s ? String(s).replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+
 function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМИН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМИН</button>`;
- const ver=`<div class="ver-info">v 781<br>${document.lastModified}</div>`;
+ const ver=`<div class="ver-info">v 782<br>${document.lastModified}</div>`;
  gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
  <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
  <div class="dash-grid">
@@ -199,9 +207,10 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ</span></div>
   <div class="dash-item" onclick="setCat('PriceList')"><span>💰 ПРАЙС</span></div>
+  ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТР. ПЕЧАТИ</span></div>` : ''}
  </div>`;updNav()}
 
-function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','InvSettings':'Invoices'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
+function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','PrintSettings':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
 function updNav(){gID('navM').className=cur==='Home'?'nav-btn-active':'';gID('navB').className=cur!=='Home'?'nav-btn-active':''}
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
 
@@ -210,7 +219,8 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  if(['Invoices','ArchSubIn','ArchSubOut'].includes(c))ensureData(['ArchIncoming','ArchInvoices']);
  if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
- if(c==='Timesheet'){const td=new Date().toISOString().split('T')[0];
+ if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div></div>`;}
+ else if(c==='Timesheet'){const td=new Date().toISOString().split('T')[0];
   if(isAdmin){ct.innerHTML=`<div class="card"><div style="text-align:center;font-weight:900;margin-bottom:10px">ТАБЕЛЬ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input type="date" id="gTD" value="${td}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><input type="time" id="gTS" value="08:00"><input type="time" id="gTE" value="17:00"></div></div><div id="tsRows"></div><button class="btn-main" onclick="addTimeRow()" style="background:#fff;color:var(--p);border:1px solid #ccc">+ ЧЕЛОВЕКА</button><button class="btn-main" onclick="saveTimesheetBatch()">СОХРАНИТЬ</button></div><button class="btn-main" onclick="setCat('TsCal')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p)">📅 КАЛЕНДАРЬ</button>`;setTimeout(()=>{const s=localStorage.getItem('activeCrew');if(s){const n=JSON.parse(s);if(n.length)n.forEach(x=>typeof x==='object'?addTimeRow(x.name,x.rate):addTimeRow(x));else addTimeRow()}else addTimeRow()},50)}
   else ct.innerHTML=`<div class="z-head">ТАБЕЛЬ</div><button class="btn-main" onclick="setCat('TsCal')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p)">📅 КАЛЕНДАРЬ</button>`
  }
@@ -231,7 +241,7 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  }
  else if(c==='PriceList'){ct.innerHTML='<div class="z-head">💰 ПРАЙС</div><div id="priceListCont">...</div>';rPriceList(gID('priceListCont'))}
  else if(c==='Invoices'){
-  ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">ПРИХОДЫ</div><div class="dash-item" onclick="setCat('ArchSubOut')">ОТГРУЗКИ</div></div>` + (isAdmin ? `<button class="btn-main" onclick="openModal('invSet')" style="background:#e0f2fe;color:#0369a1;margin-top:15px;border:1px dashed #0369a1">⚙️ НАСТРОЙКИ ПЕЧАТИ</button>` : ``);
+  ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">ПРИХОДЫ</div><div class="dash-item" onclick="setCat('ArchSubOut')">ОТГРУЗКИ</div></div>`;
  }
  else if(['ArchSubIn','ArchSubOut'].includes(c)){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ПО ДАТЕ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ПО ИМЕНИ</div></div>`}
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
@@ -239,9 +249,8 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  loadData();updCorrBtn();updNav()
 }
 
-function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet'].includes(cur))return;
+function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings'].includes(cur))return;
  if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else rGen(c)}
-
 const gP=c=>{
  let i=[];
  if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
@@ -286,7 +295,8 @@ function showH(c,n){
  h+=rMonthGroup(r, v=>{const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button onclick="delRec('${c}','${v.id}')" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${v.note||'-'}</div></div>`});
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').style.display='flex'
 }
-window.genBatchReport = function(c, n) {
+
+window.genBatchReport = function(c, n) { /* Код genBatchReport без изменений, оставляем как есть */
  gID('mT').innerText = 'ЗАГРУЗКА...';
  gID('mB').innerHTML = '<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных из цехов...</div>';
  gID('mdl').style.display = 'flex';
@@ -506,6 +516,7 @@ window.printBatchReport = function() {
  window.print();
  setTimeout(()=>gID('print-view').innerHTML='', 800);
 };
+
 function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
 function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('WeightStock','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','WeightStock','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
@@ -513,6 +524,7 @@ function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightS
 function rRawWH(c){const t={};if(data.Stock_Raw)Object.values(data.Stock_Raw).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Stock_Raw','${esc(n)}')"><div class="item-title">${n}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Stock_Raw','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
 
 function rGen(c){const d=data[cur]||{},t={};Object.values(d).forEach(v=>{if(v.name)t[v.name]=(t[v.name]||0)+v.amount});let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(k=>{const v=t[k];let a=v<0;if(cur==='Пленка'&&v<50)a=!0;if(cur==='Скотч 360 грамм'&&v<30)a=!0;if(cur==='Пакеты'&&v<3000)a=!0;let u='кг',dv=Math.round(v);if(['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cur))u='шт';if(cur==='Скотч 360 грамм')dv=v.toFixed(1);if(cur==='Пленка'){dv=v.toFixed(2);u='кг'}h+=`<div class="item-card ${a?'alarm-blink':''}" onclick="if(!corrMode)showH('${cur}','${esc(k)}')"><div class="item-title">${k}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${dv}<small style="font-size:10px">${u}</small></div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','${cur}','${esc(k)}')">±</button></div>`});c.innerHTML=h+'</div>'}
+
 function rFas(c){
  const d=data['Фасовка']||{}, l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => {
@@ -596,10 +608,12 @@ function rWorkshopList(c,k){
   </div>`;
  });
 }
+
 function rArchPack(c){
  const d=data.ArchPackIn||{}; const l=Object.entries(d).map(([id,v])=>({...v, id, _date: v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
  c.innerHTML = rMonthGroup(l, v => `<div class="j-card"><div class="j-head">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div>${v.name} (${v.amount})</div><div>${v.supplier}</div>${isAdmin?`<button onclick="delRec('ArchPackIn','${v.id}')" style="color:red;border:none;background:0 0">УДАЛИТЬ</button>`:''}</div>`);
 }
+
 function rNameGroup(list, renderRowFn, isIncoming) {
  if(!list.length) return '<div style="text-align:center;color:#999;padding:20px">Пусто</div>';
  const groups = {};
@@ -610,7 +624,6 @@ function rNameGroup(list, renderRowFn, isIncoming) {
  });
  let h = '';
  Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(n => {
-  // Внутри папки клиента сортируем его накладные по дате (свежие сверху)
   groups[n].sort((a,b)=> b._date.localeCompare(a._date));
   h += `<div class="month-group"><div class="month-head" onclick="this.nextElementSibling.classList.toggle('open')"><span>👤 ${n}</span><span>▼</span></div><div class="month-body">${groups[n].map(renderRowFn).join('')}</div></div>`;
  });
@@ -618,7 +631,6 @@ function rNameGroup(list, renderRowFn, isIncoming) {
 }
 
 function rInvD(c){rInvGen(c,'date')}
-
 function rInvC(c){rInvGen(c,'client')}
 
 function rInvGen(c,key){
@@ -632,7 +644,7 @@ function rInvGen(c,key){
    if(v.items)v.items.forEach((it,idx)=>{if(idx<4){const p=it.split('|');rows+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(p[0]).substring(0,12)}..</td><td>${p[1]}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`}});
    if(v.items&&v.items.length>4)rows+=`<tr><td colspan="4">...</td></tr>`;
    return `<div class="j-card" onclick="viewInvoice('${i}')" style="padding:8px">
-    <div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${v.num||'-'}</div>
+    <div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${v.num||'-'} ${v.priceMode==='bn'?'<span style="color:#dc2626;float:right">Б/Н</span>':''}</div>
     <div style="font-size:11px;font-weight:700;margin-bottom:2px">${v.client||'-'}</div>
     <table class="mini-inv"><tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Сумма</th></tr>${rows}</table>
     <div style="text-align:right;font-size:10px;font-weight:900;margin-top:4px">Всего: ${parseFloat(v.totalSum||0).toFixed(2)}</div>
@@ -666,9 +678,30 @@ window.viewInvoice=function(id){
  const v=data.ArchInvoices[id];if(!v)return;
  const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
  let tw=0;
- let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${v.num||'---'} від ${dStr} р.</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${v.supplierName||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${v.client}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${v.agreement||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>`;
- if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|'); tw+=parseFloat(p[1])||0; h+=`<tr><td style="text-align:center">${idx+1}</td><td>${getPrintName(p[0])}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${parseFloat(p[4]).toFixed(2)}</td><td style="text-align:center">${parseFloat(p[5]).toFixed(2)}</td></tr>`});
- h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${parseFloat(v.totalSum||0).toFixed(2)}</td></tr></tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><button class="btn-main" onclick="reprintInv('${id}')" style="margin-top:15px;background:#0f172a">🖨️ ДРУК</button></div>`;
+ const isBN = v.priceMode === 'bn';
+ 
+ let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${v.num||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${v.supplierName||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${v.client}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${v.agreement||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${v.address||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+ if(v.items)v.items.forEach((it,idx)=>{
+    const p=it.split('|'); tw+=parseFloat(p[1])||0; 
+    let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
+    if(isBN) {
+        // Для предпросмотра в архиве Б/Н выводим цену без ПДВ
+        prc = prc / 1.2;
+        sum = sum / 1.2;
+    }
+    h+=`<tr><td style="text-align:center">${idx+1}</td><td>${getPrintName(p[0])}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;
+ });
+ 
+ let total = parseFloat(v.totalSum||0);
+ if(isBN){
+    let vat = total - (total / 1.2);
+    h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(total - vat).toFixed(2)}</td></tr>`;
+    h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+    h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
+ } else {
+    h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
+ }
+ h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><button class="btn-main" onclick="reprintInv('${id}')" style="margin-top:15px;background:#0f172a">🖨️ ДРУК</button></div>`;
  gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex'
 };
 
@@ -676,11 +709,16 @@ window.reprintInv=function(id){
  const v=data.ArchInvoices[id];if(!v)return;
  const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
  let tw=0;
- const bT=invSet.tblBrd?'2px solid #000':'none', bI=invSet.tblBrd?'1px solid #000':'none';
- const bV=invSet.vLin?'1px solid #000':'none', bH=invSet.hLin?'1px solid #000':'none';
- const fS=invSet.fSize||'11px', colW=(invSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=invSet.rowH||'14px';
  
- let dData={num:v.num, dateStr:dStr, sup:v.supplierName, cli:v.client, agr:v.agreement, cnt:(v.items?v.items.length:0), sum:v.totalSum};
+ const isBN = v.priceMode === 'bn';
+ const curSet = isBN ? invSetBN : invSet;
+ 
+ const bT=curSet.tblBrd?'2px solid #000':'none', bI=curSet.tblBrd?'1px solid #000':'none';
+ const bV=curSet.vLin?'1px solid #000':'none', bH=curSet.hLin?'1px solid #000':'none';
+ const fS=curSet.fSize||'11px', colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=curSet.rowH||'14px';
+ 
+ let tSum = parseFloat(v.totalSum||0);
+ let dData={num:v.num, dateStr:dStr, sup:v.supplierName, cli:v.client, agr:v.agreement, addr:v.address, cnt:(v.items?v.items.length:0), sum:tSum, sumVAT: tSum - (tSum/1.2)};
  
  let styleBlock=`<style>
   .pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
@@ -695,15 +733,25 @@ window.reprintInv=function(id){
   .pr-table tr:last-child td {border-bottom:${bT};}
  </style>`;
  
- let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraTop, dData)+`</div>`;
- h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>`;
+ let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop, dData)+`</div>`;
+ h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
  if(v.items)v.items.forEach((it,idx)=>{
   const p=it.split('|'); tw+=parseFloat(p[1])||0; 
-  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(p[0])}</td><td>${p[1]}</td><td>${p[2]}</td><td>${parseFloat(p[4]).toFixed(2)}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`;
+  let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
+  if(isBN) { prc = prc / 1.2; sum = sum / 1.2; }
+  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(p[0])}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
  });
- h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${parseFloat(v.totalSum||0).toFixed(2)}</td></tr>`;
+ 
+ if(isBN){
+    let vat = tSum - (tSum/1.2);
+    h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tSum - vat).toFixed(2)}</td></tr>`;
+    h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+    h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+ } else {
+    h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+ }
  h+=`</tbody></table>`;
- h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraBot, dData)+`</div>`;
+ h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot, dData)+`</div>`;
  
  gID('print-view').innerHTML=h; window.print(); setTimeout(()=>gID('print-view').innerHTML='',800);
 };
@@ -740,8 +788,10 @@ function parseTags(txt, d) {
            .replace(/\[ПОСТАВЩИК\]/g, d.sup || '-/-')
            .replace(/\[КЛИЕНТ\]/g, d.cli || '-/-')
            .replace(/\[СДЕЛКА\]/g, d.agr || '-/-')
+           .replace(/\[АДРЕСА\]/g, d.addr || '-/-')
            .replace(/\[КОЛ_ВО_ПОЗИЦИЙ\]/g, d.cnt || '0')
            .replace(/\[ОБЩАЯ_СУММА\]/g, parseFloat(d.sum||0).toFixed(2))
+           .replace(/\[СУММА_ПДВ_ПРОПИСЬЮ\]/g, numToWords(d.sumVAT||0))
            .replace(/\[СУММА_ПРОПИСЬЮ\]/g, numToWords(d.sum||0));
 }
 
@@ -766,11 +816,10 @@ window.saveShipDraft = function() {
     const draft = {
         basket: shipBasket, d: gID('hD')?gID('hD').value:'', num: gID('hNum')?gID('hNum').value:'',
         ag: gID('hAg')?gID('hAg').value:'', mf: getSmartVal('hMyFop'), c: getSmartVal('hC'),
-        pm: priceMode, str: useStretch
+        pm: priceMode, str: useStretch, addr: gID('hAddr')?gID('hAddr').value:''
     };
     localStorage.setItem('shipDraft', JSON.stringify(draft));
 };
-
 window.updShipTotal = function() {
     let sum = 0;
     D.querySelectorAll('.bulk-q').forEach(i=>{ sum += parseFloat(i.value)||0; });
@@ -824,6 +873,7 @@ window.updRawTotal = function() {
     const mq = gID('mQty');
     if(mq) { mq.innerText = sum + ' кг'; mq.style.display = sum>0?'inline':'none'; }
 };
+
 function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=new Date().toISOString().split('T')[0];m.innerHTML='';aId=a;
 
  if(t==='inc'){
@@ -841,18 +891,18 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
   },50);
  }
  else if(t==='ship'){
-  let dD=d, dNum='', dAg='', dMf='', dC='';
+  let dD=d, dNum='', dAg='', dMf='', dC='', dAddr='';
   let dr = localStorage.getItem('shipDraft');
   if(dr) {
       try {
           let p = JSON.parse(dr);
           shipBasket = p.basket || {}; priceMode = p.pm || 'opt'; useStretch = p.str || false;
-          if(p.d) dD = p.d; if(p.num) dNum = p.num; if(p.ag) dAg = p.ag; if(p.mf) dMf = p.mf; if(p.c) dC = p.c;
+          if(p.d) dD = p.d; if(p.num) dNum = p.num; if(p.ag) dAg = p.ag; if(p.mf) dMf = p.mf; if(p.c) dC = p.c; if(p.addr) dAddr = p.addr;
       } catch(e) { shipBasket = {}; }
   } else { shipBasket = {}; priceMode = 'opt'; useStretch = false; }
 
   h.innerText='ОТГРУЗКА';
-  m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div class="grid-3" style="align-items:end;margin-top:5px"><button id="btnOpt" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnStr" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
+  m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span><input type="text" id="hAddr" value="${dAddr}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
   
   setTimeout(()=>{
       if(dMf) { const sm = gID('s_hMyFop'), im = gID('i_hMyFop'); let fo = Array.from(sm.options).find(o=>o.value===dMf); if(fo) sm.value=dMf; else { sm.value='NEW'; sm.style.display='none'; im.style.display='block'; im.value=dMf; } }
@@ -892,22 +942,25 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
  else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
  else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
  else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
- else if(t==='invSet'){
-  h.innerText='НАСТРОЙКИ ПЕЧАТИ';
+ else if(t==='invSet' || t==='invSetBN'){
+  const isBN = t==='invSetBN';
+  window.curEditingSet = t;
+  const curS = isBN ? invSetBN : invSet;
+  h.innerText = isBN ? 'НАСТРОЙКИ ПЕЧАТИ Б/Н' : 'НАСТРОЙКИ ПЕЧАТИ НАЛ.';
   m.innerHTML=`<div class="inv-set-card">
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
-    <label class="checkbox-wrap"><input type="checkbox" id="isBrd" ${invSet.tblBrd?'checked':''} onchange="updatePreview()"> Внешняя рамка</label>
-    <label class="checkbox-wrap"><input type="checkbox" id="isV" ${invSet.vLin?'checked':''} onchange="updatePreview()"> Верт. линии</label>
-    <label class="checkbox-wrap"><input type="checkbox" id="isH" ${invSet.hLin?'checked':''} onchange="updatePreview()"> Гориз. линии</label>
-    <div><span class="inv-set-lbl">Шрифт</span><select id="isF" class="smart-sel" onchange="updatePreview()"><option value="9px" ${invSet.fSize==='9px'?'selected':''}>9px</option><option value="11px" ${invSet.fSize==='11px'?'selected':''}>11px</option><option value="14px" ${invSet.fSize==='14px'?'selected':''}>14px</option></select></div>
+    <label class="checkbox-wrap"><input type="checkbox" id="isBrd" ${curS.tblBrd?'checked':''} onchange="updatePreview()"> Внешняя рамка</label>
+    <label class="checkbox-wrap"><input type="checkbox" id="isV" ${curS.vLin?'checked':''} onchange="updatePreview()"> Верт. линии</label>
+    <label class="checkbox-wrap"><input type="checkbox" id="isH" ${curS.hLin?'checked':''} onchange="updatePreview()"> Гориз. линии</label>
+    <div><span class="inv-set-lbl">Шрифт</span><select id="isF" class="smart-sel" onchange="updatePreview()"><option value="9px" ${curS.fSize==='9px'?'selected':''}>9px</option><option value="11px" ${curS.fSize==='11px'?'selected':''}>11px</option><option value="14px" ${curS.fSize==='14px'?'selected':''}>14px</option></select></div>
    </div>
    <div class="grid-2" style="margin-bottom:10px">
-    <div><span class="inv-set-lbl">Ширина колонок (%)</span><input type="text" id="isColW" value="${invSet.colW}" placeholder="5,55,10,5,10,15" oninput="updatePreview()" style="font-size:11px"></div>
-    <div><span class="inv-set-lbl">Высота строк</span><input type="text" id="isRowH" value="${invSet.rowH}" placeholder="14px" oninput="updatePreview()" style="font-size:11px"></div>
+    <div><span class="inv-set-lbl">Ширина колонок (%)</span><input type="text" id="isColW" value="${curS.colW}" placeholder="5,55,10,5,10,15" oninput="updatePreview()" style="font-size:11px"></div>
+    <div><span class="inv-set-lbl">Высота строк</span><input type="text" id="isRowH" value="${curS.rowH}" placeholder="14px" oninput="updatePreview()" style="font-size:11px"></div>
    </div>
-   <div style="margin-bottom:5px"><span class="inv-set-lbl">ШАПКА (ВЕРХНИЙ ТЕКСТ)</span><textarea id="isTop" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${invSet.xtraTop||''}</textarea></div>
-   <div><span class="inv-set-lbl">ПОДВАЛ (НИЖНИЙ ТЕКСТ)</span><textarea id="isBot" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${invSet.xtraBot||''}</textarea></div>
-   <div style="margin-top:5px;font-size:10px;color:#0369a1;font-weight:700">Умные теги: [НОМЕР], [ДАТА], [ПОСТАВЩИК], [КЛИЕНТ], [СДЕЛКА], [КОЛ_ВО_ПОЗИЦИЙ], [ОБЩАЯ_СУММА], [СУММА_ПРОПИСЬЮ].</div>
+   <div style="margin-bottom:5px"><span class="inv-set-lbl">ШАПКА (ВЕРХНИЙ ТЕКСТ)</span><textarea id="isTop" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraTop||''}</textarea></div>
+   <div><span class="inv-set-lbl">ПОДВАЛ (НИЖНИЙ ТЕКСТ)</span><textarea id="isBot" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraBot||''}</textarea></div>
+   <div style="margin-top:5px;font-size:10px;color:#0369a1;font-weight:700">Умные теги: [НОМЕР], [ДАТА], [ПОСТАВЩИК], [КЛИЕНТ], [СДЕЛКА], [АДРЕСА], [КОЛ_ВО_ПОЗИЦИЙ], [ОБЩАЯ_СУММА], [СУММА_ПДВ_ПРОПИСЬЮ], [СУММА_ПРОПИСЬЮ].</div>
   </div>
   <div style="text-align:center;font-weight:900;color:var(--p);margin-top:10px">ЖИВОЙ ПРЕДПРОСМОТР:</div>
   <div id="invPreview" class="inv-preview-box"></div>
@@ -917,10 +970,12 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
 }
 
 window.updatePreview = function() {
+ const isBN = window.curEditingSet === 'invSetBN';
  const bT=gID('isBrd').checked?'2px solid #000':'none', bI=gID('isBrd').checked?'1px solid #000':'none';
  const bV=gID('isV').checked?'1px solid #000':'none', bH=gID('isH').checked?'1px solid #000':'none';
  const fS=gID('isF').value, colW=gID('isColW').value.split(',').map(x=>x.trim()+'%'), rowH=gID('isRowH').value;
- let dDummy={num:'999', dateStr:new Date().toLocaleDateString('ru-RU'), sup:'ФОП Петренко', cli:'ТОВ "СИСТЕМА"', agr:'№1 від 01.01', cnt:2, sum:12500};
+ let dDummy={num:'999', dateStr:new Date().toLocaleDateString('ru-RU'), sup:'ФОП Петренко / ПП "Дід Василь"', cli:'ТОВ "СИСТЕМА"', agr:'№1 від 01.01', addr:'Одеса, вул. Моторна 8', cnt:2, sum:15000, sumVAT: 2500};
+ 
  let style=`<style>
   .prev-tbl {width:100%; border-collapse:collapse; font-size:${fS}; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
   .prev-tbl th, .prev-tbl td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;}
@@ -928,19 +983,38 @@ window.updatePreview = function() {
   .prev-tbl th:first-child, .prev-tbl td:first-child {border-left:${bT}; width:${colW[0]||'5%'};}
   .prev-tbl th:nth-child(2), .prev-tbl td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;}
   .prev-tbl th:nth-child(3), .prev-tbl td:nth-child(3) {width:${colW[2]||'10%'};}
-  .pr-table th:nth-child(4), .prev-tbl td:nth-child(4) {width:${colW[3]||'5%'};}
+  .prev-tbl th:nth-child(4), .prev-tbl td:nth-child(4) {width:${colW[3]||'5%'};}
   .prev-tbl th:nth-child(5), .prev-tbl td:nth-child(5) {width:${colW[4]||'10%'};}
   .prev-tbl th:last-child, .prev-tbl td:last-child {border-right:${bT}; width:${colW[5]||'15%'};}
   .prev-tbl tr:last-child td {border-bottom:${bT};}
  </style>`;
- let tbl=`<table class="prev-tbl"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>Ціна</th><th>Сума</th></tr></thead><tbody><tr><td>1</td><td style="text-align:left">Тестовий товар 1</td><td>10</td><td>шт</td><td>500.00</td><td>5000.00</td></tr><tr><td>2</td><td style="text-align:left">Тестовий товар 2</td><td>15</td><td>кг</td><td>500.00</td><td>7500.00</td></tr><tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr></tbody></table>`;
+ 
+ let tbl=`<table class="prev-tbl"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody><tr><td>1</td><td style="text-align:left">Тестовий товар 1</td><td>10</td><td>шт</td><td>500.00</td><td>5000.00</td></tr><tr><td>2</td><td style="text-align:left">Тестовий товар 2</td><td>15</td><td>кг</td><td>500.00</td><td>7500.00</td></tr>`;
+ 
+ if(isBN){
+    tbl+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr>`;
+    tbl+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">2500.00</td></tr>`;
+    tbl+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">15000.00</td></tr>`;
+ } else {
+    tbl+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr>`;
+ }
+ tbl+=`</tbody></table>`;
+ 
  gID('invPreview').innerHTML=style+`<div style="font-size:12px;color:#000;line-height:1.4;text-align:left;white-space:pre-wrap">`+parseTags(gID('isTop').value, dDummy)+`</div>`+tbl+`<div style="font-size:12px;color:#000;line-height:1.4;text-align:left;white-space:pre-wrap">`+parseTags(gID('isBot').value, dDummy)+`</div>`;
 };
 
 window.saveInvSet=async function(){
+ const isBN = window.curEditingSet === 'invSetBN';
+ const dbKey = isBN ? 'InvoiceSettingsBN' : 'InvoiceSettings';
  const u={tblBrd:gID('isBrd').checked, vLin:gID('isV').checked, hLin:gID('isH').checked, fSize:gID('isF').value, colW:gID('isColW').value, rowH:gID('isRowH').value, xtraTop:gID('isTop').value, xtraBot:gID('isBot').value};
- try{await db.child('InvoiceSettings').set(u); invSet=u; closeModal(); alert('Шаблон сохранен');}catch(e){alert(e);}
+ try{
+    await db.child(dbKey).set(u); 
+    if(isBN) invSetBN=u; else invSet=u; 
+    closeModal(); 
+    alert('Шаблон сохранен');
+ }catch(e){alert(e);}
 };
+
 function loadBulk(c){
  D.querySelectorAll('.bulk-q').forEach(i=>{const n=i.dataset.n,ct=i.dataset.cat,v=parseFloat(i.value),k=n+'::'+ct;if(v>0)shipBasket[k]={w:v,c:ct,n:n};else delete shipBasket[k]});
  const bs=D.querySelectorAll('#shipBtns button');
@@ -956,7 +1030,10 @@ function loadBulk(c){
    if(data.PriceList){
     const pObj = Object.values(data.PriceList).find(x=>x.name===n);
     if(pObj) {
-     let prVal = priceMode==='opt' ? (pObj.priceOpt!==undefined?pObj.priceOpt:(pObj.price||0)) : (pObj.priceRoz!==undefined?pObj.priceRoz:0);
+     let prVal = 0;
+     if(priceMode==='opt') prVal = pObj.priceOpt!==undefined?pObj.priceOpt:(pObj.price||0);
+     else if(priceMode==='roz') prVal = pObj.priceRoz!==undefined?pObj.priceRoz:0;
+     else if(priceMode==='bn') prVal = pObj.priceBN!==undefined?pObj.priceBN:(pObj.priceOpt||0);
      if(prVal > 0) prcHtml = `<div class="pulsing-price">${prVal}</div>`;
     }
    }
@@ -967,7 +1044,7 @@ function loadBulk(c){
 }
 
 window.setPriceMode=function(m){
- priceMode=m; gID('btnOpt').className='btn-sel '+(m==='opt'?'active':''); gID('btnRoz').className='btn-sel '+(m==='roz'?'active':'');
+ priceMode=m; gID('btnOpt').className='btn-sel '+(m==='opt'?'active':''); gID('btnRoz').className='btn-sel '+(m==='roz'?'active':''); gID('btnBN').className='btn-sel '+(m==='bn'?'active':'');
  const ab = Array.from(D.querySelectorAll('#shipBtns button')).find(b=>b.classList.contains('active'));
  let ac = 'Готовая';
  if(ab){
@@ -981,21 +1058,43 @@ window.setPriceMode=function(m){
 function toggleStr(b){useStretch=!useStretch;b.className='btn-sel '+(useStretch?'active':'');b.innerText=useStretch?'СТРЕЙЧ: ДА':'СТРЕЙЧ: НЕТ'}
 
 async function sShip(){
-    const d=gID('hD').value,nm=gID('hNum').value,ag=gID('hAg').value,dv=d+"T12:00:00Z",c=getSmartVal('hC'),mf=getSmartVal('hMyFop'),pm=priceMode;
+    const d=gID('hD').value,nm=gID('hNum').value,ag=gID('hAg').value,addr=gID('hAddr').value,dv=d+"T12:00:00Z",c=getSmartVal('hC'),mf=getSmartVal('hMyFop'),pm=priceMode;
     if(!c)return alert('Получатель?');
     saveShipDraft();
     const it=[];let tw=0,tm=0,pdb={};
     if(data.PriceList)Object.values(data.PriceList).forEach(v=>pdb[v.name]=v);
-    Object.values(shipBasket).forEach(v=>{let po=pdb[v.n]||{},pr=pm==='opt'?(po.priceOpt!==undefined?po.priceOpt:(po.price||0)):(po.priceRoz!==undefined?po.priceRoz:0),sm=pr*v.w;it.push({n:v.n,w:v.w,c:v.c,p:pr,s:sm});tw+=v.w;tm+=sm});
+    Object.values(shipBasket).forEach(v=>{
+        let po=pdb[v.n]||{}, pr=0;
+        if(pm==='opt') pr = po.priceOpt!==undefined?po.priceOpt:(po.price||0);
+        else if(pm==='roz') pr = po.priceRoz!==undefined?po.priceRoz:0;
+        else if(pm==='bn') pr = po.priceBN!==undefined?po.priceBN:(po.priceOpt||0);
+        let sm=pr*v.w;
+        it.push({n:v.n,w:v.w,c:v.c,p:pr,s:sm});tw+=v.w;tm+=sm
+    });
     if(!it.length)return alert('Пусто');
     
     const dtObj=new Date(dv), dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();
+    const isBN = pm === 'bn';
     
-    let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${nm||'---'}</b> (${pm==='opt'?'ОПТ':'РОЗНИЦА'})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${mf||'-'}<br><b>Кому:</b> ${c}<br><b>Сделка:</b> ${ag||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>ЦЕНА</td><td>СУММА</td></tr>`;
-    it.forEach(x=>{h+=`<tr><td>${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.p}</td><td>${x.s.toFixed(2)}</td></tr>`});
-    h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всего:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToShipBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="execShip()" style="margin:0">СПИСАТЬ</button><button class="btn-main" onclick="printAndConfirm()" style="background:#0f172a;margin:0">ПЕЧАТЬ</button></div>`;
+    let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${nm||'---'}</b> (${isBN?'Б/Н':(pm==='opt'?'ОПТ':'РОЗНИЦА')})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${mf||'-'}<br><b>Кому:</b> ${c}<br><b>Сделка:</b> ${ag||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>${isBN?'ЦЕНА (БЕЗ ПДВ)':'ЦЕНА'}</td><td>${isBN?'СУММА (БЕЗ ПДВ)':'СУММА'}</td></tr>`;
+    it.forEach(x=>{
+        let prc = isBN ? x.p/1.2 : x.p;
+        let sum = isBN ? x.s/1.2 : x.s;
+        h+=`<tr><td>${getPrintName(x.n)}</td><td>${x.w}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`
+    });
     
-    window.tempShipData={it,c,nm,dv,mf,tw,ag,tm,mode:pm};
+    if(isBN) {
+        let vat = tm - (tm/1.2);
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма без ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tm - vat).toFixed(2)}</td></tr>`;
+        h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+        h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого с ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
+    } else {
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всего:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
+    }
+    
+    h+=`<div style="display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToShipBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="execShip()" style="margin:0">СПИСАТЬ</button><button class="btn-main" onclick="printAndConfirm()" style="background:#0f172a;margin:0">ПЕЧАТЬ</button></div>`;
+    
+    window.tempShipData={it,c,nm,dv,mf,tw,ag,addr,tm,mode:pm};
     gID('shipBuilder').style.display='none';
     gID('shipPreview').innerHTML=h;
     gID('shipPreview').style.display='block';
@@ -1012,11 +1111,16 @@ window.printShipInvoice=function(d){
  if(!d)return;
  const dt=new Date(d.dv), dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
  let tw=0;
- const bT=invSet.tblBrd?'2px solid #000':'none', bI=invSet.tblBrd?'1px solid #000':'none';
- const bV=invSet.vLin?'1px solid #000':'none', bH=invSet.hLin?'1px solid #000':'none';
- const fS=invSet.fSize||'11px', colW=(invSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=invSet.rowH||'14px';
  
- let dData={num:d.nm, dateStr:dStr, sup:d.mf, cli:d.c, agr:d.ag, cnt:d.it.length, sum:d.tm};
+ const isBN = d.mode === 'bn';
+ const curSet = isBN ? invSetBN : invSet;
+ 
+ const bT=curSet.tblBrd?'2px solid #000':'none', bI=curSet.tblBrd?'1px solid #000':'none';
+ const bV=curSet.vLin?'1px solid #000':'none', bH=curSet.hLin?'1px solid #000':'none';
+ const fS=curSet.fSize||'11px', colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=curSet.rowH||'14px';
+ 
+ let tSum = parseFloat(d.tm||0);
+ let dData={num:d.nm, dateStr:dStr, sup:d.mf, cli:d.c, agr:d.ag, addr:d.addr, cnt:d.it.length, sum:tSum, sumVAT: tSum - (tSum/1.2)};
  
  let styleBlock=`<style>
   .pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
@@ -1031,22 +1135,32 @@ window.printShipInvoice=function(d){
   .pr-table tr:last-child td {border-bottom:${bT};}
  </style>`;
  
- let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraTop, dData)+`</div>`;
- h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>`;
+ let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop, dData)+`</div>`;
+ h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
  d.it.forEach((x,idx)=>{
-  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${parseFloat(x.p).toFixed(2)}</td><td>${parseFloat(x.s).toFixed(2)}</td></tr>`;
+  let prc = isBN ? x.p/1.2 : x.p;
+  let sum = isBN ? x.s/1.2 : x.s;
+  h+=`<tr><td>${idx+1}</td><td style="text-align:left">${getPrintName(x.n)}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
   tw+=x.w;
  });
- h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${parseFloat(d.tm||0).toFixed(2)}</td></tr>`;
+ 
+ if(isBN){
+    let vat = tSum - (tSum/1.2);
+    h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tSum - vat).toFixed(2)}</td></tr>`;
+    h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+    h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+ } else {
+    h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+ }
  h+=`</tbody></table>`;
- h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(invSet.xtraBot, dData)+`</div>`;
+ h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot, dData)+`</div>`;
  
  gID('print-view').innerHTML=h; window.print(); setTimeout(()=>gID('print-view').innerHTML='',800);
 };
 
 window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},800)};
 
-async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){alert(e)}}
+async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,address:d.addr,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){alert(e)}}
 
 window.previewInc = function() {
     const d=gID('iD').value, s=getSmartVal('iS'), nm=gID('iNum').value;
@@ -1405,6 +1519,7 @@ window.previewWorkshop = function(k){
   }
  };
 };
+
 function genDayReport(){
   const d=gID('repDate').value;if(!d)return;
   const ds=d.split('-').reverse().join('.');
@@ -1567,13 +1682,24 @@ function addTimeRow(n='',r=''){const i=Date.now()+Math.random();gID('tsRows').in
 async function saveTimesheetBatch(){const d=gID('gTD').value,s=gID('gTS').value,e=gID('gTE').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value);if(n&&rt>0){cr.push({name:n,rate:rt});t+=rt;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:rt,ts:new Date().toISOString()}}});if(!cr.length)return alert('Пусто');try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! Всего: '+t)}catch(err){alert(err)}}
 function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${v.name}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
 
-window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
-window.editPrice=function(id,n,p,o,r){
+window.openAddPrice=function(){
+ aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';
+ gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`
+};
+
+window.editPrice=function(id,n,p,o,r,b){
  aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';
  const sN=String(n).replace(/"/g,'&quot;'), sP=String(p||'').replace(/"/g,'&quot;');
- gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`
+ gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`
 };
-window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r});closeModal()}catch(e){alert(e)}};
+
+window.sPrice=async function(){
+ const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0,b=parseFloat(gID('prB').value)||0;
+ if(!n)return alert('Название?');
+ const k=aId||db.child('PriceList').push().key;
+ try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r,priceBN:b});closeModal()}catch(e){alert(e)}
+};
+
 window.delPrice=async function(i){if(confirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
 
 window.printPriceList = function() {
@@ -1585,13 +1711,13 @@ window.printPriceList = function() {
  const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));
  
  Object.entries(d).forEach(([i,v])=>{
-  let po=parseFloat(v.priceOpt||v.price||0), pr=parseFloat(v.priceRoz||0);
-  if(po===0 && pr===0) return; 
-  if(g.has(v.name))cats['Фасованная продукция'].push({v, po, pr});
-  else if(w.has(v.name))cats['Покупная продукция'].push({v, po, pr});
-  else if(dv.has(v.name))cats['ДВ вес'].push({v, po, pr});
-  else if(f.has(v.name))cats['Отходы производства'].push({v, po, pr});
-  else cats['Прочее'].push({v, po, pr});
+  let po=parseFloat(v.priceOpt||v.price||0), pr=parseFloat(v.priceRoz||0), pb=parseFloat(v.priceBN||v.priceOpt||v.price||0);
+  if(po===0 && pr===0 && pb===0) return; 
+  if(g.has(v.name))cats['Фасованная продукция'].push({v, po, pr, pb});
+  else if(w.has(v.name))cats['Покупная продукция'].push({v, po, pr, pb});
+  else if(dv.has(v.name))cats['ДВ вес'].push({v, po, pr, pb});
+  else if(f.has(v.name))cats['Отходы производства'].push({v, po, pr, pb});
+  else cats['Прочее'].push({v, po, pr, pb});
  });
 
  const ds = new Date().toLocaleDateString('ru-RU');
@@ -1604,13 +1730,14 @@ window.printPriceList = function() {
   
   h += `<div style="font-weight:bold; font-size:16px; margin-top:15px; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px; display:inline-block; padding-right:30px;">${k}</div>`;
   h += `<table style="border-collapse:collapse; font-size:12px; line-height:1.1; margin-bottom:10px; width:auto;">`;
-  h += `<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 15px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 15px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 15px;">Розница</th></tr></thead><tbody>`;
+  h += `<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 10px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Розница</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 10px;">Б/Н</th></tr></thead><tbody>`;
   
   cats[k].forEach(item => {
    let n = item.v.printName || item.v.name;
    let opt = item.po > 0 ? item.po : '-';
    let roz = item.pr > 0 ? item.pr : '-';
-   h += `<tr><td style="padding:2px 15px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 15px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 15px; border-bottom:1px dashed #eee;">${roz}</td></tr>`;
+   let bn = item.pb > 0 ? item.pb : '-';
+   h += `<tr><td style="padding:2px 10px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${roz}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 10px; border-bottom:1px dashed #eee;">${bn}</td></tr>`;
   });
   h += `</tbody></table>`;
  });
@@ -1637,7 +1764,9 @@ function rPriceList(c){
  Object.keys(cats).forEach(k=>{if(cats[k].length){
   h+=`<div class="cat-head">${k}</div>`;
   cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{
-   h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${v.name}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${v.printName}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${v.priceOpt||(v.price||0)}</span> | Розница: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${v.priceOpt||(v.price||0)},${v.priceRoz||0})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`
+   let p_opt = v.priceOpt||(v.price||0);
+   let p_bn = v.priceBN||p_opt;
+   h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${v.name}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${v.printName}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`
   });
  }});c.innerHTML=h;
 }
@@ -1706,6 +1835,6 @@ function rRawArch(c){
  c.innerHTML = has ? h+'</div>' : '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Пусто</div>';
 }
 
-async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введите ARCHIVE для свертывания базы до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Свертывание'}})}});if(Object.keys(u).length){await db.update(u);alert('Успешно свернуто')}closeModal()}
-async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введите CLOSE для закрытия месяца (без удаления данных)')!=='CLOSE')return;const u={},nx=new Date(d);nx.setDate(nx.getDate()+1);const nd=nx.toISOString().split('T')[0];stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings'].includes(c)){const cd=data[c]||{},r={};Object.values(cd).forEach(v=>{if(v.date.split('T')[0]<=d)r[v.name]=(r[v.name]||0)+v.amount});Object.keys(r).forEach(n=>{const a=r[n];if(Math.abs(a)>0.01){const fa=(c==='Пленка'||c==='Скотч 360 грамм')?a.toFixed(2):Math.round(a);u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:d+"T23:59:59Z",note:`Остаток на конец месяца: ${fa}`};u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:nd+"T08:00:00Z",note:`Остаток на начало месяца: ${fa}`}}})}});if(Object.keys(u).length){await db.update(u);alert(`Месяц закрыт. Маркеры остатков добавлены.`)}closeModal()}
+async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введите ARCHIVE для свертывания базы до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Свертывание'}})}});if(Object.keys(u).length){await db.update(u);alert('Успешно свернуто')}closeModal()}
+async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введите CLOSE для закрытия месяца (без удаления данных)')!=='CLOSE')return;const u={},nx=new Date(d);nx.setDate(nx.getDate()+1);const nd=nx.toISOString().split('T')[0];stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},r={};Object.values(cd).forEach(v=>{if(v.date.split('T')[0]<=d)r[v.name]=(r[v.name]||0)+v.amount});Object.keys(r).forEach(n=>{const a=r[n];if(Math.abs(a)>0.01){const fa=(c==='Пленка'||c==='Скотч 360 грамм')?a.toFixed(2):Math.round(a);u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:d+"T23:59:59Z",note:`Остаток на конец месяца: ${fa}`};u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:nd+"T08:00:00Z",note:`Остаток на начало месяца: ${fa}`}}})}});if(Object.keys(u).length){await db.update(u);alert(`Месяц закрыт. Маркеры остатков добавлены.`)}closeModal()}
 </script></body></html>
