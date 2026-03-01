@@ -227,7 +227,6 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  else if(c==='TsCal'){ct.innerHTML=`<div class="z-head">ВЫБЕРИТЕ</div><div id="tsList" class="item-grid"></div>`;loadData()}
  else if(c==='StockRoot'){
   let b=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХОД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ОТГРУЗКА</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:5px">🔧 КОРРЕКЦИЯ</button><button class="btn-main" onclick="retroAutoDeduct()" style="background:#d97706;margin-bottom:15px">🔄 ПЕРЕРАСЧЕТ СПИСАНИЯ</button>`:'';
-
   ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`
  }
  else if(c==='Stock_Raw'){ct.innerHTML=(isAdmin?`<button class="btn-main" style="background:#e0f2fe;color:#0369a1;margin-bottom:10px" onclick="setCat('StockArchive')">🗄️ АРХИВ</button>`:'')+`<div class="z-head">СЫРЬЕ</div><div id="rawList">...</div>`;if(isAdmin&&!corrMode)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s);padding:8px" onclick="openModal('addRaw')">ПРИХОД</button>`}
@@ -324,6 +323,7 @@ window.renameContractor = async function(oldEscaped, type) {
   alert('Записей для обновления не найдено.');
  }
 };
+
 const gP=c=>{
  let i=[];
  if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
@@ -874,19 +874,20 @@ window.printWorkshop = function(k) {
      const isBN = v.priceMode === 'bn';
      
      let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+     let totalNoVat = 0;
      if(v.items)v.items.forEach((it,idx)=>{
-        const p=it.split('|'); tw+=parseFloat(p[1])||0; 
+        const p=it.split('|'); const w=parseFloat(p[1])||0; tw+=w; 
         let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
-        if(isBN) { prc = prc / 1.2; sum = sum / 1.2; }
+        if(isBN) { prc = Math.round((prc / 1.2) * 100) / 100; sum = prc * w; totalNoVat += sum; }
         h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;
      });
      
      let total = parseFloat(v.totalSum||0);
      if(isBN){
-        let vat = total - (total / 1.2);
-        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(total - vat).toFixed(2)}</td></tr>`;
-        h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
-        h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
+        let vat = total - totalNoVat;
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr>`;
+        h+=`<tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+        h+=`<tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
      } else {
         h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
      }
@@ -906,8 +907,17 @@ window.printWorkshop = function(k) {
      const bV=curSet.vLin?'1px solid #000':'none', bH=curSet.hLin?'1px solid #000':'none';
      const fS=curSet.fSize||'11px', colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=curSet.rowH||'14px';
      
+     let totalNoVat = 0;
      let tSum = parseFloat(v.totalSum||0);
-     let dData={num:v.num, dateStr:dStr, sup:v.supplierName, cli:v.client, agr:v.agreement, addr:v.address, cnt:(v.items?v.items.length:0), sum:tSum, sumVAT: tSum - (tSum/1.2)};
+     if(v.items && isBN) {
+         v.items.forEach(it => {
+             const p = it.split('|'); const w = parseFloat(p[1])||0;
+             let prc = Math.round((parseFloat(p[4]) / 1.2) * 100) / 100;
+             totalNoVat += prc * w;
+         });
+     }
+     
+     let dData={num:v.num, dateStr:dStr, sup:v.supplierName, cli:v.client, agr:v.agreement, addr:v.address, cnt:(v.items?v.items.length:0), sum:tSum, sumVAT: tSum - (isBN?totalNoVat:(tSum/1.2))};
      
      let styleBlock=`<style>
       .pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
@@ -925,17 +935,17 @@ window.printWorkshop = function(k) {
      let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop, dData)+`</div>`;
      h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
      if(v.items)v.items.forEach((it,idx)=>{
-      const p=it.split('|'); tw+=parseFloat(p[1])||0; 
+      const p=it.split('|'); const w=parseFloat(p[1])||0; tw+=w; 
       let prc=parseFloat(p[4]), sum=parseFloat(p[5]);
-      if(isBN) { prc = prc / 1.2; sum = sum / 1.2; }
+      if(isBN) { prc = Math.round((prc / 1.2) * 100) / 100; sum = prc * w; }
       h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
      });
      
      if(isBN){
-        let vat = tSum - (tSum/1.2);
-        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tSum - vat).toFixed(2)}</td></tr>`;
-        h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
-        h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+        let vat = tSum - totalNoVat;
+        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr>`;
+        h+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+        h+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
      } else {
         h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
      }
@@ -1225,9 +1235,9 @@ window.printWorkshop = function(k) {
      let tbl=`<table class="prev-tbl"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody><tr><td>1</td><td style="text-align:left">Тестовий товар 1</td><td>10</td><td>шт</td><td>500.00</td><td>5000.00</td></tr><tr><td>2</td><td style="text-align:left">Тестовий товар 2</td><td>15</td><td>кг</td><td>500.00</td><td>7500.00</td></tr>`;
      
      if(isBN){
-        tbl+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr>`;
-        tbl+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">2500.00</td></tr>`;
-        tbl+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">15000.00</td></tr>`;
+        tbl+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr>`;
+        tbl+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">2500.00</td></tr>`;
+        tbl+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">15000.00</td></tr>`;
      } else {
         tbl+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">25</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">12500.00</td></tr>`;
      }
@@ -1309,24 +1319,27 @@ window.printWorkshop = function(k) {
         const isBN = pm === 'bn';
         
         let h=`<div style="text-align:center"><b>НАКЛАДНАЯ № ${esc(nm)||'---'}</b> (${isBN?'Б/Н':(pm==='opt'?'ОПТ':'РОЗНИЦА')})<br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>От:</b> ${esc(mf)||'-'}<br><b>Кому:</b> ${esc(c)}<br><b>Сделка:</b> ${esc(ag)||'-'}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td>КОЛ-ВО</td><td>${isBN?'ЦЕНА (БЕЗ ПДВ)':'ЦЕНА'}</td><td>${isBN?'СУММА (БЕЗ ПДВ)':'СУММА'}</td></tr>`;
+        
+        let totalNoVat = 0;
         it.forEach(x=>{
-            let prc = isBN ? x.p/1.2 : x.p;
-            let sum = isBN ? x.s/1.2 : x.s;
-            h+=`<tr><td>${esc(getPrintName(x.n))}</td><td>${x.w}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`
+            let prc = isBN ? Math.round((x.p / 1.2) * 100) / 100 : x.p;
+            let sum = isBN ? prc * x.w : x.s;
+            if(isBN) totalNoVat += sum;
+            h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(getPrintName(x.n))}</td><td style="text-align:center;border:1px solid #ccc">${x.w}</td><td style="text-align:center;border:1px solid #ccc">${prc.toFixed(2)}</td><td style="text-align:center;border:1px solid #ccc">${sum.toFixed(2)}</td></tr>`
         });
         
         if(isBN) {
-            let vat = tm - (tm/1.2);
-            h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма без ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tm - vat).toFixed(2)}</td></tr>`;
-            h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
-            h+=`<tr><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого с ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
+            let vat = tm - totalNoVat;
+            h+=`<tr><td style="text-align:right;border:none;font-weight:bold;padding-right:5px;padding-top:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${totalNoVat.toFixed(2)}</td></tr>`;
+            h+=`<tr><td colspan="3" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+            h+=`<tr><td colspan="3" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого с ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
         } else {
-            h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всего:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
+            h+=`<tr><td style="text-align:right;border:none;font-weight:bold;padding-right:5px;padding-top:5px">Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tm.toFixed(2)}</td></tr></table>`;
         }
         
         h+=`<div style="display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToShipBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="execShip()" style="margin:0">СПИСАТЬ</button><button class="btn-main" onclick="printAndConfirm()" style="background:#0f172a;margin:0">ПЕЧАТЬ</button></div>`;
         
-        window.tempShipData={it,c,nm,dv,mf,tw,ag,addr,tm,mode:pm};
+        window.tempShipData={it,c,nm,dv,mf,tw,ag,addr,tm,totalNoVat,mode:pm};
         gID('shipBuilder').style.display='none';
         gID('shipPreview').innerHTML=h;
         gID('shipPreview').style.display='block';
@@ -1352,7 +1365,7 @@ window.printWorkshop = function(k) {
      const fS=curSet.fSize||'11px', colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'), rowH=curSet.rowH||'14px';
      
      let tSum = parseFloat(d.tm||0);
-     let dData={num:d.nm, dateStr:dStr, sup:d.mf, cli:d.c, agr:d.ag, addr:d.addr, cnt:d.it.length, sum:tSum, sumVAT: tSum - (tSum/1.2)};
+     let dData={num:d.nm, dateStr:dStr, sup:d.mf, cli:d.c, agr:d.ag, addr:d.addr, cnt:d.it.length, sum:tSum, sumVAT: tSum - (isBN ? d.totalNoVat : (tSum/1.2))};
      
      let styleBlock=`<style>
       .pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;}
@@ -1369,18 +1382,21 @@ window.printWorkshop = function(k) {
      
      let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop, dData)+`</div>`;
      h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+     
+     let printTotalNoVat = 0;
      d.it.forEach((x,idx)=>{
-      let prc = isBN ? x.p/1.2 : x.p;
-      let sum = isBN ? x.s/1.2 : x.s;
+      let prc = isBN ? Math.round((x.p / 1.2) * 100) / 100 : x.p;
+      let sum = isBN ? prc * x.w : x.s;
+      if (isBN) printTotalNoVat += sum;
       h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(x.n))}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
       tw+=x.w;
      });
      
      if(isBN){
-        let vat = tSum - (tSum/1.2);
-        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума (без ПДВ):</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${(tSum - vat).toFixed(2)}</td></tr>`;
-        h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
-        h+=`<tr style="border:none"><td colspan="4" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+        let vat = tSum - printTotalNoVat;
+        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${printTotalNoVat.toFixed(2)}</td></tr>`;
+        h+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr>`;
+        h+=`<tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
      } else {
         h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
      }
@@ -1453,6 +1469,7 @@ window.printWorkshop = function(k) {
         gID('rawBuilder').style.display='block';
         gID('mT').innerText='ПРИХОД СЫРЬЯ';
     };
+    
     async function sInc(){
      const d = window.tempIncData;
      if(!d) return;
@@ -1568,8 +1585,8 @@ window.printWorkshop = function(k) {
      let hPk='';
      Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт</span></div>`});
      
-let tapeUsed = parseFloat((pkTotal / parseFloat(autoSet.tapeRate || 3000)).toFixed(2));
-     let thermalUsed = Math.round(pkTotal / parseFloat(autoSet.thermalRate || 34000));
+     let tapeUsed = parseFloat((pkTotal / parseFloat(autoSet.tapeRate || 3000)).toFixed(2));
+     let thermalUsed = parseFloat((pkTotal / parseFloat(autoSet.thermalRate || 34000)).toFixed(2));
 
      const html=`
       <div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div>
@@ -1808,7 +1825,6 @@ let tapeUsed = parseFloat((pkTotal / parseFloat(autoSet.tapeRate || 3000)).toFix
       }
      };
     };
-
     function genDayReport(){
       const d=gID('repDate').value;if(!d)return;
       const ds=d.split('-').reverse().join('.');
@@ -2132,6 +2148,7 @@ let tapeUsed = parseFloat((pkTotal / parseFloat(autoSet.tapeRate || 3000)).toFix
 
     async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введите ARCHIVE для свертывания базы до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Свертывание'}})}});if(Object.keys(u).length){await db.update(u);alert('Успешно свернуто')}closeModal()}
     async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введите CLOSE для закрытия месяца (без удаления данных)')!=='CLOSE')return;const u={},nx=new Date(d);nx.setDate(nx.getDate()+1);const nd=nx.toISOString().split('T')[0];stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},r={};Object.values(cd).forEach(v=>{if(v.date.split('T')[0]<=d)r[v.name]=(r[v.name]||0)+v.amount});Object.keys(r).forEach(n=>{const a=r[n];if(Math.abs(a)>0.01){const fa=(c==='Пленка'||c==='Скотч 360 грамм')?a.toFixed(2):Math.round(a);u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:d+"T23:59:59Z",note:`Остаток на конец месяца: ${fa}`};u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:nd+"T08:00:00Z",note:`Остаток на начало месяца: ${fa}`}}})}});if(Object.keys(u).length){await db.update(u);alert(`Месяц закрыт. Маркеры остатков добавлены.`)}closeModal()}
+
 window.retroAutoDeduct = async function() {
     let sdInput = prompt('Введите дату, с которой пересчитать (в формате 01.02.2026):', '01.02.2026');
     if (!sdInput) return;
@@ -2241,7 +2258,6 @@ window.retroAutoDeduct = async function() {
                                 if(matchName && w === autoBagsWeight) {
                                     bagsToDeduct['Мешок 25кг'] = (bagsToDeduct['Мешок 25кг'] || 0) + b;
                                     
-                                    // ЖЕСТКОЕ ОЧИЩЕНИЕ НАЗВАНИЙ ЭТИКЕТОК
                                     let cleanN = n.toLowerCase();
                                     let baseName = '';
                                     if (cleanN.includes('арнаутка')) baseName = 'Арнаутка';
@@ -2295,5 +2311,4 @@ window.retroAutoDeduct = async function() {
         gID('act').innerHTML = '';
     }
 };
-
     </script></body></html>
