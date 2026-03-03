@@ -167,7 +167,7 @@ let autoSet = {
   threadsRate: '600', threadsExclude: '40',
   tapeRate: '3000', tapeWeight: '360',
   thermalRate: '34000', thermalWidth: '',
-  packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя'
+  packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000'
 };
 
 function closeModal(){gID('mdl').style.display='none';gID('mQty').style.display='none';}
@@ -206,7 +206,7 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ</span></div>
   <div class="dash-item" onclick="setCat('PriceList')"><span>💰 ПРАЙС</span></div>
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТР. ПЕЧАТИ</span></div>
-  <div class="dash-item" onclick="setCat('Contractors')"><span>⚙️ КОНТРАГЕНТЫ</span></div>
+  <div class="dash-item" onclick="setCat('Contractors')"><span>⚙️ КЛИЕНТЫ</span></div>
   <div class="dash-item" onclick="openModal('autoSet')"><span>⚙️ АВТОСПИСАНИЕ</span></div>` : ''}
  </div>`;updNav()}
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','PrintSettings':'Home','Contractors':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
@@ -1163,8 +1163,11 @@ window.printWorkshop = function(k) {
        <div class="grid-2">
         <div><span class="inv-set-lbl">Стандарт (пакетов)</span><input type="number" step="0.1" id="asPk1" value="${esc(autoSet.packK1)}"></div>
         <div><span class="inv-set-lbl">Исключение (пакетов)</span><input type="number" step="0.1" id="asPk2" value="${esc(autoSet.packK2)}"></div>
-        <div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"></div>
-       </div>
+        <div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"><div>
+      <div>
+             <div class="z-head" style="margin-top:10px">СТРЕЙЧ ПЛЕНКА (ОТГРУЗКА)</div>
+       <div><span class="inv-set-lbl">1 рулон на (кг отгрузки)</span><input type="number" id="asStr" value="${esc(autoSet.stretchRate)}"></div>
+
       </div>
       <button class="btn-main" onclick="saveAutoSet()">СОХРАНИТЬ</button>`;
      }
@@ -1202,7 +1205,7 @@ window.printWorkshop = function(k) {
             threadsRate: gID('asThrR').value, threadsExclude: gID('asThrE').value,
             tapeRate: gID('asTapR').value, tapeWeight: '360',
             thermalRate: gID('asThmR').value, thermalWidth: '',
-            packK1: gID('asPk1').value, packK2: gID('asPk2').value, packK2Name: gID('asPk2N').value
+packK1: gID('asPk1').value, packK2: gID('asPk2').value, packK2Name: gID('asPk2N').value, stretchRate: gID('asStr').value
         };
         try {
             await db.child('AutoSettings').set(u);
@@ -1408,7 +1411,8 @@ window.printWorkshop = function(k) {
 
     window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},800)};
 
-    async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,address:d.addr,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/5000).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){alert(e)}}
+    async function execShip(){const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,address:d.addr,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/(parseFloat(autoSet.stretchRate)||5000)).toFixed(2));
+if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){alert(e)}}
 
     window.previewInc = function() {
         const d=gID('iD').value, s=getSmartVal('iS'), nm=gID('iNum').value;
