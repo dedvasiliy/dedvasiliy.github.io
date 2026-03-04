@@ -2362,7 +2362,6 @@ window.startVoiceInput = function() {
     btn.style.background = "#fee2e2";
 
     recognition.start();
-
     recognition.onresult = function(event) {
         let speechResult = event.results[0][0].transcript.toLowerCase();
         
@@ -2373,14 +2372,17 @@ window.startVoiceInput = function() {
         });
         speechResult = speechResult.replace(/gold/g, 'голд');
 
-        // 2. Словарь синонимов (как вы говорите -> как записано в базе)
+        // 2. Словарь синонимов (исправление ошибок распознавания)
         const synonyms = {
             'пропаренный': 'пр',
             'длинный': 'дл',
             'круглый': 'кр',
             'кукурузная': 'кук',
             'первая': '1',
-            'вторая': '2'
+            'вторая': '2',
+            'гречко': 'гречка',
+            'гречку': 'гречка',
+            'пшено': 'пшоно'
         };
         Object.keys(synonyms).forEach(w => {
             speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]);
@@ -2396,12 +2398,12 @@ window.startVoiceInput = function() {
         const lastNumStr = numMatches[numMatches.length - 1];
         const qty = parseFloat(lastNumStr);
 
-        // Удаляем только последнее число, чтобы оставить название (например, "арнаутка 1")
+        // Удаляем только последнее число, чтобы оставить название
         const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
         const spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
         const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
         
-        // Разбиваем слова. Теперь учитываем и короткие (1, 2, пр, дл)
+        // Разбиваем слова
         const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
         
         let bestMatch = null;
@@ -2418,7 +2420,6 @@ window.startVoiceInput = function() {
             let matchedWords = 0;
             spokenWords.forEach(w => {
                 if (w.length <= 2) {
-                    // Короткие слова (цифры и "пр"/"дл") ищем как точное совпадение слова, даем больше баллов
                     if (new RegExp('\\b' + w + '\\b').test(itemName)) {
                         matchedWords += 2;
                     }
@@ -2429,7 +2430,6 @@ window.startVoiceInput = function() {
             
             if (matchedWords > 0) {
                 score += matchedWords * 10;
-                // Бонус за точное совпадение
                 if (matchedWords >= spokenWords.length) {
                     score += 50;
                 }
@@ -2449,8 +2449,6 @@ window.startVoiceInput = function() {
             alert("Товар не найден. Вы сказали: " + speechResult + "\nСистема искала: " + cleanSpokenName);
         }
     };
-
-
 
     recognition.onspeechend = function() {
         recognition.stop();
