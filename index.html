@@ -2349,6 +2349,7 @@ window.retroAutoDeduct = async function() {
 };
 let vRec = null;
 let vIsRec = false;
+let vForceStop = false; 
 
 window.startVoiceInput = function() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2356,19 +2357,21 @@ window.startVoiceInput = function() {
 
     const btn = document.getElementById('vBtn');
 
-    // Если микрофон уже включен - выключаем его
-    if (vIsRec && vRec) {
+    if (vIsRec) {
+        vForceStop = true; 
         try { vRec.stop(); } catch(e) {}
-        return; // Кнопка сама поменяет цвет в функции onend
+        vIsRec = false;
+        btn.innerText = "🎤 ГОЛОС";
+        btn.style.background = "#eef2ff";
+        return;
     }
 
-    // Создаем полностью новый процесс распознавания каждый раз
+    vForceStop = false; 
     vRec = new SpeechRecognition();
     vRec.lang = 'ru-RU';
-    vRec.continuous = true; // Непрерывный режим
+    vRec.continuous = true;
     vRec.interimResults = false;
 
-    // Кнопка станет красной ТОЛЬКО когда микрофон реально успешно запустится
     vRec.onstart = function() {
         vIsRec = true;
         btn.innerText = "🔴 СТОП (СЛУШАЮ)";
@@ -2384,16 +2387,25 @@ window.startVoiceInput = function() {
         });
         speechResult = speechResult.replace(/gold/g, 'голд');
 
+        // Расширенный словарь синонимов
         const synonyms = {
             'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук',
-            'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшено': 'пшоно'
+            'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшено': 'пшоно',
+            'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя'
         };
         Object.keys(synonyms).forEach(w => {
             speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]);
         });
 
         const numMatches = speechResult.match(/\d+(?:[.,]\d+)?/g);
-        if (!numMatches) return; 
+        
+        // Если система не услышала цифру - теперь она об этом скажет
+        if (!numMatches) {
+            let oldTxt = btn.innerText;
+            btn.innerText = "❌ НЕТ КОЛ-ВА";
+            setTimeout(() => { if (vIsRec) btn.innerText = "🔴 СТОП (СЛУШАЮ)"; }, 2000);
+            return; 
+        }
 
         const lastNumStr = numMatches[numMatches.length - 1];
         const qty = parseFloat(lastNumStr);
@@ -2445,18 +2457,18 @@ window.startVoiceInput = function() {
     };
 
     vRec.onend = function() {
-        vIsRec = false;
-        btn.innerText = "🎤 ГОЛОС";
-        btn.style.background = "#eef2ff";
+        if (!vForceStop) {
+            try { vRec.start(); } catch(e) {}
+        } else {
+            vIsRec = false;
+            btn.innerText = "🎤 ГОЛОС";
+            btn.style.background = "#eef2ff";
+        }
     };
 
     vRec.onerror = function(event) {
-        vIsRec = false;
-        btn.innerText = "🎤 ГОЛОС";
-        btn.style.background = "#eef2ff";
-        
-        // Показываем ошибку (кроме случаев, когда мы просто молчали)
-        if (event.error !== 'no-speech') {
+        if (event.error === 'not-allowed') {
+            vForceStop = true;
             alert("Сбой микрофона: " + event.error);
         }
     };
