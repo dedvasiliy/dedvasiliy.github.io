@@ -2455,7 +2455,6 @@ window.startVoiceInput = function() {
             setTimeout(() => { if (vIsRec) btn.innerText = "🔴 СТОП (СЛУШАЮ)"; }, 2000);
         }
     };
-
     vRec.onend = function() {
         if (!vForceStop) {
             try { vRec.start(); } catch(e) {}
@@ -2465,7 +2464,6 @@ window.startVoiceInput = function() {
             btn.style.background = "#eef2ff";
         }
     };
-
     vRec.onerror = function(event) {
         if (event.error === 'not-allowed') {
             vForceStop = true;
@@ -2479,5 +2477,4 @@ window.startVoiceInput = function() {
         alert("Ошибка запуска: " + err.message);
     }
 };
-
     </script></body></html>
