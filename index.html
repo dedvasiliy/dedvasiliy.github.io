@@ -2350,6 +2350,7 @@ window.retroAutoDeduct = async function() {
 let vRec = null;
 let vIsRec = false;
 let vForceStop = false; 
+let vBlockBtnUpdate = false; 
 
 window.startVoiceInput = function() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2361,12 +2362,14 @@ window.startVoiceInput = function() {
         vForceStop = true; 
         try { vRec.stop(); } catch(e) {}
         vIsRec = false;
+        vBlockBtnUpdate = false; 
         btn.innerText = "🎤 ГОЛОС";
         btn.style.background = "#eef2ff";
         return;
     }
 
     vForceStop = false; 
+    vBlockBtnUpdate = false;
     vRec = new SpeechRecognition();
     vRec.lang = 'ru-RU';
     vRec.continuous = true;
@@ -2374,24 +2377,57 @@ window.startVoiceInput = function() {
 
     vRec.onstart = function() {
         vIsRec = true;
-        btn.innerText = "🔴 СТОП (СЛУШАЮ)";
-        btn.style.background = "#fee2e2";
+        if (!vBlockBtnUpdate) {
+            btn.innerText = "🔴 СТОП (СЛУШАЮ)";
+            btn.style.background = "#fee2e2";
+        }
+    };
+
+    const showError = (text) => {
+        vBlockBtnUpdate = true; 
+        btn.innerText = text;
+        btn.style.background = "#fca5a5"; 
+        setTimeout(() => { 
+            vBlockBtnUpdate = false; 
+            if (vIsRec) {
+                btn.innerText = "🔴 СТОП (СЛУШАЮ)"; 
+                btn.style.background = "#fee2e2";
+            } else {
+                btn.innerText = "🎤 ГОЛОС";
+                btn.style.background = "#eef2ff";
+            }
+        }, 4000);
     };
 
     vRec.onresult = function(event) {
         let speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase();
         
-        const wordsToNum = {'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10};
+        // 1. Фикс для пробелов в числах (1 200 -> 1200)
+        speechResult = speechResult.replace(/(\d)\s+(?=\d)/g, '$1');
+
+        // 2. Фикс для английского/европейского формата тысяч (1,200 или 1.200 -> 1200)
+        speechResult = speechResult.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2');
+
+        // 3. Базовые слова (полторы, тысяча и т.д.)
+        const wordsToNum = {
+            'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10,
+            'полторы': 1.5, 'тысячу': 1000, 'тысяча': 1000
+        };
         Object.keys(wordsToNum).forEach(w => {
             speechResult = speechResult.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]);
         });
         speechResult = speechResult.replace(/gold/g, 'голд');
 
-        // Расширенный словарь синонимов
+        // 4. Фикс для сокращений "1,2 тыс" или "5 тысяч" -> 1200, 5000
+        speechResult = speechResult.replace(/(\d+(?:[.,]\d+)?)\s*тыс(?:яч[аеиу]?[йь]?)?\.?/g, function(match, p1) {
+            return (parseFloat(p1.replace(',', '.')) * 1000).toString();
+        });
+
+        // 5. Синонимы
         const synonyms = {
             'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук',
             'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшено': 'пшоно',
-            'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя'
+            'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя', 'куча':   'кутя', 'манку': 'манка','мамка':'манка'
         };
         Object.keys(synonyms).forEach(w => {
             speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]);
@@ -2399,16 +2435,14 @@ window.startVoiceInput = function() {
 
         const numMatches = speechResult.match(/\d+(?:[.,]\d+)?/g);
         
-        // Если система не услышала цифру - теперь она об этом скажет
         if (!numMatches) {
-            let oldTxt = btn.innerText;
-            btn.innerText = "❌ НЕТ КОЛ-ВА";
-            setTimeout(() => { if (vIsRec) btn.innerText = "🔴 СТОП (СЛУШАЮ)"; }, 2000);
+            showError("❌ БЕЗ ЦИФРЫ: " + speechResult);
             return; 
         }
 
-        const lastNumStr = numMatches[numMatches.length - 1];
-        const qty = parseFloat(lastNumStr);
+        let lastNumStr = numMatches[numMatches.length - 1];
+        // Обязательно меняем запятую на точку, чтобы система правильно поняла десятичные (1,5 -> 1.5)
+        const qty = parseFloat(lastNumStr.replace(',', '.'));
 
         const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
         const spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
@@ -2449,21 +2483,28 @@ window.startVoiceInput = function() {
             bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
             bestMatch.parentElement.classList.add('tile-filled');
             window.updShipTotal();
+            
+            if (!vBlockBtnUpdate) {
+                btn.style.background = "#dcfce3";
+                setTimeout(() => { if (vIsRec && !vBlockBtnUpdate) btn.style.background = "#fee2e2"; }, 500);
+            }
         } else {
-            let oldTxt = btn.innerText;
-            btn.innerText = "❌ НЕ НАЙДЕНО";
-            setTimeout(() => { if (vIsRec) btn.innerText = "🔴 СТОП (СЛУШАЮ)"; }, 2000);
+            showError("❌ ИСКАЛ: " + speechResult);
         }
     };
+
     vRec.onend = function() {
         if (!vForceStop) {
             try { vRec.start(); } catch(e) {}
         } else {
             vIsRec = false;
-            btn.innerText = "🎤 ГОЛОС";
-            btn.style.background = "#eef2ff";
+            if (!vBlockBtnUpdate) {
+                btn.innerText = "🎤 ГОЛОС";
+                btn.style.background = "#eef2ff";
+            }
         }
     };
+
     vRec.onerror = function(event) {
         if (event.error === 'not-allowed') {
             vForceStop = true;
@@ -2477,4 +2518,5 @@ window.startVoiceInput = function() {
         alert("Ошибка запуска: " + err.message);
     }
 };
+
     </script></body></html>
