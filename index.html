@@ -2347,63 +2347,61 @@ window.retroAutoDeduct = async function() {
         gID('act').innerHTML = '';
     }
 };
+let vRec = null;
+let vIsRec = false;
+
 window.startVoiceInput = function() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Ваш браузер не поддерживает голосовой ввод");
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ru-RU'; // Язык распознавания
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
     const btn = document.getElementById('vBtn');
-    const originalText = btn.innerText;
-    btn.innerText = "🔴 СЛУШАЮ...";
-    btn.style.background = "#fee2e2";
 
-    recognition.start();
-    recognition.onresult = function(event) {
-        let speechResult = event.results[0][0].transcript.toLowerCase();
+    // Если микрофон уже включен - выключаем его
+    if (vIsRec && vRec) {
+        try { vRec.stop(); } catch(e) {}
+        return; // Кнопка сама поменяет цвет в функции onend
+    }
+
+    // Создаем полностью новый процесс распознавания каждый раз
+    vRec = new SpeechRecognition();
+    vRec.lang = 'ru-RU';
+    vRec.continuous = true; // Непрерывный режим
+    vRec.interimResults = false;
+
+    // Кнопка станет красной ТОЛЬКО когда микрофон реально успешно запустится
+    vRec.onstart = function() {
+        vIsRec = true;
+        btn.innerText = "🔴 СТОП (СЛУШАЮ)";
+        btn.style.background = "#fee2e2";
+    };
+
+    vRec.onresult = function(event) {
+        let speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase();
         
-        // 1. Перевод базовых слов в цифры
         const wordsToNum = {'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10};
         Object.keys(wordsToNum).forEach(w => {
             speechResult = speechResult.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]);
         });
         speechResult = speechResult.replace(/gold/g, 'голд');
 
-        // 2. Словарь синонимов (исправление ошибок распознавания)
         const synonyms = {
-            'пропаренный': 'пр',
-            'длинный': 'дл',
-            'круглый': 'кр',
-            'кукурузная': 'кук',
-            'первая': '1',
-            'вторая': '2',
-            'гречко': 'гречка',
-            'гречку': 'гречка',
-            'пшено': 'пшоно'
+            'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук',
+            'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшено': 'пшоно'
         };
         Object.keys(synonyms).forEach(w => {
             speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]);
         });
 
-        // 3. Поиск ВСЕХ цифр и выбор ПОСЛЕДНЕЙ как количество
         const numMatches = speechResult.match(/\d+(?:[.,]\d+)?/g);
-        if (!numMatches) {
-            alert("Не распознано количество. Вы сказали: " + speechResult);
-            return;
-        }
+        if (!numMatches) return; 
 
         const lastNumStr = numMatches[numMatches.length - 1];
         const qty = parseFloat(lastNumStr);
 
-        // Удаляем только последнее число, чтобы оставить название
         const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
         const spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
         const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
         
-        // Разбиваем слова
         const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
         
         let bestMatch = null;
@@ -2413,16 +2411,12 @@ window.startVoiceInput = function() {
             const itemName = input.dataset.n.toLowerCase();
             let score = 0;
             
-            if (itemName.includes(cleanSpokenName)) {
-                score += 100;
-            }
+            if (itemName.includes(cleanSpokenName)) score += 100;
             
             let matchedWords = 0;
             spokenWords.forEach(w => {
                 if (w.length <= 2) {
-                    if (new RegExp('\\b' + w + '\\b').test(itemName)) {
-                        matchedWords += 2;
-                    }
+                    if (new RegExp('\\b' + w + '\\b').test(itemName)) matchedWords += 2;
                 } else if (itemName.includes(w)) {
                     matchedWords++;
                 }
@@ -2430,9 +2424,7 @@ window.startVoiceInput = function() {
             
             if (matchedWords > 0) {
                 score += matchedWords * 10;
-                if (matchedWords >= spokenWords.length) {
-                    score += 50;
-                }
+                if (matchedWords >= spokenWords.length) score += 50;
             }
             
             if (score > maxScore && score > 0) {
@@ -2444,26 +2436,36 @@ window.startVoiceInput = function() {
         if (bestMatch) {
             bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
             bestMatch.parentElement.classList.add('tile-filled');
-            updShipTotal();
+            window.updShipTotal();
         } else {
-            alert("Товар не найден. Вы сказали: " + speechResult + "\nСистема искала: " + cleanSpokenName);
+            let oldTxt = btn.innerText;
+            btn.innerText = "❌ НЕ НАЙДЕНО";
+            setTimeout(() => { if (vIsRec) btn.innerText = "🔴 СТОП (СЛУШАЮ)"; }, 2000);
         }
     };
 
-    recognition.onspeechend = function() {
-        recognition.stop();
-    };
-
-    recognition.onend = function() {
-        btn.innerText = originalText;
+    vRec.onend = function() {
+        vIsRec = false;
+        btn.innerText = "🎤 ГОЛОС";
         btn.style.background = "#eef2ff";
     };
 
-    recognition.onerror = function(event) {
-        alert("Ошибка микрофона: " + event.error);
-        btn.innerText = originalText;
+    vRec.onerror = function(event) {
+        vIsRec = false;
+        btn.innerText = "🎤 ГОЛОС";
         btn.style.background = "#eef2ff";
+        
+        // Показываем ошибку (кроме случаев, когда мы просто молчали)
+        if (event.error !== 'no-speech') {
+            alert("Сбой микрофона: " + event.error);
+        }
     };
+
+    try {
+        vRec.start();
+    } catch(err) {
+        alert("Ошибка запуска: " + err.message);
+    }
 };
 
     </script></body></html>
