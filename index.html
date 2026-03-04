@@ -327,7 +327,7 @@ window.renameContractor = async function(oldEscaped, type) {
 const gP=c=>{
  let i=[];
  if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
- else if(c==='Готовая')i=["Арнаутка 1/0.9 1","Арнаутка 1/0.9 2","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кук.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшоно 1/0.9","Рис дл 1/0.9","Рис кр 1/0.9","Рис пр 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
+ else if(c==='Готовая')i=["Арнаутка 1 1/0.9","Арнаутка 2 1/0.9","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кук.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшоно 1/0.9","Рис дл 1/0.9","Рис кр 1/0.9","Рис пр 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
  const s=new Set(i),k=c==='WeightStock'?'WeightStock':(c==='Stock_DV'?'Stock_DV':(c==='Stock_Feed'?'Stock_Feed':(c==='Stock_Raw'?'Stock_Raw':(c==='Stock_Semi'?'Stock_Semi':'Готовая'))));
  if(data[k])Object.values(data[k]).forEach(v=>{
   if(v.name){
@@ -1112,7 +1112,8 @@ window.printWorkshop = function(k) {
       } else { shipBasket = {}; priceMode = 'opt'; useStretch = false; }
 
       h.innerText='ОТГРУЗКА';
-      m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span><input type="text" id="hAddr" value="${esc(dAddr)}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
+      m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div></div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span><input type="text" id="hAddr" value="${esc(dAddr)}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button><button id="vBtn" class="btn-sel" onclick="startVoiceInput()" style="flex:1; background:#eef2ff; border-color:var(--p); color:var(--p)">🎤 ГОЛОС</button>
+</div></div><button class="btn-main" style="background:#e2e8f0;color:#334155;margin-top:5px;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 СВЕРНУТЬ / РАЗВЕРНУТЬ ШАПКУ</button></div><div id="shipBtns" class="grid-2x2" style="margin-top:5px"><button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
       
       setTimeout(()=>{
           if(dMf) { const sm = gID('s_hMyFop'), im = gID('i_hMyFop'); let fo = Array.from(sm.options).find(o=>o.value===dMf); if(fo) sm.value=dMf; else { sm.value='NEW'; sm.style.display='none'; im.style.display='block'; im.value=dMf; } }
@@ -2347,4 +2348,125 @@ window.retroAutoDeduct = async function() {
         gID('act').innerHTML = '';
     }
 };
+window.startVoiceInput = function() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Ваш браузер не поддерживает голосовой ввод");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU'; // Язык распознавания
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    const btn = document.getElementById('vBtn');
+    const originalText = btn.innerText;
+    btn.innerText = "🔴 СЛУШАЮ...";
+    btn.style.background = "#fee2e2";
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        let speechResult = event.results[0][0].transcript.toLowerCase();
+        
+        // 1. Перевод базовых слов в цифры
+        const wordsToNum = {'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10};
+        Object.keys(wordsToNum).forEach(w => {
+            speechResult = speechResult.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]);
+        });
+        speechResult = speechResult.replace(/gold/g, 'голд');
+
+        // 2. Словарь синонимов (как вы говорите -> как записано в базе)
+        const synonyms = {
+            'пропаренный': 'пр',
+            'длинный': 'дл',
+            'круглый': 'кр',
+            'кукурузная': 'кук',
+            'первая': '1',
+            'вторая': '2'
+        };
+        Object.keys(synonyms).forEach(w => {
+            speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]);
+        });
+
+        // 3. Поиск ВСЕХ цифр и выбор ПОСЛЕДНЕЙ как количество
+        const numMatches = speechResult.match(/\d+(?:[.,]\d+)?/g);
+        if (!numMatches) {
+            alert("Не распознано количество. Вы сказали: " + speechResult);
+            return;
+        }
+
+        const lastNumStr = numMatches[numMatches.length - 1];
+        const qty = parseFloat(lastNumStr);
+
+        // Удаляем только последнее число, чтобы оставить название (например, "арнаутка 1")
+        const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
+        const spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
+        const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
+        
+        // Разбиваем слова. Теперь учитываем и короткие (1, 2, пр, дл)
+        const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
+        
+        let bestMatch = null;
+        let maxScore = 0;
+        
+        document.querySelectorAll('.bulk-q').forEach(input => {
+            const itemName = input.dataset.n.toLowerCase();
+            let score = 0;
+            
+            if (itemName.includes(cleanSpokenName)) {
+                score += 100;
+            }
+            
+            let matchedWords = 0;
+            spokenWords.forEach(w => {
+                if (w.length <= 2) {
+                    // Короткие слова (цифры и "пр"/"дл") ищем как точное совпадение слова, даем больше баллов
+                    if (new RegExp('\\b' + w + '\\b').test(itemName)) {
+                        matchedWords += 2;
+                    }
+                } else if (itemName.includes(w)) {
+                    matchedWords++;
+                }
+            });
+            
+            if (matchedWords > 0) {
+                score += matchedWords * 10;
+                // Бонус за точное совпадение
+                if (matchedWords >= spokenWords.length) {
+                    score += 50;
+                }
+            }
+            
+            if (score > maxScore && score > 0) {
+                maxScore = score;
+                bestMatch = input;
+            }
+        });
+
+        if (bestMatch) {
+            bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
+            bestMatch.parentElement.classList.add('tile-filled');
+            updShipTotal();
+        } else {
+            alert("Товар не найден. Вы сказали: " + speechResult + "\nСистема искала: " + cleanSpokenName);
+        }
+    };
+
+
+
+    recognition.onspeechend = function() {
+        recognition.stop();
+    };
+
+    recognition.onend = function() {
+        btn.innerText = originalText;
+        btn.style.background = "#eef2ff";
+    };
+
+    recognition.onerror = function(event) {
+        alert("Ошибка микрофона: " + event.error);
+        btn.innerText = originalText;
+        btn.style.background = "#eef2ff";
+    };
+};
+
     </script></body></html>
