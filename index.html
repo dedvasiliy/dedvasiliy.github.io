@@ -858,7 +858,6 @@ window.startVoiceInput = function() {
                 bestMatch = input;
             }
         });
-
         if (bestMatch) {
             if (isDelete) {
                 // ЕСЛИ КОМАНДА "УДАЛИТЬ"
@@ -866,18 +865,22 @@ window.startVoiceInput = function() {
                 bestMatch.parentElement.classList.remove('tile-filled');
                 window.updShipTotal();
                 
-                let sName = bestMatch.dataset.n.replace(/1\/0\.(\d)/g, "один ноль $1");
-                window.speakOut(sName + " удалено из списка");
+                // Вырезаем 1/0.9 и меняем 1 и 2 на "первая" и "вторая"
+                let sName = bestMatch.dataset.n.replace(/\s*1\/0\.\d+/g, "").trim();
+                sName = sName.replace(/\b1\b/g, "первая").replace(/\b2\b/g, "вторая");
+                window.speakOut(sName + " удалено");
             } else {
                 // ЕСЛИ ДОБАВЛЯЕМ ТОВАР
                 bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
                 bestMatch.parentElement.classList.add('tile-filled');
                 window.updShipTotal();
                 
-                let cat = bestMatch.dataset.cat;
-                let uStr = (cat === 'Готовая' || ['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat)) ? 'штук' : 'килограмм';
-                let sName = bestMatch.dataset.n.replace(/1\/0\.(\d)/g, "один ноль $1");
-                window.speakOut(sName + ", " + qty + " " + uStr + " добавлено");
+                // Вырезаем 1/0.9 и меняем 1 и 2 на "первая" и "вторая"
+                let sName = bestMatch.dataset.n.replace(/\s*1\/0\.\d+/g, "").trim();
+                sName = sName.replace(/\b1\b/g, "первая").replace(/\b2\b/g, "вторая");
+                
+                // Озвучиваем коротко: "Арнаутка первая 100 добавлено" (без штук и мешков)
+                window.speakOut(sName + " " + qty + " добавлено");
             }
             
             if (!vBlockBtnUpdate) {
@@ -887,9 +890,8 @@ window.startVoiceInput = function() {
         } else {
             showError("❌ ИСКАЛ: " + speechResult, "Товар не найден");
         }
-    };
-   
 
+    };
     vRec.onend = function() {
         if (!vForceStop) {
             try { vRec.start(); } catch(e) {}
