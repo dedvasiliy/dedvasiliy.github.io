@@ -781,29 +781,56 @@ window.startVoiceInput = function() {
         }, 4000);
     };
 
-    vRec.onresult = function(event) {
+     vRec.onresult = function(event) {
         let speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase();
         
+        // 1. Команда для стрейч-пленки
+        if (speechResult.includes("стрейч")) {
+            let btnStr = document.getElementById('btnStr');
+            if (btnStr) {
+                toggleStr(btnStr);
+                saveShipDraft();
+                window.speakOut("Стрейч " + (useStretch ? "включён" : "выключен"));
+            }
+            return;
+        }
+
+        // 2. Проверка на команду удаления
+        let isDelete = false;
+        if (speechResult.includes("удал") || speechResult.includes("очист") || speechResult.includes("убра")) {
+            isDelete = true;
+            // Убираем слова-команды из текста, чтобы остался только товар
+            speechResult = speechResult.replace(/удалить|удали|очистить|очисть|убрать|убери/g, '').trim();
+        }
+
+        // 3. Форматирование текста (числа и синонимы)
         speechResult = speechResult.replace(/(\d)\s+(?=\d)/g, '$1');
         speechResult = speechResult.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2');
-        const wordsToNum = { 'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10, 'полторы': 1.5, 'тысячу': 1000, 'тысяча': 1000 };
+        const wordsToNum = { 'ноль':0, 'нуль':0, 'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10, 'полторы': 1.5, 'тысячу': 1000, 'тысяча': 1000 };
         Object.keys(wordsToNum).forEach(w => { speechResult = speechResult.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]); });
         speechResult = speechResult.replace(/gold/g, 'голд');
         speechResult = speechResult.replace(/(\d+(?:[.,]\d+)?)\s*тыс(?:яч[аеиу]?[йь]?)?\.?/g, function(match, p1) { return (parseFloat(p1.replace(',', '.')) * 1000).toString(); });
         const synonyms = { 'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук', 'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшено': 'пшоно', 'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя', 'куча': 'кутя', 'кучя': 'кутя', 'манку': 'манка','мамка': 'манка' };
         Object.keys(synonyms).forEach(w => { speechResult = speechResult.replace(new RegExp(w, 'g'), synonyms[w]); });
 
+        // 4. Поиск цифры (если есть)
         const numMatches = speechResult.match(/\d+(?:[.,]\d+)?/g);
-        
-        if (!numMatches) {
-            showError("❌ БЕЗ ЦИФРЫ: " + speechResult, "Нет цифры");
-            return; 
+        let qty = 0;
+        let spokenName = speechResult;
+
+        if (numMatches) {
+            let lastNumStr = numMatches[numMatches.length - 1];
+            qty = parseFloat(lastNumStr.replace(',', '.'));
+            const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
+            spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
+        } else {
+            // Если цифры нет, но это команда "Удалить" - пропускаем дальше, иначе бьем ошибку
+            if (!isDelete) {
+                showError("❌ БЕЗ ЦИФРЫ: " + speechResult, "Нет цифры");
+                return; 
+            }
         }
 
-        let lastNumStr = numMatches[numMatches.length - 1];
-        const qty = parseFloat(lastNumStr.replace(',', '.'));
-        const lastNumIndex = speechResult.lastIndexOf(lastNumStr);
-        const spokenName = speechResult.substring(0, lastNumIndex) + " " + speechResult.substring(lastNumIndex + lastNumStr.length);
         const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
         const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
         
@@ -833,18 +860,27 @@ window.startVoiceInput = function() {
         });
 
         if (bestMatch) {
-            bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
-            bestMatch.parentElement.classList.add('tile-filled');
-            window.updShipTotal();
-            
-            // ОЗВУЧКА РЕЗУЛЬТАТА (с исправлением произношения)
-            let cat = bestMatch.dataset.cat;
-            let uStr = (cat === 'Готовая' || ['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat)) ? 'штук' : 'килограмм';
-            let sName = bestMatch.dataset.n.replace(/1\/0\.(\d)/g, "один ноль $1");
-            window.speakOut(sName + ", " + qty + " " + uStr + " добавлено");
+            if (isDelete) {
+                // ЕСЛИ КОМАНДА "УДАЛИТЬ"
+                bestMatch.value = '';
+                bestMatch.parentElement.classList.remove('tile-filled');
+                window.updShipTotal();
+                
+                let sName = bestMatch.dataset.n.replace(/1\/0\.(\d)/g, "один ноль $1");
+                window.speakOut(sName + " удалено из списка");
+            } else {
+                // ЕСЛИ ДОБАВЛЯЕМ ТОВАР
+                bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
+                bestMatch.parentElement.classList.add('tile-filled');
+                window.updShipTotal();
+                
+                let cat = bestMatch.dataset.cat;
+                let uStr = (cat === 'Готовая' || ['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat)) ? 'штук' : 'килограмм';
+                let sName = bestMatch.dataset.n.replace(/1\/0\.(\d)/g, "один ноль $1");
+                window.speakOut(sName + ", " + qty + " " + uStr + " добавлено");
+            }
             
             if (!vBlockBtnUpdate) {
-
                 btn.style.background = "#dcfce3";
                 setTimeout(() => { if (vIsRec && !vBlockBtnUpdate) btn.style.background = "#fee2e2"; }, 500);
             }
@@ -852,6 +888,7 @@ window.startVoiceInput = function() {
             showError("❌ ИСКАЛ: " + speechResult, "Товар не найден");
         }
     };
+   
 
     vRec.onend = function() {
         if (!vForceStop) {
