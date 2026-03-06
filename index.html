@@ -146,6 +146,7 @@ let cur='Home',data={},aId=null,archSub='',corrMode=!1,isLogged=!1,isAdmin=!1,co
 const stockCatsAll=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','PriceList','InvoiceSettings','InvoiceSettingsBN'];
 let invSet = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
 let invSetBN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА] грн.\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
+let voiceSynonyms = {};
 let autoSet = { bagsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', bagsWeight: '25', labelsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', labelsWeight: '25', threadsRate: '600', threadsExclude: '40', tapeRate: '3000', tapeWeight: '360', thermalRate: '34000', thermalWidth: '', packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000' };
 
 let shipSet = JSON.parse(localStorage.getItem('shipLayoutSet') || '{"headW":"450","listW":"100","listH":"60","tileS":"75"}');
@@ -180,6 +181,7 @@ function initAppData(){
   });
   db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}});
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; });
+  db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); });
 }
 
 function tryLogin(){const e=gID('appEmail').value,p=gID('appPass').value;if(!e||!p)return alert('Введите данные');auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message))}
@@ -199,7 +201,7 @@ function renderHome(){if(!isLogged)return;cur='Home';D.body.classList.remove('na
   <div class="dash-item" onclick="setCat('PriceList')"><span>💰 ПРАЙС</span></div>
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТР. ПЕЧАТИ</span></div>
   <div class="dash-item" onclick="setCat('Contractors')"><span>⚙️ КЛИЕНТЫ</span></div>
-  <div class="dash-item" onclick="openModal('autoSet')"><span>⚙️ АВТОСПИСАНИЕ</span></div>` : ''}
+<div class="dash-item" onclick="openModal('autoSet')"><span>⚙️ АВТОСПИСАНИЕ</span></div><div class="dash-item" onclick="openModal('voiceSet')"><span>🎤 СЛОВАРЬ ГОЛОСА</span></div>` : ''}
  </div>`;updNav()}
 
 function goBack(){const m={'StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'Home','PrintSettings':'Home','Contractors':'Home'};let n=m[cur]||'Home';if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';setCat(n)}
@@ -586,7 +588,7 @@ function showH(c,n){
     window.updIncTotal=function(){let sum=0;if(gID('incRows')){for(let x of gID('incRows').children){const i=x.id.split('_')[1];sum+=parseFloat(gID('iNa_'+i).value)||0;}}const mq=gID('mQty');if(mq){mq.innerText=sum+' кг';mq.style.display=sum>0?'inline':'none';}};
     window.saveRawDraft=function(){if(!gID('rawBuilder')||gID('rawBuilder').style.display==='none')return;const items=[];for(let x of gID('rawRows').children){const i=x.id.split('_')[1],n=gID('rNn_'+i).value,a=parseFloat(gID('rNa_'+i).value);if(n||a)items.push({n,a});}localStorage.setItem('rawDraft',JSON.stringify({d:gID('rD').value,num:gID('rNum').value,s:getSmartVal('rSupp'),items}));};
     window.updRawTotal=function(){let sum=0;if(gID('rawRows')){for(let x of gID('rawRows').children){const i=x.id.split('_')[1];sum+=parseFloat(gID('rNa_'+i).value)||0;}}const mq=gID('mQty');if(mq){mq.innerText=sum+' кг';mq.style.display=sum>0?'inline':'none';}};
-    function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=new Date().toISOString().split('T')[0];m.innerHTML='';aId=a;
+function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=new Date().toISOString().split('T')[0];m.innerHTML='';aId=a;const mBox=gID('mdl').querySelector('.modal-box');if(t==='fas'||t==='workshop'){mBox.style.maxWidth='450px';}else{mBox.style.maxWidth='';}
      if(t==='inc'){
       let dD=d, dNum='', dS=''; let dr = localStorage.getItem('incDraft'); let items=[];
       if(dr){ try{ let p=JSON.parse(dr); if(p.d)dD=p.d; if(p.num)dNum=p.num; if(p.s)dS=p.s; if(p.items)items=p.items; }catch(e){} }
@@ -644,6 +646,18 @@ function showH(c,n){
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
+          else if(t==='voiceSet'){
+      h.innerText='СЛОВАРЬ ГОЛОСА';
+      let txt = '';
+      if(typeof voiceSynonyms !== 'undefined'){
+       Object.entries(voiceSynonyms).forEach(([bad, good]) => { txt += bad + '=' + good + '\n'; });
+      }
+      m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">СЛОВА ДЛЯ ЗАМЕНЫ (каждое с новой строки)</div>
+      <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>как слышит=как надо</b>. Например:<br>иванов=ФОП Иванов И.И.<br>гречко=гречка</div>
+      <textarea id="vsTxt" style="width:100%;height:300px;font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">${txt}</textarea>
+      </div><button class="btn-main" onclick="saveVoiceSet()">СОХРАНИТЬ</button>`;
+     }
+
      else if(t==='autoSet'){
       h.innerText='НАСТРОЙКИ АВТОСПИСАНИЯ';
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">МЕШКИ И ЭТИКЕТКИ (ЦЕХА)</div><div><span class="inv-set-lbl">Названия для списания (через запятую)</span><input type="text" id="asBagsN" value="${esc(autoSet.bagsNames)}"></div><div><span class="inv-set-lbl">Целевой вес (кг)</span><input type="number" id="asBagsW" value="${esc(autoSet.bagsWeight)}"></div><div class="z-head" style="margin-top:10px">НИТКИ (ЦЕХА)</div><div class="grid-2"><div><span class="inv-set-lbl">1 шт на (мешков)</span><input type="number" id="asThrR" value="${esc(autoSet.threadsRate)}"></div><div><span class="inv-set-lbl">Исключить вес (кг)</span><input type="number" id="asThrE" value="${esc(autoSet.threadsExclude)}"></div></div><div class="z-head" style="margin-top:10px">СКОТЧ И ТЕРМОЛЕНТА (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Скотч: 1 шт на (пакетов)</span><input type="number" id="asTapR" value="${esc(autoSet.tapeRate)}"></div><div><span class="inv-set-lbl">Термо: 1 шт на (пакетов)</span><input type="number" id="asThmR" value="${esc(autoSet.thermalRate)}"></div></div><div class="z-head" style="margin-top:10px">ПАКЕТЫ (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Стандарт (пакетов)</span><input type="number" step="0.1" id="asPk1" value="${esc(autoSet.packK1)}"></div><div><span class="inv-set-lbl">Исключение (пакетов)</span><input type="number" step="0.1" id="asPk2" value="${esc(autoSet.packK2)}"></div><div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"></div></div><div class="z-head" style="margin-top:10px">СТРЕЙЧ ПЛЕНКА (ОТГРУЗКА)</div><div><span class="inv-set-lbl">1 рулон на (кг отгрузки)</span><input type="number" id="asStr" value="${esc(autoSet.stretchRate)}"></div></div><button class="btn-main" onclick="saveAutoSet()">СОХРАНИТЬ</button>`;
@@ -671,6 +685,19 @@ function showH(c,n){
         applyShipLayout();
         closeModal();
         alert('Настройки окна отгрузки применены.');
+    };
+    window.saveVoiceSet = async function() {
+        const lines = gID('vsTxt').value.split('\n');
+        const u = {};
+        lines.forEach(l => {
+            const parts = l.split('=');
+            if(parts.length === 2) {
+                const k = parts[0].trim().toLowerCase();
+                const v = parts[1].trim();
+                if(k && v) u[k] = v;
+            }
+        });
+        try { await db.child('VoiceSynonyms').set(u); voiceSynonyms = u; closeModal(); alert('Словарь сохранен!'); } catch(e) { alert(e); }
     };
 
     window.saveAutoSet = async function() {
@@ -926,7 +953,12 @@ function showH(c,n){
                 let processedSpeech = speechResult;
                 const wordsToNum = { 'ноль':0, 'нуль':0, 'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10, 'одиннадцать':11, 'двенадцать':12, 'тринадцать':13, 'четырнадцать':14, 'пятнадцать':15, 'шестнадцать':16, 'семнадцать':17, 'восемнадцать':18, 'девятнадцать':19, 'двадцать':20, 'тридцать':30, 'сорок':40, 'пятьдесят':50, 'шестьдесят':60, 'семьдесят':70, 'восемьдесят':80, 'девяносто':90, 'сто':100 };
                 Object.keys(wordsToNum).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]); });
-        
+         if(typeof voiceSynonyms !== 'undefined') {
+            Object.keys(voiceSynonyms).forEach(w => {
+                processedSpeech = processedSpeech.split(w).join(voiceSynonyms[w].toLowerCase());
+            });
+        }
+       
                 const skipCmd = processedSpeech.includes("дальше") || processedSpeech.includes("пропуст");
         
                 // 1: ДАТА
@@ -994,7 +1026,7 @@ function showH(c,n){
                             document.getElementById('s_hMyFop').value = bestSup.value;
                             checkSmart('hMyFop');
                         } else {
-                            showError("❌ ПОСТАВЩИК НЕ НАЙДЕН", "Поставщик не найден, повторите");
+                            alert("Поставщик не найден. Услышала: " + processedSpeech); showError("❌ ПОСТАВЩИК НЕ НАЙДЕН", "Поставщик не найден, повторите");
                             return;
                         }
                     }
@@ -1013,7 +1045,7 @@ function showH(c,n){
                             document.getElementById('s_hC').value = bestCli.value;
                             checkSmart('hC');
                         } else {
-                            showError("❌ КЛИЕНТ НЕ НАЙДЕН", "Клиент не найден, повторите");
+                            alert("Клиент не найден. Услышала: " + processedSpeech); showError("❌ КЛИЕНТ НЕ НАЙДЕН", "Клиент не найден, повторите");
                             return;
                         }
                     }
@@ -1170,7 +1202,7 @@ function showH(c,n){
                             setTimeout(() => { if (vIsRec && !vBlockBtnUpdate) btn.style.background = "#fee2e2"; }, 500);
                         }
                     } else {
-                        showError("❌ ИСКАЛ: " + processedSpeech, "Товар не найден");
+                        alert("Товар не найден. Услышала: " + cleanSpokenName); showError("❌ ИСКАЛ: " + processedSpeech, "Товар не найден");
                     }
                 }
             };
