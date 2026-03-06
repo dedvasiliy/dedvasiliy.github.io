@@ -772,19 +772,37 @@ let vIsRec = false;
 let vForceStop = false; 
 let vBlockBtnUpdate = false; 
 let vState = 'idle'; // 'date', 'num', 'agreement', 'supplier', 'client', 'stretch', 'price', 'items'
-
 function findBestOption(selectId, spokenText) {
     const select = document.getElementById(selectId);
     if (!select) return null;
+
+    const cliSynonyms = {
+        'сельпо': 'сільпо',
+        'копейка': 'копійка',
+        'атб': 'атб',
+        'беженарь': 'Беженарь'
+    };
+
+    let cleanSpoken = spokenText.toLowerCase();
+    Object.keys(cliSynonyms).forEach(k => {
+        cleanSpoken = cleanSpoken.replace(new RegExp('\\b' + k + '\\b', 'g'), cliSynonyms[k]);
+    });
+
+    const cleanStr = (s) => s.replace(/["'«»]/g, '').replace(/\b(тов|фоп|пп|ип|спд|магазин)\b/gi, '').trim();
+    
+    cleanSpoken = cleanStr(cleanSpoken);
+    const spokenWords = cleanSpoken.split(' ').filter(w => w.length > 0);
+    
     let bestMatch = null;
     let maxScore = 0;
-    const spokenWords = spokenText.toLowerCase().split(' ').filter(w => w.length > 0);
     
     Array.from(select.options).forEach(opt => {
         if (opt.value === "" || opt.value === "NEW") return;
-        const optText = opt.text.toLowerCase();
+        
+        let optText = cleanStr(opt.text.toLowerCase());
         let score = 0;
-        if (optText.includes(spokenText.toLowerCase())) score += 100;
+        
+        if (optText.includes(cleanSpoken)) score += 100;
         
         let matchedWords = 0;
         spokenWords.forEach(w => {
@@ -899,30 +917,29 @@ window.startVoiceInput = function() {
         Object.keys(wordsToNum).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]); });
 
         const skipCmd = processedSpeech.includes("дальше") || processedSpeech.includes("пропуст");
-
         // 1: ДАТА
         if (vState === 'date') {
+            let spokenConfirm = "";
             if (processedSpeech.includes("сегодня")) {
                 let d = new Date();
                 document.getElementById('hD').value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-                vState = 'num';
-                btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-                window.speakOut("Назовите номер накладной");
+                spokenConfirm = "Дата сегодня. ";
             } else if (skipCmd) {
-                vState = 'num';
-                btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-                window.speakOut("Назовите номер накладной");
+                spokenConfirm = "Дата пропущена. ";
             } else {
                 let parsedDate = parseSpokenDate(processedSpeech);
                 if (parsedDate) {
                     document.getElementById('hD').value = parsedDate.value;
-                    vState = 'num';
-                    btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-                    window.speakOut("Назовите номер накладной");
+                    spokenConfirm = "Дата " + parsedDate.display + ". ";
                 } else {
                     showError("❌ ПОВТОРИТЕ ДАТУ", "Повторите дату");
+                    saveShipDraft();
+                    return;
                 }
             }
+            vState = 'num';
+            btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
+            window.speakOut(spokenConfirm + "Назовите номер накладной");
             saveShipDraft();
             return;
         }
@@ -930,13 +947,17 @@ window.startVoiceInput = function() {
         // 2: НОМЕР НАКЛАДНОЙ
         if (vState === 'num') {
             let numMatch = processedSpeech.match(/\d+/);
+            let spokenConfirm = "";
             if (numMatch) {
                 document.getElementById('hNum').value = numMatch[0];
+                spokenConfirm = "Номер " + numMatch[0] + ". ";
+            } else if (skipCmd) {
+                spokenConfirm = "Номер пропущен. ";
             }
             if (numMatch || skipCmd) {
                 vState = 'agreement';
                 btn.innerText = "🔴 НОМЕР ДОГОВОРА";
-                window.speakOut("Назовите номер договора");
+                window.speakOut(spokenConfirm + "Назовите номер договора");
             } else {
                 showError("❌ ПОВТОРИТЕ НОМЕР", "Повторите номер накладной");
             }
@@ -946,51 +967,59 @@ window.startVoiceInput = function() {
 
         // 3: НОМЕР ДОГОВОРА
         if (vState === 'agreement') {
+            let spokenConfirm = "Договор пропущен. ";
             if (!skipCmd) {
                 let cleanAgr = speechResult.replace(/дальше|пропустить/g, '').trim();
-                if (cleanAgr) document.getElementById('hAg').value = cleanAgr;
+                if (cleanAgr) {
+                    document.getElementById('hAg').value = cleanAgr;
+                    spokenConfirm = "Договор " + cleanAgr + ". ";
+                }
             }
             vState = 'supplier';
             btn.innerText = "🔴 ПОСТАВЩИК";
-            window.speakOut("Назовите поставщика");
+            window.speakOut(spokenConfirm + "Назовите поставщика");
             saveShipDraft();
             return;
         }
 
         // 4: ПОСТАВЩИК
         if (vState === 'supplier') {
+            let spokenConfirm = "Поставщик пропущен. ";
             if (!skipCmd) {
                 let bestSup = findBestOption('s_hMyFop', processedSpeech);
                 if (bestSup) {
                     document.getElementById('s_hMyFop').value = bestSup.value;
                     checkSmart('hMyFop');
+                    spokenConfirm = "Поставщик " + bestSup.text + ". ";
                 } else {
-                    showError("❌ ПОСТАВЩИК НЕ НАЙДЕН", "Поставщик не найден, повторите");
+                    showError("❌ " + processedSpeech.toUpperCase() + " ?", "Услышала: " + processedSpeech + ". Поставщик не найден, повторите");
                     return;
                 }
             }
             vState = 'client';
             btn.innerText = "🔴 КЛИЕНТ";
-            window.speakOut("Назовите клиента");
+            window.speakOut(spokenConfirm + "Назовите клиента");
             saveShipDraft();
             return;
         }
 
         // 5: КЛИЕНТ
         if (vState === 'client') {
+            let spokenConfirm = "Клиент пропущен. ";
             if (!skipCmd) {
                 let bestCli = findBestOption('s_hC', processedSpeech);
                 if (bestCli) {
                     document.getElementById('s_hC').value = bestCli.value;
                     checkSmart('hC');
+                    spokenConfirm = "Клиент " + bestCli.text + ". ";
                 } else {
-                    showError("❌ КЛИЕНТ НЕ НАЙДЕН", "Клиент не найден, повторите");
+                    showError("❌ " + processedSpeech.toUpperCase() + " ?", "Услышала: " + processedSpeech + ". Клиент не найден, повторите");
                     return;
                 }
             }
             vState = 'stretch';
             btn.innerText = "🔴 СТРЕЙЧ?";
-            window.speakOut("Стрейч добавляем?");
+            window.speakOut(spokenConfirm + "Стрейч добавляем?");
             saveShipDraft();
             return;
         }
@@ -1178,4 +1207,3 @@ window.startVoiceInput = function() {
     }
 };
 </script></body></html>
-
