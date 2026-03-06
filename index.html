@@ -126,7 +126,7 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .m-rep-head { text-align:center; font-weight:900; font-size:10px; margin-bottom:2px; text-transform:uppercase; }
   .m-rep-cat { background:#f8fafc; font-weight:bold; text-align:left !important; padding-left:5px !important; }
 }
-@media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px} #shipBuilder,#shipBtns,button[onclick="sShip()"],#shipPreview{max-width:450px;margin-left:auto;margin-right:auto;display:block} #shpR{max-height:75vh!important}}
+@media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px}}
 </style></head>
 <body>
 <div id="lockScreen"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo"><div class="lock-title">УЧЕТ</div><input type="email" id="appEmail" class="lock-inp" placeholder="Email"><input type="password" id="appPass" class="lock-inp" placeholder="Пароль"><button class="btn-main" style="max-width:250px" onclick="tryLogin()">ВОЙТИ</button><div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div></div>
@@ -147,6 +147,20 @@ const stockCatsAll=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stoc
 let invSet = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
 let invSetBN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА] грн.\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
 let autoSet = { bagsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', bagsWeight: '25', labelsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', labelsWeight: '25', threadsRate: '600', threadsExclude: '40', tapeRate: '3000', tapeWeight: '360', thermalRate: '34000', thermalWidth: '', packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000' };
+
+let shipSet = JSON.parse(localStorage.getItem('shipLayoutSet') || '{"headW":"450","listW":"100","listH":"60","tileS":"75"}');
+function applyShipLayout() {
+  let s = document.getElementById('dynShipCss');
+  if(!s) { s = document.createElement('style'); s.id = 'dynShipCss'; document.head.appendChild(s); }
+  s.innerHTML = `@media(min-width:800px) { #shipBuilder > div:first-child { max-width: ${shipSet.headW}px !important; margin: 0 auto !important; } #shipBtns, #shpR, button[onclick="sShip()"], #shipPreview { max-width: ${shipSet.listW === '100' ? '100%' : shipSet.listW + 'px'} !important; margin-left: auto !important; margin-right: auto !important; } #shpR, button[onclick="sShip()"], #shipPreview { display: block !important; } #shipBtns { display: grid !important; } } #shpR { max-height: ${shipSet.listH}vh !important; } #shpR .item-grid { grid-template-columns: repeat(auto-fill, minmax(${shipSet.tileS}px, 1fr)) !important; }`;
+}
+applyShipLayout();
+{
+  let s = document.getElementById('dynShipCss');
+  if(!s) { s = document.createElement('style'); s.id = 'dynShipCss'; document.head.appendChild(s); }
+  s.innerHTML = `@media(min-width:800px) { #shipBuilder > div:first-child { max-width: ${shipSet.headW}px !important; margin: 0 auto !important; } #shipBtns, #shpR, button[onclick="sShip()"], #shipPreview { max-width: ${shipSet.listW === '100' ? '100%' : shipSet.listW + 'px'} !important; margin-left: auto !important; margin-right: auto !important; display: block !important; } } #shpR { max-height: ${shipSet.listH}vh !important; } #shpR .item-grid { grid-template-columns: repeat(auto-fill, minmax(${shipSet.tileS}px, 1fr)) !important; }`;
+}
+applyShipLayout();
 
 function closeModal(){gID('mdl').style.display='none';gID('mQty').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
@@ -197,7 +211,7 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  if(['Invoices','ArchSubIn','ArchSubOut'].includes(c))ensureData(['ArchIncoming','ArchInvoices']);
  if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
- if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div></div>`;}
+ if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div></div>`;}
  else if(c==='Contractors'){ct.innerHTML='<div class="z-head">👥 КОНТРАГЕНТЫ</div><div id="contractorsList">Загрузка...</div>'; ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Suppliers']);}
  else if(c==='Timesheet'){const td=new Date().toISOString().split('T')[0];
   if(isAdmin){ct.innerHTML=`<div class="card"><div style="text-align:center;font-weight:900;margin-bottom:10px">ТАБЕЛЬ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input type="date" id="gTD" value="${td}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><input type="time" id="gTS" value="08:00"><input type="time" id="gTE" value="17:00"></div></div><div id="tsRows"></div><button class="btn-main" onclick="addTimeRow()" style="background:#fff;color:var(--p);border:1px solid #ccc">+ ЧЕЛОВЕКА</button><button class="btn-main" onclick="saveTimesheetBatch()">СОХРАНИТЬ</button></div><button class="btn-main" onclick="setCat('TsCal')" style="background:#eef2ff;color:var(--p);border:1px solid var(--p)">📅 КАЛЕНДАРЬ</button>`;setTimeout(()=>{const s=localStorage.getItem('activeCrew');if(s){const n=JSON.parse(s);if(n.length)n.forEach(x=>typeof x==='object'?addTimeRow(x.name,x.rate):addTimeRow(x));else addTimeRow()}else addTimeRow()},50)}
@@ -424,7 +438,6 @@ function showH(c,n){
  
  let topBtns = `<button class="btn-main" onclick="printHistory('${c}','${esc(n)}')" style="background:var(--s);font-size:10px;margin:0 0 10px 0;">🖨️ ПЕЧАТЬ ИСТОРИИ</button>`;
  h += topBtns;
-
  if(['Stock_Raw','Stock_Archive'].includes(c)){
   let btns = `<button class="btn-main" onclick="genBatchReport('${c}','${esc(n)}')" style="background:#0f172a;font-size:10px;margin:0;width:auto;flex:1">📄 ОТЧЕТ ПАРТИИ</button>`;
   if(isAdmin && c==='Stock_Raw') btns+=`<button class="btn-main" onclick="archiveRawBatch('${esc(n)}')" style="background:#e0f2fe;color:#0369a1;font-size:10px;margin:0;width:auto;flex:1;border:1px solid #bae6fd">📦 В АРХИВ</button>`;
@@ -545,7 +558,7 @@ function showH(c,n){
     }
     window.viewInvoice=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;let totalNoVat=0;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;totalNoVat+=sum;}h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;});let total=parseFloat(v.totalSum||0);if(isBN){let vat=total-totalNoVat;h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><button class="btn-main" onclick="reprintInv('${id}')" style="margin-top:15px;background:#0f172a">🖨️ ДРУК</button></div>`;gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex';};
     window.reprintInv=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';const curSet=isBN?invSetBN:invSet;const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';let totalNoVat=0;let tSum=parseFloat(v.totalSum||0);if(v.items&&isBN){v.items.forEach(it=>{const p=it.split('|');const w=parseFloat(p[1])||0;let prc=Math.round((parseFloat(p[4])/1.2)*100)/100;totalNoVat+=prc*w;});}let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};}</style>`;let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;}h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;});if(isBN){let vat=tSum-totalNoVat;h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}else{h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}h+=`</tbody></table>`;h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
-    function numToWords(n){const u_m=['','один','два','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const u_f=['','одна','дві','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const t1=['десять','одинадцять','дванадцять','тринадцять','чотирнадцять','п\'ятнадцять','шістнадцять','сімнадцять','вісімнадцять','дев\'ятнадцять'];const t2=['','','двадцять','тридцять','сорок','п\'ятдесят','шістдесят','сімдесят','вісімдесят','дев\'яносто'];const h=['','сто','двісті','триста','чотириста','п\'ятсот','шістсот','сімсот','вісімсот','дев\'ятсот'];let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');if(ip===0)return `Нуль гривень ${fs} копійок`;function gg(n,isFem){let r='',c=Math.floor(n/100),d=Math.floor((n%100)/10),u0=n%10;if(c>0)r+=h[c]+' ';if(d===1)r+=t1[u0]+' ';else{if(d>1)r+=t2[d]+' ';if(u0>0)r+=(isFem&&(u0===1||u0===2)?u_f[u0]:u_m[u0])+' ';}return r;}let w='',m=Math.floor(ip/1000000),th=Math.floor((ip%1000000)/1000),rm=ip%1000;if(m>0){w+=gg(m,0);let l=m%10,l2=m%100;if(l2>=11&&l2<=14)w+='мільйонів ';else if(l===1)w+='мільйон ';else if(l>=2&&l<=4)w+='мільйони ';else w+='мільйонів ';}if(th>0){w+=gg(th,1);let l=th%10,l2=th%100;if(l2>=11&&l2<=14)w+='тисяч ';else if(l===1)w+='тисяча ';else if(l>=2&&l<=4)w+='тисячі ';else w+='тисяч ';}if(rm>0)w+=gg(rm,0);w=w.trim();w=w.charAt(0).toUpperCase()+w.slice(1);let l=ip%10,l2=ip%100,cr='гривень';if(l2>=11&&l2<=14)cr='гривень';else if(l===1)cr='гривня';else if(l>=2&&l<=4)cr='гривні';return `${w} ${cr} ${fs} копійок`;}
+    function numToWords(n){const u_m=['','один','два','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const u_f=['','одна','дві','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const t1=['десять','одинадцять','дванадцять','тринадцять','чотирнадцять','п\'ятнадцять','шістнадцять','сімнадцять','вісімнадцять','дев\'ятнадцять'];const t2=['','','двадцять','тридцять','сорок','п\'ятдесят','шістдесят','сімдесят','вісімдесят','дев\'яносто'];const h=['','сто','двісті','триста','чотириста','п\'ятдесят','шістсот','сімсот','вісімсот','дев\'ятсот'];let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');if(ip===0)return `Нуль гривень ${fs} копійок`;function gg(n,isFem){let r='',c=Math.floor(n/100),d=Math.floor((n%100)/10),u0=n%10;if(c>0)r+=h[c]+' ';if(d===1)r+=t1[u0]+' ';else{if(d>1)r+=t2[d]+' ';if(u0>0)r+=(isFem&&(u0===1||u0===2)?u_f[u0]:u_m[u0])+' ';}return r;}let w='',m=Math.floor(ip/1000000),th=Math.floor((ip%1000000)/1000),rm=ip%1000;if(m>0){w+=gg(m,0);let l=m%10,l2=m%100;if(l2>=11&&l2<=14)w+='мільйонів ';else if(l===1)w+='мільйон ';else if(l>=2&&l<=4)w+='мільйони ';else w+='мільйонів ';}if(th>0){w+=gg(th,1);let l=th%10,l2=th%100;if(l2>=11&&l2<=14)w+='тисяч ';else if(l===1)w+='тисяча ';else if(l>=2&&l<=4)w+='тисячі ';else w+='тисяч ';}if(rm>0)w+=gg(rm,0);w=w.trim();w=w.charAt(0).toUpperCase()+w.slice(1);let l=ip%10,l2=ip%100,cr='гривень';if(l2>=11&&l2<=14)cr='гривень';else if(l===1)cr='гривня';else if(l>=2&&l<=4)cr='гривні';return `${w} ${cr} ${fs} копійок`;}
     function parseTags(txt, d) {if(!txt) return ''; return txt.replace(/\[НОМЕР\]/g, esc(d.num) || '---').replace(/\[ДАТА\]/g, esc(d.dateStr) || '---').replace(/\[ПОСТАВЩИК\]/g, esc(d.sup) || '-/-').replace(/\[КЛИЕНТ\]/g, esc(d.cli) || '-/-').replace(/\[СДЕЛКА\]/g, esc(d.agr) || '-/-').replace(/\[АДРЕСА\]/g, esc(d.addr) || '-/-').replace(/\[КОЛ_ВО_ПОЗИЦИЙ\]/g, d.cnt || '0').replace(/\[ОБЩАЯ_СУММА\]/g, parseFloat(d.sum||0).toFixed(2)).replace(/\[СУММА_ПДВ_ПРОПИСЬЮ\]/g, numToWords(d.sumVAT||0)).replace(/\[СУММА_ПРОПИСЬЮ\]/g, numToWords(d.sum||0));}
     window.addIncRow = function(cat, containerId, prefix, type){
      const i=Date.now()+Math.random().toString().slice(2,7);
@@ -635,6 +648,10 @@ function showH(c,n){
       h.innerText='НАСТРОЙКИ АВТОСПИСАНИЯ';
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">МЕШКИ И ЭТИКЕТКИ (ЦЕХА)</div><div><span class="inv-set-lbl">Названия для списания (через запятую)</span><input type="text" id="asBagsN" value="${esc(autoSet.bagsNames)}"></div><div><span class="inv-set-lbl">Целевой вес (кг)</span><input type="number" id="asBagsW" value="${esc(autoSet.bagsWeight)}"></div><div class="z-head" style="margin-top:10px">НИТКИ (ЦЕХА)</div><div class="grid-2"><div><span class="inv-set-lbl">1 шт на (мешков)</span><input type="number" id="asThrR" value="${esc(autoSet.threadsRate)}"></div><div><span class="inv-set-lbl">Исключить вес (кг)</span><input type="number" id="asThrE" value="${esc(autoSet.threadsExclude)}"></div></div><div class="z-head" style="margin-top:10px">СКОТЧ И ТЕРМОЛЕНТА (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Скотч: 1 шт на (пакетов)</span><input type="number" id="asTapR" value="${esc(autoSet.tapeRate)}"></div><div><span class="inv-set-lbl">Термо: 1 шт на (пакетов)</span><input type="number" id="asThmR" value="${esc(autoSet.thermalRate)}"></div></div><div class="z-head" style="margin-top:10px">ПАКЕТЫ (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Стандарт (пакетов)</span><input type="number" step="0.1" id="asPk1" value="${esc(autoSet.packK1)}"></div><div><span class="inv-set-lbl">Исключение (пакетов)</span><input type="number" step="0.1" id="asPk2" value="${esc(autoSet.packK2)}"></div><div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"></div></div><div class="z-head" style="margin-top:10px">СТРЕЙЧ ПЛЕНКА (ОТГРУЗКА)</div><div><span class="inv-set-lbl">1 рулон на (кг отгрузки)</span><input type="number" id="asStr" value="${esc(autoSet.stretchRate)}"></div></div><button class="btn-main" onclick="saveAutoSet()">СОХРАНИТЬ</button>`;
      }
+     else if(t==='shipSet'){
+      h.innerText='НАСТРОЙКИ ОКНА ОТГРУЗКИ (ДЛЯ ПК)';
+      m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ВЕРХНИЙ БЛОК (ШАПКА)</div><div><span class="inv-set-lbl">Ширина (px) [По-умолчанию 450]</span><input type="number" id="ssHW" value="${shipSet.headW}"></div><div class="z-head" style="margin-top:10px">НИЖНИЙ БЛОК (ТОВАРЫ)</div><div><span class="inv-set-lbl">Ширина (px или 100 для 100%)</span><input type="text" id="ssLW" value="${shipSet.listW}"></div><div><span class="inv-set-lbl">Высота области (vh) [По-умолчанию 60]</span><input type="number" id="ssLH" value="${shipSet.listH}"></div><div class="z-head" style="margin-top:10px">ПЛИТКИ ТОВАРОВ</div><div><span class="inv-set-lbl">Мин. ширина плитки (px) [По-умолчанию 75]</span><input type="number" id="ssTS" value="${shipSet.tileS}"></div><div style="font-size:10px;color:#64748b;margin-top:5px;line-height:1.2">Изменения применяются только для экранов шире 800px (ноутбуки/ПК) и сохраняются в память этого браузера.</div></div><button class="btn-main" onclick="saveShipSet()">СОХРАНИТЬ И ПРИМЕНИТЬ</button>`;
+     }
      else if(t==='invSet' || t==='invSetBN'){
       const isBN = t==='invSetBN'; window.curEditingSet = t; const curS = isBN ? invSetBN : invSet;
       h.innerText = isBN ? 'НАСТРОЙКИ ПЕЧАТИ Б/Н' : 'НАСТРОЙКИ ПЕЧАТИ НАЛ.';
@@ -642,6 +659,19 @@ function showH(c,n){
       setTimeout(updatePreview, 100);
      }
     }
+
+    window.saveShipSet = function() {
+        shipSet = {
+            headW: gID('ssHW').value || '450',
+            listW: gID('ssLW').value || '100',
+            listH: gID('ssLH').value || '60',
+            tileS: gID('ssTS').value || '75'
+        };
+        localStorage.setItem('shipLayoutSet', JSON.stringify(shipSet));
+        applyShipLayout();
+        closeModal();
+        alert('Настройки окна отгрузки применены.');
+    };
 
     window.saveAutoSet = async function() {
         const u = {
@@ -698,512 +728,482 @@ function showH(c,n){
     window.previewFas=function(){const d=gID('fD').value,ds=d.split('-').reverse().join('.');const ri=[],oi=[];for(let x of gID('fasRows').children){const k=x.id.split('_')[1],n=gID('fn_'+k).value,q=parseFloat(gID('fq_'+k).value),s=gID('fs_'+k).value;if(n&&q)ri.push({n,q,s});}for(let x of gID('fasOutRows').children){const k=x.id.split('_')[1],n=gID('on_'+k).value,q=parseFloat(gID('oq_'+k).value),sz=gID('os_'+k).value;if(n&&q&&sz)oi.push({n,q,sz});}if(!ri.length||!oi.length)return alert('ВНИМАНИЕ: Заполните сырье и готовую продукцию!');const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);let mN=oi[0].n;if(mN==='Арнаутка 1/0.9 1'||mN==='Арнаутка 1/0.9 2')mN='Арнаутка 1/0.9';let hRaw='',hOut='',pk={},pkTotal=0;ri.forEach(x=>{hRaw+=`<div>${esc(x.n)} ${x.q}кг <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></div>`;});oi.forEach(x=>{hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.q}шт</span></div>`;const coeff=x.n===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);pk[x.sz]=(pk[x.sz]||0)+Math.round(x.q/coeff);pkTotal+=x.q;});let hPk='';Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт</span></div>`});let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));const html=`<div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div><div class="conf-sec"><b>сырье:</b></div>${hRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${hOut}<div class="conf-sec"><b>расход упаковки:</b></div>${hPk}<div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг</span></div>${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт</span></div>`:''}${thermalUsed>0?`<div style="display:flex;justify-content:space-between"><span>Термо лента:</span><span>${thermalUsed}шт</span></div>`:''}`;gID('confContent').innerHTML=html;gID('confMdl').style.display='flex';pendingAction=async function(){const btn=document.querySelector('#confBox .btn-main[style*="green"]');if(btn){btn.innerText='⏳...';btn.disabled=!0;}try{const id=db.child('Фасовка').push().key,u={},ts=new Date().toISOString();const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s})),dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));u['/Фасовка/'+id]={date:d+"T12:00:00Z",items:dbRi,outputItems:dbOi,vzial:vt,ostatok:os,filmName:mN};dbRi.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});dbOi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});Object.keys(pk).forEach(sz=>{u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts}});if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(tapeUsed>0)u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(thermalUsed>0)u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};await db.update(u);closeConf();closeModal();setCat('Фасовка');}catch(e){alert(e)}finally{if(btn){btn.innerText='ДА';btn.disabled=!1;}}};};
     window.updWsRawList=function(i,pfx){const src=gID(pfx+'s_'+i).value,sel=gID(pfx+'n_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount;});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.calcWsMain=function(){let tOut=0;['DV','Semi','Feed'].forEach(t=>{for(let r of gID('wsOut'+t).children){const i=r.id.split('_')[1];const b=parseFloat(gID('wob_'+i).value)||0;const w=parseFloat(gID('wow_'+i).value)||0;const rem=parseFloat(gID('wor_'+i).value)||0;tOut+=(b*w)+rem;}});let tAdd=0;for(let r of gID('wsAddRows').children){const i=r.id.split('_')[1];tAdd+=parseFloat(gID('waq_'+i).value)||0;}const mainW=Math.max(0,tOut-tAdd);const mRows=gID('wsMainRows').querySelectorAll('.main-raw-q');if(mRows.length>0)mRows[0].value=mainW.toFixed(1);};
-    window.addWsMainRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);const isFirst=gID('wsMainRows').children.length===0;gID('wsMainRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wm_${i}"><select id="wms_${i}" class="ws-inp" onchange="updWsRawList('${i}','wm')"><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wmn_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="wmq_${i}" class="ws-inp main-raw-q" placeholder="кг" ${isFirst?'readonly style="background:#e2e8f0;font-weight:bold;color:var(--p)"':'oninput="calcWsMain()"'} ><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wm'),50);};
-    window.addWsAddRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('wsAddRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wa_${i}"><select id="was_${i}" class="ws-inp" onchange="updWsRawList('${i}','wa')"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырье</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wan_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="waq_${i}" class="ws-inp" placeholder="кг" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wa'),50);};
-    window.addWsOutRow=function(t){const i=Date.now()+Math.random().toString().slice(2,7);const cat=t==='DV'?'Stock_DV':(t==='Semi'?'Stock_Semi':'Stock_Feed');let opts='<option value="">Название...</option>';gP(cat).forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('wsOut'+t).insertAdjacentHTML('beforeend',`<div class="ws-row-out" id="wo_${i}" data-t="${t}"><select id="won_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wob_${i}" class="ws-inp" placeholder="меш" oninput="calcWsMain()"><select id="wow_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Вес мешка (кг):');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''} calcWsMain()"><option value="">кг...</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wor_${i}" class="ws-inp" placeholder="ост" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
-    window.previewWorkshop=function(k){const c=WS_CFG[k],d=gID('wsD').value,ds=d.split('-').reverse().join('.');const ts=gID('wsTS').value,te=gID('wsTE').value,op=getSmartVal('wsOp')||'-',as=getSmartVal('wsAs')||'-';const main=[],add=[],out=[];let tMain=0,tAdd=0,tDV=0;for(let x of gID('wsMainRows').children){const i=x.id.split('_')[1],s=gID('wms_'+i).value,n=gID('wmn_'+i).value,q=parseFloat(gID('wmq_'+i).value);if(n&&q>0){main.push({s,n,q});tMain+=q;}}for(let x of gID('wsAddRows').children){const i=x.id.split('_')[1],s=gID('was_'+i).value,n=gID('wan_'+i).value,q=parseFloat(gID('waq_'+i).value);if(n&&q>0){add.push({s,n,q});tAdd+=q;}}let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());const autoBagsWeight=parseFloat(autoSet.bagsWeight)||25;const threadsExcl=parseFloat(autoSet.threadsExclude)||40;['DV','Semi','Feed'].forEach(type=>{for(let x of gID('wsOut'+type).children){const i=x.id.split('_')[1],n=gID('won_'+i).value,b=parseFloat(gID('wob_'+i).value)||0,w=parseFloat(gID('wow_'+i).value)||0,r=parseFloat(gID('wor_'+i).value)||0;if(n&&(b>0||r>0)){const wght=(b*w)+r;out.push({type,n,b,w,r,wght});if(type==='DV')tDV+=wght;if(b>0){if(w!==threadsExcl)totalBagsForThreads+=b;let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));if(matchName&&w===autoBagsWeight){bagsToDeduct['Мешок 25кг']=(bagsToDeduct['Мешок 25кг']||0)+b;let cleanN=n.toLowerCase();let baseName='';if(cleanN.includes('арнаутка'))baseName='Арнаутка';else if(cleanN.includes('пшеничка'))baseName='Пшеничка';else if(cleanN.includes('перловка'))baseName='Перловка';else if(cleanN.includes('ячка'))baseName='Ячка';else baseName=n.replace(/ фр/gi,'').replace(/\[.*?\]/g,'').trim();let lblName='Эт-ка '+baseName;labelsToDeduct[lblName]=(labelsToDeduct[lblName]||0)+b;}}}}});if(!main.length||!out.length)return alert('ВНИМАНИЕ: Заполните основу и выход продукции!');const tRaw=tMain+tAdd;const pct=tRaw>0?((tDV/tRaw)*100).toFixed(1):0;const lS={'Stock_Raw':'сырье','Stock_Semi':'п/ф','WeightStock':'пок.пр','Stock_DV':'ДВ вес'};let hRaw='';main.forEach(x=>hRaw+=`<div>Основа: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);add.forEach(x=>hRaw+=`<div>Добавка: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);let hDV='',hSemi='',hFeed='';out.forEach(x=>{const str=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;if(x.type==='DV')hDV+=str;else if(x.type==='Semi')hSemi+=str;else hFeed+=str;});let threadsToDeduct=parseFloat((totalBagsForThreads/parseFloat(autoSet.threadsRate||600)).toFixed(2));let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;let labelsHTML='';Object.keys(labelsToDeduct).forEach(lN=>{labelsHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(lN)}:</span><span>${labelsToDeduct[lN]}шт</span></div>`;});const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${hDV?`<div class="conf-sec"><b>ДВ вес:</b></div>${hDV}`:''}${hSemi?`<div class="conf-sec"><b>полуфабрикат:</b></div>${hSemi}`:''}${hFeed?`<div class="conf-sec"><b>отходы:</b></div>${hFeed}`:''}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${tRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой:</span><span>${pct}%</span></div>${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт</span></div>`:''}${labelsHTML}${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт</span></div>`:''}`;gID('confContent').innerHTML=html;gID('confMdl').style.display='flex';pendingAction=async function(){const btn=document.querySelector('#confBox .btn-main[style*="green"]');if(btn){btn.innerText='⏳...';btn.disabled=!0;}try{const id=db.child(c.db).push().key,u={},tsStr=new Date().toISOString();const itemsDb=out.map(x=>({type:x.type,n:x.n,q:x.b,w:x.w,l:x.r}));const rawBase=main[0]?{n:main[0].n,w:main[0].q,s:main[0].s}:null;const rawAdd=add.map(x=>({n:x.n,w:x.q,s:x.s}));u['/'+c.db+'/'+id]={date:d+"T12:00:00Z",timeStart:ts,timeEnd:te,operator:op,assistant:as,items:itemsDb,rawBase:rawBase,rawAdd:rawAdd};main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Основа',fLink:id,ts:tsStr}});add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Добавка',fLink:id,ts:tsStr}});out.forEach(x=>{const cat=x.type==='DV'?'Stock_DV':(x.type==='Semi'?'Stock_Semi':'Stock_Feed');u[`/${cat}/${db.child(cat).push().key}`]={name:x.n,amount:x.wght,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr}});if(bagsToDeduct['Мешок 25кг']>0)u['/Мешки/'+db.child('Мешки').push().key]={name:'Мешок 25кг',amount:-bagsToDeduct['Мешок 25кг'],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};Object.keys(labelsToDeduct).forEach(lN=>{u['/Этикетка/'+db.child('Этикетка').push().key]={name:lN,amount:-labelsToDeduct[lN],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};});if(threadsToDeduct>0)u['/Нитки/'+db.child('Нитки').push().key]={name:'Нитки',amount:-threadsToDeduct,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};await db.update(u);closeConf();closeModal();setCat(cur);}catch(e){alert(e)}finally{if(btn){btn.innerText='ДА';btn.disabled=!1;}}};};
-    function genDayReport(){const d=gID('repDate').value;if(!d)return;const ds=d.split('-').reverse().join('.');const rOutFas={},rOutVes={},rOutFeed={},rInc={},rToProd={},rFromProd={},rAuto={};const addV=(obj,key,val,unit,name='',src='',dest='')=>{if(!obj[key])obj[key]={v:0,u:unit,n:name||key,src,dest};obj[key].v+=Math.abs(val);};const catLabels={'Stock_DV':'ДВ вес','Stock_Semi':'полуфабрикат','Stock_Feed':'отходы','Stock_Raw':'сырье','WeightStock':'покупная','Готовая':'фасованная продукция'};if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.date&&v.date.startsWith(d)){if(v.items){v.items.forEach(it=>addV(rInc,it.n,it.a,'кг',it.n));}else if(v.name){addV(rInc,v.name,v.amount,'кг',v.name);}}});if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.date&&v.date.startsWith(d)){let n=v.name;let u=v.category==='Пленка'?'кг':'шт';addV(rInc,n,v.amount,u,n);}});const catsToCheck=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];catsToCheck.forEach(cat=>{if(!data[cat])return;let isPack=['Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat);let defUnit=(isPack&&cat!=='Пленка')||cat==='Готовая'?'шт':'кг';Object.values(data[cat]).forEach(v=>{if(!v.date||!v.date.startsWith(d)||!v.name)return;let amt=v.amount,note=v.note||'',n=v.name;if(amt<0){if(note.startsWith('Отгр:')&&cat!=='Стрейч пленка'){if(cat==='Готовая')addV(rOutFas,n,amt,defUnit,n);else if(cat==='WeightStock')addV(rOutVes,n+'::покупная',amt,defUnit,n,'покупная');else if(cat==='Stock_DV')addV(rOutVes,n+'::ДВ вес',amt,defUnit,n,'ДВ вес');else if(cat==='Stock_Feed')addV(rOutFeed,n,amt,defUnit,n);}else if(isPack){addV(rAuto,n,amt,defUnit,n);}else{addV(rToProd,n+'::'+cat+'::'+note,amt,defUnit,n,catLabels[cat]||cat,note);}}else if(amt>0){if(isPack||cat==='Stock_Raw'||cat==='WeightStock'){if(note.startsWith('Кор:'))addV(rFromProd,n+' (корр.)',amt,defUnit,n+' (корр.)');return;}if(note==='Приход'||note==='Приход сырья')return;let suffix=note.startsWith('Кор:')?' (корр.)':'';addV(rFromProd,n+suffix,amt,defUnit,n+suffix);}});});const fmt=(x)=>{let r=`<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v%1===0?x.v:x.v.toFixed(2)}${x.u}</span></div>`;if(x.src&&x.dest&&x.dest!=='Авто'&&x.dest!=='Фас'&&!x.dest.startsWith('(авто)'))r+=`<div class="dr-hint" style="width:100%; text-align:right; margin-top:-2px; font-size:10px; color:#64748b;">(${x.src} -> ${x.dest})</div>`;r+=`</div>`;return r;};const renderList=(obj)=>{let vals=Object.values(obj).sort((a,b)=>a.n.localeCompare(b.n));if(!vals.length)return '<div style="color:#94a3b8; font-size:11px;">-</div>';return vals.map(fmt).join('');};let blockOutFas=renderList(rOutFas),blockOutVes=renderList(rOutVes),blockOutFeed=renderList(rOutFeed),blockInc=renderList(rInc),blockToProd=renderList(rToProd),blockFromProd=renderList(rFromProd),blockAuto=renderList(rAuto);let screenHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-card"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub">- отходы</div><div>${blockOutFeed}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-card"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div>${blockToProd}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div>${blockFromProd}</div></div><div class="dr-card"><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div>`;let printHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:#000;">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-print-wrap"><div class="dr-print-col"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- отходы</div><div style="margin-bottom:15px;">${blockOutFeed}</div><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-print-col"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div style="margin-bottom:15px;">${blockToProd}</div><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div style="margin-bottom:15px;">${blockFromProd}</div><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div></div>`;gID('print-view').innerHTML=printHtml;gID('mB').innerHTML=screenHtml+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
-    function genMonthReport(){const m=gID('repMth').value;if(!m)return alert('Месяц?');const [y,mt]=m.split('-');const sd=`${y}-${mt}-01`,ed=`${y}-${mt}-31`;const res={};const catsP1=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Semi','Stock_Raw'];const catsP2=['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];const allCats=[...catsP1,...catsP2];const catNames={'Готовая':'Фасованная продукция','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Корма (Отходы)','Stock_Semi':'Полуфабрикат','Stock_Raw':'Сырье','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};allCats.forEach(c=>{if(data[c]){Object.values(data[c]).forEach(v=>{if(v.name){if(!res[c])res[c]={};if(!res[c][v.name])res[c][v.name]={s:0,i:0,o:0,e:0};const a=parseFloat(v.amount)||0,vd=v.date.split('T')[0];if(vd<sd){res[c][v.name].s+=a;res[c][v.name].e+=a;}else if(vd<=ed){if(a>0)res[c][v.name].i+=a;else res[c][v.name].o+=Math.abs(a);res[c][v.name].e+=a;}}})}});const buildTable=(catList)=>{let h=`<table class="m-rep-table"><thead><tr><th>НАИМЕНОВАНИЕ</th><th>НАЧАЛО</th><th>ПРИХОД</th><th>РАСХОД</th><th>КОНЕЦ</th></tr></thead><tbody>`;catList.forEach(c=>{if(!res[c])return;let rows='';Object.keys(res[c]).sort().forEach(n=>{const d=res[c][n];if(Math.abs(d.s)<0.01&&Math.abs(d.i)<0.01&&Math.abs(d.o)<0.01&&Math.abs(d.e)<0.01)return;let u=(c==='Готовая'||['Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(c))?' шт':' кг';let fmt=(v)=>(c==='Пленка'||c==='Скотч 360 грамм')?v.toFixed(2):Math.round(v);rows+=`<tr><td>${esc(n)}</td><td>${fmt(d.s)}${u}</td><td>${fmt(d.i)}${u}</td><td>${fmt(d.o)}${u}</td><td><b>${fmt(d.e)}${u}</b></td></tr>`;});if(rows){h+=`<tr><td colspan="5" class="m-rep-cat">${catNames[c]||c}</td></tr>`+rows;}});h+=`</tbody></table>`;return h;};const mStr=`${mt}.${y}`;let html=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr})</div>`;html+=buildTable(catsP1);html+=`<div class="page-break"></div>`;html+=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr}) - УПАКОВКА</div>`;html+=buildTable(catsP2);gID('print-view').innerHTML=html;gID('mB').innerHTML=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ОТЧЕТ ЗА ${mStr}</div>`+buildTable(catsP1).replace(/m-rep-table/g,'mini-inv')+buildTable(catsP2).replace(/m-rep-table/g,'mini-inv')+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
-    function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;}
-    function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
-    function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
-    function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
-    window.delRec=async(c,i)=>{if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;const u={};u[`/${c}/${i}`]=null;stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});try{await db.update(u);alert('Удалено, товар возвращен')}catch(e){alert(e)}};
-    function addTimeRow(n='',r=''){const i=Date.now()+Math.random();gID('tsRows').insertAdjacentHTML('beforeend',`<div class="ts-row" id="tr_${i}" style="display:grid;grid-template-columns:1fr 80px 30px;gap:2px;margin-bottom:2px"><input type="text" id="tn_${i}" placeholder="ФИО" value="${esc(n)}"><input type="number" id="trate_${i}" placeholder="Ставка" value="${r}"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none">x</button></div>`)}
-    async function saveTimesheetBatch(){const d=gID('gTD').value,s=gID('gTS').value,e=gID('gTE').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value);if(n&&rt>0){cr.push({name:n,rate:rt});t+=rt;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:rt,ts:new Date().toISOString()}}});if(!cr.length)return alert('Пусто');try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! Всего: '+t)}catch(err){alert(err)}}
-    function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${esc(v.name)}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
-    window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
-    window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
-    window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0,b=parseFloat(gID('prB').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r,priceBN:b});closeModal()}catch(e){alert(e)}};
-    window.delPrice=async function(i){if(confirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
-    window.printPriceList=function(){const d=data.PriceList||{};const cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{let po=parseFloat(v.priceOpt||v.price||0),pr=parseFloat(v.priceRoz||0),pb=parseFloat(v.priceBN||v.priceOpt||v.price||0);if(po===0&&pr===0&&pb===0)return;if(g.has(v.name))cats['Фасованная продукция'].push({v,po,pr,pb});else if(w.has(v.name))cats['Покупная продукция'].push({v,po,pr,pb});else if(dv.has(v.name))cats['ДВ вес'].push({v,po,pr,pb});else if(f.has(v.name))cats['Отходы производства'].push({v,po,pr,pb});else cats['Прочее'].push({v,po,pr,pb});});const ds=new Date().toLocaleDateString('ru-RU');let h=`<div style="font-family:sans-serif; color:#000;">`;h+=`<div style="font-weight:900;font-size:18px;margin-bottom:15px;text-align:center;">ПРАЙС-ЛИСТ от ${ds}</div>`;Object.keys(cats).forEach(k=>{if(!cats[k].length)return;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name));h+=`<div style="font-weight:bold; font-size:16px; margin-top:15px; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px; display:inline-block; padding-right:30px;">${k}</div>`;h+=`<table style="border-collapse:collapse; font-size:12px; line-height:1.1; margin-bottom:10px; width:auto;">`;h+=`<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 10px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Розница</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 10px;">Б/Н</th></tr></thead><tbody>`;cats[k].forEach(item=>{let n=esc(item.v.printName||item.v.name);let opt=item.po>0?item.po:'-';let roz=item.pr>0?item.pr:'-';let bn=item.pb>0?item.pb:'-';h+=`<tr><td style="padding:2px 10px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${roz}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 10px; border-bottom:1px dashed #eee;">${bn}</td></tr>`;});h+=`</tbody></table>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
-    function rPriceList(c){if(!isAdmin){c.innerHTML='<div style="text-align:center;padding:20px">Только для админа</div>';return}const d=data.PriceList||{},cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{if(g.has(v.name))cats['Фасованная продукция'].push({i,v});else if(w.has(v.name))cats['Покупная продукция'].push({i,v});else if(dv.has(v.name))cats['ДВ вес'].push({i,v});else if(f.has(v.name))cats['Отходы производства'].push({i,v});else cats['Прочее'].push({i,v});});let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" onclick="openAddPrice()" style="margin:0">+ ТОВАР В ПРАЙС</button><button class="btn-main" onclick="printPriceList()" style="background:#0f172a;margin:0">🖨️ ПЕЧАТЬ ПРАЙСА</button></div>`;Object.keys(cats).forEach(k=>{if(cats[k].length){h+=`<div class="cat-head">${k}</div>`;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{let p_opt=v.priceOpt||(v.price||0);let p_bn=v.priceBN||p_opt;h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${esc(v.name)}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${esc(v.printName)}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`});}});c.innerHTML=h;}
-    function rConsolidated(c){let h=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:15px"><button class="btn-main" onclick="openModal('dayRep')" style="background:#0f172a;font-size:10px;margin:0">ДНЕВНОЙ ОТЧЕТ</button><button class="btn-main" onclick="openModal('monthRep')" style="background:#0f172a;font-size:10px;margin:0">МЕСЯЧНЫЙ</button><button class="btn-main" onclick="printConsolidated()" style="background:var(--s);font-size:10px;margin:0">🖨️ ПЕЧАТЬ ОТЧЕТА</button></div>`;const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount;}})}});const drawCat=(name,key)=>{if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,has=!1;Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});ch+='</div>';return has?ch:'';};h+=drawCat('Фасованная продукция','Готовая')+drawCat('Покупная продукция','WeightStock')+drawCat('ДВ вес','Stock_DV')+drawCat('Отходы производства','Stock_Feed')+drawCat('Сырье','Stock_Raw')+drawCat('П/Ф','Stock_Semi');const pk={'Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};Object.keys(pk).forEach(k=>{if(r[k]){let ph=`<div class="cat-head">${pk[k]}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});ph+='</div>';if(hp)h+=ph;}});if(isAdmin)h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:20px"><button class="btn-main" onclick="openModal('arch')" style="background:red">СВЕРТЫВАНИЕ</button><button class="btn-main" onclick="openModal('closeMonth')" style="background:orange;color:#000">ЗАКРЫТЬ МЕСЯЦ</button></div>`;c.innerHTML=h;}
-    window.printConsolidated=function(){const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount}})}});const bL=(t,k,u)=>{if(!r[k])return '';let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${esc(n)}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;});if(!i.length)return '';return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');};let L=bL('Фасованная продукция','Готовая','шт')+bL('Покупная продукция','WeightStock','кг')+bL('ДВ вес','Stock_DV','кг')+bL('Отходы производства','Stock_Feed','кг');let R=bL('П/Ф','Stock_Semi','кг')+bL('Сырье','Stock_Raw','кг');const pk={'Пленка':{n:'Пленка',u:'кг'},'Пакеты':{n:'Пакеты',u:'шт'},'Скотч 360 грамм':{n:'Скотч',u:'шт'},'Мешки':{n:'Мешки',u:'шт'},'Нитки':{n:'Нитки',u:'шт'},'Этикетка':{n:'Этикетка',u:'шт'},'Стрейч пленка':{n:'Стрейч пленка',u:'шт'},'Термо лента':{n:'Термо лента',u:'шт'}};Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});let ds=new Date().toLocaleDateString('ru-RU');let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);}
-    async function archiveRawBatch(n){if(!confirm(`Архивировать партию "${n}"?`))return;const k=db.child('Stock_Archive').push().key,u={},d=data.Stock_Raw||{};let t=0;Object.entries(d).forEach(([id,v])=>{if(v.name===n){t+=v.amount;u['/Stock_Raw/'+id]=null}});u['/Stock_Archive/'+k]={name:n,amount:t,date:new Date().toISOString(),note:'Архив партии'};if(Object.keys(u).length>1){await db.update(u);alert('Партия заархивирована');closeModal();loadData();}}
-    function rRawArch(c){const t={};if(data.Stock_Archive){Object.values(data.Stock_Archive).forEach(v=>{t[v.name]=(t[v.name]||0)+v.amount;});}let h=`<div class="item-grid">`;let has=!1;Object.keys(t).sort().forEach(n=>{const v=t[n];has=!0;h+=`<div class="item-card" onclick="showH('Stock_Archive','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`;});c.innerHTML=has?h+'</div>':'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Пусто</div>';}
-    async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введите ARCHIVE для свертывания базы до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Свертывание'}})}});if(Object.keys(u).length){await db.update(u);alert('Успешно свернуто')}closeModal()}
-    async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введите CLOSE для закрытия месяца (без удаления данных)')!=='CLOSE')return;const u={},nx=new Date(d);nx.setDate(nx.getDate()+1);const nd=nx.toISOString().split('T')[0];stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},r={};Object.values(cd).forEach(v=>{if(v.date.split('T')[0]<=d)r[v.name]=(r[v.name]||0)+v.amount});Object.keys(r).forEach(n=>{const a=r[n];if(Math.abs(a)>0.01){const fa=(c==='Пленка'||c==='Скотч 360 грамм')?a.toFixed(2):Math.round(a);u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:d+"T23:59:59Z",note:`Остаток на конец месяца: ${fa}`};u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:nd+"T08:00:00Z",note:`Остаток на начало месяца: ${fa}`}}})}});if(Object.keys(u).length){await db.update(u);alert(`Месяц закрыт. Маркеры остатков добавлены.`)}closeModal()}
-    window.retroAutoDeduct=async function(){let sdInput=prompt('Введите дату, с которой пересчитать (в формате 01.02.2026):','01.02.2026');if(!sdInput)return;if(prompt('Введите слово СТАРТ для запуска перерасчета')!=='СТАРТ')return;gID('act').innerHTML='<div style="padding:10px;text-align:center;font-weight:bold;color:var(--p);">ИДЕТ ЗАГРУЗКА БАЗЫ И ПЕРЕРАСЧЕТ... ПОДОЖДИТЕ...</div>';let sd=sdInput;if(sdInput.includes('.')){let p=sdInput.split('.');if(p.length===3&&p[2].length===4)sd=`${p[2]}-${p[1]}-${p[0]}`;}const u={};const tsStr=new Date().toISOString();let updCount=0;let addCount=0;try{const fasSnap=await db.child('Фасовка').once('value');const krupSnap=await db.child('Krup_Report').once('value');const zshmSnap=await db.child('ZSHM_Report').once('value');const vibroSnap=await db.child('Vibro_Report').once('value');const repData={'Фасовка':fasSnap.val()||{},'Krup_Report':krupSnap.val()||{},'ZSHM_Report':zshmSnap.val()||{},'Vibro_Report':vibroSnap.val()||{}};const getRecKey=(cat,fLink,itemName)=>{if(!data[cat])return null;for(let k in data[cat]){if(data[cat][k].fLink===fLink&&data[cat][k].name===itemName)return k;}return null;};Object.entries(repData['Фасовка']).forEach(([id,rep])=>{const repDate=(rep.date||'2000-01-01').split('T')[0];if(repDate>=sd){let mN=rep.filmName||(rep.outputItems&&rep.outputItems[0]?rep.outputItems[0].name:'-');if(mN==='Арнаутка 1/0.9 1'||mN==='Арнаутка 1/0.9 2')mN='Арнаутка 1/0.9';let pkTotal=0;if(rep.outputItems)rep.outputItems.forEach(x=>{pkTotal+=x.count;});let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));let noteStr='(авто) фасовка '+mN;const processFasCat=(catName,itemN,usedAmt)=>{if(usedAmt>0){let exKey=getRecKey(catName,id,itemN);if(exKey){u[`/${catName}/${exKey}/amount`]=-usedAmt;u[`/${catName}/${exKey}/note`]=noteStr;updCount++;}else{u[`/${catName}/${db.child(catName).push().key}`]={name:itemN,amount:-usedAmt,date:rep.date,note:noteStr,fLink:id,ts:tsStr};addCount++;}}};processFasCat('Скотч 360 грамм','Скотч 360 грамм',tapeUsed);processFasCat('Термо лента','Термо лента',thermalUsed);['Пакеты','Пленка'].forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([k,v])=>{if(v.fLink===id&&v.note!==noteStr){u[`/${cat}/${k}/note`]=noteStr;}});}});}});const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());const autoBagsWeight=parseFloat(autoSet.bagsWeight)||25;const threadsExcl=parseFloat(autoSet.threadsExclude)||40;const threadRate=parseFloat(autoSet.threadsRate||600);['Krup_Report','ZSHM_Report','Vibro_Report'].forEach(dbN=>{Object.entries(repData[dbN]).forEach(([id,rep])=>{const repDate=(rep.date||'2000-01-01').split('T')[0];if(repDate>=sd){let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};if(rep.items){rep.items.forEach(x=>{let b=parseFloat(x.q)||0;let w=parseFloat(x.w)||0;let n=(x.n||x.name||'');if(b>0){if(w!==threadsExcl)totalBagsForThreads+=b;let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));if(matchName&&w===autoBagsWeight){bagsToDeduct['Мешок 25кг']=(bagsToDeduct['Мешок 25кг']||0)+b;let cleanN=n.toLowerCase();let baseName='';if(cleanN.includes('арнаутка'))baseName='Арнаутка';else if(cleanN.includes('пшеничка'))baseName='Пшеничка';else if(cleanN.includes('перловка'))baseName='Перловка';else if(cleanN.includes('ячка'))baseName='Ячка';else baseName=n.replace(/ фр/gi,'').replace(/\[.*?\]/g,'').trim();let lblName='Эт-ка '+baseName;labelsToDeduct[lblName]=(labelsToDeduct[lblName]||0)+b;}}});}let threadsToDeduct=parseFloat((totalBagsForThreads/threadRate).toFixed(2));let noteStr='(авто) '+(dbN==='Krup_Report'?'Крупорушка':(dbN==='ZSHM_Report'?'ЗШМ':'Вібро'));const processCehCat=(catName,itemN,usedAmt)=>{if(usedAmt>0){let exKey=getRecKey(catName,id,itemN);if(exKey){u[`/${catName}/${exKey}/amount`]=-usedAmt;u[`/${catName}/${exKey}/note`]=noteStr;updCount++;}else{u[`/${catName}/${db.child(catName).push().key}`]={name:itemN,amount:-usedAmt,date:rep.date,note:noteStr,fLink:id,ts:tsStr};addCount++;}}};Object.keys(bagsToDeduct).forEach(bN=>processCehCat('Мешки',bN,bagsToDeduct[bN]));Object.keys(labelsToDeduct).forEach(lN=>processCehCat('Этикетка',lN,labelsToDeduct[lN]));if(threadsToDeduct>0)processCehCat('Нитки','Нитки',threadsToDeduct);}});});if(Object.keys(u).length>0){await db.update(u);alert(`ИДЕАЛЬНО!\nСоздано новых записей: ${addCount}\nИсправлено старых записей: ${updCount}`);loadData();}else{alert('Все отчеты проверены, данные уже актуальны.');}}catch(err){alert('Ошибка связи с базой: '+err.message);}finally{gID('act').innerHTML='';}};
-// ДОБАВЛЯЕМ ФУНКЦИЮ ОЗВУЧКИ И ПОШАГОВОГО ВВОДА
-if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = function() {
-        window.speechSynthesis.getVoices();
-    };
-}
-
-window.speakOut = function(text) {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+        window.addWsMainRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);const isFirst=gID('wsMainRows').children.length===0;gID('wsMainRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wm_${i}"><select id="wms_${i}" class="ws-inp" onchange="updWsRawList('${i}','wm')"><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wmn_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="wmq_${i}" class="ws-inp main-raw-q" placeholder="кг" ${isFirst?'readonly style="background:#e2e8f0;font-weight:bold;color:var(--p)"':'oninput="calcWsMain()"'} ><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wm'),50);};
+        window.addWsAddRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('wsAddRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wa_${i}"><select id="was_${i}" class="ws-inp" onchange="updWsRawList('${i}','wa')"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырье</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wan_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="waq_${i}" class="ws-inp" placeholder="кг" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wa'),50);};
+        window.addWsOutRow=function(t){const i=Date.now()+Math.random().toString().slice(2,7);const cat=t==='DV'?'Stock_DV':(t==='Semi'?'Stock_Semi':'Stock_Feed');let opts='<option value="">Название...</option>';gP(cat).forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('wsOut'+t).insertAdjacentHTML('beforeend',`<div class="ws-row-out" id="wo_${i}" data-t="${t}"><select id="won_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wob_${i}" class="ws-inp" placeholder="меш" oninput="calcWsMain()"><select id="wow_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Вес мешка (кг):');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''} calcWsMain()"><option value="">кг...</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wor_${i}" class="ws-inp" placeholder="ост" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
+        window.previewWorkshop=function(k){const c=WS_CFG[k],d=gID('wsD').value,ds=d.split('-').reverse().join('.');const ts=gID('wsTS').value,te=gID('wsTE').value,op=getSmartVal('wsOp')||'-',as=getSmartVal('wsAs')||'-';const main=[],add=[],out=[];let tMain=0,tAdd=0,tDV=0;for(let x of gID('wsMainRows').children){const i=x.id.split('_')[1],s=gID('wms_'+i).value,n=gID('wmn_'+i).value,q=parseFloat(gID('wmq_'+i).value);if(n&&q>0){main.push({s,n,q});tMain+=q;}}for(let x of gID('wsAddRows').children){const i=x.id.split('_')[1],s=gID('was_'+i).value,n=gID('wan_'+i).value,q=parseFloat(gID('waq_'+i).value);if(n&&q>0){add.push({s,n,q});tAdd+=q;}}let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());const autoBagsWeight=parseFloat(autoSet.bagsWeight)||25;const threadsExcl=parseFloat(autoSet.threadsExclude)||40;['DV','Semi','Feed'].forEach(type=>{for(let x of gID('wsOut'+type).children){const i=x.id.split('_')[1],n=gID('won_'+i).value,b=parseFloat(gID('wob_'+i).value)||0,w=parseFloat(gID('wow_'+i).value)||0,r=parseFloat(gID('wor_'+i).value)||0;if(n&&(b>0||r>0)){const wght=(b*w)+r;out.push({type,n,b,w,r,wght});if(type==='DV')tDV+=wght;if(b>0){if(w!==threadsExcl)totalBagsForThreads+=b;let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));if(matchName&&w===autoBagsWeight){bagsToDeduct['Мешок 25кг']=(bagsToDeduct['Мешок 25кг']||0)+b;let cleanN=n.toLowerCase();let baseName='';if(cleanN.includes('арнаутка'))baseName='Арнаутка';else if(cleanN.includes('пшеничка'))baseName='Пшеничка';else if(cleanN.includes('перловка'))baseName='Перловка';else if(cleanN.includes('ячка'))baseName='Ячка';else baseName=n.replace(/ фр/gi,'').replace(/\[.*?\]/g,'').trim();let lblName='Эт-ка '+baseName;labelsToDeduct[lblName]=(labelsToDeduct[lblName]||0)+b;}}}}});if(!main.length||!out.length)return alert('ВНИМАНИЕ: Заполните основу и выход продукции!');const tRaw=tMain+tAdd;const pct=tRaw>0?((tDV/tRaw)*100).toFixed(1):0;const lS={'Stock_Raw':'сырье','Stock_Semi':'п/ф','WeightStock':'пок.пр','Stock_DV':'ДВ вес'};let hRaw='';main.forEach(x=>hRaw+=`<div>Основа: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);add.forEach(x=>hRaw+=`<div>Добавка: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг</div>`);let hDV='',hSemi='',hFeed='';out.forEach(x=>{const str=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;if(x.type==='DV')hDV+=str;else if(x.type==='Semi')hSemi+=str;else hFeed+=str;});let threadsToDeduct=parseFloat((totalBagsForThreads/parseFloat(autoSet.threadsRate||600)).toFixed(2));let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;let labelsHTML='';Object.keys(labelsToDeduct).forEach(lN=>{labelsHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(lN)}:</span><span>${labelsToDeduct[lN]}шт</span></div>`;});const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${hDV?`<div class="conf-sec"><b>ДВ вес:</b></div>${hDV}`:''}${hSemi?`<div class="conf-sec"><b>полуфабрикат:</b></div>${hSemi}`:''}${hFeed?`<div class="conf-sec"><b>отходы:</b></div>${hFeed}`:''}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${tRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой:</span><span>${pct}%</span></div>${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт</span></div>`:''}${labelsHTML}${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт</span></div>`:''}`;gID('confContent').innerHTML=html;gID('confMdl').style.display='flex';pendingAction=async function(){const btn=document.querySelector('#confBox .btn-main[style*="green"]');if(btn){btn.innerText='⏳...';btn.disabled=!0;}try{const id=db.child(c.db).push().key,u={},tsStr=new Date().toISOString();const itemsDb=out.map(x=>({type:x.type,n:x.n,q:x.b,w:x.w,l:x.r}));const rawBase=main[0]?{n:main[0].n,w:main[0].q,s:main[0].s}:null;const rawAdd=add.map(x=>({n:x.n,w:x.q,s:x.s}));u['/'+c.db+'/'+id]={date:d+"T12:00:00Z",timeStart:ts,timeEnd:te,operator:op,assistant:as,items:itemsDb,rawBase:rawBase,rawAdd:rawAdd};main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Основа',fLink:id,ts:tsStr}});add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Добавка',fLink:id,ts:tsStr}});out.forEach(x=>{const cat=x.type==='DV'?'Stock_DV':(x.type==='Semi'?'Stock_Semi':'Stock_Feed');u[`/${cat}/${db.child(cat).push().key}`]={name:x.n,amount:x.wght,date:d+"T12:00:00Z",note:c.note,fLink:id,ts:tsStr}});if(bagsToDeduct['Мешок 25кг']>0)u['/Мешки/'+db.child('Мешки').push().key]={name:'Мешок 25кг',amount:-bagsToDeduct['Мешок 25кг'],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};Object.keys(labelsToDeduct).forEach(lN=>{u['/Этикетка/'+db.child('Этикетка').push().key]={name:lN,amount:-labelsToDeduct[lN],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};});if(threadsToDeduct>0)u['/Нитки/'+db.child('Нитки').push().key]={name:'Нитки',amount:-threadsToDeduct,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};await db.update(u);closeConf();closeModal();setCat(cur);}catch(e){alert(e)}finally{if(btn){btn.innerText='ДА';btn.disabled=!1;}}};};
+        function genDayReport(){const d=gID('repDate').value;if(!d)return;const ds=d.split('-').reverse().join('.');const rOutFas={},rOutVes={},rOutFeed={},rInc={},rToProd={},rFromProd={},rAuto={};const addV=(obj,key,val,unit,name='',src='',dest='')=>{if(!obj[key])obj[key]={v:0,u:unit,n:name||key,src,dest};obj[key].v+=Math.abs(val);};const catLabels={'Stock_DV':'ДВ вес','Stock_Semi':'полуфабрикат','Stock_Feed':'отходы','Stock_Raw':'сырье','WeightStock':'покупная','Готовая':'фасованная продукция'};if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.date&&v.date.startsWith(d)){if(v.items){v.items.forEach(it=>addV(rInc,it.n,it.a,'кг',it.n));}else if(v.name){addV(rInc,v.name,v.amount,'кг',v.name);}}});if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.date&&v.date.startsWith(d)){let n=v.name;let u=v.category==='Пленка'?'кг':'шт';addV(rInc,n,v.amount,u,n);}});const catsToCheck=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];catsToCheck.forEach(cat=>{if(!data[cat])return;let isPack=['Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat);let defUnit=(isPack&&cat!=='Пленка')||cat==='Готовая'?'шт':'кг';Object.values(data[cat]).forEach(v=>{if(!v.date||!v.date.startsWith(d)||!v.name)return;let amt=v.amount,note=v.note||'',n=v.name;if(amt<0){if(note.startsWith('Отгр:')&&cat!=='Стрейч пленка'){if(cat==='Готовая')addV(rOutFas,n,amt,defUnit,n);else if(cat==='WeightStock')addV(rOutVes,n+'::покупная',amt,defUnit,n,'покупная');else if(cat==='Stock_DV')addV(rOutVes,n+'::ДВ вес',amt,defUnit,n,'ДВ вес');else if(cat==='Stock_Feed')addV(rOutFeed,n,amt,defUnit,n);}else if(isPack){addV(rAuto,n,amt,defUnit,n);}else{addV(rToProd,n+'::'+cat+'::'+note,amt,defUnit,n,catLabels[cat]||cat,note);}}else if(amt>0){if(isPack||cat==='Stock_Raw'||cat==='WeightStock'){if(note.startsWith('Кор:'))addV(rFromProd,n+' (корр.)',amt,defUnit,n+' (корр.)');return;}if(note==='Приход'||note==='Приход сырья')return;let suffix=note.startsWith('Кор:')?' (корр.)':'';addV(rFromProd,n+suffix,amt,defUnit,n+suffix);}});});const fmt=(x)=>{let r=`<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v%1===0?x.v:x.v.toFixed(2)}${x.u}</span></div>`;if(x.src&&x.dest&&x.dest!=='Авто'&&x.dest!=='Фас'&&!x.dest.startsWith('(авто)'))r+=`<div class="dr-hint" style="width:100%; text-align:right; margin-top:-2px; font-size:10px; color:#64748b;">(${x.src} -> ${x.dest})</div>`;r+=`</div>`;return r;};const renderList=(obj)=>{let vals=Object.values(obj).sort((a,b)=>a.n.localeCompare(b.n));if(!vals.length)return '<div style="color:#94a3b8; font-size:11px;">-</div>';return vals.map(fmt).join('');};let blockOutFas=renderList(rOutFas),blockOutVes=renderList(rOutVes),blockOutFeed=renderList(rOutFeed),blockInc=renderList(rInc),blockToProd=renderList(rToProd),blockFromProd=renderList(rFromProd),blockAuto=renderList(rAuto);let screenHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-card"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub">- отходы</div><div>${blockOutFeed}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-card"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div>${blockToProd}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div>${blockFromProd}</div></div><div class="dr-card"><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div>`;let printHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:#000;">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-print-wrap"><div class="dr-print-col"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- отходы</div><div style="margin-bottom:15px;">${blockOutFeed}</div><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-print-col"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div style="margin-bottom:15px;">${blockToProd}</div><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div style="margin-bottom:15px;">${blockFromProd}</div><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div></div>`;gID('print-view').innerHTML=printHtml;gID('mB').innerHTML=screenHtml+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
+        function genMonthReport(){const m=gID('repMth').value;if(!m)return alert('Месяц?');const [y,mt]=m.split('-');const sd=`${y}-${mt}-01`,ed=`${y}-${mt}-31`;const res={};const catsP1=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Semi','Stock_Raw'];const catsP2=['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];const allCats=[...catsP1,...catsP2];const catNames={'Готовая':'Фасованная продукция','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Корма (Отходы)','Stock_Semi':'Полуфабрикат','Stock_Raw':'Сырье','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};allCats.forEach(c=>{if(data[c]){Object.values(data[c]).forEach(v=>{if(v.name){if(!res[c])res[c]={};if(!res[c][v.name])res[c][v.name]={s:0,i:0,o:0,e:0};const a=parseFloat(v.amount)||0,vd=v.date.split('T')[0];if(vd<sd){res[c][v.name].s+=a;res[c][v.name].e+=a;}else if(vd<=ed){if(a>0)res[c][v.name].i+=a;else res[c][v.name].o+=Math.abs(a);res[c][v.name].e+=a;}}})}});const buildTable=(catList)=>{let h=`<table class="m-rep-table"><thead><tr><th>НАИМЕНОВАНИЕ</th><th>НАЧАЛО</th><th>ПРИХОД</th><th>РАСХОД</th><th>КОНЕЦ</th></tr></thead><tbody>`;catList.forEach(c=>{if(!res[c])return;let rows='';Object.keys(res[c]).sort().forEach(n=>{const d=res[c][n];if(Math.abs(d.s)<0.01&&Math.abs(d.i)<0.01&&Math.abs(d.o)<0.01&&Math.abs(d.e)<0.01)return;let u=(c==='Готовая'||['Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(c))?' шт':' кг';let fmt=(v)=>(c==='Пленка'||c==='Скотч 360 грамм')?v.toFixed(2):Math.round(v);rows+=`<tr><td>${esc(n)}</td><td>${fmt(d.s)}${u}</td><td>${fmt(d.i)}${u}</td><td>${fmt(d.o)}${u}</td><td><b>${fmt(d.e)}${u}</b></td></tr>`;});if(rows){h+=`<tr><td colspan="5" class="m-rep-cat">${catNames[c]||c}</td></tr>`+rows;}});h+=`</tbody></table>`;return h;};const mStr=`${mt}.${y}`;let html=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr})</div>`;html+=buildTable(catsP1);html+=`<div class="page-break"></div>`;html+=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr}) - УПАКОВКА</div>`;html+=buildTable(catsP2);gID('print-view').innerHTML=html;gID('mB').innerHTML=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ОТЧЕТ ЗА ${mStr}</div>`+buildTable(catsP1).replace(/m-rep-table/g,'mini-inv')+buildTable(catsP2).replace(/m-rep-table/g,'mini-inv')+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
+        function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;}
+        function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
+        function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
+        function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
+        window.delRec=async(c,i)=>{if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;const u={};u[`/${c}/${i}`]=null;stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});try{await db.update(u);alert('Удалено, товар возвращен')}catch(e){alert(e)}};
+        function addTimeRow(n='',r=''){const i=Date.now()+Math.random();gID('tsRows').insertAdjacentHTML('beforeend',`<div class="ts-row" id="tr_${i}" style="display:grid;grid-template-columns:1fr 80px 30px;gap:2px;margin-bottom:2px"><input type="text" id="tn_${i}" placeholder="ФИО" value="${esc(n)}"><input type="number" id="trate_${i}" placeholder="Ставка" value="${r}"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none">x</button></div>`)}
+        async function saveTimesheetBatch(){const d=gID('gTD').value,s=gID('gTS').value,e=gID('gTE').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value);if(n&&rt>0){cr.push({name:n,rate:rt});t+=rt;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:rt,ts:new Date().toISOString()}}});if(!cr.length)return alert('Пусто');try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! Всего: '+t)}catch(err){alert(err)}}
+        function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${esc(v.name)}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
+        window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
+        window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
+        window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0,b=parseFloat(gID('prB').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r,priceBN:b});closeModal()}catch(e){alert(e)}};
+        window.delPrice=async function(i){if(confirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
+        window.printPriceList=function(){const d=data.PriceList||{};const cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{let po=parseFloat(v.priceOpt||v.price||0),pr=parseFloat(v.priceRoz||0),pb=parseFloat(v.priceBN||v.priceOpt||v.price||0);if(po===0&&pr===0&&pb===0)return;if(g.has(v.name))cats['Фасованная продукция'].push({v,po,pr,pb});else if(w.has(v.name))cats['Покупная продукция'].push({v,po,pr,pb});else if(dv.has(v.name))cats['ДВ вес'].push({v,po,pr,pb});else if(f.has(v.name))cats['Отходы производства'].push({v,po,pr,pb});else cats['Прочее'].push({v,po,pr,pb});});const ds=new Date().toLocaleDateString('ru-RU');let h=`<div style="font-family:sans-serif; color:#000;">`;h+=`<div style="font-weight:900;font-size:18px;margin-bottom:15px;text-align:center;">ПРАЙС-ЛИСТ от ${ds}</div>`;Object.keys(cats).forEach(k=>{if(!cats[k].length)return;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name));h+=`<div style="font-weight:bold; font-size:16px; margin-top:15px; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px; display:inline-block; padding-right:30px;">${k}</div>`;h+=`<table style="border-collapse:collapse; font-size:12px; line-height:1.1; margin-bottom:10px; width:auto;">`;h+=`<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 10px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Розница</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 10px;">Б/Н</th></tr></thead><tbody>`;cats[k].forEach(item=>{let n=esc(item.v.printName||item.v.name);let opt=item.po>0?item.po:'-';let roz=item.pr>0?item.pr:'-';let bn=item.pb>0?item.pb:'-';h+=`<tr><td style="padding:2px 10px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${roz}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 10px; border-bottom:1px dashed #eee;">${bn}</td></tr>`;});h+=`</tbody></table>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
+        function rPriceList(c){if(!isAdmin){c.innerHTML='<div style="text-align:center;padding:20px">Только для админа</div>';return}const d=data.PriceList||{},cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{if(g.has(v.name))cats['Фасованная продукция'].push({i,v});else if(w.has(v.name))cats['Покупная продукция'].push({i,v});else if(dv.has(v.name))cats['ДВ вес'].push({i,v});else if(f.has(v.name))cats['Отходы производства'].push({i,v});else cats['Прочее'].push({i,v});});let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" onclick="openAddPrice()" style="margin:0">+ ТОВАР В ПРАЙС</button><button class="btn-main" onclick="printPriceList()" style="background:#0f172a;margin:0">🖨️ ПЕЧАТЬ ПРАЙСА</button></div>`;Object.keys(cats).forEach(k=>{if(cats[k].length){h+=`<div class="cat-head">${k}</div>`;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{let p_opt=v.priceOpt||(v.price||0);let p_bn=v.priceBN||p_opt;h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${esc(v.name)}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${esc(v.printName)}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`});}});c.innerHTML=h;}
+        function rConsolidated(c){let h=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:15px"><button class="btn-main" onclick="openModal('dayRep')" style="background:#0f172a;font-size:10px;margin:0">ДНЕВНОЙ ОТЧЕТ</button><button class="btn-main" onclick="openModal('monthRep')" style="background:#0f172a;font-size:10px;margin:0">МЕСЯЧНЫЙ</button><button class="btn-main" onclick="printConsolidated()" style="background:var(--s);font-size:10px;margin:0">🖨️ ПЕЧАТЬ ОТЧЕТА</button></div>`;const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount;}})}});const drawCat=(name,key)=>{if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,has=!1;Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});ch+='</div>';return has?ch:'';};h+=drawCat('Фасованная продукция','Готовая')+drawCat('Покупная продукция','WeightStock')+drawCat('ДВ вес','Stock_DV')+drawCat('Отходы производства','Stock_Feed')+drawCat('Сырье','Stock_Raw')+drawCat('П/Ф','Stock_Semi');const pk={'Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};Object.keys(pk).forEach(k=>{if(r[k]){let ph=`<div class="cat-head">${pk[k]}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});ph+='</div>';if(hp)h+=ph;}});if(isAdmin)h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:20px"><button class="btn-main" onclick="openModal('arch')" style="background:red">СВЕРТЫВАНИЕ</button><button class="btn-main" onclick="openModal('closeMonth')" style="background:orange;color:#000">ЗАКРЫТЬ МЕСЯЦ</button></div>`;c.innerHTML=h;}
+        window.printConsolidated=function(){const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount}})}});const bL=(t,k,u)=>{if(!r[k])return '';let i=Object.keys(r[k]).sort().filter(n=>Math.abs(r[k][n])>0.1).map(n=>{let val=(k==='Пленка'||k==='Скотч 360 грамм')?r[k][n].toFixed(2):Math.round(r[k][n]);return `<div style="display:flex;align-items:baseline;font-size:13px;margin-bottom:2px;line-height:1.2"><span>${esc(n)}</span><span style="flex-grow:1;border-bottom:1px dotted #999;margin:0 5px;position:relative;top:-4px;min-width:20px"></span><b style="white-space:nowrap">${val}${u}</b></div>`;});if(!i.length)return '';return `<div style="font-size:14px;font-weight:bold;margin-top:10px;margin-bottom:5px;line-height:1.0;text-transform:uppercase">${t}:</div>`+i.join('');};let L=bL('Фасованная продукция','Готовая','шт')+bL('Покупная продукция','WeightStock','кг')+bL('ДВ вес','Stock_DV','кг')+bL('Отходы производства','Stock_Feed','кг');let R=bL('П/Ф','Stock_Semi','кг')+bL('Сырье','Stock_Raw','кг');const pk={'Пленка':{n:'Пленка',u:'кг'},'Пакеты':{n:'Пакеты',u:'шт'},'Скотч 360 грамм':{n:'Скотч',u:'шт'},'Мешки':{n:'Мешки',u:'шт'},'Нитки':{n:'Нитки',u:'шт'},'Этикетка':{n:'Этикетка',u:'шт'},'Стрейч пленка':{n:'Стрейч пленка',u:'шт'},'Термо лента':{n:'Термо лента',u:'шт'}};Object.keys(pk).forEach(k=>{R+=bL(pk[k].n,k,pk[k].u)});let ds=new Date().toLocaleDateString('ru-RU');let h=`<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:15px;color:#000">СВОДНЫЙ ОТЧЕТ ОСТАТКОВ (${ds})</div><div style="display:flex;justify-content:flex-start;width:100%;gap:100px;color:#000"><div style="width:max-content">${L}</div><div style="width:max-content">${R}</div></div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);}
+        async function archiveRawBatch(n){if(!confirm(`Архивировать партию "${n}"?`))return;const k=db.child('Stock_Archive').push().key,u={},d=data.Stock_Raw||{};let t=0;Object.entries(d).forEach(([id,v])=>{if(v.name===n){t+=v.amount;u['/Stock_Raw/'+id]=null}});u['/Stock_Archive/'+k]={name:n,amount:t,date:new Date().toISOString(),note:'Архив партии'};if(Object.keys(u).length>1){await db.update(u);alert('Партия заархивирована');closeModal();loadData();}}
+        function rRawArch(c){const t={};if(data.Stock_Archive){Object.values(data.Stock_Archive).forEach(v=>{t[v.name]=(t[v.name]||0)+v.amount;});}let h=`<div class="item-grid">`;let has=!1;Object.keys(t).sort().forEach(n=>{const v=t[n];has=!0;h+=`<div class="item-card" onclick="showH('Stock_Archive','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`;});c.innerHTML=has?h+'</div>':'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Пусто</div>';}
+        async function runArchive(){const d=gID('archDate').value;if(!d)return;if(prompt('Введите ARCHIVE для свертывания базы до '+d)!=='ARCHIVE')return;const u={};stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},res={};Object.entries(cd).forEach(([k,v])=>{if(v.date.split('T')[0]<=d){res[v.name]=(res[v.name]||0)+v.amount;u[`/${c}/${k}`]=null}});Object.keys(res).forEach(n=>{if(Math.abs(res[n])>0.01)u[`/${c}/${db.child(c).push().key}`]={name:n,amount:res[n],date:d+"T23:59:59Z",note:'Свертывание'}})}});if(Object.keys(u).length){await db.update(u);alert('Успешно свернуто')}closeModal()}
+        async function runCloseMonth(){const d=gID('cmDate').value;if(!d)return;if(prompt('Введите CLOSE для закрытия месяца (без удаления данных)')!=='CLOSE')return;const u={},nx=new Date(d);nx.setDate(nx.getDate()+1);const nd=nx.toISOString().split('T')[0];stockCatsAll.forEach(c=>{if(!['Timesheet','PriceList','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','InvoiceSettings','InvoiceSettingsBN'].includes(c)){const cd=data[c]||{},r={};Object.values(cd).forEach(v=>{if(v.date.split('T')[0]<=d)r[v.name]=(r[v.name]||0)+v.amount});Object.keys(r).forEach(n=>{const a=r[n];if(Math.abs(a)>0.01){const fa=(c==='Пленка'||c==='Скотч 360 грамм')?a.toFixed(2):Math.round(a);u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:d+"T23:59:59Z",note:`Остаток на конец месяца: ${fa}`};u[`/${c}/${db.child(c).push().key}`]={name:n,amount:0,date:nd+"T08:00:00Z",note:`Остаток на начало месяца: ${fa}`}}})}});if(Object.keys(u).length){await db.update(u);alert(`Месяц закрыт. Маркеры остатков добавлены.`)}closeModal()}
+        window.retroAutoDeduct=async function(){let sdInput=prompt('Введите дату, с которой пересчитать (в формате 01.02.2026):','01.02.2026');if(!sdInput)return;if(prompt('Введите слово СТАРТ для запуска перерасчета')!=='СТАРТ')return;gID('act').innerHTML='<div style="padding:10px;text-align:center;font-weight:bold;color:var(--p);">ИДЕТ ЗАГРУЗКА БАЗЫ И ПЕРЕРАСЧЕТ... ПОДОЖДИТЕ...</div>';let sd=sdInput;if(sdInput.includes('.')){let p=sdInput.split('.');if(p.length===3&&p[2].length===4)sd=`${p[2]}-${p[1]}-${p[0]}`;}const u={};const tsStr=new Date().toISOString();let updCount=0;let addCount=0;try{const fasSnap=await db.child('Фасовка').once('value');const krupSnap=await db.child('Krup_Report').once('value');const zshmSnap=await db.child('ZSHM_Report').once('value');const vibroSnap=await db.child('Vibro_Report').once('value');const repData={'Фасовка':fasSnap.val()||{},'Krup_Report':krupSnap.val()||{},'ZSHM_Report':zshmSnap.val()||{},'Vibro_Report':vibroSnap.val()||{}};const getRecKey=(cat,fLink,itemName)=>{if(!data[cat])return null;for(let k in data[cat]){if(data[cat][k].fLink===fLink&&data[cat][k].name===itemName)return k;}return null;};Object.entries(repData['Фасовка']).forEach(([id,rep])=>{const repDate=(rep.date||'2000-01-01').split('T')[0];if(repDate>=sd){let mN=rep.filmName||(rep.outputItems&&rep.outputItems[0]?rep.outputItems[0].name:'-');if(mN==='Арнаутка 1/0.9 1'||mN==='Арнаутка 1/0.9 2')mN='Арнаутка 1/0.9';let pkTotal=0;if(rep.outputItems)rep.outputItems.forEach(x=>{pkTotal+=x.count;});let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));let noteStr='(авто) фасовка '+mN;const processFasCat=(catName,itemN,usedAmt)=>{if(usedAmt>0){let exKey=getRecKey(catName,id,itemN);if(exKey){u[`/${catName}/${exKey}/amount`]=-usedAmt;u[`/${catName}/${exKey}/note`]=noteStr;updCount++;}else{u[`/${catName}/${db.child(catName).push().key}`]={name:itemN,amount:-usedAmt,date:rep.date,note:noteStr,fLink:id,ts:tsStr};addCount++;}}};processFasCat('Скотч 360 грамм','Скотч 360 грамм',tapeUsed);processFasCat('Термо лента','Термо лента',thermalUsed);['Пакеты','Пленка'].forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([k,v])=>{if(v.fLink===id&&v.note!==noteStr){u[`/${cat}/${k}/note`]=noteStr;}});}});}});const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());const autoBagsWeight=parseFloat(autoSet.bagsWeight)||25;const threadsExcl=parseFloat(autoSet.threadsExclude)||40;const threadRate=parseFloat(autoSet.threadsRate||600);['Krup_Report','ZSHM_Report','Vibro_Report'].forEach(dbN=>{Object.entries(repData[dbN]).forEach(([id,rep])=>{const repDate=(rep.date||'2000-01-01').split('T')[0];if(repDate>=sd){let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};if(rep.items){rep.items.forEach(x=>{let b=parseFloat(x.q)||0;let w=parseFloat(x.w)||0;let n=(x.n||x.name||'');if(b>0){if(w!==threadsExcl)totalBagsForThreads+=b;let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));if(matchName&&w===autoBagsWeight){bagsToDeduct['Мешок 25кг']=(bagsToDeduct['Мешок 25кг']||0)+b;let cleanN=n.toLowerCase();let baseName='';if(cleanN.includes('арнаутка'))baseName='Арнаутка';else if(cleanN.includes('пшеничка'))baseName='Пшеничка';else if(cleanN.includes('перловка'))baseName='Перловка';else if(cleanN.includes('ячка'))baseName='Ячка';else baseName=n.replace(/ фр/gi,'').replace(/\[.*?\]/g,'').trim();let lblName='Эт-ка '+baseName;labelsToDeduct[lblName]=(labelsToDeduct[lblName]||0)+b;}}});}let threadsToDeduct=parseFloat((totalBagsForThreads/threadRate).toFixed(2));let noteStr='(авто) '+(dbN==='Krup_Report'?'Крупорушка':(dbN==='ZSHM_Report'?'ЗШМ':'Вібро'));const processCehCat=(catName,itemN,usedAmt)=>{if(usedAmt>0){let exKey=getRecKey(catName,id,itemN);if(exKey){u[`/${catName}/${exKey}/amount`]=-usedAmt;u[`/${catName}/${exKey}/note`]=noteStr;updCount++;}else{u[`/${catName}/${db.child(catName).push().key}`]={name:itemN,amount:-usedAmt,date:rep.date,note:noteStr,fLink:id,ts:tsStr};addCount++;}}};Object.keys(bagsToDeduct).forEach(bN=>processCehCat('Мешки',bN,bagsToDeduct[bN]));Object.keys(labelsToDeduct).forEach(lN=>processCehCat('Этикетка',lN,labelsToDeduct[lN]));if(threadsToDeduct>0)processCehCat('Нитки','Нитки',threadsToDeduct);}});});if(Object.keys(u).length>0){await db.update(u);alert(`ИДЕАЛЬНО!\nСоздано новых записей: ${addCount}\nИсправлено старых записей: ${updCount}`);loadData();}else{alert('Все отчеты проверены, данные уже актуальны.');}}catch(err){alert('Ошибка связи с базой: '+err.message);}finally{gID('act').innerHTML='';}};
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+        }
         
-        let spokenText = text;
-        const ortho = {
-            'арнаутка': 'арна+утка',
-            'арнаутки': 'арна+утки',
-            'арнаутку': 'арна+утку',
-            'кутя': 'куть+я',
-            'кутю': 'куть+ю',
-            'басмати': 'басм+ати',
-            'булгур': 'булг+ур',
-            'ячка': 'йа+чка'
+        window.speakOut = function(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                let spokenText = text;
+                const ortho = {
+                    'арнаутка': 'арна+утка',
+                    'арнаутки': 'арна+утки',
+                    'арнаутку': 'арна+утку',
+                    'кутя': 'куть+я',
+                    'кутю': 'куть+ю',
+                    'басмати': 'басм+ати',
+                    'булгур': 'булг+ур',
+                    'ячка': 'йа+чка'
+                };
+                let lowerText = spokenText.toLowerCase();
+                Object.keys(ortho).forEach(k => {
+                    let reg = new RegExp('\\b' + k + '\\b', 'gi');
+                    spokenText = spokenText.replace(reg, ortho[k]);
+                });
+        
+                let msg = new SpeechSynthesisUtterance(spokenText);
+                msg.lang = 'ru-RU';
+                msg.rate = 1.1; 
+                
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    let bestVoice = voices.find(v => v.lang.includes('ru') && v.name.includes('Google'));
+                    if (!bestVoice) bestVoice = voices.find(v => v.lang.includes('ru'));
+                    if (bestVoice) msg.voice = bestVoice;
+                }
+        
+                window.speechSynthesis.speak(msg);
+            }
         };
-        let lowerText = spokenText.toLowerCase();
-        Object.keys(ortho).forEach(k => {
-            let reg = new RegExp('\\b' + k + '\\b', 'gi');
-            spokenText = spokenText.replace(reg, ortho[k]);
-        });
-
-        let msg = new SpeechSynthesisUtterance(spokenText);
-        msg.lang = 'ru-RU';
-        msg.rate = 1.1; 
+        let vRec = null;
+        let vIsRec = false;
+        let vForceStop = false; 
+        let vBlockBtnUpdate = false; 
+        let vState = 'idle'; // 'date', 'num', 'agreement', 'supplier', 'client', 'stretch', 'price', 'items'
         
-        let voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-            let bestVoice = voices.find(v => v.lang.includes('ru') && v.name.includes('Google'));
-            if (!bestVoice) bestVoice = voices.find(v => v.lang.includes('ru'));
-            if (bestVoice) msg.voice = bestVoice;
-        }
-
-        window.speechSynthesis.speak(msg);
-    }
-};
-let vRec = null;
-let vIsRec = false;
-let vForceStop = false; 
-let vBlockBtnUpdate = false; 
-let vState = 'idle'; // 'date', 'num', 'agreement', 'supplier', 'client', 'stretch', 'price', 'items'
-function findBestOption(selectId, spokenText) {
-    const select = document.getElementById(selectId);
-    if (!select) return null;
-
-    const cliSynonyms = {
-        'сельпо': 'сільпо',
-        'копейка': 'копійка',
-        'атб': 'атб',
-        'беженарь': 'Беженарь'
-    };
-
-    let cleanSpoken = spokenText.toLowerCase();
-    Object.keys(cliSynonyms).forEach(k => {
-        cleanSpoken = cleanSpoken.replace(new RegExp('\\b' + k + '\\b', 'g'), cliSynonyms[k]);
-    });
-
-    const cleanStr = (s) => s.replace(/["'«»]/g, '').replace(/\b(тов|фоп|пп|ип|спд|магазин)\b/gi, '').trim();
-    
-    cleanSpoken = cleanStr(cleanSpoken);
-    const spokenWords = cleanSpoken.split(' ').filter(w => w.length > 0);
-    
-    let bestMatch = null;
-    let maxScore = 0;
-    
-    Array.from(select.options).forEach(opt => {
-        if (opt.value === "" || opt.value === "NEW") return;
-        
-        let optText = cleanStr(opt.text.toLowerCase());
-        let score = 0;
-        
-        if (optText.includes(cleanSpoken)) score += 100;
-        
-        let matchedWords = 0;
-        spokenWords.forEach(w => {
-            if (w.length > 2 && optText.includes(w)) matchedWords++;
-        });
-        if (matchedWords > 0) {
-            score += matchedWords * 10;
-            if (matchedWords === spokenWords.length) score += 50;
-        }
-        if (score > maxScore) {
-            maxScore = score;
-            bestMatch = opt;
-        }
-    });
-    return bestMatch;
-}
-
-function parseSpokenDate(text) {
-    const months = {'январ': '01', 'феврал': '02', 'март': '03', 'апрел': '04', 'ма': '05', 'июн': '06', 'июл': '07', 'август': '08', 'сентябр': '09', 'октябр': '10', 'ноябр': '11', 'декабр': '12'};
-    const words = text.toLowerCase().split(' ');
-    let day = '', month = '';
-    
-    const numMatch = text.match(/\d+/);
-    if (numMatch) day = numMatch[0].padStart(2, '0');
-    
-    for (let w of words) {
-        for (let m in months) {
-            if (w.includes(m)) { month = months[m]; break; }
-        }
-    }
-    
-    if (day && month) {
-        let year = new Date().getFullYear();
-        return { display: `${day}.${month}.${year}`, value: `${year}-${month}-${day}` };
-    }
-    return null;
-}
-
-window.startVoiceInput = function() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert("Ваш браузер не поддерживает голосовой ввод");
-
-    const btn = document.getElementById('vBtn');
-
-    if (vIsRec) {
-        vForceStop = true; 
-        try { vRec.stop(); } catch(e) {}
-        vIsRec = false;
-        vBlockBtnUpdate = false; 
-        vState = 'idle';
-        btn.innerText = "🎤 ГОЛОС";
-        btn.style.background = "#eef2ff";
-        window.speakOut("Голосовой ввод отключен");
-        return;
-    }
-
-    vForceStop = false; 
-    vBlockBtnUpdate = false;
-
-    // Проверяем, заполнена ли шапка (клиент)
-    let cVal = document.getElementById('s_hC') ? document.getElementById('s_hC').value : '';
-    let cInp = document.getElementById('i_hC') ? document.getElementById('i_hC').value : '';
-    if ((cVal && cVal !== 'NEW') || cInp) {
-        vState = 'items';
-    } else {
-        vState = 'date';
-    }
-    
-    vRec = new SpeechRecognition();
-    vRec.lang = 'ru-RU';
-    vRec.continuous = true;
-    vRec.interimResults = false;
-    vRec.onstart = function() {
-        vIsRec = true;
-        if (!vBlockBtnUpdate && vState !== 'idle') {
-            btn.style.background = "#fee2e2";
-        }
-    };
-
-    const showError = (text, spokenError) => {
-        vBlockBtnUpdate = true; 
-        let oldText = btn.innerText;
-        btn.innerText = text;
-        btn.style.background = "#fca5a5"; 
-        if (spokenError) window.speakOut(spokenError); 
-        setTimeout(() => { 
-            vBlockBtnUpdate = false; 
-            if (vIsRec) {
-                btn.innerText = oldText; 
-                btn.style.background = "#fee2e2";
-            } else {
-                btn.innerText = "🎤 ГОЛОС";
-                btn.style.background = "#eef2ff";
-            }
-        }, 4000);
-    };
-
-    if (vState === 'items') {
-        window.speakOut("Слушаю товары");
-        btn.innerText = "🔴 ТОВАРЫ";
-    } else {
-        window.speakOut("Назовите дату");
-        btn.innerText = "🔴 ДАТА";
-    }
-
-    vRec.onresult = function(event) {
-        let speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-        const btn = document.getElementById('vBtn');
-        
-        let processedSpeech = speechResult;
-        const wordsToNum = { 'ноль':0, 'нуль':0, 'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10, 'одиннадцать':11, 'двенадцать':12, 'тринадцать':13, 'четырнадцать':14, 'пятнадцать':15, 'шестнадцать':16, 'семнадцать':17, 'восемнадцать':18, 'девятнадцать':19, 'двадцать':20, 'тридцать':30, 'сорок':40, 'пятьдесят':50, 'шестьдесят':60, 'семьдесят':70, 'восемьдесят':80, 'девяносто':90, 'сто':100 };
-        Object.keys(wordsToNum).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]); });
-
-        const skipCmd = processedSpeech.includes("дальше") || processedSpeech.includes("пропуст");
-        // 1: ДАТА
-        if (vState === 'date') {
-            let spokenConfirm = "";
-            if (processedSpeech.includes("сегодня")) {
-                let d = new Date();
-                document.getElementById('hD').value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-                spokenConfirm = "Дата сегодня. ";
-            } else if (skipCmd) {
-                spokenConfirm = "Дата пропущена. ";
-            } else {
-                let parsedDate = parseSpokenDate(processedSpeech);
-                if (parsedDate) {
-                    document.getElementById('hD').value = parsedDate.value;
-                    spokenConfirm = "Дата " + parsedDate.display + ". ";
-                } else {
-                    showError("❌ ПОВТОРИТЕ ДАТУ", "Повторите дату");
-                    saveShipDraft();
-                    return;
-                }
-            }
-            vState = 'num';
-            btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-            window.speakOut(spokenConfirm + "Назовите номер накладной");
-            saveShipDraft();
-            return;
-        }
-
-        // 2: НОМЕР НАКЛАДНОЙ
-        if (vState === 'num') {
-            let numMatch = processedSpeech.match(/\d+/);
-            let spokenConfirm = "";
-            if (numMatch) {
-                document.getElementById('hNum').value = numMatch[0];
-                spokenConfirm = "Номер " + numMatch[0] + ". ";
-            } else if (skipCmd) {
-                spokenConfirm = "Номер пропущен. ";
-            }
-            if (numMatch || skipCmd) {
-                vState = 'agreement';
-                btn.innerText = "🔴 НОМЕР ДОГОВОРА";
-                window.speakOut(spokenConfirm + "Назовите номер договора");
-            } else {
-                showError("❌ ПОВТОРИТЕ НОМЕР", "Повторите номер накладной");
-            }
-            saveShipDraft();
-            return;
-        }
-
-        // 3: НОМЕР ДОГОВОРА
-        if (vState === 'agreement') {
-            let spokenConfirm = "Договор пропущен. ";
-            if (!skipCmd) {
-                let cleanAgr = speechResult.replace(/дальше|пропустить/g, '').trim();
-                if (cleanAgr) {
-                    document.getElementById('hAg').value = cleanAgr;
-                    spokenConfirm = "Договор " + cleanAgr + ". ";
-                }
-            }
-            vState = 'supplier';
-            btn.innerText = "🔴 ПОСТАВЩИК";
-            window.speakOut(spokenConfirm + "Назовите поставщика");
-            saveShipDraft();
-            return;
-        }
-
-        // 4: ПОСТАВЩИК
-        if (vState === 'supplier') {
-            let spokenConfirm = "Поставщик пропущен. ";
-            if (!skipCmd) {
-                let bestSup = findBestOption('s_hMyFop', processedSpeech);
-                if (bestSup) {
-                    document.getElementById('s_hMyFop').value = bestSup.value;
-                    checkSmart('hMyFop');
-                    spokenConfirm = "Поставщик " + bestSup.text + ". ";
-                } else {
-                    showError("❌ " + processedSpeech.toUpperCase() + " ?", "Услышала: " + processedSpeech + ". Поставщик не найден, повторите");
-                    return;
-                }
-            }
-            vState = 'client';
-            btn.innerText = "🔴 КЛИЕНТ";
-            window.speakOut(spokenConfirm + "Назовите клиента");
-            saveShipDraft();
-            return;
-        }
-
-        // 5: КЛИЕНТ
-        if (vState === 'client') {
-            let spokenConfirm = "Клиент пропущен. ";
-            if (!skipCmd) {
-                let bestCli = findBestOption('s_hC', processedSpeech);
-                if (bestCli) {
-                    document.getElementById('s_hC').value = bestCli.value;
-                    checkSmart('hC');
-                    spokenConfirm = "Клиент " + bestCli.text + ". ";
-                } else {
-                    showError("❌ " + processedSpeech.toUpperCase() + " ?", "Услышала: " + processedSpeech + ". Клиент не найден, повторите");
-                    return;
-                }
-            }
-            vState = 'stretch';
-            btn.innerText = "🔴 СТРЕЙЧ?";
-            window.speakOut(spokenConfirm + "Стрейч добавляем?");
-            saveShipDraft();
-            return;
-        }
-
-        // 6: СТРЕЙЧ
-        if (vState === 'stretch') {
-            if (processedSpeech.includes("да")) {
-                if (!useStretch) {
-                    let btnStr = document.getElementById('btnStr');
-                    if(btnStr) toggleStr(btnStr);
-                }
-                vState = 'price';
-                btn.innerText = "🔴 ВЫБОР ЦЕНЫ";
-                window.speakOut("Стрейч добавлен. Какие цены ставим?");
-                saveShipDraft();
-            } else if (processedSpeech.includes("нет") || skipCmd) {
-                if (useStretch) {
-                    let btnStr = document.getElementById('btnStr');
-                    if(btnStr) toggleStr(btnStr);
-                }
-                vState = 'price';
-                btn.innerText = "🔴 ВЫБОР ЦЕНЫ";
-                window.speakOut("Какие цены ставим?");
-                saveShipDraft();
-            } else {
-                showError("❌ ДА ИЛИ НЕТ?", "Ответьте да или нет");
-            }
-            return;
-        }
-
-        // 7: ЦЕНЫ
-        if (vState === 'price') {
-            if (processedSpeech.includes("опт")) {
-                setPriceMode('opt');
-            } else if (processedSpeech.includes("розниц")) {
-                setPriceMode('roz');
-            } else if (processedSpeech.includes("безнал") || processedSpeech.includes("без нал")) {
-                setPriceMode('bn');
-            } else if (!skipCmd) {
-                showError("❌ ОПТ, РОЗНИЦА ИЛИ БЕЗНАЛ?", "Повторите тип цены");
-                return;
-            }
-            vState = 'items';
-            btn.innerText = "🔴 ТОВАРЫ";
-            window.speakOut("Переходим к заполнению списка товаров");
-            saveShipDraft();
-            return;
-        }
-
-        // 8: ТОВАРЫ
-        if (vState === 'items') {
-            if (processedSpeech.includes("дальше") || processedSpeech.includes("готово") || processedSpeech.includes("всё") || processedSpeech.includes("все")) {
-                window.speakOut("Переходим к проверке");
-                vForceStop = true;
-                try { vRec.stop(); } catch(e) {}
-                vIsRec = false;
-                btn.innerText = "🎤 ГОЛОС";
-                btn.style.background = "#eef2ff";
-                if (typeof sShip === 'function') sShip();
-                return;
-            }
-
-            if (processedSpeech.includes("стрейч")) {
-                let btnStr = document.getElementById('btnStr');
-                if (btnStr) {
-                    toggleStr(btnStr);
-                    saveShipDraft();
-                    window.speakOut("Стрейч " + (useStretch ? "включён" : "выключен"));
-                }
-                return;
-            }
-
-            let isDelete = false;
-            if (processedSpeech.includes("удал") || processedSpeech.includes("очист") || processedSpeech.includes("убра")) {
-                isDelete = true;
-                processedSpeech = processedSpeech.replace(/удалить|удали|очистить|очисть|убрать|убери/g, '').trim();
-            }
-
-            processedSpeech = processedSpeech.replace(/(\d)\s+(?=\d)/g, '$1');
-            processedSpeech = processedSpeech.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2');
-            processedSpeech = processedSpeech.replace(/gold/g, 'голд');
-            processedSpeech = processedSpeech.replace(/(\d+(?:[.,]\d+)?)\s*тыс(?:яч[аеиу]?[йь]?)?\.?/g, function(match, p1) { return (parseFloat(p1.replace(',', '.')) * 1000).toString(); });
-            
-            const synonyms = { 'арнаутку': 'арнаутка', 'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук', 'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшоно': 'пшено', 'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя', 'куча': 'кутя', 'кучя': 'кутя', 'манку': 'манка','мамка': 'манка','ящика': 'ячка','яичко': 'ячка'};
-            Object.keys(synonyms).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp(w, 'g'), synonyms[w]); });
-
-            const numMatches = processedSpeech.match(/\d+(?:[.,]\d+)?/g);
-            let qty = 0;
-            let spokenName = processedSpeech;
-
-            if (!isDelete) {
-                if (numMatches) {
-                    let lastNumStr = numMatches[numMatches.length - 1];
-                    qty = parseFloat(lastNumStr.replace(',', '.'));
-                    const lastNumIndex = processedSpeech.lastIndexOf(lastNumStr);
-                    spokenName = processedSpeech.substring(0, lastNumIndex) + " " + processedSpeech.substring(lastNumIndex + lastNumStr.length);
-                } else {
-                    showError("❌ БЕЗ ЦИФРЫ: " + processedSpeech, "Нет цифры");
-                    return; 
-                }
-            }
-
-            const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
-            const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
-            
+        function findBestOption(selectId, spokenText) {
+            const select = document.getElementById(selectId);
+            if (!select) return null;
             let bestMatch = null;
             let maxScore = 0;
+            const spokenWords = spokenText.toLowerCase().split(' ').filter(w => w.length > 0);
             
-            document.querySelectorAll('.bulk-q').forEach(input => {
-                const itemName = input.dataset.n.toLowerCase();
+            Array.from(select.options).forEach(opt => {
+                if (opt.value === "" || opt.value === "NEW") return;
+                const optText = opt.text.toLowerCase();
                 let score = 0;
-                if (itemName.includes(cleanSpokenName)) score += 100;
+                if (optText.includes(spokenText.toLowerCase())) score += 100;
+                
                 let matchedWords = 0;
                 spokenWords.forEach(w => {
-                    if (w.length <= 2) {
-                        if (new RegExp('\\b' + w + '\\b').test(itemName)) matchedWords += 2;
-                    } else if (itemName.includes(w)) {
-                        matchedWords++;
-                    }
+                    if (w.length > 2 && optText.includes(w)) matchedWords++;
                 });
                 if (matchedWords > 0) {
                     score += matchedWords * 10;
-                    if (matchedWords >= spokenWords.length) score += 50;
+                    if (matchedWords === spokenWords.length) score += 50;
                 }
-                if (score > maxScore && score > 0) {
+                if (score > maxScore) {
                     maxScore = score;
-                    bestMatch = input;
+                    bestMatch = opt;
                 }
             });
-
-            if (bestMatch) {
-                let sName = bestMatch.dataset.n.replace(/\s*1\/0\.\d+/g, "").trim();
-                sName = sName.replace(/\b1\b/g, "первая").replace(/\b2\b/g, "вторая");
-                
-                if (isDelete) {
-                    bestMatch.value = '';
-                    bestMatch.parentElement.classList.remove('tile-filled');
-                    window.speakOut(sName + " удалено");
-                } else {
-                    bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
-                    bestMatch.parentElement.classList.add('tile-filled');
-                    window.speakOut(sName + " " + qty + " добавлено");
-                }
-                window.updShipTotal();
-                
-                if (!vBlockBtnUpdate) {
-                    btn.style.background = "#dcfce3";
-                    setTimeout(() => { if (vIsRec && !vBlockBtnUpdate) btn.style.background = "#fee2e2"; }, 500);
-                }
-            } else {
-                showError("❌ ИСКАЛ: " + processedSpeech, "Товар не найден");
-            }
+            return bestMatch;
         }
-    };
-
-    vRec.onend = function() {
-        if (!vForceStop) {
-            try { vRec.start(); } catch(e) {}
-        } else {
-            vIsRec = false;
-            if (!vBlockBtnUpdate) {
+        
+        function parseSpokenDate(text) {
+            const months = {'январ': '01', 'феврал': '02', 'март': '03', 'апрел': '04', 'ма': '05', 'июн': '06', 'июл': '07', 'август': '08', 'сентябр': '09', 'октябр': '10', 'ноябр': '11', 'декабр': '12'};
+            const words = text.toLowerCase().split(' ');
+            let day = '', month = '';
+            
+            const numMatch = text.match(/\d+/);
+            if (numMatch) day = numMatch[0].padStart(2, '0');
+            
+            for (let w of words) {
+                for (let m in months) {
+                    if (w.includes(m)) { month = months[m]; break; }
+                }
+            }
+            
+            if (day && month) {
+                let year = new Date().getFullYear();
+                return { display: `${day}.${month}.${year}`, value: `${year}-${month}-${day}` };
+            }
+            return null;
+        }
+        
+        window.startVoiceInput = function() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Ваш браузер не поддерживает голосовой ввод");
+        
+            const btn = document.getElementById('vBtn');
+        
+            if (vIsRec) {
+                vForceStop = true; 
+                try { vRec.stop(); } catch(e) {}
+                vIsRec = false;
+                vBlockBtnUpdate = false; 
+                vState = 'idle';
                 btn.innerText = "🎤 ГОЛОС";
                 btn.style.background = "#eef2ff";
+                window.speakOut("Голосовой ввод отключен");
+                return;
             }
-        }
-    };
-
-    vRec.onerror = function(event) {
-        if (event.error === 'no-speech') return; 
-        vForceStop = true;
-        vIsRec = false;
-        btn.innerText = "🎤 ГОЛОС";
-        btn.style.background = "#eef2ff";
-        if (event.error === 'not-allowed') {
-            alert("Нет доступа к микрофону. Проверьте разрешения браузера.");
-        } else {
-            console.error("Mic error:", event.error);
-        }
-    };
-
-    try {
-        vRec.start();
-    } catch(err) {
-        alert("Ошибка запуска: " + err.message);
-    }
-};
-</script></body></html>
+        
+            vForceStop = false; 
+            vBlockBtnUpdate = false;
+        
+            // Проверяем, заполнена ли шапка (клиент)
+            let cVal = document.getElementById('s_hC') ? document.getElementById('s_hC').value : '';
+            let cInp = document.getElementById('i_hC') ? document.getElementById('i_hC').value : '';
+            if ((cVal && cVal !== 'NEW') || cInp) {
+                vState = 'items';
+            } else {
+                vState = 'date';
+            }
+            
+            vRec = new SpeechRecognition();
+            vRec.lang = 'ru-RU';
+            vRec.continuous = true;
+            vRec.interimResults = false;
+            vRec.onstart = function() {
+                vIsRec = true;
+                if (!vBlockBtnUpdate && vState !== 'idle') {
+                    btn.style.background = "#fee2e2";
+                }
+            };
+        
+            const showError = (text, spokenError) => {
+                vBlockBtnUpdate = true; 
+                let oldText = btn.innerText;
+                btn.innerText = text;
+                btn.style.background = "#fca5a5"; 
+                if (spokenError) window.speakOut(spokenError); 
+                setTimeout(() => { 
+                    vBlockBtnUpdate = false; 
+                    if (vIsRec) {
+                        btn.innerText = oldText; 
+                        btn.style.background = "#fee2e2";
+                    } else {
+                        btn.innerText = "🎤 ГОЛОС";
+                        btn.style.background = "#eef2ff";
+                    }
+                }, 4000);
+            };
+        
+            if (vState === 'items') {
+                window.speakOut("Слушаю товары");
+                btn.innerText = "🔴 ТОВАРЫ";
+            } else {
+                window.speakOut("Назовите дату");
+                btn.innerText = "🔴 ДАТА";
+            }
+        
+            vRec.onresult = function(event) {
+                let speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+                const btn = document.getElementById('vBtn');
+                
+                let processedSpeech = speechResult;
+                const wordsToNum = { 'ноль':0, 'нуль':0, 'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10, 'одиннадцать':11, 'двенадцать':12, 'тринадцать':13, 'четырнадцать':14, 'пятнадцать':15, 'шестнадцать':16, 'семнадцать':17, 'восемнадцать':18, 'девятнадцать':19, 'двадцать':20, 'тридцать':30, 'сорок':40, 'пятьдесят':50, 'шестьдесят':60, 'семьдесят':70, 'восемьдесят':80, 'девяносто':90, 'сто':100 };
+                Object.keys(wordsToNum).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp('\\b' + w + '\\b', 'g'), wordsToNum[w]); });
+        
+                const skipCmd = processedSpeech.includes("дальше") || processedSpeech.includes("пропуст");
+        
+                // 1: ДАТА
+                if (vState === 'date') {
+                    if (processedSpeech.includes("сегодня")) {
+                        let d = new Date();
+                        document.getElementById('hD').value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                        vState = 'num';
+                        btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
+                        window.speakOut("Назовите номер накладной");
+                    } else if (skipCmd) {
+                        vState = 'num';
+                        btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
+                        window.speakOut("Назовите номер накладной");
+                    } else {
+                        let parsedDate = parseSpokenDate(processedSpeech);
+                        if (parsedDate) {
+                            document.getElementById('hD').value = parsedDate.value;
+                            vState = 'num';
+                            btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
+                            window.speakOut("Назовите номер накладной");
+                        } else {
+                            showError("❌ ПОВТОРИТЕ ДАТУ", "Повторите дату");
+                        }
+                    }
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 2: НОМЕР НАКЛАДНОЙ
+                if (vState === 'num') {
+                    let numMatch = processedSpeech.match(/\d+/);
+                    if (numMatch) {
+                        document.getElementById('hNum').value = numMatch[0];
+                    }
+                    if (numMatch || skipCmd) {
+                        vState = 'agreement';
+                        btn.innerText = "🔴 НОМЕР ДОГОВОРА";
+                        window.speakOut("Назовите номер договора");
+                    } else {
+                        showError("❌ ПОВТОРИТЕ НОМЕР", "Повторите номер накладной");
+                    }
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 3: НОМЕР ДОГОВОРА
+                if (vState === 'agreement') {
+                    if (!skipCmd) {
+                        let cleanAgr = speechResult.replace(/дальше|пропустить/g, '').trim();
+                        if (cleanAgr) document.getElementById('hAg').value = cleanAgr;
+                    }
+                    vState = 'supplier';
+                    btn.innerText = "🔴 ПОСТАВЩИК";
+                    window.speakOut("Назовите поставщика");
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 4: ПОСТАВЩИК
+                if (vState === 'supplier') {
+                    if (!skipCmd) {
+                        let bestSup = findBestOption('s_hMyFop', processedSpeech);
+                        if (bestSup) {
+                            document.getElementById('s_hMyFop').value = bestSup.value;
+                            checkSmart('hMyFop');
+                        } else {
+                            showError("❌ ПОСТАВЩИК НЕ НАЙДЕН", "Поставщик не найден, повторите");
+                            return;
+                        }
+                    }
+                    vState = 'client';
+                    btn.innerText = "🔴 КЛИЕНТ";
+                    window.speakOut("Назовите клиента");
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 5: КЛИЕНТ
+                if (vState === 'client') {
+                    if (!skipCmd) {
+                        let bestCli = findBestOption('s_hC', processedSpeech);
+                        if (bestCli) {
+                            document.getElementById('s_hC').value = bestCli.value;
+                            checkSmart('hC');
+                        } else {
+                            showError("❌ КЛИЕНТ НЕ НАЙДЕН", "Клиент не найден, повторите");
+                            return;
+                        }
+                    }
+                    vState = 'stretch';
+                    btn.innerText = "🔴 СТРЕЙЧ?";
+                    window.speakOut("Стрейч добавляем?");
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 6: СТРЕЙЧ
+                if (vState === 'stretch') {
+                    if (processedSpeech.includes("да")) {
+                        if (!useStretch) {
+                            let btnStr = document.getElementById('btnStr');
+                            if(btnStr) toggleStr(btnStr);
+                        }
+                        vState = 'price';
+                        btn.innerText = "🔴 ВЫБОР ЦЕНЫ";
+                        window.speakOut("Стрейч добавлен. Какие цены ставим?");
+                        saveShipDraft();
+                    } else if (processedSpeech.includes("нет") || skipCmd) {
+                        if (useStretch) {
+                            let btnStr = document.getElementById('btnStr');
+                            if(btnStr) toggleStr(btnStr);
+                        }
+                        vState = 'price';
+                        btn.innerText = "🔴 ВЫБОР ЦЕНЫ";
+                        window.speakOut("Какие цены ставим?");
+                        saveShipDraft();
+                    } else {
+                        showError("❌ ДА ИЛИ НЕТ?", "Ответьте да или нет");
+                    }
+                    return;
+                }
+        
+                // 7: ЦЕНЫ
+                if (vState === 'price') {
+                    if (processedSpeech.includes("опт")) {
+                        setPriceMode('opt');
+                    } else if (processedSpeech.includes("розниц")) {
+                        setPriceMode('roz');
+                    } else if (processedSpeech.includes("безнал") || processedSpeech.includes("без нал")) {
+                        setPriceMode('bn');
+                    } else if (!skipCmd) {
+                        showError("❌ ОПТ, РОЗНИЦА ИЛИ БЕЗНАЛ?", "Повторите тип цены");
+                        return;
+                    }
+                    vState = 'items';
+                    btn.innerText = "🔴 ТОВАРЫ";
+                    window.speakOut("Переходим к заполнению списка товаров");
+                    saveShipDraft();
+                    return;
+                }
+        
+                // 8: ТОВАРЫ
+                if (vState === 'items') {
+                    if (processedSpeech.includes("дальше") || processedSpeech.includes("готово") || processedSpeech.includes("всё") || processedSpeech.includes("все")) {
+                        window.speakOut("Переходим к проверке");
+                        vForceStop = true;
+                        try { vRec.stop(); } catch(e) {}
+                        vIsRec = false;
+                        btn.innerText = "🎤 ГОЛОС";
+                        btn.style.background = "#eef2ff";
+                        if (typeof sShip === 'function') sShip();
+                        return;
+                    }
+        
+                    if (processedSpeech.includes("стрейч")) {
+                        let btnStr = document.getElementById('btnStr');
+                        if (btnStr) {
+                            toggleStr(btnStr);
+                            saveShipDraft();
+                            window.speakOut("Стрейч " + (useStretch ? "включён" : "выключен"));
+                        }
+                        return;
+                    }
+        
+                    let isDelete = false;
+                    if (processedSpeech.includes("удал") || processedSpeech.includes("очист") || processedSpeech.includes("убра")) {
+                        isDelete = true;
+                        processedSpeech = processedSpeech.replace(/удалить|удали|очистить|очисть|убрать|убери/g, '').trim();
+                    }
+        
+                    processedSpeech = processedSpeech.replace(/(\d)\s+(?=\d)/g, '$1');
+                    processedSpeech = processedSpeech.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2');
+                    processedSpeech = processedSpeech.replace(/gold/g, 'голд');
+                    processedSpeech = processedSpeech.replace(/(\d+(?:[.,]\d+)?)\s*тыс(?:яч[аеиу]?[йь]?)?\.?/g, function(match, p1) { return (parseFloat(p1.replace(',', '.')) * 1000).toString(); });
+                    
+                    const synonyms = { 'арнаутку': 'арнаутка', 'пропаренный': 'пр', 'длинный': 'дл', 'круглый': 'кр', 'кукурузная': 'кук', 'первая': '1', 'вторая': '2', 'гречко': 'гречка', 'гречку': 'гречка', 'пшоно': 'пшено', 'кускус': 'кус кус', 'кутья': 'кутя', 'кутю': 'кутя', 'кутью': 'кутя', 'куча': 'кутя', 'кучя': 'кутя', 'манку': 'манка','мамка': 'манка','ящика': 'ячка','яичко': 'ячка'};
+                    Object.keys(synonyms).forEach(w => { processedSpeech = processedSpeech.replace(new RegExp(w, 'g'), synonyms[w]); });
+        
+                    const numMatches = processedSpeech.match(/\d+(?:[.,]\d+)?/g);
+                    let qty = 0;
+                    let spokenName = processedSpeech;
+        
+                    if (!isDelete) {
+                        if (numMatches) {
+                            let lastNumStr = numMatches[numMatches.length - 1];
+                            qty = parseFloat(lastNumStr.replace(',', '.'));
+                            const lastNumIndex = processedSpeech.lastIndexOf(lastNumStr);
+                            spokenName = processedSpeech.substring(0, lastNumIndex) + " " + processedSpeech.substring(lastNumIndex + lastNumStr.length);
+                        } else {
+                            showError("❌ БЕЗ ЦИФРЫ: " + processedSpeech, "Нет цифры");
+                            return; 
+                        }
+                    }
+        
+                    const cleanSpokenName = spokenName.replace(/\s+/g, ' ').trim();
+                    const spokenWords = cleanSpokenName.split(' ').filter(w => w.length > 0);
+                    
+                    let bestMatch = null;
+                    let maxScore = 0;
+                    
+                    document.querySelectorAll('.bulk-q').forEach(input => {
+                        const itemName = input.dataset.n.toLowerCase();
+                        let score = 0;
+                        if (itemName.includes(cleanSpokenName)) score += 100;
+                        let matchedWords = 0;
+                        spokenWords.forEach(w => {
+                            if (w.length <= 2) {
+                                if (new RegExp('\\b' + w + '\\b').test(itemName)) matchedWords += 2;
+                            } else if (itemName.includes(w)) {
+                                matchedWords++;
+                            }
+                        });
+                        if (matchedWords > 0) {
+                            score += matchedWords * 10;
+                            if (matchedWords >= spokenWords.length) score += 50;
+                        }
+                        if (score > maxScore && score > 0) {
+                            maxScore = score;
+                            bestMatch = input;
+                        }
+                    });
+        
+                    if (bestMatch) {
+                        let sName = bestMatch.dataset.n.replace(/\s*1\/0\.\d+/g, "").trim();
+                        sName = sName.replace(/\b1\b/g, "первая").replace(/\b2\b/g, "вторая");
+                        
+                        if (isDelete) {
+                            bestMatch.value = '';
+                            bestMatch.parentElement.classList.remove('tile-filled');
+                            window.speakOut(sName + " удалено");
+                        } else {
+                            bestMatch.value = (parseFloat(bestMatch.value) || 0) + qty;
+                            bestMatch.parentElement.classList.add('tile-filled');
+                            window.speakOut(sName + " " + qty + " добавлено");
+                        }
+                        window.updShipTotal();
+                        
+                        if (!vBlockBtnUpdate) {
+                            btn.style.background = "#dcfce3";
+                            setTimeout(() => { if (vIsRec && !vBlockBtnUpdate) btn.style.background = "#fee2e2"; }, 500);
+                        }
+                    } else {
+                        showError("❌ ИСКАЛ: " + processedSpeech, "Товар не найден");
+                    }
+                }
+            };
+        
+            vRec.onend = function() {
+                if (!vForceStop) {
+                    try { vRec.start(); } catch(e) {}
+                } else {
+                    vIsRec = false;
+                    if (!vBlockBtnUpdate) {
+                        btn.innerText = "🎤 ГОЛОС";
+                        btn.style.background = "#eef2ff";
+                    }
+                }
+            };
+        
+            vRec.onerror = function(event) {
+                if (event.error === 'no-speech') return; 
+                vForceStop = true;
+                vIsRec = false;
+                btn.innerText = "🎤 ГОЛОС";
+                btn.style.background = "#eef2ff";
+                if (event.error === 'not-allowed') {
+                    alert("Нет доступа к микрофону. Проверьте разрешения браузера.");
+                } else {
+                    console.error("Mic error:", event.error);
+                }
+            };
+        
+            try {
+                vRec.start();
+            } catch(err) {
+                alert("Ошибка запуска: " + err.message);
+            }
+        };
+        </script></body></html>
