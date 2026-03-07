@@ -147,6 +147,7 @@ const stockCatsAll=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stoc
 let invSet = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
 let invSetBN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА] грн.\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
 let voiceSynonyms = {};
+let stressDictData = '';
 let autoSet = { bagsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', bagsWeight: '25', labelsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', labelsWeight: '25', threadsRate: '600', threadsExclude: '40', tapeRate: '3000', tapeWeight: '360', thermalRate: '34000', thermalWidth: '', packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000' };
 
 let shipSet = JSON.parse(localStorage.getItem('shipLayoutSet') || '{"headW":"450","listW":"100","listH":"60","tileS":"75"}');
@@ -182,8 +183,8 @@ function initAppData(){
   db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}});
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; });
   db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); });
+  db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); });
 }
-
 function tryLogin(){const e=gID('appEmail').value,p=gID('appPass').value;if(!e||!p)return alert('Введите данные');auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message))}
 function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrMode=!1;renderHome();return alert('Админ выключен')}const p=prompt('Пароль:');if(p==='3011'){isAdmin=!0;localStorage.setItem('admT','1');renderHome();alert('Админ включен')}}
 const esc = s => s ? String(s).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
@@ -645,7 +646,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
-          else if(t==='voiceSet'){
+     else if(t==='voiceSet'){
       h.innerText='СЛОВАРЬ ГОЛОСА';
       let txt = '';
       if(typeof voiceSynonyms !== 'undefined'){
@@ -655,10 +656,8 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
       <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>как слышит=как надо</b>. Например:<br>иванов=ФОП Иванов И.И.<br>гречко=гречка</div>
       <textarea id="vsTxt" style="width:100%;height:300px;font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">${txt}</textarea>
       <div class="z-head" style="margin-top:15px; margin-bottom:0;">СЛОВАРЬ УДАРЕНИЙ</div>
-<div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>слово=сл+ово</b>. Например:<br>кордонська=корд+онська</div>
-<textarea id="stressDict" style="width:100%; height:80px; padding:5px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom: 10px;" oninput="localStorage.setItem('stressDictData', this.value)"></textarea>
-<img src="x" onerror="let el = document.getElementById('stressDict'); if(el) el.value = localStorage.getItem('stressDictData') || ''; this.remove();" style="display:none;">
-
+      <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>слово=сл+ово</b>. Например:<br>кордонська=корд+онська</div>
+      <textarea id="stressDict" style="width:100%; height:80px; padding:5px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom: 10px;">${stressDictData}</textarea>
       </div><button class="btn-main" onclick="saveVoiceSet()">СОХРАНИТЬ</button>`;
      }
 
@@ -701,9 +700,16 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                 if(k && v) u[k] = v;
             }
         });
-        try { await db.child('VoiceSynonyms').set(u); voiceSynonyms = u; closeModal(); alert('Словарь сохранен!'); } catch(e) { alert(e); }
+        const stressVal = gID('stressDict').value;
+        try { 
+            await db.child('VoiceSynonyms').set(u); 
+            await db.child('StressDict').set(stressVal);
+            voiceSynonyms = u; 
+            stressDictData = stressVal;
+            closeModal(); 
+            alert('Словари сохранены в базу!'); 
+        } catch(e) { alert(e); }
     };
-
     window.saveAutoSet = async function() {
         const u = {
             bagsNames: gID('asBagsN').value, bagsWeight: gID('asBagsW').value,
@@ -795,9 +801,8 @@ window.speakOut = function(text) {
     if (!text) return;
     window.speechSynthesis.cancel();
 
-    let savedStress = localStorage.getItem('stressDictData');
-    if (savedStress) {
-        let lines = savedStress.split('\n');
+    if (stressDictData) {
+        let lines = stressDictData.split('\n');
         for (let line of lines) {
             let parts = line.split('=');
             if (parts.length === 2) {
@@ -824,7 +829,6 @@ window.speakOut = function(text) {
 
     window.speechSynthesis.speak(msg);
 };
-
         let vRec = null;
         let vIsRec = false;
         let vForceStop = false; 
@@ -1012,7 +1016,7 @@ window.speakOut = function(text) {
                 if (vState === 'agreement') {
                     let recognizedAgr = "";
                     if (!skipCmd) {
-                        let cleanAgr = speechResult.replace(/дальше|пропустить/g, '').trim();
+                        let cleanAgr = processedSpeech.replace(/дальше|пропустить/g, '').trim();
                         if (cleanAgr) {
                             document.getElementById('hAg').value = cleanAgr;
                             recognizedAgr = cleanAgr;
