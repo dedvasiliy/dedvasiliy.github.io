@@ -654,6 +654,11 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">СЛОВА ДЛЯ ЗАМЕНЫ (каждое с новой строки)</div>
       <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>как слышит=как надо</b>. Например:<br>иванов=ФОП Иванов И.И.<br>гречко=гречка</div>
       <textarea id="vsTxt" style="width:100%;height:300px;font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">${txt}</textarea>
+      <div class="z-head" style="margin-top:15px; margin-bottom:0;">СЛОВАРЬ УДАРЕНИЙ</div>
+<div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>слово=сл+ово</b>. Например:<br>кордонська=корд+онська</div>
+<textarea id="stressDict" style="width:100%; height:80px; padding:5px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom: 10px;" oninput="localStorage.setItem('stressDictData', this.value)"></textarea>
+<img src="x" onerror="let el = document.getElementById('stressDict'); if(el) el.value = localStorage.getItem('stressDictData') || ''; this.remove();" style="display:none;">
+
       </div><button class="btn-main" onclick="saveVoiceSet()">СОХРАНИТЬ</button>`;
      }
 
@@ -786,42 +791,40 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                 window.speechSynthesis.getVoices();
             };
         }
-        
-        window.speakOut = function(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                
-                let spokenText = text;
-                const ortho = {
-                    'арнаутка': 'арна+утка',
-                    'арнаутки': 'арна+утки',
-                    'арнаутку': 'арна+утку',
-                    'кутя': 'куть+я',
-                    'кутю': 'куть+ю',
-                    'басмати': 'басм+ати',
-                    'булгур': 'булг+ур',
-                    'ячка': 'йа+чка'
-                };
-                let lowerText = spokenText.toLowerCase();
-                Object.keys(ortho).forEach(k => {
-                    let reg = new RegExp('\\b' + k + '\\b', 'gi');
-                    spokenText = spokenText.replace(reg, ortho[k]);
-                });
-        
-                let msg = new SpeechSynthesisUtterance(spokenText);
-                msg.lang = 'ru-RU';
-                msg.rate = 1.1; 
-                
-                let voices = window.speechSynthesis.getVoices();
-                if (voices.length > 0) {
-                    let bestVoice = voices.find(v => v.lang.includes('ru') && v.name.includes('Google'));
-                    if (!bestVoice) bestVoice = voices.find(v => v.lang.includes('ru'));
-                    if (bestVoice) msg.voice = bestVoice;
+window.speakOut = function(text) {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+
+    let savedStress = localStorage.getItem('stressDictData');
+    if (savedStress) {
+        let lines = savedStress.split('\n');
+        for (let line of lines) {
+            let parts = line.split('=');
+            if (parts.length === 2) {
+                let wordFrom = parts[0].trim();
+                let wordTo = parts[1].trim();
+                if (wordFrom && wordTo) {
+                    // Превращаем "+" перед буквой в правильный знак ударения для системы
+                    wordTo = wordTo.replace(/\+([а-яА-ЯіїєґІЇЄҐa-zA-Z])/gi, '$1\u0301');
+                    
+                    let reg = new RegExp(wordFrom, "gi");
+                    text = text.replace(reg, wordTo);
                 }
-        
-                window.speechSynthesis.speak(msg);
             }
-        };
+        }
+    }
+
+    let msg = new SpeechSynthesisUtterance(text);
+
+    if (/[іІїЇєЄґҐ']/.test(text) || /(^|[^а-яА-ЯіїєґІЇЄҐ])(ФОП|ТОВ|ПП|СПД|підприємство)([^а-яА-ЯіїєґІЇЄҐ]|$)/i.test(text)) {
+        msg.lang = 'uk-UA';
+    } else {
+        msg.lang = 'ru-RU';
+    }
+
+    window.speechSynthesis.speak(msg);
+};
+
         let vRec = null;
         let vIsRec = false;
         let vForceStop = false; 
@@ -959,7 +962,6 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
         }
        
                 const skipCmd = processedSpeech.includes("дальше") || processedSpeech.includes("пропуст");
-        
                 // 1: ДАТА
                 if (vState === 'date') {
                     if (processedSpeech.includes("сегодня")) {
@@ -967,7 +969,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                         document.getElementById('hD').value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
                         vState = 'num';
                         btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-                        window.speakOut("Назовите номер накладной");
+                        window.speakOut("Дата сегодня. Назовите номер накладной");
                     } else if (skipCmd) {
                         vState = 'num';
                         btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
@@ -978,7 +980,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                             document.getElementById('hD').value = parsedDate.value;
                             vState = 'num';
                             btn.innerText = "🔴 НОМЕР НАКЛАДНОЙ";
-                            window.speakOut("Назовите номер накладной");
+                            window.speakOut("Дата " + parsedDate.display + ". Назовите номер накладной");
                         } else {
                             showError("❌ ПОВТОРИТЕ ДАТУ", "Повторите дату");
                         }
@@ -990,13 +992,15 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                 // 2: НОМЕР НАКЛАДНОЙ
                 if (vState === 'num') {
                     let numMatch = processedSpeech.match(/\d+/);
+                    let recognizedNum = "";
                     if (numMatch) {
                         document.getElementById('hNum').value = numMatch[0];
+                        recognizedNum = numMatch[0];
                     }
                     if (numMatch || skipCmd) {
                         vState = 'agreement';
                         btn.innerText = "🔴 НОМЕР ДОГОВОРА";
-                        window.speakOut("Назовите номер договора");
+                        window.speakOut((recognizedNum ? "Номер " + recognizedNum + ". " : "") + "Назовите номер договора");
                     } else {
                         showError("❌ ПОВТОРИТЕ НОМЕР", "Повторите номер накладной");
                     }
@@ -1006,24 +1010,30 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
         
                 // 3: НОМЕР ДОГОВОРА
                 if (vState === 'agreement') {
+                    let recognizedAgr = "";
                     if (!skipCmd) {
                         let cleanAgr = speechResult.replace(/дальше|пропустить/g, '').trim();
-                        if (cleanAgr) document.getElementById('hAg').value = cleanAgr;
+                        if (cleanAgr) {
+                            document.getElementById('hAg').value = cleanAgr;
+                            recognizedAgr = cleanAgr;
+                        }
                     }
                     vState = 'supplier';
                     btn.innerText = "🔴 ПОСТАВЩИК";
-                    window.speakOut("Назовите поставщика");
+                    window.speakOut((recognizedAgr ? "Договор " + recognizedAgr + ". " : "") + "Назовите поставщика");
                     saveShipDraft();
                     return;
                 }
-        
+
                 // 4: ПОСТАВЩИК
                 if (vState === 'supplier') {
+                    let recognizedName = "";
                     if (!skipCmd) {
                         let bestSup = findBestOption('s_hMyFop', processedSpeech);
                         if (bestSup) {
                             document.getElementById('s_hMyFop').value = bestSup.value;
                             checkSmart('hMyFop');
+                            recognizedName = bestSup.text;
                         } else {
                             alert("Поставщик не найден. Услышала: " + processedSpeech); showError("❌ ПОСТАВЩИК НЕ НАЙДЕН", "Поставщик не найден, повторите");
                             return;
@@ -1031,18 +1041,19 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                     }
                     vState = 'client';
                     btn.innerText = "🔴 КЛИЕНТ";
-                    window.speakOut("Назовите клиента");
+                    window.speakOut((recognizedName ? recognizedName + ". " : "") + "Назвіть клієнта");
                     saveShipDraft();
                     return;
                 }
-        
                 // 5: КЛИЕНТ
                 if (vState === 'client') {
+                    let recognizedName = "";
                     if (!skipCmd) {
                         let bestCli = findBestOption('s_hC', processedSpeech);
                         if (bestCli) {
                             document.getElementById('s_hC').value = bestCli.value;
                             checkSmart('hC');
+                            recognizedName = bestCli.text;
                         } else {
                             alert("Клиент не найден. Услышала: " + processedSpeech); showError("❌ КЛИЕНТ НЕ НАЙДЕН", "Клиент не найден, повторите");
                             return;
@@ -1050,11 +1061,10 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
                     }
                     vState = 'stretch';
                     btn.innerText = "🔴 СТРЕЙЧ?";
-                    window.speakOut("Стрейч добавляем?");
+                    window.speakOut((recognizedName ? recognizedName + ". " : "") + "Стрейч добавляем?");
                     saveShipDraft();
                     return;
                 }
-        
                 // 6: СТРЕЙЧ
                 if (vState === 'stretch') {
                     if (processedSpeech.includes("да")) {
