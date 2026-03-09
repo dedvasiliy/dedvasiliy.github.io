@@ -467,62 +467,109 @@ function showH(c,n){
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').querySelector('.modal-box').style.maxWidth='450px';gID('mdl').style.display='flex';
 }
     window.genBatchReport=function(c,n){
-     const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
-     gID('mT').innerText='ЗАГРУЗКА...';gID('mB').innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных из цехов...</div>';gID('mdl').style.display='flex';
-     ensureData(['Krup_Report','Vibro_Report','ZSHM_Report','Фасовка']);
-     setTimeout(()=>{
-      let rep=[],totalUsed=0,totalOtherRaw=0,totalDV=0,inRecords=[],totalIn=0,sumDV={},sumOther={},sumFas={};
-      if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===rawName&&v.amount>0){totalIn+=v.amount;inRecords.push({d:v.date?v.date.split('T')[0]:'2000-01-01',a:v.amount});}});
-      inRecords.sort((a,b)=>a.d.localeCompare(b.d));
-      const dStart=inRecords.length>0?inRecords[0].d:'2000-01-01';
-      let hIn='';inRecords.forEach(x=>{hIn+=`<div style="display:flex;justify-content:space-between;font-size:11px;color:#047857;border-bottom:1px dashed #a7f3d0;padding:2px 0;"><span>Приход ${x.d.split('-').reverse().join('.')}</span><span style="font-weight:900">+${x.a} кг</span></div>`;});
-      if(!hIn)hIn=`<div style="font-size:11px;color:#64748b;text-align:center">Нет данных о приходе</div>`;
-      const pDate=(d)=>d?d.split('T')[0]:'2000-01-01';const searchN=String(rawName).toLowerCase();
-      const pWs=(dbN,title)=>{
-       if(!data[dbN])return;
-       Object.values(data[dbN]).forEach(v=>{
-        const vD=pDate(v.date);
-        if(vD>=dStart){
-         let u=0,shiftTotalRaw=0,otherRaws=[];
-         if(v.rawMix&&typeof v.rawMix==='string'){let matches=v.rawMix.match(/\d+(?:\.\d+)?/g);if(matches)matches.forEach(num=>shiftTotalRaw+=parseFloat(num));if(v.rawMix.toLowerCase().includes(searchN)&&matches)matches.forEach(num=>u+=parseFloat(num));if(shiftTotalRaw-u>0)otherRaws.push({n:'Сырье (старая запись)',w:shiftTotalRaw-u});}
-         if(v.rawBase){shiftTotalRaw+=v.rawBase.w;if(v.rawBase.n&&v.rawBase.n.toLowerCase()===searchN)u+=v.rawBase.w;else otherRaws.push({n:v.rawBase.n,w:v.rawBase.w});}
-         if(v.rawAdd)v.rawAdd.forEach(x=>{shiftTotalRaw+=x.w;if(x.n&&x.n.toLowerCase()===searchN)u+=x.w;else otherRaws.push({n:x.n,w:x.w});});
-         if(u>0){
-          let oS='',shiftDV=0;
-          if(v.items)v.items.forEach(x=>{let w=(x.q*x.w)+(x.l||0);if(!w&&x.amount)w=parseFloat(x.amount)||0;if(w>0){let nm=x.n||x.name||'';oS+=`${esc(nm)} (${w}кг)<br>`;let isDV=x.type==='DV';if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm))isDV=!0;if(isDV){shiftDV+=w;sumDV[nm]=(sumDV[nm]||0)+w;}else sumOther[nm]=(sumOther[nm]||0)+w;}});
-          let otherRawTotal=shiftTotalRaw-u;if(otherRawTotal<0)otherRawTotal=0;
-          rep.push({dt:v.date,dFmt:vD.split('-').reverse().join('.'),shop:title,used:u,otherRaw:otherRawTotal,otherRaws:otherRaws,oS:oS,shiftDV:shiftDV});
-         }
-        }
-       });
-      };
-      pWs('Krup_Report','КРУПОРУШКА');pWs('Vibro_Report','ВИБРОСТОЛ');pWs('ZSHM_Report','ЗШМ');
-      if(data['Фасовка'])Object.values(data['Фасовка']).forEach(v=>{const vD=pDate(v.date);if(vD>=dStart){let u=0,shiftTotalRaw=0,otherRaws=[];if(v.items)v.items.forEach(x=>{let amt=Math.abs(x.amount);shiftTotalRaw+=amt;if(x.name&&x.name.toLowerCase()===searchN)u+=amt;else otherRaws.push({n:x.name,w:amt});});if(u>0){let oS='';if(v.outputItems)v.outputItems.forEach(x=>{oS+=`${esc(x.name)} (${x.count}шт)<br>`;sumFas[x.name]=(sumFas[x.name]||0)+x.count;});let otherRawTotal=shiftTotalRaw-u;if(otherRawTotal<0)otherRawTotal=0;rep.push({dt:v.date,dFmt:vD.split('-').reverse().join('.'),shop:'ФАСОВКА',used:u,otherRaw:otherRawTotal,otherRaws:otherRaws,oS:oS,shiftDV:0});}}});
-      rep.sort((a,b)=>b.dt.localeCompare(a.dt));
-      let rows='';
-      rep.forEach(r=>{
-       totalUsed+=r.used;totalDV+=r.shiftDV;if(r.otherRaw)totalOtherRaw+=r.otherRaw;
-       let shiftTotalInput=r.used+(r.otherRaw||0);
-       let pct=shiftTotalInput>0&&r.shiftDV>0?((r.shiftDV/shiftTotalInput)*100).toFixed(1):0;
-       let pctHtml=pct>0?`<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Выход готовой (ДВ): ${pct}%</div>`:'';
-       let otherRawHtml='';
-       if(r.otherRaws&&r.otherRaws.length>0)r.otherRaws.forEach(add=>{otherRawHtml+=`<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span style="flex:1">Добавка: ${esc(add.n)}</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${add.w} кг</span></div>`;});
-       else if(r.otherRaw>0)otherRawHtml=`<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span>Добавка (другое сырье):</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${r.otherRaw} кг</span></div>`;
-       rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;"><span style="font-weight:900">${r.dFmt}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div><div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:2px;"><span>Ушло сырья (эта партия):</span> <span class="val-neg" style="font-weight:900">${r.used} кг</span></div>${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
-      });
-      if(!rows)rows=`<div style="text-align:center;padding:15px;color:#64748b;font-weight:900">Движений по партии не найдено</div>`;
-      let curOstatok=totalIn-totalUsed,totalInputAll=totalUsed+totalOtherRaw,avgPct=totalInputAll>0&&totalDV>0?((totalDV/totalInputAll)*100).toFixed(1):0;
-      let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px">ИТОГОВЫЙ ВЫХОД ПАРТИИ</div>`;
-      if(Object.keys(sumDV).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВАЯ ПРОДУКЦИЯ (ДВ):</div>`;Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
-      if(Object.keys(sumOther).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
-      if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`;});}
-      sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД (ДВ):</span><span>${avgPct}%</span></div></div>`;
-      let otherRawTotalHtml=totalOtherRaw>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${totalOtherRaw} кг</b></div>`:'';
-      let h=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px;text-transform:uppercase">${esc(n)}</div><div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px;margin-bottom:10px;"><div style="text-align:center;font-size:11px;font-weight:900;color:#047857;margin-bottom:4px">ПРИХОДЫ СЫРЬЯ:</div>${hIn}<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;margin-top:6px;color:#047857"><span>ВСЕГО ПРИШЛО:</span><span>${totalIn} кг</span></div></div><div id="batchRows" style="max-height:40vh;overflow-y:auto;margin-bottom:5px;padding-right:2px">${rows}</div>${sumHtml}<div style="border-top:2px solid #e2e8f0;padding-top:8px;font-size:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Израсходовано (эта партия):</b> <b class="val-neg">${totalUsed} кг</b></div>${otherRawTotalHtml}<div style="display:flex;justify-content:space-between;margin-bottom:4px;border-top:1px dashed #cbd5e1;padding-top:6px;margin-top:4px;font-size:14px"><b>ОСТАТОК СЫРЬЯ:</b> <b style="color:#0f172a">${curOstatok} кг</b></div></div><button class="btn-main" onclick="printBatchReport()" style="background:#0f172a;margin-top:5px">🖨️ ПЕЧАТЬ ОТЧЕТА</button>`;
-      window.tempBatchPrint=h.replace(/max-height:40vh;overflow-y:auto;/g,'');
-      gID('mT').innerText='ОТГРУЗКА ПАРТИИ';gID('mB').innerHTML=h;
-     },800);
+        const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+        gID('mT').innerText='ЗАГРУЗКА...';
+        gID('mB').innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных из цехов...</div>';
+        gID('mdl').style.display='flex';
+        
+        ensureData(['Krup_Report','Vibro_Report','ZSHM_Report','Фасовка']);
+        
+        setTimeout(()=>{
+            let rep=[], totalUsed=0, totalOtherRaw=0, totalDV=0;
+            let inRecords=[], totalIn=0, sumDV={}, sumOther={}, sumFas={};
+            
+            // 1. Собираем реальные приходы (только для активного склада)
+            if(data[c]){
+                Object.values(data[c]).forEach(v=>{
+                    if(v.name===rawName && v.amount>0){
+                        totalIn += v.amount;
+                        inRecords.push({ d: v.date ? v.date.split('T')[0] : '2000-01-01', a: v.amount });
+                    }
+                });
+            }
+            
+            inRecords.sort((a,b)=>a.d.localeCompare(b.d));
+            
+            // 2. Определяем дату начала для поиска смен
+            // Если архив - ищем историю этой папки. Если активная - строго с момента её первого живого прихода!
+            const dStart = (c === 'Stock_Archive') ? '2000-01-01' : (inRecords.length > 0 ? inRecords[0].d : '2000-01-01');
+            const pDate=(d)=>d?d.split('T')[0]:'2000-01-01';
+            const searchN=String(rawName).toLowerCase();
+            
+            // 3. Ищем смены
+            const pWs=(dbN,title)=>{
+                if(!data[dbN])return;
+                Object.values(data[dbN]).forEach(v=>{
+                    const vD=pDate(v.date);
+                    if(vD>=dStart){
+                        let u=0,shiftTotalRaw=0,otherRaws=[];
+                        if(v.rawMix&&typeof v.rawMix==='string'){let matches=v.rawMix.match(/\d+(?:\.\d+)?/g);if(matches)matches.forEach(num=>shiftTotalRaw+=parseFloat(num));if(v.rawMix.toLowerCase().includes(searchN)&&matches)matches.forEach(num=>u+=parseFloat(num));if(shiftTotalRaw-u>0)otherRaws.push({n:'Сырье (старая запись)',w:shiftTotalRaw-u});}
+                        if(v.rawBase){shiftTotalRaw+=v.rawBase.w;if(v.rawBase.n&&v.rawBase.n.toLowerCase()===searchN)u+=v.rawBase.w;else otherRaws.push({n:v.rawBase.n,w:v.rawBase.w});}
+                        if(v.rawAdd)v.rawAdd.forEach(x=>{shiftTotalRaw+=x.w;if(x.n&&x.n.toLowerCase()===searchN)u+=x.w;else otherRaws.push({n:x.n,w:x.w});});
+                        if(u>0){
+                            let oS='',shiftDV=0;
+                            if(v.items)v.items.forEach(x=>{let w=(x.q*x.w)+(x.l||0);if(!w&&x.amount)w=parseFloat(x.amount)||0;if(w>0){let nm=x.n||x.name||'';oS+=`${esc(nm)} (${w}кг)<br>`;let isDV=x.type==='DV';if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm))isDV=!0;if(isDV){shiftDV+=w;sumDV[nm]=(sumDV[nm]||0)+w;}else sumOther[nm]=(sumOther[nm]||0)+w;}});
+                            let otherRawTotal=shiftTotalRaw-u;if(otherRawTotal<0)otherRawTotal=0;
+                            rep.push({dt:v.date,dFmt:vD.split('-').reverse().join('.'),shop:title,used:u,otherRaw:otherRawTotal,otherRaws:otherRaws,oS:oS,shiftDV:shiftDV});
+                        }
+                    }
+                });
+            };
+            
+            pWs('Krup_Report','КРУПОРУШКА');pWs('Vibro_Report','ВИБРОСТОЛ');pWs('ZSHM_Report','ЗШМ');
+            
+            if(data['Фасовка'])Object.values(data['Фасовка']).forEach(v=>{const vD=pDate(v.date);if(vD>=dStart){let u=0,shiftTotalRaw=0,otherRaws=[];if(v.items)v.items.forEach(x=>{let amt=Math.abs(x.amount);shiftTotalRaw+=amt;if(x.name&&x.name.toLowerCase()===searchN)u+=amt;else otherRaws.push({n:x.name,w:amt});});if(u>0){let oS='';if(v.outputItems)v.outputItems.forEach(x=>{oS+=`${esc(x.name)} (${x.count}шт)<br>`;sumFas[x.name]=(sumFas[x.name]||0)+x.count;});let otherRawTotal=shiftTotalRaw-u;if(otherRawTotal<0)otherRawTotal=0;rep.push({dt:v.date,dFmt:vD.split('-').reverse().join('.'),shop:'ФАСОВКА',used:u,otherRaw:otherRawTotal,otherRaws:otherRaws,oS:oS,shiftDV:0});}}});
+            
+            rep.sort((a,b)=>b.dt.localeCompare(a.dt));
+            
+            let rows='';
+            rep.forEach(r=>{
+                totalUsed+=r.used;totalDV+=r.shiftDV;if(r.otherRaw)totalOtherRaw+=r.otherRaw;
+                let shiftTotalInput=r.used+(r.otherRaw||0);
+                let pct=shiftTotalInput>0&&r.shiftDV>0?((r.shiftDV/shiftTotalInput)*100).toFixed(1):0;
+                let pctHtml=pct>0?`<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Выход готовой (ДВ): ${pct}%</div>`:'';
+                let otherRawHtml='';
+                if(r.otherRaws&&r.otherRaws.length>0)r.otherRaws.forEach(add=>{otherRawHtml+=`<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span style="flex:1">Добавка: ${esc(add.n)}</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${add.w} кг</span></div>`;});
+                else if(r.otherRaw>0)otherRawHtml=`<div style="font-size:11.5px;display:flex;justify-content:space-between;margin-bottom:2px;color:#d97706;line-height:1.2"><span>Добавка (другое сырье):</span> <span style="font-weight:900;white-space:nowrap;margin-left:5px;">${r.otherRaw} кг</span></div>`;
+                rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;"><span style="font-weight:900">${r.dFmt}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div><div style="font-size:12px;display:flex;justify-content:space-between;margin-bottom:2px;"><span>Ушло сырья (эта партия):</span> <span class="val-neg" style="font-weight:900">${r.used} кг</span></div>${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
+            });
+            if(!rows)rows=`<div style="text-align:center;padding:15px;color:#64748b;font-weight:900">Движений по партии не найдено</div>`;
+            
+            // 4. Отрисовка блока "ПРИХОДЫ"
+            let hIn='';
+            let curOstatok = 0;
+            
+            if (c === 'Stock_Archive') {
+                curOstatok = totalIn; 
+                totalIn = totalUsed + curOstatok; 
+                hIn = `<div style="display:flex;justify-content:space-between;font-size:11px;color:#047857;border-bottom:1px dashed #a7f3d0;padding:2px 0;"><span>Приходы (поднято из архива)</span><span style="font-weight:900">+${totalIn} кг</span></div>`;
+            } else {
+                curOstatok = totalIn - totalUsed;
+                inRecords.forEach(x=>{
+                    hIn+=`<div style="display:flex;justify-content:space-between;font-size:11px;color:#047857;border-bottom:1px dashed #a7f3d0;padding:2px 0;"><span>Приход ${x.d.split('-').reverse().join('.')}</span><span style="font-weight:900">+${x.a} кг</span></div>`;
+                });
+            }
+            if(!hIn)hIn=`<div style="font-size:11px;color:#64748b;text-align:center">Нет данных о приходе</div>`;
+            
+            let totalInputAll=totalUsed+totalOtherRaw,avgPct=totalInputAll>0&&totalDV>0?((totalDV/totalInputAll)*100).toFixed(1):0;
+            
+            let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px">ИТОГОВЫЙ ВЫХОД ПАРТИИ</div>`;
+            if(Object.keys(sumDV).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВА ПРОДУКЦИЯ (ДВ):</div>`;Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
+            if(Object.keys(sumOther).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
+            if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`;});}
+            sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД (ДВ):</span><span>${avgPct}%</span></div></div>`;
+            
+            let otherRawTotalHtml=totalOtherRaw>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${totalOtherRaw} кг</b></div>`:'';
+            
+            let h=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px;text-transform:uppercase">${esc(n)}</div><div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px;margin-bottom:10px;"><div style="text-align:center;font-size:11px;font-weight:900;color:#047857;margin-bottom:4px">ПРИХОДЫ СЫРЬЯ:</div>${hIn}<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;margin-top:6px;color:#047857"><span>ВСЕГО ПРИШЛО:</span><span>${totalIn} кг</span></div></div><div id="batchRows" style="max-height:40vh;overflow-y:auto;margin-bottom:5px;padding-right:2px">${rows}</div>${sumHtml}<div style="border-top:2px solid #e2e8f0;padding-top:8px;font-size:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Израсходовано (эта партия):</b> <b class="val-neg">${totalUsed} кг</b></div>${otherRawTotalHtml}<div style="display:flex;justify-content:space-between;margin-bottom:4px;border-top:1px dashed #cbd5e1;padding-top:6px;margin-top:4px;font-size:14px"><b>ОСТАТОК СЫРЬЯ:</b> <b style="color:#0f172a">${curOstatok} кг</b></div></div><button class="btn-main" onclick="printBatchReport()" style="background:#0f172a;margin-top:5px">🖨️ ПЕЧАТЬ ОТЧЕТА</button>`;
+            
+            window.tempBatchPrint=h.replace(/max-height:40vh;overflow-y:auto;/g,'');
+            gID('mT').innerText='ОТЧЕТ ПАРТИИ';
+            gID('mB').innerHTML=h;
+            
+        }, 500);
     };
+
 window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<style>body{color:#000;font-family:sans-serif;font-size:10px}.btn-main{display:none!important;}#batchRows{display:grid!important;grid-template-columns:repeat(3, 1fr)!important;gap:4px!important}.rep-card{box-shadow:none!important;border:1px solid #000!important;margin-bottom:0!important;padding:4px!important;page-break-inside:avoid;font-size:9px!important} .rep-card div, .rep-card span {line-height:1.1!important;margin-bottom:1px!important;}</style>`;gID('print-view').innerHTML=style+h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
     function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
     function rWgh(c){const t={};gP('WeightStock').forEach(p=>t[p]=0);if(data.WeightStock)Object.values(data.WeightStock).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{const v=t[n];h+=`<div class="item-card" onclick="if(!corrMode)showH('WeightStock','${esc(n)}')"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','WeightStock','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
