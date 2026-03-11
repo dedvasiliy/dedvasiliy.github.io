@@ -129,7 +129,37 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px}}
 </style></head>
 <body>
-<div id="lockScreen"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo"><div class="lock-title">УЧЕТ</div><input type="email" id="appEmail" class="lock-inp" placeholder="Email"><input type="password" id="appPass" class="lock-inp" placeholder="Пароль"><button class="btn-main" style="max-width:250px" onclick="tryLogin()">ВОЙТИ</button><div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div></div>
+<div id="lockScreen">
+    <img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo">
+    <div class="lock-title">УЧЕТ</div>
+
+    <div id="loginBaseBlock" style="width:100%; max-width:250px; text-align:center;">
+        <input type="email" id="appEmail" class="lock-inp" placeholder="Email">
+        <input type="password" id="appPass" class="lock-inp" placeholder="Пароль">
+        <button class="btn-main" onclick="tryLogin()">ВОЙТИ</button>
+        <div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div>
+    </div>
+    <div id="mfaEnrollBlock" style="display:none; width:100%; max-width:250px; text-align:center;">
+        <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 1: ПОДТВЕРДИТЕ ПОЧТУ</div>
+        
+        <button class="btn-main" onclick="firebase.auth().currentUser.sendEmailVerification().then(()=>alert('Письмо отправлено! Проверьте ящик (и папку Спам).')).catch(e=>alert(e.message))" style="background:#16a34a; margin-bottom:15px;">ОТПРАВИТЬ ПИСЬМО НА ПОЧТУ</button>
+        
+        <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 2: ПРИВЯЖИТЕ ТЕЛЕФОН</div>
+        <input type="tel" id="mfaPhone" class="lock-inp" placeholder="+380...">
+        <button class="btn-main" onclick="sendEnrollSms()" id="btnSendEnroll">ОТПРАВИТЬ СМС</button>
+        <button class="btn-main" onclick="cancelMfa()" style="background:#e2e8f0; color:#475569;">ОТМЕНА</button>
+    </div>
+
+    <div id="mfaVerifyBlock" style="display:none; width:100%; max-width:250px; text-align:center;">
+        <div id="mfaHint" style="font-size:12px; color:var(--p); font-weight:900; margin-bottom:10px;">КОД ИЗ СМС</div>
+        <input type="text" id="mfaCode" class="lock-inp" placeholder="123456">
+        <button class="btn-main" onclick="verifySmsCode()" id="btnVerify">ПОДТВЕРДИТЬ</button>
+        <button class="btn-main" onclick="cancelMfa()" style="background:#e2e8f0; color:#475569;">ОТМЕНА</button>
+    </div>
+
+    <div id="recaptcha-container"></div>
+</div>
+
 <div id="act"></div><div id="cnt"></div>
 <div class="bottom-nav"><button id="navM" onclick="renderHome()">МЕНЮ</button><button id="navB" onclick="goBack()">НАЗАД</button></div>
 <div id="mdl" class="modal"><div class="modal-box"><div class="modal-header"><div style="display:flex;align-items:center;gap:10px;"><h4 id="mT" style="margin:0;font-size:15px;font-weight:900"></h4><span id="mQty" style="color:var(--p);font-weight:900;font-size:14px;display:none;">0 шт/кг</span></div><button onclick="closeModal()" style="border:none;background:#fee2e2;color:#dc2626;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer">✕ ЗАКРЫТЬ</button></div><div id="mB" class="modal-body"></div></div></div>
@@ -167,8 +197,47 @@ applyShipLayout();
 function closeModal(){gID('mdl').style.display='none';gID('mQty').style.display='none';}
 function closeConf(){gID('confMdl').style.display='none';pendingAction=null;}
 function doConfirm(){if(pendingAction)pendingAction();} 
-
-auth.onAuthStateChanged(u=>{if(u){gID('lockScreen').classList.add('lock-hidden');D.body.classList.add('nav-active');isLogged=!0;if(localStorage.getItem('admT')==='1')isAdmin=!0;initAppData()}else{gID('lockScreen').classList.remove('lock-hidden');D.body.classList.remove('nav-active');isLogged=!1;isAdmin=!1;gID('cnt').innerHTML='';data={}}});
+let recaptchaVerifier = null;
+let mfaResolver = null;
+let mfaVerificationId = null;
+let currentUserForEnrollment = null;
+let isEnrollmentMode = false;
+function cancelMfa() {
+    if(currentUserForEnrollment && isEnrollmentMode) firebase.auth().signOut();
+    gID('loginBaseBlock').style.display = 'block';
+    gID('mfaEnrollBlock').style.display = 'none';
+    gID('mfaVerifyBlock').style.display = 'none';
+    gID('loginStatus').innerText = '';
+    if (recaptchaVerifier) { 
+        recaptchaVerifier.clear(); 
+        recaptchaVerifier = null; 
+        gID('recaptcha-container').innerHTML = '';
+    }
+}
+auth.onAuthStateChanged(u => {
+    if (u) {
+        if (u.multiFactor && u.multiFactor.enrolledFactors.length === 0) {
+            currentUserForEnrollment = u;
+            isEnrollmentMode = true;
+            gID('loginBaseBlock').style.display = 'none';
+            gID('mfaEnrollBlock').style.display = 'block';
+            return;
+        }
+        gID('lockScreen').classList.add('lock-hidden');
+        D.body.classList.add('nav-active');
+        isLogged = !0;
+        if (localStorage.getItem('admT') === '1') isAdmin = !0;
+        initAppData();
+    } else {
+        gID('lockScreen').classList.remove('lock-hidden');
+        D.body.classList.remove('nav-active');
+        isLogged = !1;
+        isAdmin = !1;
+        gID('cnt').innerHTML = '';
+        data = {};
+        cancelMfa();
+    }
+});
 
 function initAppData(){
   renderHome();
@@ -185,7 +254,98 @@ function initAppData(){
   db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); });
   db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); });
 }
-function tryLogin(){const e=gID('appEmail').value,p=gID('appPass').value;if(!e||!p)return alert('Введите данные');auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message))}
+function tryLogin() {
+    const e = gID('appEmail').value, p = gID('appPass').value;
+    if (!e || !p) return alert('Введите данные');
+    gID('loginStatus').innerText = 'Проверка...';
+    
+    auth.signInWithEmailAndPassword(e, p).catch(err => {
+        if (err.code === 'auth/multi-factor-auth-required') {
+            mfaResolver = err.resolver;
+            startMfaSignIn(mfaResolver);
+        } else {
+            alert(err.message);
+            gID('loginStatus').innerText = '';
+        }
+    });
+}
+async function sendEnrollSms() {
+    const phone = gID('mfaPhone').value.trim();
+    if (!phone.startsWith('+380') || phone.length < 13) return alert('Введите номер в формате +380...');
+    gID('btnSendEnroll').innerText = 'Отправка...';
+    
+    // Жестко убиваем старую капчу перед каждой отправкой
+    if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+    gID('recaptcha-container').innerHTML = '';
+
+    // Создаем новую капчу
+    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+
+    try {
+        // ВАЖНО: Принудительно рендерим капчу перед вызовом телефона
+        await recaptchaVerifier.render();
+
+        const session = await currentUserForEnrollment.multiFactor.getSession();
+        const phoneInfoOptions = { phoneNumber: phone, session: session };
+        const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        
+        mfaVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier);
+        
+        gID('mfaEnrollBlock').style.display = 'none';
+        gID('mfaVerifyBlock').style.display = 'block';
+        gID('mfaHint').innerText = 'Код отправлен на ' + phone;
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+        gID('btnSendEnroll').innerText = 'ОТПРАВИТЬ СМС';
+        if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+        gID('recaptcha-container').innerHTML = '';
+    }
+}
+
+async function startMfaSignIn(resolver) {
+    if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+    gID('recaptcha-container').innerHTML = '';
+    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+
+    const hint = resolver.hints[0];
+    gID('loginBaseBlock').style.display = 'none';
+    
+    try {
+        await recaptchaVerifier.render(); // Рендерим явно
+        const phoneInfoOptions = { multiFactorHint: hint, session: resolver.session };
+        const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        
+        mfaVerificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier);
+        
+        gID('mfaVerifyBlock').style.display = 'block';
+        gID('mfaHint').innerText = 'СМС отправлено на ' + hint.phoneNumber;
+        isEnrollmentMode = false;
+    } catch (error) {
+        alert('Ошибка отправки СМС: ' + error.message);
+        cancelMfa();
+    }
+}
+
+async function verifySmsCode() {
+    const code = gID('mfaCode').value.trim();
+    if (!code) return alert('Введите код');
+    gID('btnVerify').innerText = 'Проверка...';
+    try {
+        const cred = firebase.auth.PhoneAuthProvider.credential(mfaVerificationId, code);
+        const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+        if (isEnrollmentMode) {
+            await currentUserForEnrollment.multiFactor.enroll(multiFactorAssertion, 'Рабочий телефон');
+            alert('Телефон успешно привязан!');
+            window.location.reload(); 
+        } else {
+            await mfaResolver.resolveSignIn(multiFactorAssertion);
+        }
+    } catch (error) {
+        alert('Неверный код СМС!');
+        gID('btnVerify').innerText = 'ПОДТВЕРДИТЬ';
+    }
+}
+
 function tryAdmin(){if(isAdmin){isAdmin=!1;localStorage.removeItem('admT');corrMode=!1;renderHome();return alert('Админ выключен')}const p=prompt('Пароль:');if(p==='3011'){isAdmin=!0;localStorage.setItem('admT','1');renderHome();alert('Админ включен')}}
 const esc = s => s ? String(s).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
 function renderHome(){
