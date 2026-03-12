@@ -223,12 +223,27 @@ auth.onAuthStateChanged(u => {
             gID('mfaEnrollBlock').style.display = 'block';
             return;
         }
+
+        const today = new Date().toISOString().split('T')[0];
+        const authDate = localStorage.getItem('authDate');
+
+        if (authDate && authDate !== today) {
+            firebase.auth().signOut();
+            localStorage.removeItem('authDate');
+            return; 
+        }
+
+        if (!authDate) {
+            localStorage.setItem('authDate', today);
+        }
+
         gID('lockScreen').classList.add('lock-hidden');
         D.body.classList.add('nav-active');
         isLogged = !0;
         if (localStorage.getItem('admT') === '1') isAdmin = !0;
         initAppData();
     } else {
+        localStorage.removeItem('authDate');
         gID('lockScreen').classList.remove('lock-hidden');
         D.body.classList.remove('nav-active');
         isLogged = !1;
