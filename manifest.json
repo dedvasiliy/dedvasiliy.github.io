@@ -9,14 +9,12 @@
     {
       "src": "https://i.ibb.co/wNfrSMRx/IMG-20260313-183114.jpg",
       "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/jpeg"
     },
     {
       "src": "https://i.ibb.co/wNfrSMRx/IMG-20260313-183114.jpg",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/jpeg"
     }
   ]
 }
