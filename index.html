@@ -127,7 +127,11 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
   .m-rep-cat { background:#f8fafc; font-weight:bold; text-align:left !important; padding-left:5px !important; }
 }
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px}}
-</style></head>
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4338ca">
+<link rel="apple-touch-icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
+</head>
 <body>
 <div id="lockScreen">
     <img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo">
@@ -1767,4 +1771,14 @@ window.speakOut = function(text) {
     try { rec.start(); } catch(err) { alert(err.message); }
 };
 
-        </script></body></html>
+        </script>
+        <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SW зарегистрирован'))
+        .catch(err => console.log('Ошибка SW:', err));
+    });
+  }
+</script>
+</body></html>
