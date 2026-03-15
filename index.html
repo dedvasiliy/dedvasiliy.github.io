@@ -1783,4 +1783,45 @@ window.speakOut = function(text) {
     });
   }
 </script>
+<div id="installPopup" class="modal-box" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:400px; padding:15px; text-align:center; z-index:10000; box-shadow:0 10px 40px rgba(0,0,0,0.3); border:2px solid var(--p);">
+    <div style="font-weight:900; font-size:14px; margin-bottom:15px; color:var(--p);">УСТАНОВИТЬ "СКЛАД" НА ТЕЛЕФОН?</div>
+    <div style="font-size:11px; color:#64748b; margin-bottom:15px; line-height:1.3;">Приложение будет работать быстрее и открываться без интернета.</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button class="btn-main" id="btnInstallCancel" style="background:#e2e8f0; color:#475569; margin:0;">ПОЗЖЕ</button>
+        <button class="btn-main" id="btnInstallConfirm" style="background:#16a34a; margin:0;">УСТАНОВИТЬ</button>
+    </div>
+</div>
+<script>
+let deferredPrompt;
+const installPopup = document.getElementById('installPopup');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Отменяем стандартный немедленный показ от браузера
+    e.preventDefault();
+    // Сохраняем системное событие в память
+    deferredPrompt = e;
+
+    // Запускаем таймер на 5 секунд
+    setTimeout(() => {
+        if (deferredPrompt) {
+            installPopup.style.display = 'block'; // показываем твое окно
+        }
+    }, 5000);
+});
+
+// Что делать при нажатии "УСТАНОВИТЬ"
+document.getElementById('btnInstallConfirm').addEventListener('click', async () => {
+    installPopup.style.display = 'none'; // прячем твое окно
+    if (deferredPrompt) {
+        deferredPrompt.prompt(); // вызываем жесткое системное окно установки
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null; // очищаем память
+    }
+});
+
+// Что делать при нажатии "ПОЗЖЕ"
+document.getElementById('btnInstallCancel').addEventListener('click', () => {
+    installPopup.style.display = 'none'; // просто прячем окно и не мешаем работать
+});
+</script>
 </body></html>
