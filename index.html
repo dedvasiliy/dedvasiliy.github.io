@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v789</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v790</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#000;--w:#fff}
 body.dark-theme { --bg: #121212; --w: #1e1e1e; --t: #f8fafc; }
@@ -445,7 +445,7 @@ function renderHome(){
  cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМИН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМИН</button>`;
  const ver=`<div class="ver-info" onclick="openModal('changelog')" style="cursor:pointer; background:#fff; border:1px solid #cbd5e1; padding:4px 6px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align:center;">
-  <span style="color:var(--p); font-size:10px;">v 789 ℹ️</span><br>
+  <span style="color:var(--p); font-size:10px;">v 790 ℹ️</span><br>
   <span style="font-size:9px; color:#d97706;">ЧТО НОВОГО?</span><br>
   <span style="font-size:8px; color:#94a3b8; font-weight:normal;">${document.lastModified}</span>
  </div>`;
@@ -1051,6 +1051,13 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
           else if(t==='changelog'){
       h.innerText='ИСТОРИЯ ОБНОВЛЕНИЙ';
       m.innerHTML=`
+      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
+ <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 790 (16.03.2026)</div>
+ <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
+  <li>Системные окна заменены на всплывающие уведомления.</li>
+  <li>Они появляются внизу экрана, не блокируют работу и исчезают сами через 3 секунды.</li>
+ </ul>
+</div>
       <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
  <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 789 (16.03.2026)</div>
  <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
