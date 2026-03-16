@@ -1,6 +1,9 @@
 <!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v784</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#000;--w:#fff}
+body.dark-theme { --bg: #121212; --w: #1e1e1e; --t: #f8fafc; }
+body.dark-theme .dash-item, body.dark-theme .card, body.dark-theme .item-card, body.dark-theme .j-card, body.dark-theme .modal-box, body.dark-theme .modal-header, body.dark-theme .bottom-nav, body.dark-theme input, body.dark-theme select, body.dark-theme .month-group, body.dark-theme .month-head, body.dark-theme .month-body, body.dark-theme .dr-card { background: var(--w); border-color: #334155; color: var(--t); }
+body.dark-theme .item-title, body.dark-theme .lbl-small { color: #cbd5e1; }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;padding:2px;padding-bottom:60px;color:var(--t);overflow-x:hidden;width:100vw}
 #lockScreen{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
 .lock-hidden{opacity:0;pointer-events:none}
@@ -173,6 +176,8 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 <script>
 const WS_CFG={'VIBRO':{title:'ВИБРОСТОЛ',db:'Vibro_Report',prefix:'v',note:'Вібро'},'KRUP':{title:'КРУПОРУШКА',db:'Krup_Report',prefix:'k',note:'Крупорушка'},'ZSHM':{title:'ЗШМ',db:'ZSHM_Report',prefix:'z',note:'ЗШМ'}};
 const D=document,gID=i=>D.getElementById(i);
+function toggleTheme(){D.body.classList.toggle('dark-theme');localStorage.setItem('theme',D.body.classList.contains('dark-theme')?'dark':'light')}
+if(localStorage.getItem('theme')==='dark')D.body.classList.add('dark-theme');
 const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
 if(!firebase.apps.length)firebase.initializeApp(cfg);
 const db=firebase.database().ref('production'),auth=firebase.auth();
@@ -384,6 +389,7 @@ function renderHome(){
   <div class="dash-item" onclick="setCat('ProdSub')"><span>🛠️ ПРОИЗВОДСТВО</span></div>
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ</span></div>
+  <div class="dash-item" onclick="toggleTheme()"><span>🌗 ТЕМА</span></div>
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
  updNav();
