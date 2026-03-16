@@ -134,6 +134,50 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px}}
 .spinner { width: 50px; height: 50px; border: 5px solid #f8fafc; border-top: 5px solid var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin: auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+...
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ВСТАВЛЯТЬ СЮДА */
+#toast-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  width: 90%;
+  max-width: 400px;
+}
+.toast-msg {
+  background: #334155;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: toastIn 0.3s forwards, toastOut 0.3s forwards 2.5s;
+}
+body.dark-theme .toast-msg {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+@keyframes toastIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+/* КОНЕЦ ВСТАВКИ */
+
+</style>
+
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4338ca">
@@ -183,6 +227,23 @@ const WS_CFG={'VIBRO':{title:'ВИБРОСТОЛ',db:'Vibro_Report',prefix:'v',n
 const D=document,gID=i=>D.getElementById(i);
 function showLoad() { gID('loader').style.display = 'flex'; }
 function hideLoad() { gID('loader').style.display = 'none'; }
+window.alert = function(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast-msg';
+  toast.innerText = message;
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    if (toast.parentElement) toast.parentElement.removeChild(toast);
+  }, 3000);
+};
+
 function toggleTheme(){D.body.classList.toggle('dark-theme');localStorage.setItem('theme',D.body.classList.contains('dark-theme')?'dark':'light')}
 if(localStorage.getItem('theme')==='dark')D.body.classList.add('dark-theme');
 const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
