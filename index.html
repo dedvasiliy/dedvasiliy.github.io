@@ -546,7 +546,8 @@ else if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="d
  }
  else if(['ArchSubIn','ArchSubOut'].includes(c)){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ПО ДАТЕ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ПО ИМЕНИ</div></div>`}
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
-  else if(c==='Analytics'){ct.innerHTML=`<div class="z-head">АНАЛИТИКА</div><div class="dash-grid"><div class="dash-item" onclick="showWsChart('KRUP')">📊 КРУПОРУШКА</div><div class="dash-item" onclick="showWsChart('ZSHM')">📊 ЗШМ</div><div class="dash-item" onclick="showWsChart('VIBRO')">📊 ВИБРОСТОЛ</div></div><div style="text-align:center; padding:20px; color:#64748b; font-size:12px; font-weight:bold;">Здесь скоро появятся графики приходов, отгрузок и остатков.</div>`;}
+  else if(c==='Analytics'){ct.innerHTML=`<div class="z-head">АНАЛИТИКА</div><div class="dash-grid"><div class="dash-item" style="border:2px solid var(--p)" onclick="showShipChart()">📈 ОТГРУЗКИ</div>
+<div class="dash-item" onclick="showWsChart('KRUP')">📊 КРУПОРУШКА</div><div class="dash-item" onclick="showWsChart('ZSHM')">📊 ЗШМ</div><div class="dash-item" onclick="showWsChart('VIBRO')">📊 ВИБРОСТОЛ</div></div><div style="text-align:center; padding:20px; color:#64748b; font-size:12px; font-weight:bold;">Здесь скоро появятся графики приходов и остатков.</div>`;}
 
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
@@ -1097,6 +1098,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
   <li>На главный экран добавлена новая папка <b>"АНАЛИТИКА"</b> для визуального контроля показателей.</li>
   <li>Кнопка смены темы перенесена в раздел "НАСТРОЙКИ", чтобы сделать меню логичнее.</li>
   <li>В Аналитике появились столбчатые графики выработки цехов (Крупорушка, ЗШМ, Вибростол). Теперь можно наглядно сравнить затраченное сырье и полученную готовую продукцию (ДВ) за последние 14 рабочих смен.</li>
+  <li>Добавлен график отгрузок.Теперь можно отслеживать динамику ежедневных продаж (в кг и шт) за последние 14 рабочих смен.</li>
  </ul>
 </div>
 
@@ -2003,6 +2005,53 @@ window.showWsChart = function(k) {
                 plugins: { legend: { position: 'bottom' } }
             }
 
+        });
+    }, 100);
+};
+let shipChartInstance = null;
+window.showShipChart = function() {
+    const d = data['ArchInvoices'] || {};
+    const byDate = {};
+    
+    Object.values(d).forEach(v => {
+        if(!v.date) return;
+        const dt = v.date.split('T')[0];
+        if(!byDate[dt]) byDate[dt] = 0;
+        
+        if(v.items) {
+            v.items.forEach(it => {
+                const p = it.split('|');
+                byDate[dt] += parseFloat(p[1]) || 0;
+            });
+        }
+    });
+    
+    const sortedDates = Object.keys(byDate).sort().slice(-14);
+    const labels = sortedDates.map(dt => dt.split('-').slice(1).reverse().join('.'));
+    const dataArr = sortedDates.map(dt => byDate[dt]);
+    
+    gID('mdl').style.display = 'flex';
+    gID('mT').innerText = 'ГРАФИК ОТГРУЗОК';
+    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="shipChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Общий объем отгрузок за последние 14 рабочих дней.</div>`;
+    
+    setTimeout(() => {
+        const ctx = document.getElementById('shipChartCanvas').getContext('2d');
+        if (shipChartInstance) shipChartInstance.destroy();
+        shipChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Отгружено (шт/кг)', data: dataArr, backgroundColor: '#3b82f6', borderRadius: 4 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 9 } } },
+                    y: { beginAtZero: true } 
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
         });
     }, 100);
 };
