@@ -552,7 +552,7 @@ else if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="d
  loadData();updCorrBtn();updNav()
 }
 
-function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings'].includes(cur))return;
+function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics'].includes(cur))return;
  if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
 
 function rContractors(c){
