@@ -185,6 +185,7 @@ body.dark-theme .toast-msg {
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4338ca">
 <link rel="apple-touch-icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div id="loader" class="modal" style="z-index:100000;"><div class="spinner"></div></div>
@@ -1922,6 +1923,70 @@ window.restoreDB = function(event) {
     };
     reader.readAsText(file);
 };
+let wsChartInstance = null;
+window.showWsChart = function(k) {
+    const c = WS_CFG[k];
+    const dbN = c.db;
+    const d = data[dbN] || {};
+    
+    const byDate = {};
+    Object.values(d).forEach(v => {
+        const dt = (v.date || '2000-01-01').split('T')[0];
+        if (!byDate[dt]) byDate[dt] = { raw: 0, dv: 0 };
+        
+        let tr = 0;
+        if (v.rawBase) tr += v.rawBase.w;
+        if (v.rawAdd) v.rawAdd.forEach(x => tr += x.w);
+        if (v.rawMix) {
+            let m = String(v.rawMix).match(/\d+(?:\.\d+)?/g);
+            if (m) m.forEach(num => tr += parseFloat(num));
+        }
+        byDate[dt].raw += tr;
+        
+        let tdv = 0;
+        if (v.items) {
+            v.items.forEach(x => {
+                let wght = ((x.q || 0) * (x.w || 0)) + (x.l || 0);
+                if (!wght && x.amount) wght = parseFloat(x.amount) || 0;
+                let nm = x.n || x.name || '';
+                let isDV = x.type === 'DV' || (!x.type && !/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm));
+                if (isDV) tdv += wght;
+            });
+        }
+        byDate[dt].dv += tdv;
+    });
+    
+    const sortedDates = Object.keys(byDate).sort().slice(-14);
+    const labels = sortedDates.map(dt => dt.split('-').slice(1).reverse().join('.'));
+    const dataRaw = sortedDates.map(dt => byDate[dt].raw);
+    const dataDV = sortedDates.map(dt => byDate[dt].dv);
+    
+    gID('mdl').style.display = 'flex';
+    gID('mT').innerText = 'ГРАФИК ВЫРАБОТКИ: ' + c.title;
+    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="wsChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Показаны последние 14 рабочих дней.<br>Сравнивается затраченное сырье и полученная ДВ.</div>`;
+    
+    setTimeout(() => {
+        const ctx = document.getElementById('wsChartCanvas').getContext('2d');
+        if (wsChartInstance) wsChartInstance.destroy();
+        wsChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Сырье (кг)', data: dataRaw, backgroundColor: '#cbd5e1', borderRadius: 4 },
+                    { label: 'Готовая ДВ (кг)', data: dataDV, backgroundColor: '#10b981', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }, 100);
+};
+
         </script>
         <script>
   if ('serviceWorker' in navigator) {
