@@ -1098,7 +1098,6 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
   <li>На главный экран добавлена новая папка <b>"АНАЛИТИКА"</b> для визуального контроля показателей.</li>
   <li>Кнопка смены темы перенесена в раздел "НАСТРОЙКИ", чтобы сделать меню логичнее.</li>
   <li>В Аналитике появились столбчатые графики выработки цехов (Крупорушка, ЗШМ, Вибростол). Теперь можно наглядно сравнить затраченное сырье и полученную готовую продукцию (ДВ) за последние 14 рабочих смен.</li>
-  <li>Добавлен график отгрузок.Теперь можно отслеживать динамику ежедневных продаж (в кг и шт) за последние 14 рабочих смен.</li>
  </ul>
 </div>
 
@@ -2037,12 +2036,21 @@ window.showShipChart = function() {
     setTimeout(() => {
         const ctx = document.getElementById('shipChartCanvas').getContext('2d');
         if (shipChartInstance) shipChartInstance.destroy();
-        shipChartInstance = new Chart(ctx, {
-            type: 'bar',
+                shipChartInstance = new Chart(ctx, {
+            type: 'line',
             data: {
                 labels: labels,
-                datasets: [{ label: 'Отгружено (шт/кг)', data: dataArr, backgroundColor: '#3b82f6', borderRadius: 4 }]
+                datasets: [{ 
+                    label: 'Отгружено (шт/кг)', 
+                    data: dataArr, 
+                    borderColor: '#3b82f6', 
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                    borderWidth: 3, 
+                    tension: 0.3, 
+                    fill: true 
+                }]
             },
+
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
