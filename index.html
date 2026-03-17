@@ -515,7 +515,7 @@ function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.c
 function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
  if(c==='Home'){renderHome();return}
  if(['Invoices','ArchSubIn','ArchSubOut'].includes(c))ensureData(['ArchIncoming','ArchInvoices']);
- if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
+ if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM','Analytics'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
 else if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('voiceSet')">🎤 СЛОВАРЬ ГОЛОСА</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
 <div style="margin-top:20px; text-align:center;"><input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreDB(event)"><button class="btn-main" style="background:var(--d);" onclick="document.getElementById('restoreFile').click()">⚠️ ВОССТАНОВИТЬ БАЗУ</button></div>`;}
