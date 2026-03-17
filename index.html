@@ -1090,7 +1090,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
           else if(t==='changelog'){
       h.innerText='ИСТОРИЯ ОБНОВЛЕНИЙ';
-      m.innerHTML=
+      m.innerHTML=`
       <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
  <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 793 (17.03.2026)</div>
  <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
