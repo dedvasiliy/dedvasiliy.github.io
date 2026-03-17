@@ -2008,6 +2008,7 @@ window.showWsChart = function(k) {
     }, 100);
 };
 let shipChartInstance = null;
+let shipChartInstance = null;
 window.showShipChart = function() {
     const d = data['ArchInvoices'] || {};
     const byDate = {};
@@ -2015,42 +2016,73 @@ window.showShipChart = function() {
     Object.values(d).forEach(v => {
         if(!v.date) return;
         const dt = v.date.split('T')[0];
-        if(!byDate[dt]) byDate[dt] = 0;
+        if(!byDate[dt]) byDate[dt] = { fas: 0, ves: 0, korm: 0 };
         
         if(v.items) {
             v.items.forEach(it => {
                 const p = it.split('|');
-                byDate[dt] += parseFloat(p[1]) || 0;
+                const w = parseFloat(p[1]) || 0;
+                const cat = p[3]; // Категория товара в накладной
+                
+                if (cat === 'Готовая') {
+                    byDate[dt].fas += w;
+                } else if (cat === 'WeightStock' || cat === 'Stock_DV') {
+                    byDate[dt].ves += w;
+                } else if (cat === 'Stock_Feed') {
+                    byDate[dt].korm += w;
+                }
             });
         }
     });
     
     const sortedDates = Object.keys(byDate).sort().slice(-14);
     const labels = sortedDates.map(dt => dt.split('-').slice(1).reverse().join('.'));
-    const dataArr = sortedDates.map(dt => byDate[dt]);
+    
+    const dataFas = sortedDates.map(dt => byDate[dt].fas);
+    const dataVes = sortedDates.map(dt => byDate[dt].ves);
+    const dataKorm = sortedDates.map(dt => byDate[dt].korm);
     
     gID('mdl').style.display = 'flex';
     gID('mT').innerText = 'ГРАФИК ОТГРУЗОК';
-    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="shipChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Общий объем отгрузок за последние 14 рабочих дней.</div>`;
+    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="shipChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Динамика продаж по категориям за последние 14 рабочих дней.</div>`;
     
     setTimeout(() => {
         const ctx = document.getElementById('shipChartCanvas').getContext('2d');
         if (shipChartInstance) shipChartInstance.destroy();
-                shipChartInstance = new Chart(ctx, {
+        shipChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{ 
-                    label: 'Отгружено (шт/кг)', 
-                    data: dataArr, 
-                    borderColor: '#3b82f6', 
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)', 
-                    borderWidth: 3, 
-                    tension: 0.3, 
-                    fill: true 
-                }]
+                datasets: [
+                    {
+                        label: 'Фасовка (шт)',
+                        data: dataFas,
+                        borderColor: '#3b82f6', // Синий
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Весовая (кг)',
+                        data: dataVes,
+                        borderColor: '#10b981', // Зеленый
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Корма (кг)',
+                        data: dataKorm,
+                        borderColor: '#f59e0b', // Оранжевый
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
             },
-
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -2058,7 +2090,7 @@ window.showShipChart = function() {
                     x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 9 } } },
                     y: { beginAtZero: true } 
                 },
-                plugins: { legend: { position: 'bottom' } }
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
             }
         });
     }, 100);
