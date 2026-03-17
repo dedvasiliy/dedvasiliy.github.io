@@ -246,7 +246,37 @@ window.alert = function(message) {
     if (toast.parentElement) toast.parentElement.removeChild(toast);
   }, 3000);
 };
+let shadowTimer = null;
+function runAutoBackup() {
+  clearTimeout(shadowTimer);
+  shadowTimer = setTimeout(() => {
+    if(isLogged && Object.keys(data).length > 0) {
+      try {
+        localStorage.setItem('shadowBackup', JSON.stringify(data));
+        const t = new Date().toLocaleString('ru-RU');
+        localStorage.setItem('shadowBackupTime', t);
+        const el = document.getElementById('backupTimeDisplay');
+        if(el) el.innerText = t;
+      } catch(e) {}
+    }
+  }, 3000);
+}
 
+window.downloadShadowBackup = function() {
+  const b = localStorage.getItem('shadowBackup');
+  const t = localStorage.getItem('shadowBackupTime');
+  if(!b) return alert('Копий еще нет. Подождите пару секунд.');
+  if(!confirm('Скачать резервную копию от ' + t + '?')) return;
+  const blob = new Blob([b], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sklad_AUTO_' + t.replace(/[:., ]/g, '_') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 function toggleTheme(){D.body.classList.toggle('dark-theme');localStorage.setItem('theme',D.body.classList.contains('dark-theme')?'dark':'light')}
 if(localStorage.getItem('theme')==='dark')D.body.classList.add('dark-theme');
 const cfg={apiKey:"AIzaSyAya0CSXtG3Fh4GzJ2bV7AJ0BaYEcTXK9Q",databaseURL:"https://myproductionapp-bd872-default-rtdb.firebaseio.com",projectId:"myproductionapp-bd872"};
@@ -333,7 +363,6 @@ auth.onAuthStateChanged(u => {
         cancelMfa();
     }
 });
-
 function initAppData(){
   renderHome();
   stockCatsAll.forEach(p=>{
@@ -342,12 +371,13 @@ function initAppData(){
       if(p==='InvoiceSettings' && data[p].xtraTop!==undefined){ invSet=data[p]; }
       if(p==='InvoiceSettingsBN' && data[p].xtraTop!==undefined){ invSetBN=data[p]; }
       if(cur!=='Home') loadData();
+      runAutoBackup();
     })
   });
-  db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}});
-  db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; });
-  db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); });
-  db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); });
+  db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; runAutoBackup();});
+  db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
+  db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); runAutoBackup();});
+  db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); runAutoBackup();});
 }
 function tryLogin() {
     const e = gID('appEmail').value, p = gID('appPass').value;
@@ -454,6 +484,8 @@ function renderHome(){
  </div>`;
  gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
  <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
+  <div style="text-align:center;margin-bottom:10px;"><span onclick="downloadShadowBackup()" style="font-size:10px;font-weight:900;color:#047857;background:#ecfdf5;padding:4px 8px;border-radius:6px;border:1px solid #a7f3d0;cursor:pointer;">💾 БЭКАП: <span id="backupTimeDisplay">${localStorage.getItem('shadowBackupTime')||'Создается...'}</span></span></div>
+
  <div class="dash-grid">
   <div class="dash-item" onclick="setCat('StockRoot')"><span>📂 СКЛАД</span></div>
   <div class="dash-item" onclick="setCat('ProdSub')"><span>🛠️ ПРОИЗВОДСТВО</span></div>
