@@ -2172,15 +2172,15 @@ window.printRegOut = function() {
     // Новые сверху
     arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-    let h = `<div style="font-family: sans-serif; color: #000; font-size: 12px;">`;
-    h += `<h3 style="text-align: center; margin-bottom: 15px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
+    // Уменьшили шрифт до 10px
+    let h = `<div style="font-family: sans-serif; color: #000; font-size: 10px;">`;
+    h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
     
     // 2 колонки
     h += `<div style="column-count: 2; column-gap: 15px;">`;
     
     arr.forEach(v => {
         const dtObj = new Date(v.date);
-        // Оставляем только дату (без времени)
         const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + 
                      (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + 
                      dtObj.getFullYear();
@@ -2189,10 +2189,9 @@ window.printRegOut = function() {
         const sum = parseFloat(v.totalSum || 0).toFixed(2);
         const cli = esc(v.client) || '-';
 
-        // Максимально прижали первые три колонки (65px, 75px, 65px).
-        // white-space: nowrap гарантирует, что текст не спрыгнет на вторую строку.
-        // text-overflow: ellipsis добавит "..." только если название клиента ну очень длинное и упрется в край бумаги.
-        h += `<div style="display: grid; grid-template-columns: 65px 75px 65px 1fr; gap: 5px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+        // Сильно ужали первые три колонки: Дата 55px, Номер 45px, Сумма 60px.
+        // gap: 4px делает отступы между ними минимальными.
+        h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
                 <div>${dStr}</div>
                 <div>${num}</div>
                 <div style="text-align: right; font-weight: bold;">${sum}</div>
@@ -2206,7 +2205,7 @@ window.printRegOut = function() {
     window.print();
     setTimeout(() => {
         gID('print-view').innerHTML = '';
-        closeModal(); // Закрываем окно после печати
+        closeModal();
     }, 800);
 };
 
