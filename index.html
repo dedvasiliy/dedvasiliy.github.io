@@ -544,7 +544,12 @@ else if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="d
  else if(c==='Invoices'){
   ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('ArchSubIn')">ПРИХОДЫ</div><div class="dash-item" onclick="setCat('ArchSubOut')">ОТГРУЗКИ</div></div>`;
  }
- else if(['ArchSubIn','ArchSubOut'].includes(c)){archSub=(c==='ArchSubIn'?'In':'Out');ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ПО ДАТЕ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ПО ИМЕНИ</div></div>`}
+  else if(['ArchSubIn','ArchSubOut'].includes(c)){
+  archSub=(c==='ArchSubIn'?'In':'Out');
+  let btn = c==='ArchSubOut' ? `<button class="btn-main" onclick="openModal('regOut')" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ РЕЕСТРА</button>` : '';
+  ct.innerHTML=btn+`<div class="dash-grid"><div class="dash-item" onclick="setCat('InvoicesDate')">ПО ДАТЕ</div><div class="dash-item" onclick="setCat('InvoicesClient')">ПО ИМЕНИ</div></div>`
+ }
+
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
   else if(c==='Analytics'){ct.innerHTML=`<div class="z-head">АНАЛИТИКА</div><div class="dash-grid"><div class="dash-item" style="border:2px solid var(--p)" onclick="showShipChart()">📈 ОТГРУЗКИ</div>
 <div class="dash-item" onclick="showWsChart('KRUP')">📊 КРУПОРУШКА</div><div class="dash-item" onclick="showWsChart('ZSHM')">📊 ЗШМ</div><div class="dash-item" onclick="showWsChart('VIBRO')">📊 ВИБРОСТОЛ</div></div><div style="text-align:center; padding:20px; color:#64748b; font-size:12px; font-weight:bold;">Здесь скоро появятся графики приходов и остатков.</div>`;}
@@ -1086,6 +1091,8 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
      else if(t==='corr'){h.innerText='КОРРЕКЦИЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${esc(b)}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВЫЙ ОСТАТОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">СОХРАНИТЬ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${esc(b)}','${a}')">ПЕРЕИМЕНОВАТЬ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${esc(b)}','${a}')">УДАЛИТЬ КАРТОЧКУ</button></div>`}
      else if(t==='dayRep'){h.innerText='ДНЕВНОЙ ОТЧЕТ';m.innerHTML=`<div>ДАТА <input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`}
      else if(t==='monthRep'){h.innerText='МЕСЯЧНЫЙ ОТЧЕТ';m.innerHTML=`<div>МЕСЯЦ <input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">СФОРМИРОВАТЬ</button>`}
+          else if(t==='regOut'){h.innerText='РЕЕСТР ОТГРУЗОК';m.innerHTML=`<div>С ДАТЫ <input type="date" id="regFrom" value="${d}"></div><div>ПО ДАТУ <input type="date" id="regTo" value="${d}"></div><button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`}
+
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
@@ -2145,5 +2152,73 @@ document.getElementById('btnInstallConfirm').addEventListener('click', async () 
 document.getElementById('btnInstallCancel').addEventListener('click', () => {
     installPopup.style.display = 'none'; // просто прячем окно и не мешаем работать
 });
+window.printRegOut = function() {
+    const dFrom = gID('regFrom').value;
+    const dTo = gID('regTo').value;
+    if (!dFrom || !dTo) return alert('Выберите обе даты');
+
+    const d = data.ArchInvoices || {};
+    const arr = [];
+    
+    // Фильтруем по дате
+    Object.values(d).forEach(v => {
+        const dt = (v.date || '').split('T')[0];
+        if (dt >= dFrom && dt <= dTo) {
+            arr.push(v);
+        }
+    });
+
+    if (!arr.length) return alert('Нет данных за этот период');
+
+    // Сортировка: новые записи сверху (как договаривались)
+    arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    let h = `<div style="font-family: sans-serif; color: #000; font-size: 12px;">`;
+    h += `<h3 style="text-align: center; margin-bottom: 15px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
+    
+    // Включаем 2 колонки
+    h += `<div style="column-count: 2; column-gap: 20px;">`;
+    
+    // Заголовок таблицы (появится в начале списка)
+    h += `<div style="display: grid; grid-template-columns: 120px 80px 70px 1fr; gap: 5px; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; font-weight: bold; break-inside: avoid;">
+            <div>Дата</div>
+            <div>Номер</div>
+            <div style="text-align: right;">Сумма</div>
+            <div style="padding-left: 5px;">Контрагент</div>
+          </div>`;
+    
+    // Формируем список
+    arr.forEach(v => {
+        const dtObj = new Date(v.date);
+        const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + 
+                     (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + 
+                     dtObj.getFullYear() + ' ' +
+                     dtObj.getHours().toString().padStart(2, '0') + ':' +
+                     dtObj.getMinutes().toString().padStart(2, '0') + ':' +
+                     dtObj.getSeconds().toString().padStart(2, '0');
+                     
+        const num = esc(v.num) || '---';
+        const sum = parseFloat(v.totalSum || 0).toFixed(2);
+        const cli = esc(v.client) || '-';
+
+        h += `<div style="display: grid; grid-template-columns: 120px 80px 70px 1fr; gap: 5px; border-bottom: 1px dashed #999; padding: 3px 0; break-inside: avoid; line-height: 1.2;">
+                <div>${dStr}</div>
+                <div>${num}</div>
+                <div style="text-align: right; font-weight: bold;">${sum}</div>
+                <div style="padding-left: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+              </div>`;
+    });
+    
+    h += `</div></div>`;
+    
+    // Отправляем на печать (код печати отгрузок не затронут)
+    gID('print-view').innerHTML = h;
+    window.print();
+    setTimeout(() => {
+        gID('print-view').innerHTML = '';
+        closeModal(); // закрываем окно после печати
+    }, 800);
+};
+
 </script>
 </body></html>
