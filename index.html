@@ -2160,7 +2160,6 @@ window.printRegOut = function() {
     const d = data.ArchInvoices || {};
     const arr = [];
     
-    // Фильтруем по дате
     Object.values(d).forEach(v => {
         const dt = (v.date || '').split('T')[0];
         if (dt >= dFrom && dt <= dTo) {
@@ -2170,53 +2169,44 @@ window.printRegOut = function() {
 
     if (!arr.length) return alert('Нет данных за этот период');
 
-    // Сортировка: новые записи сверху (как договаривались)
+    // Новые сверху
     arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     let h = `<div style="font-family: sans-serif; color: #000; font-size: 12px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
     
-    // Включаем 2 колонки
-    h += `<div style="column-count: 2; column-gap: 20px;">`;
+    // 2 колонки
+    h += `<div style="column-count: 2; column-gap: 15px;">`;
     
-    // Заголовок таблицы (появится в начале списка)
-    h += `<div style="display: grid; grid-template-columns: 120px 80px 70px 1fr; gap: 5px; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; font-weight: bold; break-inside: avoid;">
-            <div>Дата</div>
-            <div>Номер</div>
-            <div style="text-align: right;">Сумма</div>
-            <div style="padding-left: 5px;">Контрагент</div>
-          </div>`;
-    
-    // Формируем список
     arr.forEach(v => {
         const dtObj = new Date(v.date);
+        // Оставляем только дату (без времени)
         const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + 
                      (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + 
-                     dtObj.getFullYear() + ' ' +
-                     dtObj.getHours().toString().padStart(2, '0') + ':' +
-                     dtObj.getMinutes().toString().padStart(2, '0') + ':' +
-                     dtObj.getSeconds().toString().padStart(2, '0');
+                     dtObj.getFullYear();
                      
         const num = esc(v.num) || '---';
         const sum = parseFloat(v.totalSum || 0).toFixed(2);
         const cli = esc(v.client) || '-';
 
-        h += `<div style="display: grid; grid-template-columns: 120px 80px 70px 1fr; gap: 5px; border-bottom: 1px dashed #999; padding: 3px 0; break-inside: avoid; line-height: 1.2;">
+        // Максимально прижали первые три колонки (65px, 75px, 65px).
+        // white-space: nowrap гарантирует, что текст не спрыгнет на вторую строку.
+        // text-overflow: ellipsis добавит "..." только если название клиента ну очень длинное и упрется в край бумаги.
+        h += `<div style="display: grid; grid-template-columns: 65px 75px 65px 1fr; gap: 5px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
                 <div>${dStr}</div>
                 <div>${num}</div>
                 <div style="text-align: right; font-weight: bold;">${sum}</div>
-                <div style="padding-left: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+                <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
               </div>`;
     });
     
     h += `</div></div>`;
     
-    // Отправляем на печать (код печати отгрузок не затронут)
     gID('print-view').innerHTML = h;
     window.print();
     setTimeout(() => {
         gID('print-view').innerHTML = '';
-        closeModal(); // закрываем окно после печати
+        closeModal(); // Закрываем окно после печати
     }, 800);
 };
 
