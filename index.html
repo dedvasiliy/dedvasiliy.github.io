@@ -1099,7 +1099,27 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
      else if(t==='corr'){h.innerText='КОРРЕКЦИЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${esc(b)}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВЫЙ ОСТАТОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">СОХРАНИТЬ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${esc(b)}','${a}')">ПЕРЕИМЕНОВАТЬ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${esc(b)}','${a}')">УДАЛИТЬ КАРТОЧКУ</button></div>`}
      else if(t==='dayRep'){h.innerText='ДНЕВНОЙ ОТЧЕТ';m.innerHTML=`<div>ДАТА <input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`}
      else if(t==='monthRep'){h.innerText='МЕСЯЧНЫЙ ОТЧЕТ';m.innerHTML=`<div>МЕСЯЦ <input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">СФОРМИРОВАТЬ</button>`}
-else if(t==='regOut'){h.innerText='РЕЕСТР ОТГРУЗОК';m.innerHTML=`<div>С ДАТЫ <input type="date" id="regFrom" value="${d}"></div><div>ПО ДАТУ <input type="date" id="regTo" value="${d}"></div><div style="margin-top:5px; margin-bottom:10px;"><span style="font-size:10px; font-weight:900; color:#64748b;">ФОРМАТ ОТЧЕТА</span><select id="regType" style="width:100%;"><option value="standard">Список накладных (кратко)</option><option value="byClient">По клиентам (детально)</option><option value="byItem">По позициям (детально)</option><option value="byDate">По дням (детально)</option></select></div><button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`}
+else if(t==='regOut'){
+    h.innerText='РЕЕСТР ОТГРУЗОК';
+    let cOpts='<option value="ALL">Все клиенты</option>';
+    gCl().forEach(c=>cOpts+=`<option value="${esc(c)}">${esc(c)}</option>`);
+    let iSet=new Set();
+    if(data.PriceList)Object.values(data.PriceList).forEach(v=>iSet.add(v.name));
+    let iOpts='<option value="ALL">Все товары</option>';
+    Array.from(iSet).sort().forEach(i=>iOpts+=`<option value="${esc(i)}">${esc(i)}</option>`);
+    
+    m.innerHTML=`<div>С ДАТЫ <input type="date" id="regFrom" value="${d}"></div>
+    <div>ПО ДАТУ <input type="date" id="regTo" value="${d}"></div>
+    <div style="margin-top:5px"><span style="font-size:10px; font-weight:900; color:#64748b;">ФИЛЬТР: КЛИЕНТ</span><select id="regClient" style="width:100%">${cOpts}</select></div>
+    <div style="margin-top:5px"><span style="font-size:10px; font-weight:900; color:#64748b;">ФИЛЬТР: ТОВАР</span><select id="regItem" style="width:100%">${iOpts}</select></div>
+    <div style="margin-top:5px; margin-bottom:10px;"><span style="font-size:10px; font-weight:900; color:#64748b;">ФОРМАТ ОТЧЕТА</span><select id="regType" style="width:100%;">
+    <option value="standard">Список накладных (кратко)</option>
+    <option value="byClient">По клиентам (детально)</option>
+    <option value="byItem">По позициям (детально)</option>
+    <option value="byDate">По дням (детально)</option>
+    </select></div>
+    <button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`;
+}
 
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
@@ -2169,44 +2189,61 @@ window.printRegOut = function() {
     const dFrom = gID('regFrom').value;
     const dTo = gID('regTo').value;
     const type = gID('regType').value;
+    const fClient = gID('regClient').value;
+    const fItem = gID('regItem').value;
     if (!dFrom || !dTo) return alert('Выберите обе даты');
 
     const d = data.ArchInvoices || {};
-    const invoices = [];
-    const allItems = [];
+    let invoices = [];
+    let allItems = [];
     
-    // Сбор всех данных
     Object.values(d).forEach(v => {
         const dt = (v.date || '').split('T')[0];
         if (dt >= dFrom && dt <= dTo) {
-            invoices.push(v);
-            const dStr = dt.split('-').reverse().join('.');
+            if (fClient !== 'ALL' && v.client !== fClient) return;
+            
+            const dtObj = new Date(v.date);
+            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+            
+            let invMatchItem = false;
+            let tempItems = [];
+            
             if (v.items) {
                 v.items.forEach(it => {
                     const p = it.split('|');
-                    allItems.push({
+                    const iName = p[0];
+                    const printName = getPrintName(iName) || iName;
+                    
+                    if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
+                    
+                    invMatchItem = true;
+                    tempItems.push({
                         date: dt,
                         dateStr: dStr,
                         invNum: v.num || '-',
                         client: v.client || 'Неизвестно',
-                        name: getPrintName(p[0]) || p[0],
+                        name: printName,
                         qty: parseFloat(p[1]) || 0,
                         unit: p[2] || 'шт',
                         sum: parseFloat(p[5]) || 0
                     });
                 });
             }
+            
+            if (fItem === 'ALL' || invMatchItem) {
+                invoices.push(v);
+                allItems.push(...tempItems);
+            }
         }
     });
 
-    if (!invoices.length) return alert('Нет данных за этот период');
+    if (!invoices.length && !allItems.length) return alert('Нет данных по этим фильтрам');
 
     let h = `<div style="font-family: sans-serif; color: #000; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
 
     if (type === 'standard') {
-        // Старый формат (краткий список накладных в 2 колонки)
-        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
         h += `<div style="column-count: 2; column-gap: 15px;">`;
         invoices.forEach(v => {
             const dtObj = new Date(v.date);
@@ -2221,7 +2258,6 @@ window.printRegOut = function() {
         });
         h += `</div>`;
     } else {
-        // Детальные форматы с группировкой
         const groups = {};
         let totalSum = 0;
 
@@ -2241,10 +2277,10 @@ window.printRegOut = function() {
             sortedKeys.sort((a, b) => {
                let da = a.split('.').reverse().join('');
                let db = b.split('.').reverse().join('');
-               return db.localeCompare(da); // Новые даты сверху
+               return db.localeCompare(da); 
             });
         } else {
-            sortedKeys.sort(); // Алфавитный порядок
+            sortedKeys.sort(); 
         }
 
         h += `<table style="width: 100%; border-collapse: collapse; font-size: 10px;">`;
@@ -2263,7 +2299,6 @@ window.printRegOut = function() {
                     <td style="padding: 2px; text-align: right; border-right: 1px solid #000; width: 15%;">Сумма</td>
                   </tr>`;
                   
-            // Сортируем внутри группы (новые сверху)
             itemsInGroup.sort((a,b) => b.date.localeCompare(a.date));
 
             itemsInGroup.forEach(it => {
