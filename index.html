@@ -1099,7 +1099,7 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
      else if(t==='corr'){h.innerText='КОРРЕКЦИЯ';corrCtx={cat:a,name:b};m.innerHTML=`<div style="text-align:center;font-weight:900">${esc(b)}</div><div>ДАТА <input type="date" id="cD" value="${d}"></div><div>НОВЫЙ ОСТАТОК <input type="number" id="cA"></div><div>ПРИЧИНА <input type="text" id="cR"></div><button class="btn-main" onclick="sCorr()">СОХРАНИТЬ</button><div style="margin-top:10px;border-top:1px dashed #ccc"><button class="btn-main" style="background:#fff;color:#333;border:1px solid #ccc" onclick="renameItem('${esc(b)}','${a}')">ПЕРЕИМЕНОВАТЬ</button><button class="btn-main" style="background:#fee2e2;color:red" onclick="delItemBatch('${esc(b)}','${a}')">УДАЛИТЬ КАРТОЧКУ</button></div>`}
      else if(t==='dayRep'){h.innerText='ДНЕВНОЙ ОТЧЕТ';m.innerHTML=`<div>ДАТА <input type="date" id="repDate" value="${d}"></div><button class="btn-main" onclick="genDayReport()">СФОРМИРОВАТЬ</button>`}
      else if(t==='monthRep'){h.innerText='МЕСЯЧНЫЙ ОТЧЕТ';m.innerHTML=`<div>МЕСЯЦ <input type="month" id="repMth"></div><button class="btn-main" onclick="genMonthReport()">СФОРМИРОВАТЬ</button>`}
-          else if(t==='regOut'){h.innerText='РЕЕСТР ОТГРУЗОК';m.innerHTML=`<div>С ДАТЫ <input type="date" id="regFrom" value="${d}"></div><div>ПО ДАТУ <input type="date" id="regTo" value="${d}"></div><button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`}
+else if(t==='regOut'){h.innerText='РЕЕСТР ОТГРУЗОК';m.innerHTML=`<div>С ДАТЫ <input type="date" id="regFrom" value="${d}"></div><div>ПО ДАТУ <input type="date" id="regTo" value="${d}"></div><div style="margin-top:5px; margin-bottom:10px;"><span style="font-size:10px; font-weight:900; color:#64748b;">ФОРМАТ ОТЧЕТА</span><select id="regType" style="width:100%;"><option value="standard">Список накладных (кратко)</option><option value="byClient">По клиентам (детально)</option><option value="byItem">По позициям (детально)</option><option value="byDate">По дням (детально)</option></select></div><button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`}
 
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
@@ -2168,51 +2168,133 @@ document.getElementById('btnInstallCancel').addEventListener('click', () => {
 window.printRegOut = function() {
     const dFrom = gID('regFrom').value;
     const dTo = gID('regTo').value;
+    const type = gID('regType').value;
     if (!dFrom || !dTo) return alert('Выберите обе даты');
 
     const d = data.ArchInvoices || {};
-    const arr = [];
+    const invoices = [];
+    const allItems = [];
     
+    // Сбор всех данных
     Object.values(d).forEach(v => {
         const dt = (v.date || '').split('T')[0];
         if (dt >= dFrom && dt <= dTo) {
-            arr.push(v);
+            invoices.push(v);
+            const dStr = dt.split('-').reverse().join('.');
+            if (v.items) {
+                v.items.forEach(it => {
+                    const p = it.split('|');
+                    allItems.push({
+                        date: dt,
+                        dateStr: dStr,
+                        invNum: v.num || '-',
+                        client: v.client || 'Неизвестно',
+                        name: getPrintName(p[0]) || p[0],
+                        qty: parseFloat(p[1]) || 0,
+                        unit: p[2] || 'шт',
+                        sum: parseFloat(p[5]) || 0
+                    });
+                });
+            }
         }
     });
 
-    if (!arr.length) return alert('Нет данных за этот период');
+    if (!invoices.length) return alert('Нет данных за этот период');
 
-    // Новые сверху
-    arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
-    // Уменьшили шрифт до 10px
     let h = `<div style="font-family: sans-serif; color: #000; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
-    
-    // 2 колонки
-    h += `<div style="column-count: 2; column-gap: 15px;">`;
-    
-    arr.forEach(v => {
-        const dtObj = new Date(v.date);
-        const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + 
-                     (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + 
-                     dtObj.getFullYear();
-                     
-        const num = esc(v.num) || '---';
-        const sum = parseFloat(v.totalSum || 0).toFixed(2);
-        const cli = esc(v.client) || '-';
 
-        // Сильно ужали первые три колонки: Дата 55px, Номер 45px, Сумма 60px.
-        // gap: 4px делает отступы между ними минимальными.
-        h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
-                <div>${dStr}</div>
-                <div>${num}</div>
-                <div style="text-align: right; font-weight: bold;">${sum}</div>
-                <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
-              </div>`;
-    });
+    if (type === 'standard') {
+        // Старый формат (краткий список накладных в 2 колонки)
+        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        h += `<div style="column-count: 2; column-gap: 15px;">`;
+        invoices.forEach(v => {
+            const dtObj = new Date(v.date);
+            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+            const num = esc(v.num) || '---';
+            const sum = parseFloat(v.totalSum || 0).toFixed(2);
+            const cli = esc(v.client) || '-';
+            h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+                    <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
+                    <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+                  </div>`;
+        });
+        h += `</div>`;
+    } else {
+        // Детальные форматы с группировкой
+        const groups = {};
+        let totalSum = 0;
+
+        allItems.forEach(item => {
+            let key = '';
+            if (type === 'byClient') key = item.client;
+            else if (type === 'byItem') key = item.name;
+            else if (type === 'byDate') key = item.dateStr;
+
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+            totalSum += item.sum;
+        });
+
+        let sortedKeys = Object.keys(groups);
+        if (type === 'byDate') {
+            sortedKeys.sort((a, b) => {
+               let da = a.split('.').reverse().join('');
+               let db = b.split('.').reverse().join('');
+               return db.localeCompare(da); // Новые даты сверху
+            });
+        } else {
+            sortedKeys.sort(); // Алфавитный порядок
+        }
+
+        h += `<table style="width: 100%; border-collapse: collapse; font-size: 10px;">`;
+        
+        sortedKeys.forEach(key => {
+            const itemsInGroup = groups[key];
+            let grpQty = 0;
+            let grpSum = 0;
+            
+            h += `<tr><td colspan="5" style="background: #eee; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid #000; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
+            h += `<tr style="font-weight: bold; border-bottom: 1px solid #000;">
+                    <td style="padding: 2px; border-left: 1px solid #000; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
+                    <td style="padding: 2px; width: 45%;">${type === 'byItem' ? 'Клиент' : 'Наименование'}</td>
+                    <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
+                    <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
+                    <td style="padding: 2px; text-align: right; border-right: 1px solid #000; width: 15%;">Сумма</td>
+                  </tr>`;
+                  
+            // Сортируем внутри группы (новые сверху)
+            itemsInGroup.sort((a,b) => b.date.localeCompare(a.date));
+
+            itemsInGroup.forEach(it => {
+                grpQty += it.qty;
+                grpSum += it.sum;
+                let col1 = type === 'byDate' ? it.client : it.dateStr;
+                let col2 = type === 'byItem' ? it.client : it.name;
+                
+                h += `<tr style="border-bottom: 1px dashed #ccc;">
+                        <td style="padding: 2px; border-left: 1px solid #000; vertical-align: top;">${esc(col1)}</td>
+                        <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
+                        <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
+                        <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
+                        <td style="padding: 2px; text-align: right; vertical-align: top;">${it.sum.toFixed(2)}</td>
+                      </tr>`;
+            });
+            
+            let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
+            
+            h += `<tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 2px solid #000;">
+                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid #000;">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
+                    <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
+                    <td style="text-align: right; padding: 2px; border-right: 1px solid #000;">${grpSum.toFixed(2)}</td>
+                  </tr><tr><td colspan="5" style="height: 10px; border: none;"></td></tr>`;
+        });
+        
+        h += `</table>`;
+        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalSum.toFixed(2)} грн</div>`;
+    }
     
-    h += `</div></div>`;
+    h += `</div>`;
     
     gID('print-view').innerHTML = h;
     window.print();
