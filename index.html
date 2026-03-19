@@ -748,7 +748,8 @@ window.printHistory = function(c, n) {
 
 function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
- r.sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
+  r.sort((a,b)=>{const dA=a.date||a._date,dB=b.date||b._date; if(dA!==dB)return dB.localeCompare(dA); return b.id.localeCompare(a.id);});
+
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${esc(n)}</div>`;
  
  let topBtns = `<button class="btn-main" onclick="printHistory('${c}','${esc(n)}')" style="background:var(--s);font-size:10px;margin:0 0 10px 0;">🖨️ ПЕЧАТЬ ИСТОРИИ</button>`;
