@@ -718,8 +718,7 @@ window.printHistory = function(c, n) {
    if(!m || dt.startsWith(m)) r.push({...v,id:k,_date:dt});
   }
  });
- r.sort((a,b)=>{if(a._date!==b._date)return b._date.localeCompare(a._date);return b.id.localeCompare(a.id);});
- 
+  r.sort((a,b)=>{const dA=a.date||a._date,dB=b.date||b._date; if(dA!==dB)return dB.localeCompare(dA); return b.id.localeCompare(a.id);});
  let h = `<div style="font-family:sans-serif; color:#000;">
   <h3 style="text-align:center; margin-bottom:5px;">ИСТОРИЯ ДВИЖЕНИЙ ${m ? 'за ' + m : ''}</h3>
   <h4 style="text-align:center; margin-top:0; color:#444;">${esc(n)}</h4>
