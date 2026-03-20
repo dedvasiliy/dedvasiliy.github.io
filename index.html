@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v794</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
+<!DOCTYPE html><html lang="ru" translate="no"><head><meta charset="UTF-8"><meta name="google" content="notranslate"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Склад v795</title><script>window.onerror=function(m,u,l){alert("ERR:"+m+"\nL:"+l);return!1}</script><link rel="icon" type="image/png" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png"><style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:0}
 :root{--bg:#f8fafc;--p:#4338ca;--d:#dc2626;--s:#059669;--t:#000;--w:#fff}
 body.dark-theme { --bg: #121212; --w: #1e1e1e; --t: #f8fafc; }
@@ -479,7 +479,7 @@ function renderHome(){
  cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМИН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМИН</button>`;
  
- const currentVer = 794;
+ const currentVer = 795;
  const lastRead = parseInt(localStorage.getItem('lastReadVer')) || 0;
  const isNew = currentVer > lastRead;
 
@@ -1124,7 +1124,10 @@ else if(t==='regOut'){
     <option value="byItem">По позициям (детально)</option>
     <option value="byDate">По дням (детально)</option>
     </select></div>
-    <button class="btn-main" onclick="printRegOut()">ПЕЧАТЬ</button>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+        <button class="btn-main" onclick="viewRegOut()" style="background:var(--s);margin:0;">ПРОСМОТР</button>
+        <button class="btn-main" onclick="printRegOut()" style="margin:0;">ПЕЧАТЬ</button>
+    </div>`;
 }
 
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
@@ -1135,6 +1138,14 @@ else if(t==='regOut'){
           else if(t==='changelog'){
       h.innerText='ИСТОРИЯ ОБНОВЛЕНИЙ';
       m.innerHTML=`
+      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
+ <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 795 (20.03.2026)</div>
+ <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
+  <li>В «Реестре отгрузок» добавлена кнопка <b>«ПРОСМОТР»</b>.</li>
+  <li>Теперь любой сформированный отчет (по клиентам, товарам или датам) можно удобно изучать прямо на экране телефона или ПК, без необходимости сразу отправлять его на печать.</li>
+ </ul>
+</div>
+
       <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
  <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 794 (19.03.2026)</div>
  <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
@@ -2201,13 +2212,13 @@ document.getElementById('btnInstallConfirm').addEventListener('click', async () 
 document.getElementById('btnInstallCancel').addEventListener('click', () => {
     installPopup.style.display = 'none'; // просто прячем окно и не мешаем работать
 });
-window.printRegOut = function() {
+window.getRegOutHTML = function(isPrint) {
     const dFrom = gID('regFrom').value;
     const dTo = gID('regTo').value;
     const type = gID('regType').value;
     const fClient = gID('regClient').value;
     const fItem = gID('regItem').value;
-    if (!dFrom || !dTo) return alert('Выберите обе даты');
+    if (!dFrom || !dTo) { alert('Выберите обе даты'); return null; }
 
     const d = data.ArchInvoices || {};
     let invoices = [];
@@ -2254,14 +2265,15 @@ window.printRegOut = function() {
         }
     });
 
-    if (!invoices.length && !allItems.length) return alert('Нет данных по этим фильтрам');
+    if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
 
-    let h = `<div style="font-family: sans-serif; color: #000; font-size: 10px;">`;
+    let textColor = isPrint ? '#000' : 'inherit';
+    let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
 
     if (type === 'standard') {
         invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
-        h += `<div style="column-count: 2; column-gap: 15px;">`;
+        h += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
         invoices.forEach(v => {
             const dtObj = new Date(v.date);
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
@@ -2300,21 +2312,23 @@ window.printRegOut = function() {
             sortedKeys.sort(); 
         }
 
-        h += `<table style="width: 100%; border-collapse: collapse; font-size: 10px;">`;
+        h += `<div style="overflow-x: auto;"><table style="width: 100%; min-width: 300px; border-collapse: collapse; font-size: 10px;">`;
+        
+        let borderColor = isPrint ? '#000' : '#cbd5e1';
         
         sortedKeys.forEach(key => {
             const itemsInGroup = groups[key];
             let grpQty = 0;
             let grpSum = 0;
             
-            h += `<tr><td colspan="6" style="background: #e2e8f0; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid #000; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
-            h += `<tr style="font-weight: bold; background: #f8fafc; border-bottom: 1px solid #000;">
-                    <td style="padding: 2px; border-left: 1px solid #000; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
+            h += `<tr><td colspan="6" style="background: ${isPrint ? '#e2e8f0' : 'rgba(226,232,240,0.5)'}; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
+            h += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
+                    <td style="padding: 2px; border-left: 1px solid ${borderColor}; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
                     <td style="padding: 2px; width: 35%;">${type === 'byItem' ? 'Клиент' : 'Наименование'}</td>
                     <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
                     <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
                     <td style="padding: 2px; text-align: right; width: 10%;">Цена</td>
-                    <td style="padding: 2px; text-align: right; border-right: 1px solid #000; width: 15%;">Сумма</td>
+                    <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; width: 15%;">Сумма</td>
                   </tr>`;
 
             let invoicesInGroup = {};
@@ -2333,12 +2347,11 @@ window.printRegOut = function() {
 
             invKeysOrder.forEach(ik => {
                 let invData = invoicesInGroup[ik];
-                // Показываем разделитель ТОЛЬКО если в накладной больше 1 позиции И это не отчет по товарам
                 let showSeparator = (invData.items.length > 1 && type !== 'byItem');
                 
                 if (showSeparator) {
-                    h += `<tr style="background: #f1f5f9; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
-                            <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: #334155; border-left: 1px solid #000; border-right: 1px solid #000;">
+                    h += `<tr style="background: ${isPrint ? '#f1f5f9' : 'rgba(241,245,249,0.2)'}; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                            <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: ${isPrint ? '#334155' : 'inherit'}; border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor};">
                                 Накладная № ${esc(invData.inv)} от ${invData.date}
                             </td>
                           </tr>`;
@@ -2350,48 +2363,60 @@ window.printRegOut = function() {
                     let col1 = type === 'byDate' ? it.client : it.dateStr;
                     let col2 = type === 'byItem' ? it.client : it.name;
                     
-                    let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? '1px solid #000' : '1px dashed #ccc';
+                    let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
                     
                     h += `<tr style="border-bottom: ${btmBorder};">
-                            <td style="padding: 2px; border-left: 1px solid #000; vertical-align: top;">${esc(col1)}</td>
+                            <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
                             <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
                             <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
                             <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
                             <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
-                            <td style="padding: 2px; text-align: right; border-right: 1px solid #000; vertical-align: top;">${it.sum.toFixed(2)}</td>
+                            <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; vertical-align: top;">${it.sum.toFixed(2)}</td>
                           </tr>`;
                 });
                 
                 if (showSeparator) {
                     h += `<tr>
-                            <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid #000; border-bottom: 1px solid #000;">Итого по накл. № ${esc(invData.inv)}:</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid #000; border-bottom: 1px solid #000;">${invData.sum.toFixed(2)}</td>
+                            <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
+                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)}</td>
                           </tr>`;
                 }
             });
             
             let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
             
-            h += `<tr style="font-weight: bold; border-top: 2px solid #000; border-bottom: 2px solid #000;">
-                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid #000;">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
+            h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
+                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
                     <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
                     <td style="text-align: right; padding: 2px;"></td>
-                    <td style="text-align: right; padding: 2px; border-right: 1px solid #000;">${grpSum.toFixed(2)}</td>
+                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSum.toFixed(2)}</td>
                   </tr><tr><td colspan="6" style="height: 10px; border: none;"></td></tr>`;
         });
         
-        h += `</table>`;
+        h += `</table></div>`;
         h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalSum.toFixed(2)} грн</div>`;
     }
     
     h += `</div>`;
-    
+    return h;
+};
+
+window.printRegOut = function() {
+    const h = getRegOutHTML(true);
+    if (!h) return;
     gID('print-view').innerHTML = h;
     window.print();
     setTimeout(() => {
         gID('print-view').innerHTML = '';
         closeModal();
     }, 800);
+};
+
+window.viewRegOut = function() {
+    const h = getRegOutHTML(false);
+    if (!h) return;
+    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА';
+    gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
 
 </script>
