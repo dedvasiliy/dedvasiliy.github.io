@@ -1364,8 +1364,123 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.addFasRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('fasRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="fr_${i}"><select id="fs_${i}" class="fas-inp" onchange="updFasRawList('${i}')"><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option></select><select id="fn_${i}" class="fas-inp"><option value="">Выберите...</option></select><input type="number" id="fq_${i}" class="fas-inp" placeholder="кг"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updFasRawList(i),50);};
     window.updFasRawList=function(i){const src=gID('fs_'+i).value,sel=gID('fn_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
-    window.previewFas=function(){const d=gID('fD').value,ds=d.split('-').reverse().join('.');const ri=[],oi=[];for(let x of gID('fasRows').children){const k=x.id.split('_')[1],n=gID('fn_'+k).value,q=parseFloat(gID('fq_'+k).value),s=gID('fs_'+k).value;if(n&&q)ri.push({n,q,s});}for(let x of gID('fasOutRows').children){const k=x.id.split('_')[1],n=gID('on_'+k).value,q=parseFloat(gID('oq_'+k).value),sz=gID('os_'+k).value;if(n&&q&&sz)oi.push({n,q,sz});}if(!ri.length||!oi.length)return alert('ВНИМАНИЕ: Заполните сырье и готовую продукцию!');const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);let mN=oi[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';let hRaw='',hOut='',pk={},pkTotal=0;ri.forEach(x=>{hRaw+=`<div>${esc(x.n)} ${x.q}кг <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></div>`;});oi.forEach(x=>{hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.q}шт</span></div>`;const coeff=x.n===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);pk[x.sz]=(pk[x.sz]||0)+Math.round(x.q/coeff);pkTotal+=x.q;});let hPk='';Object.keys(pk).forEach(sz=>{hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт</span></div>`});let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));const html=`<div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div><div class="conf-sec"><b>сырье:</b></div>${hRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${hOut}<div class="conf-sec"><b>расход упаковки:</b></div>${hPk}<div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг</span></div>${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт</span></div>`:''}${thermalUsed>0?`<div style="display:flex;justify-content:space-between"><span>Термо лента:</span><span>${thermalUsed}шт</span></div>`:''}`;gID('confContent').innerHTML=html;gID('confMdl').style.display='flex';pendingAction=async function(){const btn=document.querySelector('#confBox .btn-main[style*="green"]');if(btn){btn.innerText='⏳...';btn.disabled=!0;}showLoad();try{const id=db.child('Фасовка').push().key,u={},ts=new Date().toISOString();const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s})),dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));u['/Фасовка/'+id]={date:d+"T12:00:00Z",items:dbRi,outputItems:dbOi,vzial:vt,ostatok:os,filmName:mN};dbRi.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});dbOi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});Object.keys(pk).forEach(sz=>{u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts}});if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(tapeUsed>0)u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(thermalUsed>0)u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};await db.update(u);hideLoad();closeConf();closeModal();setCat('Фасовка');}catch(e){hideLoad();alert(e)}finally{if(btn){btn.innerText='ДА';btn.disabled=!1;}}};
-};
+        window.previewFas=function(){
+        const d=gID('fD').value,ds=d.split('-').reverse().join('.');
+        const ri=[],oi=[];
+        for(let x of gID('fasRows').children){const k=x.id.split('_')[1],n=gID('fn_'+k).value,q=parseFloat(gID('fq_'+k).value),s=gID('fs_'+k).value;if(n&&q)ri.push({n,q,s});}
+        for(let x of gID('fasOutRows').children){const k=x.id.split('_')[1],n=gID('on_'+k).value,q=parseFloat(gID('oq_'+k).value),sz=gID('os_'+k).value;if(n&&q&&sz)oi.push({n,q,sz});}
+        if(!ri.length||!oi.length)return alert('ВНИМАНИЕ: Заполните сырье и готовую продукцию!');
+        
+        const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
+        let mN=oi[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';
+        
+        let hRaw='',hOut='',pk={},pkTotal=0, rawCost=0;
+        
+        // 1. Считаем стоимость сырья
+        ri.forEach(x=>{
+            let p = window.calcAvgPrice(x.n, x.s); // Подтягиваем среднюю цену сырья
+            let cst = x.q * p;
+            rawCost += cst;
+            hRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
+        });
+        
+        oi.forEach(x=>{
+            hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.q}шт</span></div>`;
+            const coeff=x.n===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);
+            pk[x.sz]=(pk[x.sz]||0)+Math.round(x.q/coeff);
+            pkTotal+=x.q;
+        });
+        
+        // 2. Считаем стоимость всей упаковки
+        let packCost = 0;
+        let hPk='';
+        Object.keys(pk).forEach(sz=>{
+            let pP = window.calcAvgPrice(sz, 'Пакеты');
+            let cst = pk[sz] * pP;
+            packCost += cst;
+            hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт <span style="font-size:9px;color:#059669">[~${cst.toFixed(2)} грн]</span></span></div>`;
+        });
+        
+        let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));
+        let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));
+        
+        let pFilm = window.calcAvgPrice(mN, 'Пленка');
+        let cFilm = fU * pFilm;
+        packCost += cFilm;
+        
+        let pTape = tapeUsed > 0 ? window.calcAvgPrice('Скотч 360 грамм', 'Скотч 360 грамм') : 0;
+        let cTape = tapeUsed * pTape;
+        packCost += cTape;
+        
+        let pTherm = thermalUsed > 0 ? window.calcAvgPrice('Термо лента', 'Термо лента') : 0;
+        let cTherm = thermalUsed * pTherm;
+        packCost += cTherm;
+
+        // 3. Считаем Финансы (Свет и Зарплату)
+        let energyCost = 30 * (parseFloat(costSet.powerPrice)||0); // 30 кВт
+        let salCost = pkTotal * 0.50; // 50 копеек за пачку
+        
+        let totalCost = rawCost + packCost + energyCost + salCost;
+        let costPerPack = pkTotal > 0 ? (totalCost / pkTotal).toFixed(2) : 0;
+
+        const html=`<div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div>
+        <div class="conf-sec"><b>сырье:</b></div>${hRaw}
+        <div class="conf-sec"><b>готовая продукция:</b></div>${hOut}
+        <div class="conf-sec"><b>расход упаковки:</b></div>${hPk}
+        <div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг <span style="font-size:9px;color:#059669">[~${cFilm.toFixed(2)} грн]</span></span></div>
+        ${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт <span style="font-size:9px;color:#059669">[~${cTape.toFixed(2)} грн]</span></span></div>`:''}
+        ${thermalUsed>0?`<div style="display:flex;justify-content:space-between"><span>Термо лента:</span><span>${thermalUsed}шт <span style="font-size:9px;color:#059669">[~${cTherm.toFixed(2)} грн]</span></span></div>`:''}
+        <div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px; margin-top:10px;">
+            <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (30 кВт):</span><span>${energyCost.toFixed(2)} грн</span></div>
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (0.50 грн/шт):</span><span>${salCost.toFixed(2)} грн</span></div>
+            <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
+                <span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span style="color:#dc2626">${costPerPack} грн</span>
+            </div>
+        </div>`;
+        
+        gID('confContent').innerHTML=html;
+        gID('confMdl').style.display='flex';
+        
+        pendingAction=async function(){
+            const btn=document.querySelector('#confBox .btn-main[style*="green"]');
+            if(btn){btn.innerText='⏳...';btn.disabled=!0;}
+            showLoad();
+            try{
+                const id=db.child('Фасовка').push().key,u={},ts=new Date().toISOString();
+                const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s}));
+                const dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));
+                u['/Фасовка/'+id]={date:d+"T12:00:00Z",items:dbRi,outputItems:dbOi,vzial:vt,ostatok:os,filmName:mN, costPerPack: parseFloat(costPerPack)||0, totalCost: totalCost};
+                
+                dbRi.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});
+                dbOi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});
+                
+                Object.keys(pk).forEach(sz=>{u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts}});
+                if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};
+                if(tapeUsed>0)u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};
+                if(thermalUsed>0)u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};
+                
+                // ВАЖНО: Фиксируем цену готовой пачки на складе через виртуальный приход!
+                if(pkTotal > 0) {
+                    const archKey = db.child('ArchIncoming').push().key;
+                    const fasItems = oi.map(x => ({n: x.n, a: x.q, p: parseFloat(costPerPack)||0}));
+                    if(fasItems.length > 0) {
+                        u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Фасовка', num: 'Смена ' + ds, type: 'GOODS', ts: ts, items: fasItems };
+                    }
+                }
+
+                await db.update(u);
+                hideLoad();closeConf();closeModal();setCat('Фасовка');
+            }catch(e){
+                hideLoad();alert(e)
+            }finally{
+                if(btn){btn.innerText='ДА';btn.disabled=!1;}
+            }
+        };
+    };
+
     window.updWsRawList=function(i,pfx){const src=gID(pfx+'s_'+i).value,sel=gID(pfx+'n_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount;});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.calcWsMain=function(){let tOut=0;['DV','Semi','Feed'].forEach(t=>{for(let r of gID('wsOut'+t).children){const i=r.id.split('_')[1];const b=parseFloat(gID('wob_'+i).value)||0;const w=parseFloat(gID('wow_'+i).value)||0;const rem=parseFloat(gID('wor_'+i).value)||0;tOut+=(b*w)+rem;}});let tAdd=0;for(let r of gID('wsAddRows').children){const i=r.id.split('_')[1];tAdd+=parseFloat(gID('waq_'+i).value)||0;}const loss=parseFloat(costSet.lossPercent)||0;const baseW=Math.max(0,tOut-tAdd);const finalW=baseW+(baseW*(loss/100));const mRows=gID('wsMainRows').querySelectorAll('.main-raw-q');if(mRows.length>0)mRows[0].value=finalW.toFixed(1);};
 
@@ -1440,7 +1555,7 @@ window.previewWorkshop=function(k){
     let hRaw='';
     let rawCost = 0;
     main.forEach(x=>{
-        let p = window.calcAvgPrice(x.n, x.s); // Подтягиваем среднюю цену со склада!
+        let p = window.calcAvgPrice(x.n, x.s);
         rawCost += x.q * p;
         hRaw+=`<div>Основа: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></div>`;
     });
@@ -1452,7 +1567,6 @@ window.previewWorkshop=function(k){
     
     let hDV='',hSemi='',hFeed='';
     let wasteRev = 0;
-    const wRules = (costSet.wastePrices||'').split(',').map(s=>s.trim().toLowerCase());
 
     out.forEach(x=>{
         const str=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.b}м×${x.w}кг${x.r>0?'+'+x.r+'кг':''}</span></div>`;
@@ -1460,17 +1574,37 @@ window.previewWorkshop=function(k){
         else if(x.type==='Semi') hSemi+=str;
         else {
             hFeed+=str;
-            // Проверяем, есть ли цена на эти отходы в настройках
             let wp = 0;
-            for(let r of wRules) {
-                let parts = r.split('=');
-                if(parts.length===2 && x.n.toLowerCase().includes(parts[0].trim())) {
-                    wp = parseFloat(parts[1])||0; break;
-                }
+            if (data.PriceList) {
+                const pObj = Object.values(data.PriceList).find(item => item.name === x.n);
+                if (pObj) wp = pObj.priceOpt !== undefined ? pObj.priceOpt : (pObj.price || 0);
             }
             wasteRev += x.wght * wp;
         }
     });
+
+    // Считаем количество упаковки
+    let threadsToDeduct=parseFloat((totalBagsForThreads/parseFloat(autoSet.threadsRate||600)).toFixed(2));
+    let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;
+
+    // Считаем ДЕНЬГИ за упаковку
+    let packCost = 0;
+    let cBags = totalBagsHTML > 0 ? totalBagsHTML * window.calcAvgPrice('Мешок 25кг', 'Мешки') : 0;
+    packCost += cBags;
+
+    let cThreads = threadsToDeduct > 0 ? threadsToDeduct * window.calcAvgPrice('Нитки', 'Нитки') : 0;
+    packCost += cThreads;
+
+    let cLabels = 0;
+    let labelsHTML='';
+    Object.keys(labelsToDeduct).forEach(lN=>{
+        let count = labelsToDeduct[lN];
+        let pL = window.calcAvgPrice(lN, 'Этикетка');
+        let cost = count * pL;
+        cLabels += cost;
+        labelsHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(lN)}:</span><span>${count}шт <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
+    });
+    packCost += cLabels;
 
     // Считаем время, электричество и зарплату
     const t1 = ts.split(':'), t2 = te.split(':');
@@ -1484,14 +1618,9 @@ window.previewWorkshop=function(k){
     const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
     const salCost = parseFloat(costSet.salaryShift)||0;
 
-    // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ
-    const netCost = rawCost + energyCost + salCost - wasteRev;
+    // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ С УЧЕТОМ УПАКОВКИ
+    const netCost = rawCost + packCost + energyCost + salCost - wasteRev;
     const costPerKg = tDV > 0 ? (netCost / tDV).toFixed(2) : 0;
-    
-    let threadsToDeduct=parseFloat((totalBagsForThreads/parseFloat(autoSet.threadsRate||600)).toFixed(2));
-    let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;
-    let labelsHTML='';
-    Object.keys(labelsToDeduct).forEach(lN=>{labelsHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(lN)}:</span><span>${labelsToDeduct[lN]}шт</span></div>`;});
     
     const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div>
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
@@ -1505,6 +1634,7 @@ window.previewWorkshop=function(k){
     <div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px;">
         <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата:</span><span>${salCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between; color:var(--s)"><span>Доход с отходов:</span><span>- ${wasteRev.toFixed(2)} грн</span></div>
@@ -1513,9 +1643,9 @@ window.previewWorkshop=function(k){
         </div>
     </div>
     ${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}
-    ${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт</span></div>`:''}
+    ${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт <span style="font-size:9px;color:#059669">[~${cBags.toFixed(2)} грн]</span></span></div>`:''}
     ${labelsHTML}
-    ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт</span></div>`:''}`;
+    ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}`;
     
     gID('confContent').innerHTML=html;
     gID('confMdl').style.display='flex';
@@ -1543,7 +1673,6 @@ window.previewWorkshop=function(k){
             Object.keys(labelsToDeduct).forEach(lN=>{u['/Этикетка/'+db.child('Этикетка').push().key]={name:lN,amount:-labelsToDeduct[lN],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};});
             if(threadsToDeduct>0) u['/Нитки/'+db.child('Нитки').push().key]={name:'Нитки',amount:-threadsToDeduct,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
             
-            // ВАЖНО: Создаем невидимый приход ДВ веса с посчитанной себестоимостью!
             if(tDV > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
                 const dvItems = out.filter(x => x.type === 'DV').map(x => ({n: x.n, a: x.wght, p: parseFloat(costPerKg)||0}));
