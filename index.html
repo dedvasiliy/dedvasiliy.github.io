@@ -1425,8 +1425,7 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
 window.previewWorkshop=function(k){
     const c=WS_CFG[k],d=gID('wsD').value,ds=d.split('-').reverse().join('.');
     const ts=gID('wsTS').value,te=gID('wsTE').value,op=getSmartVal('wsOp')||'-',as=getSmartVal('wsAs')||'-';
-    const main=[],add=[],out=[];let tMain=0,tAdd=0,tDV=0;
-    
+        const main=[],add=[],out=[];let tMain=0,tAdd=0,tDV=0,tSemi=0;
     for(let x of gID('wsMainRows').children){
         const i=x.id.split('_')[1],s=gID('wms_'+i).value,n=gID('wmn_'+i).value,q=parseFloat(gID('wmq_'+i).value);
         if(n&&q>0){main.push({s,n,q});tMain+=q;}
@@ -1457,11 +1456,13 @@ window.previewWorkshop=function(k){
                 if (type === 'Semi' && batchTag && !n.includes('[')) {
                     n = n.trim() + ' ' + batchTag;
                 }
-                const wght=(b*w)+r;
+                                const wght=(b*w)+r;
                 out.push({type,n,b,w,r,wght});
                 if(type==='DV') tDV+=wght;
+                else if(type==='Semi') tSemi+=wght;
                 
                 if(b>0){
+
                     if(w!==threadsExcl) totalBagsForThreads+=b;
                     let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));
                     if(matchName&&w===autoBagsWeight){
@@ -1550,12 +1551,21 @@ window.previewWorkshop=function(k){
     if(k==='KRUP') pwrUsage = parseFloat(costSet.powerKrup)||0;
     else if(k==='ZSHM') pwrUsage = parseFloat(costSet.powerZshm)||0;
     else if(k==='VIBRO') pwrUsage = parseFloat(costSet.powerVibro)||0;
-    const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
-    const salCost = parseFloat(costSet.salaryShift)||0;
+        const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
+    
+    let salCost = 0;
+    if (data.Timesheet) {
+        Object.values(data.Timesheet).forEach(t => {
+            if (t.date === d && (t.name === op || (as !== '-' && t.name === as))) {
+                salCost += parseFloat(t.rate) || 0;
+            }
+        });
+    }
 
     // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ С УЧЕТОМ УПАКОВКИ
     const netCost = rawCost + packCost + energyCost + salCost - wasteRev;
-    const costPerKg = tDV > 0 ? (netCost / tDV).toFixed(2) : 0;
+    const usefulWeight = tDV + tSemi;
+    const costPerKg = usefulWeight > 0 ? (netCost / usefulWeight).toFixed(2) : 0;
     
     const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div>
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
@@ -1574,11 +1584,14 @@ window.previewWorkshop=function(k){
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата:</span><span>${salCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between; color:var(--s)"><span>Доход с отходов:</span><span>- ${wasteRev.toFixed(2)} грн</span></div>
         <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
-            <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ):</span><span style="color:#dc2626">${costPerKg} грн</span>
+            <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ + П/Ф):</span><span style="color:#dc2626">${costPerKg} грн</span>
         </div>
     </div>
     ${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}
     ${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт <span style="font-size:9px;color:#059669">[~${cBags.toFixed(2)} грн]</span></span></div>`:''}
+    ${labelsHTML}
+    ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}`;
+
     ${labelsHTML}
     ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}`;
     
@@ -1607,12 +1620,11 @@ window.previewWorkshop=function(k){
             if(bagsToDeduct['Мешок 25кг']>0) u['/Мешки/'+db.child('Мешки').push().key]={name:'Мешок 25кг',amount:-bagsToDeduct['Мешок 25кг'],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
             Object.keys(labelsToDeduct).forEach(lN=>{u['/Этикетка/'+db.child('Этикетка').push().key]={name:lN,amount:-labelsToDeduct[lN],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};});
             if(threadsToDeduct>0) u['/Нитки/'+db.child('Нитки').push().key]={name:'Нитки',amount:-threadsToDeduct,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
-            
-            if(tDV > 0) {
+            if(usefulWeight > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
-                const dvItems = out.filter(x => x.type === 'DV').map(x => ({n: x.n, a: x.wght, p: parseFloat(costPerKg)||0}));
-                if(dvItems.length > 0) {
-                    u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Свое производство', num: 'Смена ' + ds, type: 'GOODS', ts: tsStr, items: dvItems };
+                const prodItems = out.filter(x => x.type === 'DV' || x.type === 'Semi').map(x => ({n: x.n, a: x.wght, p: parseFloat(costPerKg)||0}));
+                if(prodItems.length > 0) {
+                    u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Свое производство', num: 'Смена ' + ds, type: 'GOODS', ts: tsStr, items: prodItems };
                 }
             }
 
@@ -1633,7 +1645,7 @@ window.previewWorkshop=function(k){
         function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
 window.calcAvgPrice = function(itemName, category) {
     let curStock = 0;
-    // Узнаем остаток (оставляем проверку для конкретного размера)
+    // Узнаем текущий остаток на складе
     if (data[category]) {
         Object.values(data[category]).forEach(v => { 
             if (v.name === itemName) curStock += (parseFloat(v.amount) || 0); 
@@ -1643,14 +1655,14 @@ window.calcAvgPrice = function(itemName, category) {
 
     let incs = [];
     
-    // Ищем в накладных сырья (на всякий случай)
+    // Ищем в накладных
     if (data.ArchIncoming) {
         Object.values(data.ArchIncoming).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
                     let isFilm = (category === 'Пленка' && it.n.toLowerCase().includes('пленка'));
                     if ((isFilm || it.n === itemName) && it.a > 0 && it.p > 0) {
-                        incs.push({ d: inv.date, p: it.p });
+                        incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
                     }
                 });
             }
@@ -1661,14 +1673,35 @@ window.calcAvgPrice = function(itemName, category) {
         Object.values(data.ArchPackIn).forEach(inv => {
             let isFilm = (category === 'Пленка' && inv.category === 'Пленка');
             if ((isFilm || inv.name === itemName) && inv.amount > 0 && inv.price > 0) {
-                incs.push({ d: inv.date, p: inv.price });
+                incs.push({ d: inv.date, p: parseFloat(inv.price), a: parseFloat(inv.amount) });
             }
         });
     }
     
-    // Сортируем и берем самую свежую цену
+    // Сортируем от новых к старым
     incs.sort((a, b) => b.d.localeCompare(a.d));
-    return incs.length > 0 ? incs[0].p : 0;
+    if (incs.length === 0) return 0;
+
+    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (только для производства и фасовки)
+    if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая') {
+        let remStock = curStock;
+        let totalValue = 0;
+        let countedStock = 0;
+        
+        // Набираем партии с конца, пока не покроем текущий остаток
+        for (let inc of incs) {
+            let take = Math.min(remStock, inc.a);
+            totalValue += take * inc.p;
+            countedStock += take;
+            remStock -= take;
+            if (remStock <= 0) break;
+        }
+        
+        return countedStock > 0 ? (totalValue / countedStock) : incs[0].p;
+    }
+
+    // ПОСЛЕДНЯЯ ЦЕНА (для сырья, упаковки и покупной продукции)
+    return incs[0].p;
 };
 
         function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
