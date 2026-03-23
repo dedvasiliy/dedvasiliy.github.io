@@ -1255,7 +1255,7 @@ else if(t==='regOut'){
      else if(t==='costSet'){
       h.innerText='СЕБЕСТОИМОСТЬ (ТАРИФЫ)';
             m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div><span class="inv-set-lbl">Зарплата цех (смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div><div><span class="inv-set-lbl">ЗП Фасовка (за пачку)</span><input type="number" id="csSalFas" value="${esc(costSet.salaryFas||'')}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка (на 1000шт)</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
-     }
+}
      else if(t==='autoSet'){
       h.innerText='НАСТРОЙКИ АВТОСПИСАНИЯ';
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">МЕШКИ И ЭТИКЕТКИ (ЦЕХА)</div><div><span class="inv-set-lbl">Названия для списания (через запятую)</span><input type="text" id="asBagsN" value="${esc(autoSet.bagsNames)}"></div><div><span class="inv-set-lbl">Целевой вес (кг)</span><input type="number" id="asBagsW" value="${esc(autoSet.bagsWeight)}"></div><div class="z-head" style="margin-top:10px">НИТКИ (ЦЕХА)</div><div class="grid-2"><div><span class="inv-set-lbl">1 шт на (мешков)</span><input type="number" id="asThrR" value="${esc(autoSet.threadsRate)}"></div><div><span class="inv-set-lbl">Исключить вес (кг)</span><input type="number" id="asThrE" value="${esc(autoSet.threadsExclude)}"></div></div><div class="z-head" style="margin-top:10px">СКОТЧ И ТЕРМОЛЕНТА (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Скотч: 1 шт на (пакетов)</span><input type="number" id="asTapR" value="${esc(autoSet.tapeRate)}"></div><div><span class="inv-set-lbl">Термо: 1 шт на (пакетов)</span><input type="number" id="asThmR" value="${esc(autoSet.thermalRate)}"></div></div><div class="z-head" style="margin-top:10px">ПАКЕТЫ (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Стандарт (пакетов)</span><input type="number" step="0.1" id="asPk1" value="${esc(autoSet.packK1)}"></div><div><span class="inv-set-lbl">Исключение (пакетов)</span><input type="number" step="0.1" id="asPk2" value="${esc(autoSet.packK2)}"></div><div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"></div></div><div class="z-head" style="margin-top:10px">СТРЕЙЧ ПЛЕНКА (ОТГРУЗКА)</div><div><span class="inv-set-lbl">1 рулон на (кг отгрузки)</span><input type="number" id="asStr" value="${esc(autoSet.stretchRate)}"></div></div><button class="btn-main" onclick="saveAutoSet()">СОХРАНИТЬ</button>`;
@@ -1721,36 +1721,41 @@ window.previewWorkshop=function(k){
         function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
 window.calcAvgPrice = function(itemName, category) {
     let curStock = 0;
-    // 1. Узнаем текущий остаток товара на складе
+    // Узнаем остаток (оставляем проверку для конкретного размера)
     if (data[category]) {
         Object.values(data[category]).forEach(v => { 
             if (v.name === itemName) curStock += (parseFloat(v.amount) || 0); 
         });
     }
-    if (curStock <= 0.01) return 0; // Нет на складе - цена 0
+    if (curStock <= 0.01) return 0; 
 
     let incs = [];
-    // 2. Ищем приходы сырья и покупной продукции
+    
+    // Ищем в накладных сырья (на всякий случай)
     if (data.ArchIncoming) {
         Object.values(data.ArchIncoming).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    if (it.n === itemName && it.a > 0 && it.p > 0) incs.push({ d: inv.date, p: it.p });
+                    let isFilm = (category === 'Пленка' && it.n.toLowerCase().includes('пленка'));
+                    if ((isFilm || it.n === itemName) && it.a > 0 && it.p > 0) {
+                        incs.push({ d: inv.date, p: it.p });
+                    }
                 });
             }
         });
     }
-    // 3. Ищем приходы упаковки
+    // Ищем в приходах упаковки
     if (data.ArchPackIn) {
         Object.values(data.ArchPackIn).forEach(inv => {
-            if (inv.name === itemName && inv.amount > 0 && inv.price > 0) incs.push({ d: inv.date, p: inv.price });
+            let isFilm = (category === 'Пленка' && inv.category === 'Пленка');
+            if ((isFilm || inv.name === itemName) && inv.amount > 0 && inv.price > 0) {
+                incs.push({ d: inv.date, p: inv.price });
+            }
         });
     }
     
-    // 4. Сортируем от новых к старым
+    // Сортируем и берем самую свежую цену
     incs.sort((a, b) => b.d.localeCompare(a.d));
-    
-    // 5. Возвращаем цену самого последнего прихода
     return incs.length > 0 ? incs[0].p : 0;
 };
 
