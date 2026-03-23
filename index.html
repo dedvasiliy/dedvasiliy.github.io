@@ -1766,7 +1766,90 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
 
         async function saveTimesheetBatch(){const d=gID('gTD').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value),s=gID('ts_'+k).value,e=gID('te_'+k).value;if(n&&rt>0){cr.push({name:n,rate:rt,start:s,end:e});t+=rt;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:rt,ts:new Date().toISOString()}}});if(!cr.length)return alert('Пусто');try{await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! Всего: '+t)}catch(err){alert(err)}}
 
-        function renderTsList(c){const d=data.Timesheet||{},l=Object.entries(d).sort((a,b)=>b[1].date.localeCompare(a[1].date));let h='';l.forEach(([i,v])=>{h+=`<div class="j-card"><div class="j-head">${v.date.split('-').reverse().join('.')}</div><div>${esc(v.name)}: ${v.start}-${v.end} (${v.rate} грн)</div>${isAdmin?`<button onclick="delRec('Timesheet','${i}')" style="color:red;border:none;background:0 0;margin-top:5px">УДАЛИТЬ</button>`:''}</div>`});c.innerHTML=h||'Пусто'}
+        function renderTsList(c){const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});let h='<div class="dash-grid">';Object.keys(w).sort().forEach(n=>{h+=`<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')"><div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div><div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div><div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div></div>`});h+='</div>';c.innerHTML=Object.keys(w).length?h:'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>'}
+window.openWorkerCalendar = function(name, y, m) {
+    const d = new Date();
+    const year = y || d.getFullYear();
+    const month = m !== undefined ? m : d.getMonth(); 
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let startDay = firstDay === 0 ? 6 : firstDay - 1; 
+    
+    const ts = data.Timesheet || {};
+    const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const shifts = {};
+    
+    Object.entries(ts).forEach(([k, v]) => {
+        if (v.name === name && v.date.startsWith(monthPrefix)) {
+            if(!shifts[v.date]) shifts[v.date] = [];
+            shifts[v.date].push({id: k, ...v});
+        }
+    });
+    
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    
+    let prevM = month - 1, prevY = year;
+    if (prevM < 0) { prevM = 11; prevY--; }
+    let nextM = month + 1, nextY = year;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    
+    let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openWorkerCalendar('${esc(name)}', ${prevY}, ${prevM})">◀</button>
+        <div style="font-weight:900;color:var(--p);font-size:14px;text-transform:uppercase">${monthNames[month]} ${year}</div>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openWorkerCalendar('${esc(name)}', ${nextY}, ${nextM})">▶</button>
+    </div>`;
+    
+    h += `<div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:2px;text-align:center;font-size:9px;font-weight:900;color:#64748b;margin-bottom:4px">
+        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div style="color:#dc2626">СБ</div><div style="color:#dc2626">ВС</div>
+    </div>`;
+    
+    h += `<div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:2px;">`;
+    
+    for (let i = 0; i < startDay; i++) {
+        h += `<div style="background:#f1f5f9;border-radius:4px;min-height:50px;border:1px solid transparent"></div>`;
+    }
+    
+    let totalZp = 0;
+    let totalShifts = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayShifts = shifts[dateStr];
+        const isToday = dateStr === new Date().toISOString().split('T')[0];
+        
+        let cellBg = isToday ? '#e0e7ff' : '#fff';
+        let cellBorder = isToday ? '2px solid var(--p)' : '1px solid #cbd5e1';
+        let innerHtml = `<div style="font-weight:900;font-size:12px;color:#0f172a;text-align:right;padding:2px">${day}</div>`;
+        
+        if (dayShifts && dayShifts.length > 0) {
+            cellBg = '#ecfdf5';
+            cellBorder = '1px solid #10b981';
+            dayShifts.forEach(s => {
+                totalZp += parseFloat(s.rate) || 0;
+                totalShifts++;
+                innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                    ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                    ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${day} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                </div>`;
+            });
+        }
+        
+        h += `<div style="background:${cellBg};border:${cellBorder};border-radius:4px;min-height:55px;display:flex;flex-direction:column;padding:1px;overflow:hidden">${innerHtml}</div>`;
+    }
+    
+    h += `</div>`;
+    h += `<div style="margin-top:10px;background:#fefce8;border:1px dashed #ca8a04;padding:10px;border-radius:8px;text-align:center;font-weight:900">
+        <div style="font-size:11px;color:#a16207">ИТОГО ЗА ${monthNames[month].toUpperCase()}</div>
+        <div style="color:var(--p);font-size:15px;margin-top:2px">Смен: ${totalShifts} | ЗП: ${totalZp} грн</div>
+    </div>`;
+    
+    gID('mT').innerText = 'ТАБЕЛЬ: ' + name;
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
+    gID('mdl').style.display = 'flex';
+};
+
         window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0,b=parseFloat(gID('prB').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r,priceBN:b});closeModal()}catch(e){alert(e)}};
