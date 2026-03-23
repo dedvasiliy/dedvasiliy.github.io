@@ -1364,6 +1364,52 @@ else if(t==='regOut'){
     window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},800)};
     async function execShip(){showLoad();const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,address:d.addr,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/(parseFloat(autoSet.stretchRate)||5000)).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);hideLoad();closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){hideLoad();alert(e)}}
         window.previewInc=function(){const d=gID('iD').value,s=getSmartVal('iS'),nm=gID('iNum').value;if(!s||!nm)return alert('Заполните поставщика и номер накладной');saveIncDraft();const itms=[];let tw=0;let ts=0;for(let x of gID('incRows').children){const i=x.id.split('_')[1],n=gID('iNn_'+i).value,a=parseFloat(gID('iNa_'+i).value),p=parseFloat(gID('iNp_'+i).value)||0;if(n&&a>0){itms.push({n,a,p});tw+=a;ts+=(a*p);}}if(!itms.length)return alert('Добавьте товар с весом');const dtObj=new Date(d),dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();let h=`<div style="text-align:center"><b>ПРИХОД (ПОКУПНАЯ)</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>ТОВАР</td><td style="text-align:center">ВЕС</td><td style="text-align:center">ЦЕНА</td><td style="text-align:center">СУММА</td></tr>`;itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?x.p.toFixed(2):'-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?(x.a*x.p).toFixed(2):'-'}</td></tr>`});h+=`<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${ts>0?ts.toFixed(2):''}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToIncBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sInc()" style="margin:0">СОХРАНИТЬ</button></div>`;window.tempIncData={d,s,nm,itms};gID('incBuilder').style.display='none';gID('incPreview').innerHTML=h;gID('incPreview').style.display='block';gID('mT').innerText='ПРОВЕРКА';};
+window.sInc = async function() {
+    showLoad();
+    const d = window.tempIncData;
+    if (!d) { hideLoad(); return; }
+    try {
+        const k = db.child('ArchIncoming').push().key;
+        const u = {};
+        const ts = new Date().toISOString();
+        let tSum = 0;
+        
+        d.itms.forEach(x => tSum += (x.a * (x.p || 0)));
+
+        u['/ArchIncoming/' + k] = {
+            date: d.d + "T12:00:00Z",
+            supplier: d.s,
+            num: d.nm,
+            type: 'GOODS',
+            ts: ts,
+            totalSum: tSum,
+            items: d.itms.map(x => ({ n: x.n, a: x.a, p: (x.p || 0), s: (x.a * (x.p || 0)) }))
+        };
+
+        d.itms.forEach(x => {
+            u['/WeightStock/' + db.child('WeightStock').push().key] = {
+                name: x.n,
+                amount: x.a,
+                date: d.d + "T12:00:00Z",
+                note: x.p > 0 ? `Приход (по ${parseFloat(x.p).toFixed(2)} грн)` : 'Приход',
+                fLink: k,
+                ts: ts
+            };
+        });
+
+        await db.update(u);
+        localStorage.removeItem('incDraft');
+        const mq = gID('mQty');
+        if(mq) mq.style.display = 'none';
+        
+        hideLoad();
+        closeModal();
+        alert('Приход покупной продукции сохранен');
+    } catch (e) {
+        hideLoad();
+        alert(e);
+    }
+};
 
     window.backToIncBuilder=function(){gID('incPreview').style.display='none';gID('incBuilder').style.display='block';gID('mT').innerText='ПРИХОД (ПОКУПНАЯ)';};
         window.previewRaw=function(){const d=gID('rD').value,s=getSmartVal('rSupp'),nm=gID('rNum').value,dop=parseFloat(gID('rDop').value)||0;if(!s||!nm)return alert('Заполните поставщика и номер накладной');saveRawDraft();const itms=[];let tw=0;let tsBase=0;const dtObj=new Date(d),dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();const sr=data['Stock_Raw']||{};const existingBals={};Object.values(sr).forEach(v=>{if(v.name)existingBals[v.name]=(existingBals[v.name]||0)+v.amount;});const existingNames=new Set();Object.keys(existingBals).forEach(k=>{if(existingBals[k]>0.01)existingNames.add(k);});for(let x of gID('rawRows').children){const i=x.id.split('_')[1];let n=gID('rNn_'+i).value;const a=parseFloat(gID('rNa_'+i).value);const p=parseFloat(gID('rNp_'+i).value)||0;if(n&&a>0){let rawBase=n.replace(/\s\[.*?\](.*)?$/,'').trim();let baseName=`${rawBase} [${s}]`;if(existingNames.has(baseName)){if(!confirm(`На складе уже есть папка '${baseName}'. Добавить вес в неё?\n(ОК - добавить, Отмена - создать новую с датой)`)){baseName=`${baseName} ${dStr}`;}}itms.push({n:baseName,a,pBase:p});tw+=a;tsBase+=(a*p);}}if(!itms.length)return alert('Добавьте сырье с весом');let dopPerKg=tw>0?(dop/tw):0;let tsTotal=0;itms.forEach(x=>{x.p=x.pBase+dopPerKg;x.s=x.a*x.p;tsTotal+=x.s;});let h=`<div style="text-align:center"><b>ПРИХОД СЫРЬЯ</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}<br><b>Доп. расходы:</b> ${dop.toFixed(2)} грн (размазано по +${dopPerKg.toFixed(2)} грн/кг)</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ (ПАПКА)</td><td style="text-align:center">ВЕС</td><td style="text-align:center">ИТОГ. ЦЕНА</td><td style="text-align:center">СУММА</td></tr>`;itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?x.p.toFixed(2):'-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?x.s.toFixed(2):'-'}</td></tr>`});h+=`<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal>0?tsTotal.toFixed(2):''}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToRawBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sRawInc()" style="margin:0">СОХРАНИТЬ</button></div>`;window.tempRawData={d,s,nm,itms,dop};gID('rawBuilder').style.display='none';gID('rawPreview').innerHTML=h;gID('rawPreview').style.display='block';gID('mT').innerText='ПРОВЕРКА';};
