@@ -1254,8 +1254,7 @@ else if(t==='regOut'){
      }
      else if(t==='costSet'){
       h.innerText='СЕБЕСТОИМОСТЬ (ТАРИФЫ)';
-      m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div style="grid-column: span 2;"><span class="inv-set-lbl">Зарплата цех (грн/смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
-     }
+            m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div><span class="inv-set-lbl">Зарплата цех (смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div><div><span class="inv-set-lbl">ЗП Фасовка (за пачку)</span><input type="number" id="csSalFas" value="${esc(costSet.salaryFas||'')}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка (на 1000шт)</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
 
      else if(t==='autoSet'){
       h.innerText='НАСТРОЙКИ АВТОСПИСАНИЯ';
@@ -1327,6 +1326,7 @@ else if(t==='regOut'){
             lossPercent: gID('csLoss').value,
             powerPrice: gID('csPowerP').value,
             salaryShift: gID('csSal').value,
+            salaryFas: gID('csSalFas').value,
             wastePrices: gID('csWaste').value,
             powerKrup: gID('csPKrup').value,
             powerZshm: gID('csPZshm').value,
@@ -1432,12 +1432,17 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
         let cTherm = thermalUsed * pTherm;
         packCost += cTherm;
 
-        // 3. Считаем Финансы (Свет и Зарплату)
-        let energyCost = 30 * (parseFloat(costSet.powerPrice)||0); // 30 кВт
-        let salCost = pkTotal * 0.50; // 50 копеек за пачку
+                // 3. Считаем Финансы (Свет и Зарплату)
+        let kwPer1000 = parseFloat(costSet.powerFas) || 3;
+        let kwUsed = (pkTotal / 1000) * kwPer1000;
+        let energyCost = kwUsed * (parseFloat(costSet.powerPrice) || 0);
+                let salPerPack = costSet.salaryFas !== undefined && costSet.salaryFas !== '' ? parseFloat(costSet.salaryFas) : 0.50;
+        let salCost = pkTotal * salPerPack;
+
         
         let totalCost = rawCost + packCost + energyCost + salCost;
         let costPerPack = pkTotal > 0 ? (totalCost / pkTotal).toFixed(2) : 0;
+
 
         const html=`<div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div>
         <div class="conf-sec"><b>сырье:</b></div>${hRaw}
@@ -1450,8 +1455,10 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
             <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
             <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
             <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
-            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (30 кВт):</span><span>${energyCost.toFixed(2)} грн</span></div>
-            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (0.50 грн/шт):</span><span>${salCost.toFixed(2)} грн</span></div>
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${kwUsed.toFixed(1)} кВт):</span><span>${energyCost.toFixed(2)} грн</span></div>
+
+            <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (${salPerPack.toFixed(2)} грн/шт):</span>
+<span>${salCost.toFixed(2)} грн</span></div>
             <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
                 <span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span style="color:#dc2626">${costPerPack} грн</span>
             </div>
@@ -1712,7 +1719,7 @@ window.previewWorkshop=function(k){
         function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;}
         function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
         function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
-        window.calcAvgPrice = function(itemName, category) {
+window.calcAvgPrice = function(itemName, category) {
     let curStock = 0;
     // 1. Узнаем текущий остаток товара на складе
     if (data[category]) {
@@ -1728,7 +1735,7 @@ window.previewWorkshop=function(k){
         Object.values(data.ArchIncoming).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    if (it.n === itemName && it.a > 0 && it.p > 0) incs.push({ d: inv.date, a: it.a, p: it.p });
+                    if (it.n === itemName && it.a > 0 && it.p > 0) incs.push({ d: inv.date, p: it.p });
                 });
             }
         });
@@ -1736,27 +1743,15 @@ window.previewWorkshop=function(k){
     // 3. Ищем приходы упаковки
     if (data.ArchPackIn) {
         Object.values(data.ArchPackIn).forEach(inv => {
-            if (inv.name === itemName && inv.amount > 0 && inv.price > 0) incs.push({ d: inv.date, a: inv.amount, p: inv.price });
+            if (inv.name === itemName && inv.amount > 0 && inv.price > 0) incs.push({ d: inv.date, p: inv.price });
         });
     }
     
     // 4. Сортируем от новых к старым
     incs.sort((a, b) => b.d.localeCompare(a.d));
     
-    // 5. Высчитываем среднюю цену только для текущего остатка
-    let accW = 0, accC = 0;
-    for (let i = 0; i < incs.length; i++) {
-        let needed = curStock - accW;
-        if (incs[i].a >= needed) {
-            accC += needed * incs[i].p;
-            accW += needed;
-            break;
-        } else {
-            accC += incs[i].a * incs[i].p;
-            accW += incs[i].a;
-        }
-    }
-    return accW > 0 ? (accC / accW) : 0;
+    // 5. Возвращаем цену самого последнего прихода
+    return incs.length > 0 ? incs[0].p : 0;
 };
 
         function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
