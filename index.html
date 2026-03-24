@@ -1587,10 +1587,11 @@ window.previewWorkshop=function(k){
             <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ + П/Ф):</span><span style="color:#dc2626">${costPerKg} грн</span>
         </div>
     </div>
-    
+    ${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}
+    ${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт <span style="font-size:9px;color:#059669">[~${cBags.toFixed(2)} грн]</span></span></div>`:''}
     ${labelsHTML}
     ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}`;
-    
+
     gID('confContent').innerHTML=html;
     gID('confMdl').style.display='flex';
     
