@@ -1555,8 +1555,11 @@ window.previewWorkshop=function(k){
     
     let salCost = 0;
     if (data.Timesheet) {
+        let opClean = String(op || '').trim();
+        let asClean = String(as || '').trim();
         Object.values(data.Timesheet).forEach(t => {
-            if (t.date === d && (t.name === op || (as !== '-' && t.name === as))) {
+            let tNameClean = String(t.name || '').trim();
+            if (t.date === d && (tNameClean === opClean || (asClean !== '-' && tNameClean === asClean))) {
                 salCost += parseFloat(t.rate) || 0;
             }
         });
@@ -1707,7 +1710,9 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
 
     async function saveTimesheetBatch(){const d=gID('gTD').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value)||0,s=gID('ts_'+k).value,e=gID('te_'+k).value,isAbs=gID('abs_'+k).checked;if(n){cr.push({name:n,rate:rt,start:s,end:e});if(!isAbs&&rt>0){const[sH,sM]=s.split(':').map(Number),[eH,eM]=e.split(':').map(Number);let hrs=(eH+eM/60)-(sH+sM/60);if(hrs<0)hrs+=24;const pay=Math.round(hrs*rt);t+=pay;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:pay,hourlyRate:rt,hours:hrs.toFixed(1),ts:new Date().toISOString()}}}});if(!cr.length)return alert('Пусто');try{if(Object.keys(u).length>0)await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! ЗП за день: '+t+' грн')}catch(err){alert(err)}}
     
-        function renderTsList(c){const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});let h='<div class="dash-grid">';Object.keys(w).sort().forEach(n=>{h+=`<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')"><div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div><div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div><div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div></div>`});h+='</div>';c.innerHTML=Object.keys(w).length?h:'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>'}
+        window.printTsList=function(){const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});let h=`<div style="font-family:sans-serif;color:#000;"><h3 style="text-align:center;margin-bottom:15px;text-transform:uppercase;">ТАБЕЛЬ ЗА ${cM.split('-').reverse().join('.')}</h3><div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;">`;Object.keys(w).sort().forEach(n=>{h+=`<div style="border:2px solid #000;padding:10px;border-radius:8px;text-align:center;break-inside:avoid;"><div style="font-weight:900;font-size:14px;margin-bottom:5px;">${esc(n)}</div><div style="font-size:11px;">Смен: <b>${w[n].s}</b></div><div style="font-size:12px;font-weight:900;margin-top:4px;">ЗП: ${w[n].t} грн</div></div>`;});h+=`</div></div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
+        function renderTsList(c){const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});let h=`<button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ ТАБЕЛЯ</button><div class="dash-grid">`;Object.keys(w).sort().forEach(n=>{h+=`<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')"><div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div><div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div><div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div></div>`});h+='</div>';c.innerHTML=Object.keys(w).length?h:'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>'}
+
 window.openWorkerCalendar = function(name, y, m) {
     const d = new Date();
     const year = y || d.getFullYear();
