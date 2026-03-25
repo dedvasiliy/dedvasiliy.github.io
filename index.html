@@ -1716,6 +1716,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
             const month = dObj.getMonth();
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
             const cM = new Date().toISOString().substring(0,7);
+            const todayStr = new Date().toISOString().split('T')[0];
             
             const ts = data.Timesheet || {};
             const workers = {};
@@ -1760,6 +1761,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const dayShifts = shiftsByDate[dateStr];
+                    const isFuture = dateStr > todayStr;
                     
                     const col = (startDay + day - 1) % 7;
                     const isWeekend = (col === 5 || col === 6);
@@ -1779,7 +1781,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
                             </div>`;
                         });
                     } else {
-                        if (!isWeekend) {
+                        if (!isWeekend && !isFuture) {
                             cellBg = '#eff6ff';
                             cellBorder = '1px solid #93c5fd';
                             innerHtml += `<div style="font-size:12px;color:#2563eb;text-align:center;margin-top:2px;font-weight:900;">Н</div>`;
@@ -1817,6 +1819,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
             const d = new Date();
             const year = y || d.getFullYear();
             const month = m !== undefined ? m : d.getMonth(); 
+            const todayStr = new Date().toISOString().split('T')[0];
             
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1862,7 +1865,8 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const dayShifts = shifts[dateStr];
-                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                const isToday = dateStr === todayStr;
+                const isFuture = dateStr > todayStr;
                 
                 const col = (startDay + day - 1) % 7;
                 const isWeekend = (col === 5 || col === 6);
@@ -1883,7 +1887,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
                         </div>`;
                     });
                 } else {
-                    if (!isWeekend) {
+                    if (!isWeekend && !isFuture) {
                         if(!isToday) cellBg = '#eff6ff';
                         if(!isToday) cellBorder = '1px solid #93c5fd';
                         innerHtml += `<div style="font-size:18px;color:#2563eb;text-align:center;margin-top:4px;font-weight:900;">Н</div>`;
