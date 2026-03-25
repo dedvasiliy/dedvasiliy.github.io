@@ -1710,31 +1710,85 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
 
     async function saveTimesheetBatch(){const d=gID('gTD').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value)||0,s=gID('ts_'+k).value,e=gID('te_'+k).value,isAbs=gID('abs_'+k).checked;if(n){cr.push({name:n,rate:rt,start:s,end:e});if(!isAbs&&rt>0){const[sH,sM]=s.split(':').map(Number),[eH,eM]=e.split(':').map(Number);let hrs=(eH+eM/60)-(sH+sM/60);if(hrs<0)hrs+=24;const pay=Math.round(hrs*rt);t+=pay;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:pay,hourlyRate:rt,hours:hrs.toFixed(1),ts:new Date().toISOString()}}}});if(!cr.length)return alert('Пусто');try{if(Object.keys(u).length>0)await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! ЗП за день: '+t+' грн')}catch(err){alert(err)}}
     
-                window.printTsList=function(){
-            const d=data.Timesheet||{};
-            const cM=new Date().toISOString().substring(0,7);
-            const g={};
-            let tS=0;
-            Object.values(d).forEach(v=>{
-                if(v.date&&v.date.startsWith(cM)){
-                    if(!g[v.date])g[v.date]=[];
-                    g[v.date].push(v);
-                    tS+=parseFloat(v.rate)||0;
+                        window.printTsList=function(){
+            const dObj = new Date();
+            const year = dObj.getFullYear();
+            const month = dObj.getMonth();
+            const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+            const cM = new Date().toISOString().substring(0,7);
+            
+            const ts = data.Timesheet || {};
+            const workers = {};
+            Object.entries(ts).forEach(([k, v]) => {
+                if (v.name && v.date && v.date.startsWith(cM)) {
+                    if(!workers[v.name]) workers[v.name] = [];
+                    workers[v.name].push({id: k, ...v});
                 }
             });
-            const sD=Object.keys(g).sort((a,b)=>b.localeCompare(a));
-            let h=`<div style="font-family:sans-serif;color:#000;"><h3 style="text-align:center;margin-bottom:15px;text-transform:uppercase;">ДЕТАЛЬНЫЙ ТАБЕЛЬ ЗА ${cM.split('-').reverse().join('.')}</h3><div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;align-items:start;">`;
-            sD.forEach(date=>{
-                const dStr=date.split('-').reverse().join('.');
-                h+=`<div style="border:2px solid #000;padding:8px;border-radius:6px;break-inside:avoid;"><div style="font-weight:900;text-align:center;border-bottom:1px solid #000;margin-bottom:5px;padding-bottom:3px;">${dStr}</div>`;
-                let dS=0;
-                g[date].sort((a,b)=>(b.time||'').localeCompare(a.time||'')).forEach(s=>{
-                    const r=parseFloat(s.rate)||0;dS+=r;
-                    h+=`<div style="font-size:12px;margin-bottom:4px;"><span>${esc(s.time||'')}</span> - <b>${esc(s.name)}</b>: ${r}</div>`;
+
+            if(Object.keys(workers).length === 0) return alert('Нет данных за этот месяц');
+
+            let h = `<div style="font-family:sans-serif;color:#000;">
+                     <h3 style="text-align:center;margin-bottom:15px;text-transform:uppercase;font-size:16px;">ТАБЕЛЬ (КАЛЕНДАРНАЯ СЕТКА) ЗА ${monthNames[month]} ${year}</h3>
+                     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;align-items:start;">`;
+
+            Object.keys(workers).sort().forEach(name => {
+                const shiftsByDate = {};
+                workers[name].forEach(s => {
+                    if(!shiftsByDate[s.date]) shiftsByDate[s.date] = [];
+                    shiftsByDate[s.date].push(s);
                 });
-                h+=`<div style="font-size:12px;font-weight:900;text-align:right;margin-top:5px;border-top:1px dashed #000;padding-top:3px;">Итого за день: ${dS}</div></div>`;
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                let startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+                let calHtml = `<div style="border:2px solid #94a3b8;padding:8px;border-radius:8px;break-inside:avoid;page-break-inside:avoid;background:#fff;">
+                    <div style="font-weight:900;color:#000;font-size:13px;text-transform:uppercase;text-align:center;margin-bottom:6px;">${esc(name)}</div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:2px;text-align:center;font-size:8px;font-weight:900;color:#64748b;margin-bottom:2px">
+                        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div style="color:#dc2626">СБ</div><div style="color:#dc2626">ВС</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:2px;">`;
+
+                for (let i = 0; i < startDay; i++) {
+                    calHtml += `<div style="background:#f8fafc;border-radius:3px;min-height:35px;border:1px solid transparent"></div>`;
+                }
+
+                let totalZp = 0;
+                let totalShifts = 0;
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayShifts = shiftsByDate[dateStr];
+                    
+                    let cellBg = '#fff';
+                    let cellBorder = '1px solid #cbd5e1';
+                    let innerHtml = `<div style="font-weight:900;font-size:10px;color:#0f172a;text-align:right;padding:1px 2px 0 0">${day}</div>`;
+                    
+                    if (dayShifts && dayShifts.length > 0) {
+                        cellBg = '#ecfdf5';
+                        cellBorder = '1px solid #10b981';
+                        dayShifts.forEach(s => {
+                            totalZp += parseFloat(s.rate) || 0;
+                            totalShifts++;
+                            innerHtml += `<div style="font-size:8px;line-height:1;margin-bottom:1px;background:#d1fae5;padding:1px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                                ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                            </div>`;
+                        });
+                    }
+                    calHtml += `<div style="background:${cellBg};border:${cellBorder};border-radius:3px;min-height:40px;display:flex;flex-direction:column;padding:1px;overflow:hidden">${innerHtml}</div>`;
+                }
+
+                calHtml += `</div>
+                    <div style="margin-top:6px;background:#fefce8;border:1px dashed #ca8a04;padding:4px;border-radius:4px;text-align:center;font-weight:900">
+                        <div style="color:#000;font-size:12px;">Смен: ${totalShifts} | ЗП: ${totalZp} грн</div>
+                    </div>
+                </div>`;
+                
+                h += calHtml;
             });
-            h+=`</div><h3 style="text-align:right;margin-top:15px;">ОБЩАЯ СУММА ЗА МЕСЯЦ: ${tS} грн</h3></div>`;
+
+            h += `</div></div>`;
             gID('print-view').innerHTML=h;
             window.print();
             setTimeout(()=>gID('print-view').innerHTML='',800);
@@ -1743,7 +1797,7 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
         function renderTsList(c){
             const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);
             Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});
-            let h=`<button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ ТАБЕЛЯ (ДЕТАЛЬНО)</button><div class="dash-grid">`;
+            let h=`<button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ КАЛЕНДАРЕЙ</button><div class="dash-grid">`;
             Object.keys(w).sort().forEach(n=>{h+=`<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')"><div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div><div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div><div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div></div>`});
             h+='</div>';
             c.innerHTML=Object.keys(w).length?h:'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>';
