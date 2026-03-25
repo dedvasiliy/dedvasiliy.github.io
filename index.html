@@ -1805,14 +1805,80 @@ function addTimeRow(n='',r='',ts='',te=''){const i=Date.now()+Math.random();cons
             window.print();
             setTimeout(()=>gID('print-view').innerHTML='',800);
         };
+        window.openWorkersMgmt = function() {
+            let h = `<div style="margin-bottom:15px;display:flex;gap:5px;">
+                <input type="text" id="newWorkerName" placeholder="Имя сотрудника..." class="inp" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:4px;">
+                <button class="btn-main" style="width:auto;margin:0;padding:0 15px;" onclick="addWorker()">ДОБАВИТЬ</button>
+            </div>
+            <div id="workersList"></div>`;
+            gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
+            gID('mB').innerHTML = h;
+            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+            gID('mdl').style.display = 'flex';
+            renderWorkersList();
+        };
 
-        function renderTsList(c){
-            const d=data.Timesheet||{};const w={};const cM=new Date().toISOString().substring(0,7);
-            Object.entries(d).forEach(([k,v])=>{if(v.name){if(!w[v.name])w[v.name]={t:0,s:0};if(v.date.startsWith(cM)){w[v.name].t+=parseFloat(v.rate)||0;w[v.name].s+=1}}});
-            let h=`<button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ КАЛЕНДАРЕЙ</button><div class="dash-grid">`;
-            Object.keys(w).sort().forEach(n=>{h+=`<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')"><div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div><div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div><div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div></div>`});
-            h+='</div>';
-            c.innerHTML=Object.keys(w).length?h:'<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>';
+        window.renderWorkersList = function() {
+            const wList = gID('workersList');
+            if (!wList) return;
+            const w = data.Workers || {};
+            let h = '';
+            Object.keys(w).sort((a,b) => b.localeCompare(a)).forEach(k => {
+                h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:10px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:6px;">
+                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)}</div>
+                    <div style="color:#dc2626;font-weight:bold;font-size:10px;cursor:pointer;padding:5px;" onclick="delWorker('${k}')">УДАЛИТЬ</div>
+                </div>`;
+            });
+            wList.innerHTML = h || '<div style="text-align:center;padding:10px;color:#64748b;font-size:12px;">Список пуст</div>';
+        };
+
+        window.addWorker = function() {
+            const n = gID('newWorkerName').value.trim();
+            if(!n) return;
+            addRec('Workers', { name: n });
+            setTimeout(renderWorkersList, 500);
+        };
+
+        window.delWorker = function(id) {
+            if(!confirm('Точно удалить из базы?')) return;
+            delRec('Workers', id);
+            setTimeout(renderWorkersList, 500);
+        };
+
+                function renderTsList(c){
+            const d = data.Timesheet || {};
+            const dbW = data.Workers || {};
+            const w = {};
+            const cM = new Date().toISOString().substring(0,7);
+            
+            Object.values(dbW).forEach(bw => {
+                if(bw.name) w[bw.name] = {t:0, s:0};
+            });
+
+            Object.entries(d).forEach(([k,v]) => {
+                if(v.name){
+                    if(!w[v.name]) w[v.name] = {t:0,s:0}; 
+                    if(v.date.startsWith(cM)){
+                        w[v.name].t += parseFloat(v.rate) || 0;
+                        w[v.name].s += 1;
+                    }
+                }
+            });
+
+            let h = `<div style="display:flex;gap:8px;margin-bottom:10px">
+                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;flex:1">🖨️ ПЕЧАТЬ</button>
+                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;flex:1">👥 СОТРУДНИКИ</button>
+            </div><div class="dash-grid">`;
+            
+            Object.keys(w).sort().forEach(n=>{
+                h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')">
+                    <div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div>
+                    <div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div>
+                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div>
+                </div>`;
+            });
+            h += '</div>';
+            c.innerHTML = Object.keys(w).length ? h : '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>';
         }
 
         window.openWorkerCalendar = function(name, y, m) {
