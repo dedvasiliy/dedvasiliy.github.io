@@ -1805,9 +1805,9 @@ function addTimeRow(n='',r='',ts='',te=''){
                         });
                     } else {
                         if (!isWeekend && !isFuture) {
-                            cellBg = '#eff6ff';
-                            cellBorder = '1px solid #93c5fd';
-                            innerHtml += `<div style="font-size:12px;color:#2563eb;text-align:center;margin-top:2px;font-weight:900;">Н</div>`;
+                            // Задаем светло-серый фон и тёмно-серую рамку для печати
+                            cellBg = '#e2e8f0'; 
+                            cellBorder = '2px solid #64748b'; 
                         }
                     }
                     
@@ -1828,6 +1828,7 @@ function addTimeRow(n='',r='',ts='',te=''){
             window.print();
             setTimeout(()=>gID('print-view').innerHTML='',800);
         };
+
         window.openWorkersMgmt = function() {
             let h = `<div style="margin-bottom:15px;display:flex;gap:5px;">
                 <input type="text" id="newWorkerName" placeholder="Имя сотрудника..." class="fas-inp" style="flex:1;">
