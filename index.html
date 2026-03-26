@@ -1731,8 +1731,94 @@ function addTimeRow(n='',r='',ts='',te=''){
     </div>`);
 }
 
-    async function saveTimesheetBatch(){const d=gID('gTD').value,u={},cr=[];let t=0;D.querySelectorAll('#tsRows .ts-row').forEach(r=>{const k=r.id.split('_')[1],n=gID('tn_'+k).value,rt=parseFloat(gID('trate_'+k).value)||0,s=gID('ts_'+k).value,e=gID('te_'+k).value,isAbs=gID('abs_'+k).checked;if(n){cr.push({name:n,rate:rt,start:s,end:e});if(!isAbs&&rt>0){const[sH,sM]=s.split(':').map(Number),[eH,eM]=e.split(':').map(Number);let hrs=(eH+eM/60)-(sH+sM/60);if(hrs<0)hrs+=24;const pay=Math.round(hrs*rt);t+=pay;u['/Timesheet/'+db.child('Timesheet').push().key]={date:d,name:n,start:s,end:e,rate:pay,hourlyRate:rt,hours:hrs.toFixed(1),ts:new Date().toISOString()}}}});if(!cr.length)return alert('Пусто');try{if(Object.keys(u).length>0)await db.update(u);localStorage.setItem('activeCrew',JSON.stringify(cr));alert('Сохранено! ЗП за день: '+t+' грн')}catch(err){alert(err)}}
-    
+    window.saveTimesheetBatch = function() {
+        const d = gID('gTD').value;
+        const ds = d.split('-').reverse().join('.');
+        const cr = [];
+        let totalZp = 0;
+        let previewHtml = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:10px">СМЕНА ЗА ${ds}</div><table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:15px"><tr style="background:#f1f5f9;font-weight:bold;text-align:center"><td>ФИО</td><td>ВРЕМЯ</td><td>СТАТУС / ЗП</td></tr>`;
+        
+        D.querySelectorAll('#tsRows .ts-row').forEach(r => {
+            const k = r.id.split('_')[1];
+            const n = gID('tn_'+k).value;
+            const rt = parseFloat(gID('trate_'+k).value) || 0;
+            const s = gID('ts_'+k).value;
+            const e = gID('te_'+k).value;
+            const isAbs = gID('abs_'+k).checked;
+            
+            if (n) {
+                let status = '';
+                let hrs = 0;
+                let pay = 0;
+                
+                if (isAbs) {
+                    status = '<span style="color:#dc2626;font-weight:bold">Н/Я (Пропуск)</span>';
+                } else if (rt > 0) {
+                    const [sH, sM] = s.split(':').map(Number);
+                    const [eH, eM] = e.split(':').map(Number);
+                    hrs = (eH + eM/60) - (sH + sM/60);
+                    if(hrs < 0) hrs += 24;
+                    pay = Math.round(hrs * rt);
+                    totalZp += pay;
+                    status = `<span style="color:#059669;font-weight:bold">${pay} грн</span> <span style="font-size:9px;color:#64748b">(${hrs.toFixed(1)}ч)</span>`;
+                } else {
+                    status = '<span style="color:#94a3b8">0 грн</span>';
+                }
+                
+                cr.push({name:n, rate:rt, start:s, end:e, isAbs, pay, hrs: hrs.toFixed(1)});
+                previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${status}</td></tr>`;
+            }
+        });
+        
+        if(!cr.length) return alert('Заполните хотя бы одного сотрудника!');
+        
+        previewHtml += `</table><div style="font-size:14px;font-weight:900;text-align:center;margin-bottom:15px">ОБЩАЯ ЗП ЗА ДЕНЬ: <span style="color:#dc2626">${totalZp} грн</span></div>`;
+        previewHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeModal()" style="background:#e2e8f0;color:#475569;margin:0">ОТМЕНА</button><button class="btn-main" onclick="execTimesheetBatch()" style="background:#10b981;margin:0">ВСЁ ВЕРНО</button></div>`;
+        
+        window.tempTsData = { d, cr, totalZp };
+        
+        gID('mT').innerText = 'ПРОВЕРКА ТАБЕЛЯ';
+        gID('mB').innerHTML = previewHtml;
+        gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+        gID('mdl').style.display = 'flex';
+    };
+
+    window.execTimesheetBatch = async function() {
+        showLoad();
+        const data = window.tempTsData;
+        if(!data) { hideLoad(); return; }
+        const u = {};
+        const tsStr = new Date().toISOString();
+        const activeCrew = [];
+        
+        data.cr.forEach(x => {
+            activeCrew.push({name: x.name, rate: x.rate, start: x.start, end: x.end});
+            if(!x.isAbs && x.pay > 0) {
+                u['/Timesheet/'+db.child('Timesheet').push().key] = {
+                    date: data.d,
+                    name: x.name,
+                    start: x.start,
+                    end: x.end,
+                    rate: x.pay,
+                    hourlyRate: x.rate,
+                    hours: x.hrs,
+                    ts: tsStr
+                };
+            }
+        });
+        
+        try {
+            if(Object.keys(u).length > 0) await db.update(u);
+            localStorage.setItem('activeCrew', JSON.stringify(activeCrew));
+            hideLoad();
+            closeModal();
+            alert('Смена сохранена! Общая ЗП: ' + data.totalZp + ' грн');
+        } catch(err) {
+            hideLoad();
+            alert(err.message);
+        }
+    };
+
         window.printTsList=function(){
             const dObj = new Date();
             const year = dObj.getFullYear();
