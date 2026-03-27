@@ -1955,16 +1955,23 @@ window.calcFinances = function() {
     
     gID('finResult').innerHTML = '<div style="text-align:center;padding:20px;color:var(--p);font-weight:bold;">Считаем деньги... ⏳</div>';
 
+    // Бронебойный фильтр: превращает что угодно (текст, пустоту, запятые) в нормальное число или 0
+    const getNum = (val) => {
+        if (!val) return 0;
+        const num = parseFloat(String(val).replace(',', '.').replace(/[^\d.-]/g, ''));
+        return isNaN(num) ? 0 : num;
+    };
+
     // 1. ДОХОДЫ (Продажи)
     let revOpt = 0, revRoz = 0, revBN = 0;
     if (data.ArchInvoices) {
         Object.values(data.ArchInvoices).forEach(v => {
             const dt = (v.date || '').split('T')[0];
             if (dt >= dFrom && dt <= dTo) {
-                const sum = parseFloat(v.totalSum) || 0;
+                const sum = getNum(v.totalSum);
                 if (v.priceMode === 'roz') revRoz += sum;
                 else if (v.priceMode === 'bn') revBN += sum;
-                else revOpt += sum; // opt по умолчанию
+                else revOpt += sum; 
             }
         });
     }
@@ -1976,7 +1983,7 @@ window.calcFinances = function() {
         Object.values(data.ArchIncoming).forEach(v => {
             const dt = (v.date || '').split('T')[0];
             if (dt >= dFrom && dt <= dTo && v.supplier !== 'Фасовка' && v.supplier !== 'Свое производство') {
-                expRaw += parseFloat(v.totalSum) || 0;
+                expRaw += getNum(v.totalSum);
             }
         });
     }
@@ -1984,17 +1991,19 @@ window.calcFinances = function() {
         Object.values(data.ArchPackIn).forEach(v => {
             const dt = (v.date || '').split('T')[0];
             if (dt >= dFrom && dt <= dTo) {
-                expPack += parseFloat(v.totalSum) || 0;
+                expPack += getNum(v.totalSum);
             }
         });
     }
 
     // 3. ОПЕРАЦИОННЫЕ РАСХОДЫ (Зарплаты и Свет)
     let expSal = 0, expEnergy = 0;
+    
+    // Считаем ЗП из табеля
     if (data.Timesheet) {
         Object.values(data.Timesheet).forEach(v => {
             if (v.date >= dFrom && v.date <= dTo) {
-                expSal += parseFloat(v.rate) || 0;
+                expSal += getNum(v.rate);
             }
         });
     }
@@ -2005,9 +2014,11 @@ window.calcFinances = function() {
             Object.values(data[dbName]).forEach(v => {
                 const dt = (v.date || '').split('T')[0];
                 if (dt >= dFrom && dt <= dTo) {
-                    expEnergy += parseFloat(v.energyCost) || 0;
-                    // Если зарплата на фасовке считается сдельно и не идет в общий табель, раскомментируй строку ниже:
-                    // if (dbName === 'Фасовка') expSal += parseFloat(v.salCost) || 0;
+                    // Подхватываем разные возможные названия поля со светом в твоей базе
+                    expEnergy += getNum(v.energyCost) + getNum(v.energy) + getNum(v.svetCost) + getNum(v.svet);
+                    
+                    // Если зарплата на фасовке считается сдельно, а не в общем табеле, раскомментируй строку ниже:
+                    // if (dbName === 'Фасовка') expSal += getNum(v.salCost);
                 }
             });
         }
