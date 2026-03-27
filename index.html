@@ -591,7 +591,8 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  loadData();updCorrBtn();updNav()
 }
 
-function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics'].includes(cur))return;
+function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances'].includes(cur))return;
+
  if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
 
 function rContractors(c){
@@ -1948,112 +1949,155 @@ function addTimeRow(n='',r='',ts='',te=''){
             window.print();
             setTimeout(()=>gID('print-view').innerHTML='',800);
         };
-window.calcFinances = function() {
+
+window.calcFinances = async function() {
     const dFrom = gID('finFrom').value;
     const dTo = gID('finTo').value;
     if (!dFrom || !dTo) return alert('Выберите даты!');
     
-    gID('finResult').innerHTML = '<div style="text-align:center;padding:20px;color:var(--p);font-weight:bold;">Считаем деньги... ⏳</div>';
+    gID('finResult').innerHTML = '<div style="text-align:center;padding:20px;color:var(--p);font-weight:bold;"><div class="spinner" style="margin-bottom:10px;width:30px;height:30px;border-width:3px"></div>Анализируем базу данных...</div>';
 
-    // Бронебойный фильтр: превращает что угодно (текст, пустоту, запятые) в нормальное число или 0
+    // Функция нормализации дат (превращает 26.03.2026 в 2026-03-26)
+    const normD = (d) => {
+        if (!d) return "1970-01-01";
+        if (d.includes('T')) d = d.split('T')[0];
+        if (d.includes('.')) {
+            let p = d.split('.');
+            if(p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+        }
+        return d;
+    };
+
+    // Функция защиты от букв и пустых строк
     const getNum = (val) => {
         if (!val) return 0;
         const num = parseFloat(String(val).replace(',', '.').replace(/[^\d.-]/g, ''));
         return isNaN(num) ? 0 : num;
     };
 
-    // 1. ДОХОДЫ (Продажи)
-    let revOpt = 0, revRoz = 0, revBN = 0;
-    if (data.ArchInvoices) {
-        Object.values(data.ArchInvoices).forEach(v => {
-            const dt = (v.date || '').split('T')[0];
+    try {
+        // Принудительно скачиваем актуальные данные из облака
+        const [snapInv, snapInc, snapPack, snapTs, snapKrup, snapZshm, snapVibro, snapFas] = await Promise.all([
+            db.child('ArchInvoices').once('value'),
+            db.child('ArchIncoming').once('value'),
+            db.child('ArchPackIn').once('value'),
+            db.child('Timesheet').once('value'),
+            db.child('Krup_Report').once('value'),
+            db.child('ZSHM_Report').once('value'),
+            db.child('Vibro_Report').once('value'),
+            db.child('Фасовка').once('value')
+        ]);
+
+        const dInv = snapInv.val() || {};
+        const dInc = snapInc.val() || {};
+        const dPack = snapPack.val() || {};
+        const dTs = snapTs.val() || {};
+        const dKrup = snapKrup.val() || {};
+        const dZshm = snapZshm.val() || {};
+        const dVibro = snapVibro.val() || {};
+        const dFas = snapFas.val() || {};
+
+        // 1. ДОХОДЫ (Продажи)
+        let revOpt = 0, revRoz = 0, revBN = 0;
+        Object.values(dInv).forEach(v => {
+            const dt = normD(v.date);
             if (dt >= dFrom && dt <= dTo) {
                 const sum = getNum(v.totalSum);
                 if (v.priceMode === 'roz') revRoz += sum;
                 else if (v.priceMode === 'bn') revBN += sum;
-                else revOpt += sum; 
+                else revOpt += sum;
             }
         });
-    }
-    const totalRev = revOpt + revRoz + revBN;
+        const totalRev = revOpt + revRoz + revBN;
 
-    // 2. РАСХОДЫ (Закупки)
-    let expRaw = 0, expPack = 0;
-    if (data.ArchIncoming) {
-        Object.values(data.ArchIncoming).forEach(v => {
-            const dt = (v.date || '').split('T')[0];
+        // 2. РАСХОДЫ (Закупки)
+        let expRaw = 0, expPack = 0;
+        Object.values(dInc).forEach(v => {
+            const dt = normD(v.date);
             if (dt >= dFrom && dt <= dTo && v.supplier !== 'Фасовка' && v.supplier !== 'Свое производство') {
                 expRaw += getNum(v.totalSum);
             }
         });
-    }
-    if (data.ArchPackIn) {
-        Object.values(data.ArchPackIn).forEach(v => {
-            const dt = (v.date || '').split('T')[0];
+        Object.values(dPack).forEach(v => {
+            const dt = normD(v.date);
             if (dt >= dFrom && dt <= dTo) {
                 expPack += getNum(v.totalSum);
             }
         });
-    }
 
-    // 3. ОПЕРАЦИОННЫЕ РАСХОДЫ (Зарплаты и Свет)
-    let expSal = 0, expEnergy = 0;
-    
-    // Считаем ЗП из табеля
-    if (data.Timesheet) {
-        Object.values(data.Timesheet).forEach(v => {
-            if (v.date >= dFrom && v.date <= dTo) {
+        // 3. ОПЕРАЦИОННЫЕ РАСХОДЫ (Зарплаты и Свет)
+        let expSal = 0, expEnergy = 0;
+        
+        // ЗП из табеля
+        Object.values(dTs).forEach(v => {
+            const dt = normD(v.date);
+            if (dt >= dFrom && dt <= dTo) {
                 expSal += getNum(v.rate);
             }
         });
-    }
-    
-    // Собираем свет из цехов и фасовки
-    ['Krup_Report', 'Vibro_Report', 'ZSHM_Report', 'Фасовка'].forEach(dbName => {
-        if (data[dbName]) {
-            Object.values(data[dbName]).forEach(v => {
-                const dt = (v.date || '').split('T')[0];
+        
+        // Свет из Фасовки
+        Object.values(dFas).forEach(v => {
+            const dt = normD(v.date);
+            if (dt >= dFrom && dt <= dTo) {
+                expEnergy += getNum(v.energyCost) + getNum(v.energy) + getNum(v.svetCost);
+            }
+        });
+
+        // Свет из Цехов (высчитываем на лету по отработанным часам)
+        const calcWsEnergy = (wsData, pwrVal) => {
+            Object.values(wsData).forEach(v => {
+                const dt = normD(v.date);
                 if (dt >= dFrom && dt <= dTo) {
-                    // Подхватываем разные возможные названия поля со светом в твоей базе
-                    expEnergy += getNum(v.energyCost) + getNum(v.energy) + getNum(v.svetCost) + getNum(v.svet);
-                    
-                    // Если зарплата на фасовке считается сдельно, а не в общем табеле, раскомментируй строку ниже:
-                    // if (dbName === 'Фасовка') expSal += getNum(v.salCost);
+                    let hours = 0;
+                    if (v.timeStart && v.timeEnd) {
+                        const t1 = v.timeStart.split(':'), t2 = v.timeEnd.split(':');
+                        hours = (parseInt(t2[0]) + parseInt(t2[1])/60) - (parseInt(t1[0]) + parseInt(t1[1])/60);
+                        if (hours < 0) hours += 24;
+                    }
+                    expEnergy += hours * (parseFloat(pwrVal) || 0) * (parseFloat(costSet.powerPrice) || 0);
                 }
             });
-        }
-    });
+        };
 
-    const totalExp = expRaw + expPack + expSal + expEnergy;
-    const netProfit = totalRev - totalExp;
+        calcWsEnergy(dKrup, costSet.powerKrup);
+        calcWsEnergy(dZshm, costSet.powerZshm);
+        calcWsEnergy(dVibro, costSet.powerVibro);
 
-    // ОТРИСОВКА
-    let h = `
-    <div style="background:#fff;border:2px solid ${netProfit >= 0 ? '#10b981' : '#dc2626'};border-radius:12px;padding:15px;text-align:center;margin-bottom:15px;box-shadow:0 4px 6px rgba(0,0,0,0.05)">
-        <div style="font-size:12px;font-weight:900;color:#64748b;text-transform:uppercase">ЧИСТАЯ ПРИБЫЛЬ / УБЫТОК</div>
-        <div style="font-size:24px;font-weight:900;color:${netProfit >= 0 ? '#059669' : '#dc2626'}">${netProfit.toFixed(2)} ₴</div>
-    </div>
+        const totalExp = expRaw + expPack + expSal + expEnergy;
+        const netProfit = totalRev - totalExp;
 
-    <div class="dr-card">
-        <div class="dr-sec" style="color:#059669;border-color:#059669">💰 ДОХОДЫ: ${totalRev.toFixed(2)} ₴</div>
-        <div class="dr-row"><div class="dr-left">ОПТ</div><div class="dr-qty">${revOpt.toFixed(2)} ₴</div></div>
-        <div class="dr-row"><div class="dr-left">Розница</div><div class="dr-qty">${revRoz.toFixed(2)} ₴</div></div>
-        <div class="dr-row"><div class="dr-left">Безнал (Б/Н)</div><div class="dr-qty">${revBN.toFixed(2)} ₴</div></div>
-    </div>
+        // ОТРИСОВКА
+        let h = `
+        <div style="background:#fff;border:2px solid ${netProfit >= 0 ? '#10b981' : '#dc2626'};border-radius:12px;padding:15px;text-align:center;margin-bottom:15px;box-shadow:0 4px 6px rgba(0,0,0,0.05)">
+            <div style="font-size:12px;font-weight:900;color:#64748b;text-transform:uppercase">ЧИСТАЯ ПРИБЫЛЬ / УБЫТОК</div>
+            <div style="font-size:24px;font-weight:900;color:${netProfit >= 0 ? '#059669' : '#dc2626'}">${netProfit.toFixed(2)} ₴</div>
+        </div>
 
-    <div class="dr-card">
-        <div class="dr-sec" style="color:#dc2626;border-color:#dc2626">📉 РАСХОДЫ: ${totalExp.toFixed(2)} ₴</div>
-        <div class="dr-sub" style="background:#fee2e2;color:#b91c1c">ЗАКУПКИ ТОВАРОВ</div>
-        <div class="dr-row"><div class="dr-left">Сырье и покупная продукция</div><div class="dr-qty">${expRaw.toFixed(2)} ₴</div></div>
-        <div class="dr-row"><div class="dr-left">Упаковка (пленка, пакеты, скотч...)</div><div class="dr-qty">${expPack.toFixed(2)} ₴</div></div>
-        
-        <div class="dr-sub" style="background:#fef3c7;color:#b45309;margin-top:10px">ОПЕРАЦИОННЫЕ И ПРОИЗВОДСТВЕННЫЕ</div>
-        <div class="dr-row"><div class="dr-left">Заработная плата (Табель)</div><div class="dr-qty">${expSal.toFixed(2)} ₴</div></div>
-        <div class="dr-row"><div class="dr-left">Электроэнергия (Цеха + Фасовка)</div><div class="dr-qty">${expEnergy.toFixed(2)} ₴</div></div>
-    </div>
-    `;
+        <div class="dr-card">
+            <div class="dr-sec" style="color:#059669;border-color:#059669">💰 ДОХОДЫ: ${totalRev.toFixed(2)} ₴</div>
+            <div class="dr-row"><div class="dr-left">ОПТ</div><div class="dr-qty">${revOpt.toFixed(2)} ₴</div></div>
+            <div class="dr-row"><div class="dr-left">Розница</div><div class="dr-qty">${revRoz.toFixed(2)} ₴</div></div>
+            <div class="dr-row"><div class="dr-left">Безнал (Б/Н)</div><div class="dr-qty">${revBN.toFixed(2)} ₴</div></div>
+        </div>
 
-    gID('finResult').innerHTML = h;
+        <div class="dr-card">
+            <div class="dr-sec" style="color:#dc2626;border-color:#dc2626">📉 РАСХОДЫ: ${totalExp.toFixed(2)} ₴</div>
+            <div class="dr-sub" style="background:#fee2e2;color:#b91c1c">ЗАКУПКИ ТОВАРОВ</div>
+            <div class="dr-row"><div class="dr-left">Сырье и покупная продукция</div><div class="dr-qty">${expRaw.toFixed(2)} ₴</div></div>
+            <div class="dr-row"><div class="dr-left">Упаковка (пленка, пакеты, скотч...)</div><div class="dr-qty">${expPack.toFixed(2)} ₴</div></div>
+            
+            <div class="dr-sub" style="background:#fef3c7;color:#b45309;margin-top:10px">ОПЕРАЦИОННЫЕ И ПРОИЗВОДСТВЕННЫЕ</div>
+            <div class="dr-row"><div class="dr-left">Заработная плата (Табель)</div><div class="dr-qty">${expSal.toFixed(2)} ₴</div></div>
+            <div class="dr-row"><div class="dr-left">Электроэнергия (Цеха + Фасовка)</div><div class="dr-qty">${expEnergy.toFixed(2)} ₴</div></div>
+        </div>
+        `;
+
+        gID('finResult').innerHTML = h;
+
+    } catch(e) {
+        gID('finResult').innerHTML = `<div style="color:red;text-align:center;padding:20px;font-weight:bold;">Ошибка загрузки данных: ${e.message}</div>`;
+    }
 };
 
         function renderTsList(c){
