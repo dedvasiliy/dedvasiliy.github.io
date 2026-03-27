@@ -1819,24 +1819,40 @@ function addTimeRow(n='',r='',ts='',te=''){
         }
     };
 
-        window.printTsList=function(){
+                window.printTsList=function(){
             const dObj = new Date();
             const year = dObj.getFullYear();
             const month = dObj.getMonth();
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-            const cM = new Date().toISOString().substring(0,7);
             const todayStr = new Date().toISOString().split('T')[0];
             
+            // Формируем нестандартные списки дней для марта и апреля 2026
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+            }
+
+            const firstDateStr = daysToRender[0];
+            const firstDayObj = new Date(firstDateStr);
+            let firstDayOfWeek = firstDayObj.getDay();
+            let startDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
+
             const ts = data.Timesheet || {};
             const workers = {};
             Object.entries(ts).forEach(([k, v]) => {
-                if (v.name && v.date && v.date.startsWith(cM)) {
+                if (v.name && daysToRender.includes(v.date)) {
                     if(!workers[v.name]) workers[v.name] = [];
                     workers[v.name].push({id: k, ...v});
                 }
             });
 
-            if(Object.keys(workers).length === 0) return alert('Нет данных за этот месяц');
+            if(Object.keys(workers).length === 0) return alert('Нет данных за этот период');
 
             let h = `<div style="font-family:sans-serif;color:#000;padding:10px;">
                      <h3 style="text-align:center;margin:0 0 10px 0;text-transform:uppercase;font-size:14px;">ТАБЕЛЬ ЗА ${monthNames[month]} ${year}</h3>
@@ -1849,10 +1865,6 @@ function addTimeRow(n='',r='',ts='',te=''){
                     shiftsByDate[s.date].push(s);
                 });
 
-                const firstDay = new Date(year, month, 1).getDay();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                let startDay = firstDay === 0 ? 6 : firstDay - 1;
-
                 let calHtml = `<div style="border:1px solid #94a3b8;padding:4px;border-radius:6px;break-inside:avoid;page-break-inside:avoid;background:#fff;max-height:300px;">
                     <div style="font-weight:900;color:#000;font-size:11px;text-transform:uppercase;text-align:center;margin-bottom:4px;">${esc(name)}</div>
                     <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;text-align:center;font-size:7px;font-weight:900;color:#64748b;margin-bottom:2px">
@@ -1860,6 +1872,7 @@ function addTimeRow(n='',r='',ts='',te=''){
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;">`;
 
+                // Пустые клетки до первого дня
                 for (let i = 0; i < startDay; i++) {
                     calHtml += `<div style="background:#f8fafc;border-radius:2px;min-height:30px;border:1px solid transparent"></div>`;
                 }
@@ -1867,17 +1880,18 @@ function addTimeRow(n='',r='',ts='',te=''){
                 let totalZp = 0;
                 let totalShifts = 0;
 
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                for (let i = 0; i < daysToRender.length; i++) {
+                    const dateStr = daysToRender[i];
+                    const dayNum = parseInt(dateStr.split('-')[2]); // Берем число из даты
                     const dayShifts = shiftsByDate[dateStr];
                     const isFuture = dateStr > todayStr;
                     
-                    const col = (startDay + day - 1) % 7;
+                    const col = (startDay + i) % 7;
                     const isWeekend = (col === 5 || col === 6);
                     
                     let cellBg = '#fff';
                     let cellBorder = isWeekend ? '1px solid #fca5a5' : '1px solid #e2e8f0';
-                    let innerHtml = `<div style="font-weight:900;font-size:9px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:1px 2px 0 0">${day}</div>`;
+                    let innerHtml = `<div style="font-weight:900;font-size:9px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:1px 2px 0 0">${dayNum}</div>`;
                     
                     if (dayShifts && dayShifts.length > 0) {
                         cellBg = '#ecfdf5';
@@ -1891,7 +1905,6 @@ function addTimeRow(n='',r='',ts='',te=''){
                         });
                     } else {
                         if (!isWeekend && !isFuture) {
-                            // Задаем светло-серый фон и тёмно-серую рамку для печати
                             cellBg = '#e2e8f0'; 
                             cellBorder = '2px solid #64748b'; 
                         }
@@ -1915,58 +1928,25 @@ function addTimeRow(n='',r='',ts='',te=''){
             setTimeout(()=>gID('print-view').innerHTML='',800);
         };
 
-        window.openWorkersMgmt = function() {
-            let h = `<div style="margin-bottom:15px;display:flex;gap:5px;">
-                <input type="text" id="newWorkerName" placeholder="Имя сотрудника..." class="fas-inp" style="flex:1;">
-                <button class="btn-main" style="width:auto;margin:0;padding:0 15px;" onclick="addWorker()">ДОБАВИТЬ</button>
-            </div>
-            <div id="workersList"></div>`;
-            gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
-            gID('mB').innerHTML = h;
-            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
-            gID('mdl').style.display = 'flex';
-            renderWorkersList();
-        };
-
-        window.renderWorkersList = function() {
-            const wList = gID('workersList');
-            if (!wList) return;
-            const w = data.Workers || {};
-            let h = '';
-            Object.keys(w).sort((a,b) => b.localeCompare(a)).forEach(k => {
-                h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:4px;">
-                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)}</div>
-                    <button style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="delWorker('${k}')">УДАЛИТЬ</button>
-                </div>`;
-            });
-            wList.innerHTML = h || '<div style="text-align:center;padding:10px;color:#64748b;font-size:12px;">Список пуст</div>';
-        };
-
-        window.addWorker = async function() {
-            const n = gID('newWorkerName').value.trim();
-            if(!n) return;
-            showLoad();
-            try {
-                await db.child('Workers').push({ name: n });
-                gID('newWorkerName').value = '';
-                hideLoad();
-            } catch(e) { hideLoad(); alert(e); }
-        };
-
-        window.delWorker = async function(id) {
-            if(!confirm('Точно удалить сотрудника из базы?')) return;
-            showLoad();
-            try {
-                await db.child('Workers/' + id).remove();
-                hideLoad();
-            } catch(e) { hideLoad(); alert(e); }
-        };
-
-                function renderTsList(c){
+        function renderTsList(c){
             const d = data.Timesheet || {};
             const dbW = data.Workers || {};
             const w = {};
-            const cM = new Date().toISOString().substring(0,7);
+            
+            const dObj = new Date();
+            const year = dObj.getFullYear();
+            const month = dObj.getMonth();
+
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+            }
             
             Object.values(dbW).forEach(bw => {
                 if(bw.name) w[bw.name] = {t:0, s:0};
@@ -1975,7 +1955,7 @@ function addTimeRow(n='',r='',ts='',te=''){
             Object.entries(d).forEach(([k,v]) => {
                 if(v.name){
                     if(!w[v.name]) w[v.name] = {t:0,s:0}; 
-                    if(v.date.startsWith(cM)){
+                    if(daysToRender.includes(v.date)){
                         w[v.name].t += parseFloat(v.rate) || 0;
                         w[v.name].s += 1;
                     }
@@ -1990,8 +1970,8 @@ function addTimeRow(n='',r='',ts='',te=''){
             Object.keys(w).sort().forEach(n=>{
                 h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')">
                     <div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div>
-                    <div style="font-size:10px;color:#64748b">Смен (тек. месяц): <b>${w[n].s}</b></div>
-                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за месяц: ${w[n].t} грн</div>
+                    <div style="font-size:10px;color:#64748b">Смен (тек. период): <b>${w[n].s}</b></div>
+                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за период: ${w[n].t} грн</div>
                 </div>`;
             });
             h += '</div>';
@@ -1999,21 +1979,32 @@ function addTimeRow(n='',r='',ts='',te=''){
         }
 
         window.openWorkerCalendar = function(name, y, m) {
-            const d = new Date();
-            const year = y || d.getFullYear();
-            const month = m !== undefined ? m : d.getMonth(); 
+            const dObj = new Date();
+            const year = y || dObj.getFullYear();
+            const month = m !== undefined ? m : dObj.getMonth(); 
             const todayStr = new Date().toISOString().split('T')[0];
             
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let startDay = firstDay === 0 ? 6 : firstDay - 1; 
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+            }
+
+            const firstDateStr = daysToRender[0];
+            const firstDayObj = new Date(firstDateStr);
+            let firstDayOfWeek = firstDayObj.getDay();
+            let startDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
             
             const ts = data.Timesheet || {};
-            const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
             const shifts = {};
             
             Object.entries(ts).forEach(([k, v]) => {
-                if (v.name === name && v.date.startsWith(monthPrefix)) {
+                if (v.name === name && daysToRender.includes(v.date)) {
                     if(!shifts[v.date]) shifts[v.date] = [];
                     shifts[v.date].push({id: k, ...v});
                 }
@@ -2026,9 +2017,13 @@ function addTimeRow(n='',r='',ts='',te=''){
             let nextM = month + 1, nextY = year;
             if (nextM > 11) { nextM = 0; nextY++; }
             
+            let titleText = `${monthNames[month]} ${year}`;
+            if (year === 2026 && month === 3) titleText = `АПРЕЛЬ 2026 (с 27 Марта)`;
+            else if (year === 2026 && month === 2) titleText = `МАРТ 2026 (до 26 числа)`;
+
             let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
                 <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openWorkerCalendar('${esc(name)}', ${prevY}, ${prevM})">◀</button>
-                <div style="font-weight:900;color:var(--p);font-size:14px;text-transform:uppercase">${monthNames[month]} ${year}</div>
+                <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
                 <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openWorkerCalendar('${esc(name)}', ${nextY}, ${nextM})">▶</button>
             </div>`;
             
@@ -2045,18 +2040,19 @@ function addTimeRow(n='',r='',ts='',te=''){
             let totalZp = 0;
             let totalShifts = 0;
             
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            for (let i = 0; i < daysToRender.length; i++) {
+                const dateStr = daysToRender[i];
+                const dayNum = parseInt(dateStr.split('-')[2]);
                 const dayShifts = shifts[dateStr];
                 const isToday = dateStr === todayStr;
                 const isFuture = dateStr > todayStr;
                 
-                const col = (startDay + day - 1) % 7;
+                const col = (startDay + i) % 7;
                 const isWeekend = (col === 5 || col === 6);
                 
                 let cellBg = isToday ? '#e0e7ff' : '#fff';
                 let cellBorder = isToday ? '2px solid var(--p)' : (isWeekend ? '1px solid #fca5a5' : '1px solid #cbd5e1');
-                let innerHtml = `<div style="font-weight:900;font-size:12px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:2px">${day}</div>`;
+                let innerHtml = `<div style="font-weight:900;font-size:12px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:2px">${dayNum}</div>`;
                 
                 if (dayShifts && dayShifts.length > 0) {
                     cellBg = '#ecfdf5';
@@ -2066,7 +2062,7 @@ function addTimeRow(n='',r='',ts='',te=''){
                         totalShifts++;
                         innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
                             ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
-                            ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${day} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                            ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${dayNum} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
                         </div>`;
                     });
                 } else {
@@ -2082,7 +2078,7 @@ function addTimeRow(n='',r='',ts='',te=''){
             
             h += `</div>`;
             h += `<div style="margin-top:10px;background:#fefce8;border:1px dashed #ca8a04;padding:10px;border-radius:8px;text-align:center;font-weight:900">
-                <div style="font-size:11px;color:#a16207">ИТОГО ЗА ${monthNames[month].toUpperCase()}</div>
+                <div style="font-size:11px;color:#a16207">ИТОГО ЗА ПЕРИОД</div>
                 <div style="color:var(--p);font-size:15px;margin-top:2px">Смен: ${totalShifts} | ЗП: ${totalZp} грн</div>
             </div>`;
             
