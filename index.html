@@ -2284,6 +2284,52 @@ window.calcFinances = async function() {
             gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
             gID('mdl').style.display = 'flex';
         };
+        window.openWorkersMgmt = function() {
+            let h = `<div style="margin-bottom:15px;display:flex;gap:5px;">
+                <input type="text" id="newWorkerName" placeholder="Имя сотрудника..." class="fas-inp" style="flex:1;">
+                <button class="btn-main" style="width:auto;margin:0;padding:0 15px;" onclick="addWorker()">ДОБАВИТЬ</button>
+            </div>
+            <div id="workersList"></div>`;
+            gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
+            gID('mB').innerHTML = h;
+            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+            gID('mdl').style.display = 'flex';
+            renderWorkersList();
+        };
+
+        window.renderWorkersList = function() {
+            const wList = gID('workersList');
+            if (!wList) return;
+            const w = data.Workers || {};
+            let h = '';
+            Object.keys(w).sort((a,b) => b.localeCompare(a)).forEach(k => {
+                h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:4px;">
+                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)}</div>
+                    <button style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="delWorker('${k}')">УДАЛИТЬ</button>
+                </div>`;
+            });
+            wList.innerHTML = h || '<div style="text-align:center;padding:10px;color:#64748b;font-size:12px;">Список пуст</div>';
+        };
+
+        window.addWorker = async function() {
+            const n = gID('newWorkerName').value.trim();
+            if(!n) return;
+            showLoad();
+            try {
+                await db.child('Workers').push({ name: n });
+                gID('newWorkerName').value = '';
+                hideLoad();
+            } catch(e) { hideLoad(); alert(e); }
+        };
+
+        window.delWorker = async function(id) {
+            if(!confirm('Точно удалить сотрудника из базы?')) return;
+            showLoad();
+            try {
+                await db.child('Workers/' + id).remove();
+                hideLoad();
+            } catch(e) { hideLoad(); alert(e); }
+        };
 
         window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
