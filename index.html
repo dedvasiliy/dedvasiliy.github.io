@@ -812,6 +812,7 @@ function showH(c,n){
  }, true);
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').querySelector('.modal-box').style.maxWidth='450px';gID('mdl').style.display='flex';
 }
+
 window.genBatchReport=function(c,n){
     const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     gID('mT').innerText='ЗАГРУЗКА...';
@@ -990,6 +991,22 @@ window.genBatchReport=function(c,n){
         if(Object.keys(sumDV).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВАЯ ПРОДУКЦИЯ (ДВ):</div>`;Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
         if(Object.keys(sumOther).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} кг</b></div>`;});}
         if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`;});}
+        
+        let totalOutputWeight = 0;
+        Object.values(sumDV).forEach(v => totalOutputWeight += v);
+        
+        // Добавляем к итогу ТОЛЬКО КОРМА, игнорируя П/Ф и сечку
+        Object.keys(sumOther).forEach(k => {
+            let isSemi = /(сечк|полуфабрикат)/i.test(k) || semiNames.has(k.toLowerCase());
+            if (!isSemi) {
+                totalOutputWeight += sumOther[k];
+            }
+        });
+        
+        if(totalOutputWeight > 0) {
+            sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:900;color:#0f172a;border-top:1px dashed #94a3b8;padding-top:4px"><span>ОБЩИЙ ВЕС (Готовая + Отходы):</span><span>${parseFloat(totalOutputWeight.toFixed(2))} кг</span></div>`;
+        }
+        
         sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ(сырьё+добавка):</span><span>${avgPct}%</span></div></div>`;
         
         let otherRawTotalHtml=totalOtherRaw>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${totalOtherRaw} кг</b></div>`:'';
