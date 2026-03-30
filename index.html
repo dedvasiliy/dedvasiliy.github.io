@@ -1505,6 +1505,7 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
         window.addWsMainRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);const isFirst=gID('wsMainRows').children.length===0;gID('wsMainRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wm_${i}"><select id="wms_${i}" class="ws-inp" onchange="updWsRawList('${i}','wm')"><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wmn_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="wmq_${i}" class="ws-inp main-raw-q" placeholder="кг" ${isFirst?'readonly style="background:#e2e8f0;font-weight:bold;color:var(--p)"':'oninput="calcWsMain()"'} ><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wm'),50);};
         window.addWsAddRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('wsAddRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="wa_${i}"><select id="was_${i}" class="ws-inp" onchange="updWsRawList('${i}','wa')"><option value="Stock_Semi">П/Ф</option><option value="Stock_Raw">Сырье</option><option value="Stock_DV">ДВ вес</option><option value="WeightStock">Покупная</option></select><select id="wan_${i}" class="ws-inp"><option value="">Выберите...</option></select><input type="number" id="waq_${i}" class="ws-inp" placeholder="кг" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updWsRawList(i,'wa'),50);};
         window.addWsOutRow=function(t){const i=Date.now()+Math.random().toString().slice(2,7);const cat=t==='DV'?'Stock_DV':(t==='Semi'?'Stock_Semi':'Stock_Feed');let opts='<option value="">Название...</option>';gP(cat).forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('wsOut'+t).insertAdjacentHTML('beforeend',`<div class="ws-row-out" id="wo_${i}" data-t="${t}"><select id="won_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Новое название:');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''}">${opts}<option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wob_${i}" class="ws-inp" placeholder="меш" oninput="calcWsMain()"><select id="wow_${i}" class="ws-inp" onchange="if(this.value==='NEW'){const n=prompt('Вес мешка (кг):');if(n){const o=document.createElement('option');o.value=n;o.text=n;this.add(o,this.options[1]);this.value=n}else this.value=''} calcWsMain()"><option value="">кг...</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="NEW" style="color:blue">НОВЫЙ...</option></select><input type="number" id="wor_${i}" class="ws-inp" placeholder="ост" oninput="calcWsMain()"><button onclick="this.parentElement.remove(); calcWsMain()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
+
 window.previewWorkshop=function(k){
     const c=WS_CFG[k],d=gID('wsD').value,ds=d.split('-').reverse().join('.');
     const ts=gID('wsTS').value,te=gID('wsTE').value,op=getSmartVal('wsOp')||'-',as=getSmartVal('wsAs')||'-';
@@ -1625,7 +1626,7 @@ window.previewWorkshop=function(k){
     });
     packCost += cLabels;
 
-    // Считаем время, электричество и зарплату
+    // Считаем время, электричество и ЗАРПЛАТУ ЗА ОТРАБОТАННЫЕ ЧАСЫ
     const t1 = ts.split(':'), t2 = te.split(':');
     let hours = (parseInt(t2[0]) + parseInt(t2[1])/60) - (parseInt(t1[0]) + parseInt(t1[1])/60);
     if (hours < 0) hours += 24; 
@@ -1634,16 +1635,29 @@ window.previewWorkshop=function(k){
     if(k==='KRUP') pwrUsage = parseFloat(costSet.powerKrup)||0;
     else if(k==='ZSHM') pwrUsage = parseFloat(costSet.powerZshm)||0;
     else if(k==='VIBRO') pwrUsage = parseFloat(costSet.powerVibro)||0;
-        const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
+    const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
     
     let salCost = 0;
+    let opFound = false;
+    let asFound = false;
     if (data.Timesheet) {
         let opClean = String(op || '').trim();
         let asClean = String(as || '').trim();
         Object.values(data.Timesheet).forEach(t => {
             let tNameClean = String(t.name || '').trim();
-            if (t.date === d && (tNameClean === opClean || (asClean !== '-' && tNameClean === asClean))) {
-                salCost += parseFloat(t.rate) || 0;
+            if (t.date === d) {
+                if (!opFound && tNameClean === opClean) {
+                    // Берем часовую ставку из табеля и умножаем на часы работы в цеху
+                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
+                    salCost += hours * hRate;
+                    opFound = true;
+                }
+                if (!asFound && asClean !== '-' && tNameClean === asClean) {
+                    // То же самое для помощника
+                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
+                    salCost += hours * hRate;
+                    asFound = true;
+                }
             }
         });
     }
@@ -1667,7 +1681,7 @@ window.previewWorkshop=function(k){
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
-        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата:</span><span>${salCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (${hours.toFixed(1)}ч):</span><span>${salCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between; color:var(--s)"><span>Доход с отходов:</span><span>- ${wasteRev.toFixed(2)} грн</span></div>
         <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
             <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ + П/Ф):</span><span style="color:#dc2626">${costPerKg} грн</span>
