@@ -1626,10 +1626,12 @@ window.previewWorkshop=function(k){
     });
     packCost += cLabels;
 
-    // Считаем время, электричество и ЗАРПЛАТУ ЗА ОТРАБОТАННЫЕ ЧАСЫ
-    const t1 = ts.split(':'), t2 = te.split(':');
-    let hours = (parseInt(t2[0]) + parseInt(t2[1])/60) - (parseInt(t1[0]) + parseInt(t1[1])/60);
-    if (hours < 0) hours += 24; 
+    // Считаем время, электричество и ЗАРПЛАТУ ЗА ФАКТИЧЕСКИ ОТРАБОТАННЫЕ ЧАСЫ (УМНЫЙ АЛГОРИТМ)
+    const getDec = (tStr) => { const [h,m]=String(tStr||'00:00').split(':').map(Number); return h+(m/60); };
+    const wsS = getDec(ts);
+    let wsE = getDec(te);
+    if (wsE < wsS) wsE += 24; 
+    let hours = wsE - wsS;
     
     let pwrUsage = 0;
     if(k==='KRUP') pwrUsage = parseFloat(costSet.powerKrup)||0;
@@ -1640,6 +1642,9 @@ window.previewWorkshop=function(k){
     let salCost = 0;
     let opFound = false;
     let asFound = false;
+    let opHours = 0;
+    let asHours = 0;
+
     if (data.Timesheet) {
         let opClean = String(op || '').trim();
         let asClean = String(as || '').trim();
@@ -1647,22 +1652,39 @@ window.previewWorkshop=function(k){
             let tNameClean = String(t.name || '').trim();
             if (t.date === d) {
                 if (!opFound && tNameClean === opClean) {
-                    // Берем часовую ставку из табеля и умножаем на часы работы в цеху
+                    let wS = getDec(t.start);
+                    let wE = getDec(t.end);
+                    if (wE < wS) wE += 24;
+                    // Ищем пересечение времени смены в цеху и времени присутствия человека
+                    let overlapStart = Math.max(wsS, wS);
+                    let overlapEnd = Math.min(wsE, wE);
+                    opHours = Math.max(0, overlapEnd - overlapStart);
+                    
                     let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += hours * hRate;
+                    salCost += opHours * hRate;
                     opFound = true;
                 }
                 if (!asFound && asClean !== '-' && tNameClean === asClean) {
-                    // То же самое для помощника
+                    let wS = getDec(t.start);
+                    let wE = getDec(t.end);
+                    if (wE < wS) wE += 24;
+                    let overlapStart = Math.max(wsS, wS);
+                    let overlapEnd = Math.min(wsE, wE);
+                    asHours = Math.max(0, overlapEnd - overlapStart);
+                    
                     let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += hours * hRate;
+                    salCost += asHours * hRate;
                     asFound = true;
                 }
             }
         });
     }
 
-    // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ С УЧЕТОМ УПАКОВКИ
+    let salHtmlStr = `Зарплата (Оп:${opHours.toFixed(1)}ч`;
+    if (asFound) salHtmlStr += ` + Пом:${asHours.toFixed(1)}ч`;
+    salHtmlStr += `):`;
+
+    // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ С УЧЕТОМ УПАКОВКИ И ФАКТИЧЕСКИХ ЧАСОВ
     const netCost = rawCost + packCost + energyCost + salCost - wasteRev;
     const usefulWeight = tDV + tSemi;
     const costPerKg = usefulWeight > 0 ? (netCost / usefulWeight).toFixed(2) : 0;
@@ -1681,7 +1703,7 @@ window.previewWorkshop=function(k){
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
-        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (${hours.toFixed(1)}ч):</span><span>${salCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>${salHtmlStr}</span><span>${salCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between; color:var(--s)"><span>Доход с отходов:</span><span>- ${wasteRev.toFixed(2)} грн</span></div>
         <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
             <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ + П/Ф):</span><span style="color:#dc2626">${costPerKg} грн</span>
