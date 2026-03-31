@@ -1005,6 +1005,24 @@ window.genBatchReport=function(c,n){
         
         if(totalOutputWeight > 0) {
             sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:900;color:#0f172a;border-top:1px dashed #94a3b8;padding-top:4px"><span>ОБЩИЙ ВЕС (Готовая + Отходы):</span><span>${parseFloat(totalOutputWeight.toFixed(1))} кг</span></div>`;
+            
+            if (totalIn > 0) {
+                let diff = totalOutputWeight - totalIn;
+                let diffPct = (Math.abs(diff) / totalIn) * 100;
+                let diffText = '';
+                let diffColor = '';
+                if (diff < -0.01) {
+                    diffText = `${diff.toFixed(1)} кг (потеря ${diffPct.toFixed(1)}%)`;
+                    diffColor = '#dc2626'; // красный
+                } else if (diff > 0.01) {
+                    diffText = `+${diff.toFixed(1)} кг (излишек ${diffPct.toFixed(1)}%)`;
+                    diffColor = '#059669'; // зеленый
+                } else {
+                    diffText = `0 кг`;
+                    diffColor = '#64748b'; // серый
+                }
+                sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;font-weight:900;color:${diffColor};"><span>Фактически по партии:</span><span>${diffText}</span></div>`;
+            }
         }
         
         sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ(сырьё+добавка):</span><span>${avgPct}%</span></div></div>`;
