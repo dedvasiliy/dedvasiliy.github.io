@@ -2501,7 +2501,7 @@ window.calcFinances = async function() {
             Object.entries(d).forEach(([k,v]) => {
                 if(v.name){
                     if(!w[v.name]) w[v.name] = {t:0,s:0}; 
-                    if(daysToRender.includes(v.date)){
+                    if(daysToRender.includes(v.date) && !v.isPayout){
                         w[v.name].t += parseFloat(v.rate) || 0;
                         w[v.name].s += 1;
                     }
@@ -2533,6 +2533,7 @@ window.calcFinances = async function() {
             const year = y !== undefined ? y : defY;
             const month = m !== undefined ? m : defM; 
             const todayStr = new Date().toISOString().split('T')[0];
+            const monthKey = year + '-' + String(month + 1).padStart(2, '0');
             
             const daysToRender = [];
             if (year === 2026 && month === 2) { 
@@ -2552,14 +2553,42 @@ window.calcFinances = async function() {
             
             const ts = data.Timesheet || {};
             const shifts = {};
+            let totalZp = 0;
+            let totalShifts = 0;
+            let earned1to15 = 0;
+            let advanceAmt = 0;
+            let salaryAmt = 0;
             
             Object.entries(ts).forEach(([k, v]) => {
-                if (v.name === name && daysToRender.includes(v.date)) {
-                    if(!shifts[v.date]) shifts[v.date] = [];
-                    shifts[v.date].push({id: k, ...v});
+                if (v.name === name) {
+                    if (v.isPayout && v.forMonth === monthKey) {
+                        if (v.payoutType === 'Аванс') advanceAmt += parseFloat(v.payoutAmount) || 0;
+                        if (v.payoutType === 'Зарплата') salaryAmt += parseFloat(v.payoutAmount) || 0;
+                        
+                        if (daysToRender.includes(v.date)) {
+                            if(!shifts[v.date]) shifts[v.date] = [];
+                            shifts[v.date].push({id: k, ...v});
+                        }
+                    } 
+                    else if (!v.isPayout && daysToRender.includes(v.date)) {
+                        if(!shifts[v.date]) shifts[v.date] = [];
+                        shifts[v.date].push({id: k, ...v});
+                        
+                        let rt = parseFloat(v.rate) || 0;
+                        totalZp += rt;
+                        totalShifts++;
+                        
+                        let dNum = parseInt(v.date.split('-')[2]);
+                        if (dNum <= 15) {
+                            earned1to15 += rt;
+                        }
+                    }
                 }
             });
             
+            let calcAdv = Math.round((earned1to15 * 0.8) / 1000) * 1000;
+            let remZp = totalZp - advanceAmt - salaryAmt;
+
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
             
             let prevM = month - 1, prevY = year;
@@ -2587,9 +2616,6 @@ window.calcFinances = async function() {
                 h += `<div style="background:#f1f5f9;border-radius:4px;min-height:50px;border:1px solid transparent"></div>`;
             }
             
-            let totalZp = 0;
-            let totalShifts = 0;
-            
             for (let i = 0; i < daysToRender.length; i++) {
                 const dateStr = daysToRender[i];
                 const dayNum = parseInt(dateStr.split('-')[2]);
@@ -2608,14 +2634,20 @@ window.calcFinances = async function() {
                     cellBg = '#ecfdf5';
                     cellBorder = '1px solid #10b981';
                     dayShifts.forEach(s => {
-                        totalZp += parseFloat(s.rate) || 0;
-                        totalShifts++;
-                        let bHtml = (parseFloat(s.bonus)>0) ? `<div style="color:#d97706;font-size:8px;margin-bottom:1px;font-weight:900">+${s.bonus}</div>` : '';
-                        innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
-                            ${bHtml}
-                            ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
-                            ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${dayNum} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
-                        </div>`;
+                        if (s.isPayout) {
+                            innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#e0e7ff;padding:2px;border-radius:2px;color:#3730a3;font-weight:bold;text-align:center;border:1px solid #a5b4fc">
+                                ${s.payoutType.toUpperCase()}<br><span style="color:#dc2626">${s.payoutAmount}₴</span>
+                                ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить выплату?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                            </div>`;
+                            cellBg = '#f8fafc'; 
+                        } else {
+                            let bHtml = (parseFloat(s.bonus)>0) ? `<div style="color:#d97706;font-size:8px;margin-bottom:1px;font-weight:900">+${s.bonus}</div>` : '';
+                            innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                                ${bHtml}
+                                ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                                ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${dayNum} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                            </div>`;
+                        }
                     });
                 } else {
                     if (!isWeekend && !isFuture) {
@@ -2629,15 +2661,202 @@ window.calcFinances = async function() {
             }
             
             h += `</div>`;
-            h += `<div style="margin-top:10px;background:#fefce8;border:1px dashed #ca8a04;padding:10px;border-radius:8px;text-align:center;font-weight:900">
-                <div style="font-size:11px;color:#a16207">ИТОГО ЗА ПЕРИОД</div>
-                <div style="color:var(--p);font-size:15px;margin-top:2px">Смен: ${totalShifts} | ЗП: ${totalZp} грн</div>
+            
+            let actionsHtml = `<div style="display:flex;gap:5px;margin-top:10px;">`;
+            if (advanceAmt === 0 && earned1to15 > 0 && calcAdv > 0) {
+                actionsHtml += `<button class="btn-main" style="flex:1;background:#3b82f6;font-size:10px;margin:0;" onclick="issuePayout('${esc(name)}', '${monthKey}', 'Аванс', ${calcAdv})">💸 АВАНС (~${calcAdv}₴)</button>`;
+            }
+            if (remZp > 0) {
+                actionsHtml += `<button class="btn-main" style="flex:1;background:#10b981;font-size:10px;margin:0;" onclick="issuePayout('${esc(name)}', '${monthKey}', 'Зарплата', ${remZp})">💰 ЗАРПЛАТА (${remZp}₴)</button>`;
+            }
+            actionsHtml += `</div>`;
+
+            h += `<div style="margin-top:10px;background:#f8fafc;border:1px solid #cbd5e1;padding:10px;border-radius:8px;text-align:center;font-weight:900;font-size:12px;">
+                <div style="color:#475569;font-size:10px;margin-bottom:4px;text-transform:uppercase;">ФИНАНСЫ ЗА ПЕРИОД</div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Заработано (смен: ${totalShifts}):</span> <span style="color:#059669">${totalZp} ₴</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Выдан аванс:</span> <span style="color:#2563eb">${advanceAmt} ₴</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:14px;">
+                    <span>Остаток к выплате:</span> <span style="color:#dc2626">${remZp} ₴</span>
+                </div>
             </div>`;
+            h += actionsHtml;
             
             gID('mT').innerText = 'ТАБЕЛЬ: ' + name;
             gID('mB').innerHTML = h;
             gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
             gID('mdl').style.display = 'flex';
+        };
+
+        window.issuePayout = async function(name, monthKey, type, defaultAmt) {
+            let amtStr = prompt(`Введите сумму выплаты (${type}) для ${name}:`, defaultAmt);
+            if (!amtStr) return;
+            let amt = parseInt(amtStr.replace(/\\D/g, ''));
+            if (isNaN(amt) || amt <= 0) return alert('Некорректная сумма');
+            
+            let payoutDate = prompt(`Введите дату выплаты (ГГГГ-ММ-ДД):\\n(В эту дату запись появится в календаре)`, new Date().toISOString().split('T')[0]);
+            if (!payoutDate) return;
+
+            showLoad();
+            try {
+                await db.child('Timesheet').push({
+                    date: payoutDate,
+                    name: name,
+                    isPayout: true,
+                    payoutType: type,
+                    payoutAmount: amt,
+                    forMonth: monthKey,
+                    ts: new Date().toISOString()
+                });
+                hideLoad();
+                alert(`Выплата (${type}) сохранена!`);
+                let [y, m] = monthKey.split('-').map(Number);
+                openWorkerCalendar(name, y, m - 1);
+            } catch(e) {
+                hideLoad();
+                alert(e.message);
+            }
+        };
+
+        window.printTsList = function() {
+            const dObj = new Date();
+            let defY = dObj.getFullYear();
+            let defM = dObj.getMonth();
+            if (defY === 2026 && defM === 2 && dObj.getDate() >= 27) defM = 3;
+            
+            const req = prompt('Введите месяц и год для печати (ММ.ГГГГ):', String(defM + 1).padStart(2, '0') + '.' + defY);
+            if (!req) return;
+            const pts = req.split('.');
+            if (pts.length !== 2) return alert('Формат: ММ.ГГГГ');
+            
+            const month = parseInt(pts[0]) - 1;
+            const year = parseInt(pts[1]);
+            const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+            const todayStr = new Date().toISOString().split('T')[0];
+            const monthKey = year + '-' + String(month + 1).padStart(2, '0');
+            
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+            }
+
+            const firstDateStr = daysToRender[0];
+            const firstDayObj = new Date(firstDateStr);
+            let firstDayOfWeek = firstDayObj.getDay();
+            let startDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
+
+            const ts = data.Timesheet || {};
+            const workers = {};
+            const payoutsForMonth = {};
+            
+            Object.entries(ts).forEach(([k, v]) => {
+                if (v.name) {
+                    if (v.isPayout && v.forMonth === monthKey) {
+                        if (!payoutsForMonth[v.name]) payoutsForMonth[v.name] = { adv: 0, sal: 0 };
+                        if (v.payoutType === 'Аванс') payoutsForMonth[v.name].adv += parseFloat(v.payoutAmount) || 0;
+                        if (v.payoutType === 'Зарплата') payoutsForMonth[v.name].sal += parseFloat(v.payoutAmount) || 0;
+                    }
+                    if (daysToRender.includes(v.date)) {
+                        if(!workers[v.name]) workers[v.name] = [];
+                        workers[v.name].push({id: k, ...v});
+                    }
+                }
+            });
+
+            if(Object.keys(workers).length === 0) return alert('Нет данных за ' + monthNames[month] + ' ' + year);
+
+            let h = `<div style="font-family:sans-serif;color:#000;padding:10px;">
+                     <h3 style="text-align:center;margin:0 0 10px 0;text-transform:uppercase;font-size:14px;">ТАБЕЛЬ ЗА ${monthNames[month]} ${year}</h3>
+                     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;align-items:start;">`;
+
+            Object.keys(workers).sort().forEach(name => {
+                const shiftsByDate = {};
+                workers[name].forEach(s => {
+                    if(!shiftsByDate[s.date]) shiftsByDate[s.date] = [];
+                    shiftsByDate[s.date].push(s);
+                });
+
+                let calHtml = `<div style="border:1px solid #94a3b8;padding:4px;border-radius:6px;break-inside:avoid;page-break-inside:avoid;background:#fff;max-height:300px;">
+                    <div style="font-weight:900;color:#000;font-size:11px;text-transform:uppercase;text-align:center;margin-bottom:4px;">${esc(name)}</div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;text-align:center;font-size:7px;font-weight:900;color:#64748b;margin-bottom:2px">
+                        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div style="color:#dc2626">СБ</div><div style="color:#dc2626">ВС</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;">`;
+
+                for (let i = 0; i < startDay; i++) {
+                    calHtml += `<div style="background:#f8fafc;border-radius:2px;min-height:30px;border:1px solid transparent"></div>`;
+                }
+
+                let totalZp = 0;
+                let totalShifts = 0;
+
+                for (let i = 0; i < daysToRender.length; i++) {
+                    const dateStr = daysToRender[i];
+                    const dayNum = parseInt(dateStr.split('-')[2]); 
+                    const dayShifts = shiftsByDate[dateStr];
+                    const isFuture = dateStr > todayStr;
+                    
+                    const col = (startDay + i) % 7;
+                    const isWeekend = (col === 5 || col === 6);
+                    
+                    let cellBg = '#fff';
+                    let cellBorder = isWeekend ? '1px solid #fca5a5' : '1px solid #e2e8f0';
+                    let innerHtml = `<div style="font-weight:900;font-size:9px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:1px 2px 0 0">${dayNum}</div>`;
+                    
+                    if (dayShifts && dayShifts.length > 0) {
+                        cellBg = '#ecfdf5';
+                        cellBorder = '1px solid #10b981';
+                        dayShifts.forEach(s => {
+                            if (s.isPayout) {
+                                innerHtml += `<div style="font-size:7px;line-height:1;margin-bottom:1px;background:#e0e7ff;padding:1px;border-radius:2px;color:#3730a3;font-weight:bold;text-align:center">
+                                    ${s.payoutType.slice(0,2)}: ${s.payoutAmount}₴
+                                </div>`;
+                            } else {
+                                totalZp += parseFloat(s.rate) || 0;
+                                totalShifts++;
+                                let bHtml = (parseFloat(s.bonus)>0) ? `<span style="color:#d97706;font-weight:900">+${s.bonus}</span> ` : '';
+                                innerHtml += `<div style="font-size:7px;line-height:1;margin-bottom:1px;background:#d1fae5;padding:1px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                                    ${bHtml}${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                                </div>`;
+                            }
+                        });
+                    } else {
+                        if (!isWeekend && !isFuture) {
+                            cellBg = '#e2e8f0'; 
+                            cellBorder = '2px solid #64748b'; 
+                        }
+                    }
+                    
+                    calHtml += `<div style="background:${cellBg};border:${cellBorder};border-radius:2px;min-height:30px;display:flex;flex-direction:column;padding:1px;overflow:hidden">${innerHtml}</div>`;
+                }
+
+                let pAdv = payoutsForMonth[name] ? payoutsForMonth[name].adv : 0;
+                let pSal = payoutsForMonth[name] ? payoutsForMonth[name].sal : 0;
+                let pRem = totalZp - pAdv - pSal;
+
+                calHtml += `</div>
+                    <div style="margin-top:4px;background:#fefce8;border:1px dashed #ca8a04;padding:3px;border-radius:4px;text-align:center;font-weight:900">
+                        <div style="color:#000;font-size:10px;">Смен: ${totalShifts} | ЗП: ${totalZp} ₴</div>
+                        <div style="color:#2563eb;font-size:9px;">Аванс: ${pAdv} ₴ | Остаток: <span style="color:#dc2626">${pRem} ₴</span></div>
+                    </div>
+                </div>`;
+                
+                h += calHtml;
+            });
+
+            h += `</div></div>`;
+            gID('print-view').innerHTML=h;
+            window.print();
+            setTimeout(()=>gID('print-view').innerHTML='',800);
         };
 
         window.openWorkersMgmt = function() {
