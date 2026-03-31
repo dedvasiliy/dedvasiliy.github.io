@@ -1294,8 +1294,9 @@ else if(t==='regOut'){
      }
      else if(t==='costSet'){
       h.innerText='СЕБЕСТОИМОСТЬ (ТАРИФЫ)';
-            m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div><span class="inv-set-lbl">Зарплата цех (смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div><div><span class="inv-set-lbl">ЗП Фасовка (за пачку)</span><input type="number" id="csSalFas" value="${esc(costSet.salaryFas||'')}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка (на 1000шт)</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
+            m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div><span class="inv-set-lbl">Зарплата цех (смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div><div><span class="inv-set-lbl">ЗП Фасовка (за пачку)</span><input type="number" id="csSalFas" value="${esc(costSet.salaryFas||'')}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка (на 1000шт)</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div><div class="z-head" style="margin-top:10px">РАСХОД СТРЕЙЧ ПЛЕНКИ (ПРОИЗВОДСТВО)</div><div><span class="inv-set-lbl">Выход продукции на 1 рулон (шт/кг)</span><input type="number" id="csStretch" value="${esc(costSet.stretchNorm||'')}"></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
 }
+
      else if(t==='autoSet'){
       h.innerText='НАСТРОЙКИ АВТОСПИСАНИЯ';
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">МЕШКИ И ЭТИКЕТКИ (ЦЕХА)</div><div><span class="inv-set-lbl">Названия для списания (через запятую)</span><input type="text" id="asBagsN" value="${esc(autoSet.bagsNames)}"></div><div><span class="inv-set-lbl">Целевой вес (кг)</span><input type="number" id="asBagsW" value="${esc(autoSet.bagsWeight)}"></div><div class="z-head" style="margin-top:10px">НИТКИ (ЦЕХА)</div><div class="grid-2"><div><span class="inv-set-lbl">1 шт на (мешков)</span><input type="number" id="asThrR" value="${esc(autoSet.threadsRate)}"></div><div><span class="inv-set-lbl">Исключить вес (кг)</span><input type="number" id="asThrE" value="${esc(autoSet.threadsExclude)}"></div></div><div class="z-head" style="margin-top:10px">СКОТЧ И ТЕРМОЛЕНТА (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Скотч: 1 шт на (пакетов)</span><input type="number" id="asTapR" value="${esc(autoSet.tapeRate)}"></div><div><span class="inv-set-lbl">Термо: 1 шт на (пакетов)</span><input type="number" id="asThmR" value="${esc(autoSet.thermalRate)}"></div></div><div class="z-head" style="margin-top:10px">ПАКЕТЫ (ФАСОВКА)</div><div class="grid-2"><div><span class="inv-set-lbl">Стандарт (пакетов)</span><input type="number" step="0.1" id="asPk1" value="${esc(autoSet.packK1)}"></div><div><span class="inv-set-lbl">Исключение (пакетов)</span><input type="number" step="0.1" id="asPk2" value="${esc(autoSet.packK2)}"></div><div style="grid-column: span 2;"><span class="inv-set-lbl">Продукт-исключение</span><input type="text" id="asPk2N" value="${esc(autoSet.packK2Name)}"></div></div><div class="z-head" style="margin-top:10px">СТРЕЙЧ ПЛЕНКА (ОТГРУЗКА)</div><div><span class="inv-set-lbl">1 рулон на (кг отгрузки)</span><input type="number" id="asStr" value="${esc(autoSet.stretchRate)}"></div></div><button class="btn-main" onclick="saveAutoSet()">СОХРАНИТЬ</button>`;
@@ -1371,7 +1372,8 @@ else if(t==='regOut'){
             powerKrup: gID('csPKrup').value,
             powerZshm: gID('csPZshm').value,
             powerVibro: gID('csPVibro').value,
-            powerFas: gID('csPFas').value
+            powerFas: gID('csPFas').value,
+            stretchNorm: gID('csStretch').value
         };
         try { await db.child('CostSettings').set(u); costSet = u; closeModal(); alert('Тарифы сохранены!'); } catch(e) { alert(e); }
     };
@@ -1472,7 +1474,229 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.addFasRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('fasRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="fr_${i}"><select id="fs_${i}" class="fas-inp" onchange="updFasRawList('${i}')"><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option></select><select id="fn_${i}" class="fas-inp"><option value="">Выберите...</option></select><input type="number" id="fq_${i}" class="fas-inp" placeholder="кг"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updFasRawList(i),50);};
     window.updFasRawList=function(i){const src=gID('fs_'+i).value,sel=gID('fn_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
-        window.previewFas=function(){const d=gID('fD').value,ds=d.split('-').reverse().join('.');const ri=[],oi=[];for(let x of gID('fasRows').children){const k=x.id.split('_')[1],n=gID('fn_'+k).value,q=parseFloat(gID('fq_'+k).value),s=gID('fs_'+k).value;if(n&&q)ri.push({n,q,s});}for(let x of gID('fasOutRows').children){const k=x.id.split('_')[1],n=gID('on_'+k).value,q=parseFloat(gID('oq_'+k).value),sz=gID('os_'+k).value;if(n&&q&&sz)oi.push({n,q,sz});}if(!ri.length||!oi.length)return alert('ВНИМАНИЕ: Заполните сырье и готовую продукцию!');const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);let mN=oi[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';let hRaw='',hOut='',pk={},pkTotal=0,rawCost=0;ri.forEach(x=>{let p=window.calcAvgPrice(x.n,x.s);let cst=x.q*p;rawCost+=cst;hRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${x.s==='WeightStock'?'пок.пр':'ДВ вес'})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;});oi.forEach(x=>{hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.q}шт</span></div>`;const coeff=x.n===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);pk[x.sz]=(pk[x.sz]||0)+Math.round(x.q/coeff);pkTotal+=x.q;});let packCost=0;let cPackets=0;let hPk='';Object.keys(pk).forEach(sz=>{let pP=window.calcAvgPrice(sz,'Пакеты');let cst=pk[sz]*pP;cPackets+=cst;packCost+=cst;hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт <span style="font-size:9px;color:#059669">[~${cst.toFixed(2)} грн]</span></span></div>`;});let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));let pFilm=window.calcAvgPrice(mN,'Пленка');let cFilm=fU*pFilm;packCost+=cFilm;let pTape=tapeUsed>0?window.calcAvgPrice('Скотч 360 грамм','Скотч 360 грамм'):0;let cTape=tapeUsed*pTape;packCost+=cTape;let pTherm=thermalUsed>0?window.calcAvgPrice('Термо лента','Термо лента'):0;let cTherm=thermalUsed*pTherm;packCost+=cTherm;let kwPer1000=parseFloat(costSet.powerFas)||3;let kwUsed=(pkTotal/1000)*kwPer1000;let energyCost=kwUsed*(parseFloat(costSet.powerPrice)||0);let salPerPack=costSet.salaryFas!==undefined&&costSet.salaryFas!==''?parseFloat(costSet.salaryFas):0.50;let salCost=pkTotal*salPerPack;let totalCost=rawCost+packCost+energyCost+salCost;let costPerPack=pkTotal>0?(totalCost/pkTotal).toFixed(2):0;const html=`<div class="conf-title">${ds} <span style="color:var(--p);margin-left:15px">${esc(mN)}</span></div><div class="conf-sec"><b>сырье:</b></div>${hRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${hOut}<div class="conf-sec"><b>расход упаковки:</b></div>${hPk}<div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг <span style="font-size:9px;color:#059669">[~${cFilm.toFixed(2)} грн]</span></span></div>${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт <span style="font-size:9px;color:#059669">[~${cTape.toFixed(2)} грн]</span></span></div>`:''}${thermalUsed>0?`<div style="display:flex;justify-content:space-between"><span>Термо лента:</span><span>${thermalUsed}шт <span style="font-size:9px;color:#059669">[~${cTherm.toFixed(2)} грн]</span></span></div>`:''}<div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px; margin-top:10px;"><div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div><div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div><div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div><div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${kwUsed.toFixed(1)} кВт):</span><span>${energyCost.toFixed(2)} грн</span></div><div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата (${salPerPack.toFixed(2)} грн/шт):</span><span>${salCost.toFixed(2)} грн</span></div><div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;"><span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span style="color:#dc2626">${costPerPack} грн</span></div></div>`;gID('confContent').innerHTML=html;gID('confMdl').style.display='flex';pendingAction=async function(){const btn=document.querySelector('#confBox .btn-main[style*="green"]');if(btn){btn.innerText='⏳...';btn.disabled=!0;}showLoad();try{const id=db.child('Фасовка').push().key,u={},ts=new Date().toISOString();const dbRi=ri.map(x=>({name:x.n,amount:x.q,source:x.s}));const dbOi=oi.map(x=>({name:x.n,size:x.sz,count:x.q}));u['/Фасовка/'+id]={date:d+"T12:00:00Z",items:dbRi,outputItems:dbOi,vzial:vt,ostatok:os,filmName:mN,costPerPack:parseFloat(costPerPack)||0,totalCost:totalCost,rawCost:rawCost,packCost:packCost,cFilm:cFilm,cPackets:cPackets,cTape:cTape,cTherm:cTherm,energyCost:energyCost,salCost:salCost};dbRi.forEach(i=>{u[`/${i.source}/${db.child(i.source).push().key}`]={name:i.name,amount:-i.amount,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});dbOi.forEach(i=>{u['/Готовая/'+db.child('Готовая').push().key]={name:i.name,amount:i.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:ts}});Object.keys(pk).forEach(sz=>{u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts}});if(fU>0)u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(tapeUsed>0)u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(thermalUsed>0)u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:ts};if(pkTotal>0){const archKey=db.child('ArchIncoming').push().key;const fasItems=oi.map(x=>({n:x.n,a:x.q,p:parseFloat(costPerPack)||0}));if(fasItems.length>0){u['/ArchIncoming/'+archKey]={date:d+"T12:00:00Z",supplier:'Фасовка',num:'Смена '+ds,type:'GOODS',ts:ts,items:fasItems};}}await db.update(u);hideLoad();closeConf();closeModal();setCat('Фасовка');}catch(e){hideLoad();alert(e)}finally{if(btn){btn.innerText='ДА';btn.disabled=!1;}}};};
+
+window.previewFas=function(){
+    const d=gID('fD').value,ds=d.split('-').reverse().join('.'),ts=gID('fTS').value,te=gID('fTE').value,op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
+    const main=[],add=[],out=[];let tRaw=0;
+    
+    for(let x of gID('fInRows').children){
+        const i=x.id.split('_')[1],s=gID('fis_'+i).value,n=gID('fin_'+i).value,q=parseFloat(gID('fiq_'+i).value);
+        if(n&&q>0){
+            if(s==='Этикетка'||s==='Пакеты'||s==='Скотч'||s==='Пленка'||s==='Гофротара'){add.push({s,n,q});}
+            else{main.push({s,n,q});tRaw+=q;}
+        }
+    }
+    for(let x of gID('fOutRows').children){
+        const i=x.id.split('_')[1],n=gID('fon_'+i).value,q=parseFloat(gID('foq_'+i).value);
+        if(n&&q>0){out.push({n,count:q});}
+    }
+    if(!main.length||!out.length)return alert('ВНИМАНИЕ: Заполните сырье и выход продукции!');
+
+    let tOutW=0,hOut='',hIn='',hAdd='';
+    let totalPackCost=0;
+    let rawCost=0;
+
+    let pkTotal = 0;
+
+    out.forEach(x=>{
+        pkTotal += x.count;
+        let pW=0;
+        if(data.PriceList){
+            const obj=Object.values(data.PriceList).find(item=>item.name===x.n);
+            if(obj) pW=parseFloat(obj.weight)||0;
+        }
+        let kg=(x.count*pW).toFixed(2);
+        tOutW+=parseFloat(kg);
+        hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.count}шт <span style="font-size:10px;color:#64748b">(${kg}кг)</span></span></div>`;
+    });
+
+    const lS={'Stock_DV':'ДВ','Stock_Semi':'п/ф','WeightStock':'весовка','Пакеты':'пакеты','Пленка':'пленка','Этикетка':'этикетка','Скотч':'скотч','Гофротара':'ящики'};
+    
+    main.forEach(x=>{
+        let p = window.calcAvgPrice(x.n, x.s);
+        rawCost += x.q * p;
+        hIn+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
+    });
+
+    add.forEach(x=>{
+        let p = window.calcAvgPrice(x.n, x.s);
+        let cost = x.q * p;
+        totalPackCost += cost;
+        hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
+    });
+
+    const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
+    let mN=out[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';
+    let pk={};
+
+    out.forEach(x=>{
+        const coeff=x.n===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);
+        pk[x.sz||'']=(pk[x.sz||'']||0)+Math.round(x.count/coeff);
+    });
+
+    let packCost=0;
+    let cPackets=0;
+    let hPk='';
+    Object.keys(pk).forEach(sz=>{
+        if(!sz) return;
+        let pP=window.calcAvgPrice(sz,'Пакеты');
+        let cst=pk[sz]*pP;
+        cPackets+=cst;
+        packCost+=cst;
+        hPk+=`<div style="display:flex;justify-content:space-between"><span>Пакеты: ${esc(sz)}</span><span>${pk[sz]}шт <span style="font-size:9px;color:#059669">[~${cst.toFixed(2)} грн]</span></span></div>`;
+    });
+    
+    let tapeUsed=parseFloat((pkTotal/parseFloat(autoSet.tapeRate||3000)).toFixed(2));
+    let thermalUsed=parseFloat((pkTotal/parseFloat(autoSet.thermalRate||34000)).toFixed(2));
+    
+    let pFilm=window.calcAvgPrice(mN,'Пленка');
+    let cFilm=fU*pFilm;
+    packCost+=cFilm;
+    
+    let pTape=tapeUsed>0?window.calcAvgPrice('Скотч 360 грамм','Скотч 360 грамм'):0;
+    let cTape=tapeUsed*pTape;
+    packCost+=cTape;
+    
+    let pTherm=thermalUsed>0?window.calcAvgPrice('Термо лента','Термо лента'):0;
+    let cTherm=thermalUsed*pTherm;
+    packCost+=cTherm;
+
+    let stretchRolls = 0;
+    let cStretch = 0;
+    let sNorm = parseFloat(costSet.stretchNorm) || 0;
+    if(sNorm > 0 && pkTotal > 0){
+        stretchRolls = parseFloat((pkTotal / sNorm).toFixed(3));
+        cStretch = stretchRolls * window.calcAvgPrice('Стрейч пленка', 'Стрейч пленка');
+        packCost += cStretch;
+    }
+
+    const pct=tRaw>0?((tOutW/tRaw)*100).toFixed(1):0;
+    const loss=tRaw-tOutW;
+
+    const getDec = (tStr) => { const [h,m]=String(tStr||'00:00').split(':').map(Number); return h+(m/60); };
+    const wsS = getDec(ts);
+    let wsE = getDec(te);
+    if (wsE < wsS) wsE += 24; 
+    let hours = wsE - wsS;
+
+    const pwrUsage = parseFloat(costSet.powerFas)||3; 
+    const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
+
+    let salCost = 0;
+    let opFound = false;
+    let asFound = false;
+    let opHours = 0;
+    let asHours = 0;
+
+    if (data.Timesheet) {
+        let opClean = String(op || '').trim();
+        let asClean = String(as || '').trim();
+        Object.values(data.Timesheet).forEach(t => {
+            let tNameClean = String(t.name || '').trim();
+            if (t.date === d) {
+                if (!opFound && tNameClean === opClean) {
+                    let wS = getDec(t.start);
+                    let wE = getDec(t.end);
+                    if (wE < wS) wE += 24;
+                    let overlapStart = Math.max(wsS, wS);
+                    let overlapEnd = Math.min(wsE, wE);
+                    opHours = Math.max(0, overlapEnd - overlapStart);
+                    
+                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
+                    salCost += opHours * hRate;
+                    opFound = true;
+                }
+                if (!asFound && asClean !== '-' && tNameClean === asClean) {
+                    let wS = getDec(t.start);
+                    let wE = getDec(t.end);
+                    if (wE < wS) wE += 24;
+                    let overlapStart = Math.max(wsS, wS);
+                    let overlapEnd = Math.min(wsE, wE);
+                    asHours = Math.max(0, overlapEnd - overlapStart);
+                    
+                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
+                    salCost += asHours * hRate;
+                    asFound = true;
+                }
+            }
+        });
+    }
+
+    let salHtmlStr = `Зарплата (Оп:${opHours.toFixed(1)}ч`;
+    if (asFound) salHtmlStr += ` + Пом:${asHours.toFixed(1)}ч`;
+    salHtmlStr += `):`;
+
+    const netCost = rawCost + packCost + totalPackCost + energyCost + salCost;
+    const costPerItem = pkTotal > 0 ? (netCost / pkTotal).toFixed(2) : 0;
+
+    const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">ФАСОВКА</div>
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
+    <div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div>
+    <div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hIn}
+    ${hAdd?`<div class="conf-sec"><b>расходники (ручное списание):</b></div>${hAdd}`:''}
+    <div class="conf-sec"><b>готовая продукция:</b></div>${hOut}
+    <div class="conf-sec"><b>расход упаковки:</b></div>${hPk}
+    <div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг <span style="font-size:9px;color:#059669">[~${cFilm.toFixed(2)} грн]</span></span></div>
+    ${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт <span style="font-size:9px;color:#059669">[~${cTape.toFixed(2)} грн]</span></span></div>`:''}
+    ${thermalUsed>0?`<div style="display:flex;justify-content:space-between"><span>Термо лента:</span><span>${thermalUsed}шт <span style="font-size:9px;color:#059669">[~${cTherm.toFixed(2)} грн]</span></span></div>`:''}
+    ${stretchRolls>0?`<div style="display:flex;justify-content:space-between"><span>Стрейч пленка:</span><span>${stretchRolls} шт <span style="font-size:9px;color:#059669">[~${cStretch.toFixed(2)} грн]</span></span></div>`:''}
+    
+    <div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between;font-size:11px"><span>Израсходовано сырья:</span><span>${tRaw}кг</span></div>
+    <div style="font-weight:900;display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>Вес готовой:</span><span>${tOutW.toFixed(2)}кг</span></div>
+    <div style="font-weight:900;display:flex;justify-content:space-between;font-size:11px;color:${loss>0?'var(--d)':'#000'}"><span>Потери:</span><span>${loss.toFixed(2)}кг</span></div>
+    
+    <div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px; margin-top:10px;">
+        <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${(packCost + totalPackCost).toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>${salHtmlStr}</span><span>${salCost.toFixed(2)} грн</span></div>
+        <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
+            <span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span style="color:#dc2626">${costPerItem} грн</span>
+        </div>
+    </div>`;
+
+    gID('confContent').innerHTML=html;
+    gID('confMdl').style.display='flex';
+    
+    pendingAction=async function(){
+        const btn=document.querySelector('#confBox .btn-main[style*="green"]');
+        if(btn){btn.innerText='⏳...';btn.disabled=!0;}
+        showLoad();
+        try{
+            const id=db.child('Фасовка').push().key,u={},tsStr=new Date().toISOString();
+            const it=main.map(x=>({name:x.n,amount:x.q,source:x.s}));
+            const itAdd=add.map(x=>({name:x.n,amount:x.q,source:x.s}));
+            const itOut=out.map(x=>({name:x.n,size:x.sz,count:x.count}));
+            
+            u['/Фасовка/'+id]={date:d+"T12:00:00Z",timeStart:ts,timeEnd:te,operator:op,assistant:as,items:it,addItems:itAdd,outputItems:itOut,vzial:vt,ostatok:os,filmName:mN, costPerPack: parseFloat(costPerItem)||0, totalCost: netCost, rawCost: rawCost, packCost: (packCost+totalPackCost), cFilm: cFilm, cPackets: cPackets, cTape: cTape, cTherm: cTherm, energyCost: energyCost, salCost: salCost};
+            
+            main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:'Списание на фасовку',fLink:id,ts:tsStr};});
+            add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:'Расходник фасовка',fLink:id,ts:tsStr};});
+            
+            out.forEach(x=>{u[`/Готовая/${db.child('Готовая').push().key}`]={name:x.n,amount:x.count,date:d+"T12:00:00Z",note:'Фас',fLink:id,ts:tsStr};});
+            
+            Object.keys(pk).forEach(sz=>{if(sz) u['/Пакеты/'+db.child('Пакеты').push().key]={name:sz,amount:-pk[sz],date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};});
+            if(fU>0) u['/Пленка/'+db.child('Пленка').push().key]={name:mN,amount:-fU,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
+            if(tapeUsed>0) u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
+            if(thermalUsed>0) u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
+            if(stretchRolls>0) u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-stretchRolls,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
+            
+            if(totalCount > 0) {
+                const archKey = db.child('ArchIncoming').push().key;
+                const prodItems = out.map(x => ({n: x.n, a: x.count, p: parseFloat(costPerItem)||0}));
+                u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Свое производство', num: 'Смена ФАСОВКА ' + ds, type: 'PACK', ts: tsStr, items: prodItems };
+            }
+
+            await db.update(u);
+            hideLoad();closeConf();closeModal();setCat(cur);
+        }catch(e){
+            hideLoad();alert(e);
+        }finally{
+            if(btn){btn.innerText='ДА';btn.disabled=!1;}
+        }
+    };
+};
 
     window.updWsRawList=function(i,pfx){const src=gID(pfx+'s_'+i).value,sel=gID(pfx+'n_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount;});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     
@@ -1603,11 +1827,9 @@ window.previewWorkshop=function(k){
         }
     });
 
-    // Считаем количество упаковки
     let threadsToDeduct=parseFloat((totalBagsForThreads/parseFloat(autoSet.threadsRate||600)).toFixed(2));
     let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;
 
-    // Считаем ДЕНЬГИ за упаковку
     let packCost = 0;
     let cBags = totalBagsHTML > 0 ? totalBagsHTML * window.calcAvgPrice('Мешок 25кг', 'Мешки') : 0;
     packCost += cBags;
@@ -1626,7 +1848,15 @@ window.previewWorkshop=function(k){
     });
     packCost += cLabels;
 
-    // Считаем время, электричество и ЗАРПЛАТУ ЗА ФАКТИЧЕСКИ ОТРАБОТАННЫЕ ЧАСЫ (УМНЫЙ АЛГОРИТМ)
+    let stretchRolls = 0;
+    let cStretch = 0;
+    let sNorm = parseFloat(costSet.stretchNorm) || 0;
+    if(sNorm > 0 && tDV > 0){
+        stretchRolls = parseFloat((tDV / sNorm).toFixed(3));
+        cStretch = stretchRolls * window.calcAvgPrice('Стрейч пленка', 'Стрейч пленка');
+        packCost += cStretch;
+    }
+
     const getDec = (tStr) => { const [h,m]=String(tStr||'00:00').split(':').map(Number); return h+(m/60); };
     const wsS = getDec(ts);
     let wsE = getDec(te);
@@ -1655,7 +1885,6 @@ window.previewWorkshop=function(k){
                     let wS = getDec(t.start);
                     let wE = getDec(t.end);
                     if (wE < wS) wE += 24;
-                    // Ищем пересечение времени смены в цеху и времени присутствия человека
                     let overlapStart = Math.max(wsS, wS);
                     let overlapEnd = Math.min(wsE, wE);
                     opHours = Math.max(0, overlapEnd - overlapStart);
@@ -1684,7 +1913,6 @@ window.previewWorkshop=function(k){
     if (asFound) salHtmlStr += ` + Пом:${asHours.toFixed(1)}ч`;
     salHtmlStr += `):`;
 
-    // ГЛАВНАЯ ФОРМУЛА СЕБЕСТОИМОСТИ С УЧЕТОМ УПАКОВКИ И ФАКТИЧЕСКИХ ЧАСОВ
     const netCost = rawCost + packCost + energyCost + salCost - wasteRev;
     const usefulWeight = tDV + tSemi;
     const costPerKg = usefulWeight > 0 ? (netCost / usefulWeight).toFixed(2) : 0;
@@ -1709,10 +1937,11 @@ window.previewWorkshop=function(k){
             <span>СЕБЕСТОИМОСТЬ 1 КГ (ДВ + П/Ф):</span><span style="color:#dc2626">${costPerKg} грн</span>
         </div>
     </div>
-    ${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}
+    ${(totalBagsHTML>0||Object.keys(labelsToDeduct).length>0||threadsToDeduct>0||stretchRolls>0)?`<div class="conf-sec"><b>автосписание:</b></div>`:''}
     ${totalBagsHTML>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Мешок 25кг:</span><span>${totalBagsHTML}шт <span style="font-size:9px;color:#059669">[~${cBags.toFixed(2)} грн]</span></span></div>`:''}
     ${labelsHTML}
-    ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}`;
+    ${threadsToDeduct>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Нитки:</span><span>${threadsToDeduct}шт <span style="font-size:9px;color:#059669">[~${cThreads.toFixed(2)} грн]</span></span></div>`:''}
+    ${stretchRolls>0?`<div style="display:flex;justify-content:space-between;font-size:11px"><span>Стрейч пленка:</span><span>${stretchRolls} шт <span style="font-size:9px;color:#059669">[~${cStretch.toFixed(2)} грн]</span></span></div>`:''}`;
 
     gID('confContent').innerHTML=html;
     gID('confMdl').style.display='flex';
@@ -1739,6 +1968,8 @@ window.previewWorkshop=function(k){
             if(bagsToDeduct['Мешок 25кг']>0) u['/Мешки/'+db.child('Мешки').push().key]={name:'Мешок 25кг',amount:-bagsToDeduct['Мешок 25кг'],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
             Object.keys(labelsToDeduct).forEach(lN=>{u['/Этикетка/'+db.child('Этикетка').push().key]={name:lN,amount:-labelsToDeduct[lN],date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};});
             if(threadsToDeduct>0) u['/Нитки/'+db.child('Нитки').push().key]={name:'Нитки',amount:-threadsToDeduct,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
+            if(stretchRolls>0) u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-stretchRolls,date:d+"T12:00:00Z",note:'(авто) '+c.note,fLink:id,ts:tsStr};
+            
             if(usefulWeight > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
                 const prodItems = out.filter(x => x.type === 'DV' || x.type === 'Semi').map(x => ({n: x.n, a: x.wght, p: parseFloat(costPerKg)||0}));
