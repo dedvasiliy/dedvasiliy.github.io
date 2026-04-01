@@ -823,6 +823,7 @@ window.genBatchReport=function(c,n){
     
     setTimeout(()=>{
         let inRecords=[], totalIn=0;
+        // 1. Приходы
         if(data[c]){
             Object.values(data[c]).forEach(v=>{
                 if(v.name===rawName && v.amount>0){
@@ -851,11 +852,12 @@ window.genBatchReport=function(c,n){
             });
         }
         
+        // Хронологическая сортировка (чтобы сначала найти П/Ф, а потом его переработку)
         allShifts.sort((a,b)=>a.origD.localeCompare(b.origD));
         
-        let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
+        let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0;
         let sumDV={}, sumOther={}, sumFas={};
-        let semiNames = new Set();
+        let semiNames = new Set(); // Запоминаем П/Ф этой партии
         
         allShifts.forEach(shift=>{
             let v = shift.v;
@@ -886,13 +888,7 @@ window.genBatchReport=function(c,n){
                 }
 
                 if(isStage1 || isStage2) {
-                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
-                    if(otherRawTotal<0) otherRawTotal=0;
-
-                    let shiftTotalInput = usedAmt + usedSemiAmt + otherRawTotal;
-                    let ratio = shiftTotalInput > 0 ? (usedAmt + usedSemiAmt) / shiftTotalInput : 1;
-
-                    let oS='', shiftDV=0, scaledShiftDV=0;
+                    let oS='', shiftDV=0;
                     if(v.items) {
                         v.items.forEach(x=>{
                             let w=(x.q*x.w)+(x.l||0); if(!w&&x.amount) w=parseFloat(x.amount)||0;
@@ -902,21 +898,19 @@ window.genBatchReport=function(c,n){
                                 let isDV=x.type==='DV';
                                 if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) isDV=true;
                                 
+                                // Если это Этап 1 и на выходе П/Ф - запоминаем его имя
                                 if(isStage1 && (x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm))) {
                                     semiNames.add(nm.toLowerCase());
                                 }
 
-                                let scaledW = w * ratio;
-
-                                if(isDV){ shiftDV+=w; scaledShiftDV+=scaledW; sumDV[nm]=(sumDV[nm]||0)+scaledW; }
-                                else { sumOther[nm]=(sumOther[nm]||0)+scaledW; }
+                                if(isDV){ shiftDV+=w; sumDV[nm]=(sumDV[nm]||0)+w; }
+                                else { sumOther[nm]=(sumOther[nm]||0)+w; }
                             }
                         });
                     }
-                    if(ratio < 0.999 && oS !== '') {
-                        oS += `<div style="color:#d97706;font-size:10px;margin-top:4px;font-weight:bold;">Доля партии в выходе: ${(ratio*100).toFixed(1)}%</div>`;
-                    }
-                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:shiftDV, scaledShiftDV:scaledShiftDV, stage: isStage1 ? 1 : 2});
+                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
+                    if(otherRawTotal<0) otherRawTotal=0;
+                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:shiftDV, stage: isStage1 ? 1 : 2});
                 }
             } else if(shift.type === 'fas') {
                 if(v.items) {
@@ -930,24 +924,16 @@ window.genBatchReport=function(c,n){
                     });
                 }
                 if(isStage1 || isStage2) {
-                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
-                    if(otherRawTotal<0) otherRawTotal=0;
-
-                    let shiftTotalInput = usedAmt + usedSemiAmt + otherRawTotal;
-                    let ratio = shiftTotalInput > 0 ? (usedAmt + usedSemiAmt) / shiftTotalInput : 1;
-
                     let oS='';
                     if(v.outputItems) {
                         v.outputItems.forEach(x=>{
                             oS+=`${esc(x.name)} (${x.count}шт)<br>`;
-                            let scaledCount = x.count * ratio;
-                            sumFas[x.name]=(sumFas[x.name]||0)+scaledCount;
+                            sumFas[x.name]=(sumFas[x.name]||0)+x.count;
                         });
                     }
-                    if(ratio < 0.999 && oS !== '') {
-                        oS += `<div style="color:#d97706;font-size:10px;margin-top:4px;font-weight:bold;">Доля партии в выходе: ${(ratio*100).toFixed(1)}%</div>`;
-                    }
-                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:0, scaledShiftDV:0, stage: isStage1 ? 1 : 2});
+                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
+                    if(otherRawTotal<0) otherRawTotal=0;
+                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:0, stage: isStage1 ? 1 : 2});
                 }
             }
         });
@@ -959,12 +945,11 @@ window.genBatchReport=function(c,n){
             totalUsedRaw += r.used;
             totalUsedSemi += r.usedSemi;
             totalDV += r.shiftDV;
-            totalScaledDV += r.scaledShiftDV;
             if(r.otherRaw) totalOtherRaw += r.otherRaw;
             
             let shiftTotalInput = r.used + r.usedSemi + (r.otherRaw||0);
             let pct = (shiftTotalInput>0 && r.shiftDV>0) ? ((r.shiftDV/shiftTotalInput)*100).toFixed(1) : 0;
-            let pctHtml = pct>0 ? `<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Общий выход смены (ДВ): ${pct}%</div>` : '';
+            let pctHtml = pct>0 ? `<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Выход (ДВ): ${pct}%</div>` : '';
             
             let otherRawHtml='';
             if(r.otherRaws && r.otherRaws.length>0) {
@@ -979,7 +964,7 @@ window.genBatchReport=function(c,n){
 
             let stageBadge = r.stage === 2 ? `<span style="background:#8b5cf6;color:#fff;padding:2px 4px;border-radius:4px;font-size:9px;">ЭТАП 2 (П/Ф)</span>` : '';
 
-            rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;align-items:center"><span style="font-weight:900">${r.dFmt} ${stageBadge}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div>${usedHtml}${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено сменной продукции:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
+            rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;align-items:center"><span style="font-weight:900">${r.dFmt} ${stageBadge}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div>${usedHtml}${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
         });
         if(!rows) rows=`<div style="text-align:center;padding:15px;color:#64748b;font-weight:900">Движений по партии не найдено</div>`;
         
@@ -998,17 +983,19 @@ window.genBatchReport=function(c,n){
         }
         if(!hIn) hIn=`<div style="font-size:11px;color:#64748b;text-align:center">Нет данных о приходе</div>`;
         
-        let avgPct = (totalUsedRaw > 0 && totalScaledDV > 0) ? ((totalScaledDV / totalUsedRaw) * 100).toFixed(1) : 0;
+        // Считаем % выхода от ИСХОДНОГО СЫРЬЯ + ВСЕХ ДОБАВОК
+        let totalInputAll = totalUsedRaw + totalOtherRaw;
+        let avgPct = (totalInputAll > 0 && totalDV > 0) ? ((totalDV / totalInputAll) * 100).toFixed(1) : 0;
         
-        let titleSuffix = totalOtherRaw > 0 ? ' <br><span style="font-size:10px;color:#d97706">(ПРОПОРЦИОНАЛЬНО ДОЛЕ ПАРТИИ)</span>' : '';
-        let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px;line-height:1.2">ИТОГОВЫЙ ВЫХОД ПАРТИИ${titleSuffix}</div>`;
+        let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px">ИТОГОВЫЙ ВЫХОД ПАРТИИ</div>`;
         if(Object.keys(sumDV).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВАЯ ПРОДУКЦИЯ (ДВ):</div>`;Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} кг</b></div>`;});}
         if(Object.keys(sumOther).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} кг</b></div>`;});}
-        if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} шт</b></div>`;});}
+        if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`;});}
         
         let totalOutputWeight = 0;
         Object.values(sumDV).forEach(v => totalOutputWeight += v);
         
+        // Добавляем к итогу ТОЛЬКО КОРМА, игнорируя П/Ф и сечку
         Object.keys(sumOther).forEach(k => {
             let isSemi = /(сечк|полуфабрикат)/i.test(k) || semiNames.has(k.toLowerCase());
             if (!isSemi) {
@@ -1018,27 +1005,9 @@ window.genBatchReport=function(c,n){
         
         if(totalOutputWeight > 0) {
             sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:900;color:#0f172a;border-top:1px dashed #94a3b8;padding-top:4px"><span>ОБЩИЙ ВЕС (Готовая + Отходы):</span><span>${parseFloat(totalOutputWeight.toFixed(1))} кг</span></div>`;
-            
-            if (totalIn > 0) {
-                let diff = totalOutputWeight - totalIn;
-                let diffPct = (Math.abs(diff) / totalIn) * 100;
-                let diffText = '';
-                let diffColor = '';
-                if (diff < -0.01) {
-                    diffText = `${diff.toFixed(1)} кг (потеря ${diffPct.toFixed(1)}%)`;
-                    diffColor = '#dc2626';
-                } else if (diff > 0.01) {
-                    diffText = `+${diff.toFixed(1)} кг (излишек ${diffPct.toFixed(1)}%)`;
-                    diffColor = '#059669';
-                } else {
-                    diffText = `0 кг`;
-                    diffColor = '#64748b';
-                }
-                sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;font-weight:900;color:${diffColor};"><span>Фактически по партии:</span><span>${diffText}</span></div>`;
-            }
         }
         
-        sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ:</span><span>${avgPct}%</span></div></div>`;
+        sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ(сырьё+добавка):</span><span>${avgPct}%</span></div></div>`;
         
         let otherRawTotalHtml=totalOtherRaw>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${parseFloat(totalOtherRaw.toFixed(1))} кг</b></div>`:'';
         
