@@ -1537,17 +1537,34 @@ window.previewFas=function(){
     const d=gID('fD')?gID('fD').value:'',ds=d?d.split('-').reverse().join('.'):'',ts=gID('fTS')?gID('fTS').value:'',te=gID('fTE')?gID('fTE').value:'',op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
     const main=[],add=[],out=[];let tRaw=0;
     
-    for(let x of gID('fInRows').children){
-        const i=x.id.split('_')[1],s=gID('fis_'+i).value,n=gID('fin_'+i).value,q=parseFloat(gID('fiq_'+i).value);
-        if(n&&q>0){
-            if(s==='Этикетка'||s==='Пакеты'||s==='Скотч'||s==='Пленка'||s==='Гофротара'){add.push({s,n,q});}
-            else{main.push({s,n,q});tRaw+=q;}
+    // ИСПРАВЛЕНИЕ: fInRows заменен на fasRows
+    const inRowsBox = gID('fasRows');
+    if(inRowsBox) {
+        for(let x of inRowsBox.children){
+            const i=x.id.split('_')[1];
+            // Поскольку добавляется через addFasRow, там ID: fs_, fn_, fq_
+            const sEl=gID('fs_'+i), nEl=gID('fn_'+i), qEl=gID('fq_'+i);
+            const s=sEl?sEl.value:'', n=nEl?nEl.value:'', q=qEl?parseFloat(qEl.value)||0:0;
+            
+            if(n&&q>0){
+                if(s==='Этикетка'||s==='Пакеты'||s==='Скотч'||s==='Пленка'||s==='Гофротара'){add.push({s,n,q});}
+                else{main.push({s,n,q});tRaw+=q;}
+            }
         }
     }
-    for(let x of gID('fOutRows').children){
-        const i=x.id.split('_')[1],n=gID('fon_'+i).value,q=parseFloat(gID('foq_'+i).value);
-        if(n&&q>0){out.push({n,count:q});}
+
+    // ИСПРАВЛЕНИЕ: fOutRows заменен на fasOutRows
+    const outRowsBox = gID('fasOutRows');
+    if(outRowsBox) {
+        for(let x of outRowsBox.children){
+            const i=x.id.split('_')[1];
+            // ID: on_, oq_, os_
+            const nEl=gID('on_'+i), qEl=gID('oq_'+i), szEl=gID('os_'+i);
+            const n=nEl?nEl.value:'', q=qEl?parseFloat(qEl.value)||0:0, sz=szEl?szEl.value:'';
+            if(n&&q>0){out.push({n,count:q,sz});}
+        }
     }
+    
     if(!main.length||!out.length)return alert('ВНИМАНИЕ: Заполните сырье и выход продукции!');
 
     let tOutW=0,hOut='',hIn='',hAdd='';
@@ -1573,17 +1590,21 @@ window.previewFas=function(){
     main.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
         rawCost += x.q * p;
-        hIn+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
+        hIn+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]||x.s})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
     });
 
     add.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
         let cost = x.q * p;
         totalPackCost += cost;
-        hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
+        hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]||x.s})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
     });
 
-    const vz=gID('fVz')?gID('fVz').value:'0',os=gID('fOs')?parseFloat(gID('fOs').value)||0:0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
+    const vzEl=gID('fVz'), osEl=gID('fOs');
+    const vz=vzEl?vzEl.value:'0', os=osEl?(parseFloat(osEl.value)||0):0;
+    const vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
+    const fU=Math.max(0,vt-os);
+    
     let mN=out[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';
     let pk={};
 
