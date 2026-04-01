@@ -247,6 +247,33 @@ window.alert = function(message) {
     if (toast.parentElement) toast.parentElement.removeChild(toast);
   }, 3000);
 };
+window.appConfirm = function(msg) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('customDialog');
+        document.getElementById('dialogMsg').innerText = msg;
+        document.getElementById('dialogInp').style.display = 'none';
+        modal.style.display = 'flex';
+
+        document.getElementById('dialogBtnYes').onclick = () => { modal.style.display = 'none'; resolve(true); };
+        document.getElementById('dialogBtnNo').onclick = () => { modal.style.display = 'none'; resolve(false); };
+    });
+};
+
+window.appPrompt = function(msg, defaultVal = '') {
+    return new Promise(resolve => {
+        const modal = document.getElementById('customDialog');
+        const inp = document.getElementById('dialogInp');
+        document.getElementById('dialogMsg').innerText = msg;
+        inp.style.display = 'block';
+        inp.value = defaultVal;
+        modal.style.display = 'flex';
+        inp.focus();
+
+        document.getElementById('dialogBtnYes').onclick = () => { modal.style.display = 'none'; resolve(inp.value); };
+        document.getElementById('dialogBtnNo').onclick = () => { modal.style.display = 'none'; resolve(null); };
+    });
+};
+
 let shadowTimer = null;
 function runAutoBackup() {
   clearTimeout(shadowTimer);
@@ -823,7 +850,6 @@ window.genBatchReport=function(c,n){
     
     setTimeout(()=>{
         let inRecords=[], totalIn=0;
-        // 1. Приходы
         if(data[c]){
             Object.values(data[c]).forEach(v=>{
                 if(v.name===rawName && v.amount>0){
@@ -852,12 +878,11 @@ window.genBatchReport=function(c,n){
             });
         }
         
-        // Хронологическая сортировка (чтобы сначала найти П/Ф, а потом его переработку)
         allShifts.sort((a,b)=>a.origD.localeCompare(b.origD));
         
-        let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0;
+        let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
-        let semiNames = new Set(); // Запоминаем П/Ф этой партии
+        let semiNames = new Set();
         
         allShifts.forEach(shift=>{
             let v = shift.v;
@@ -888,7 +913,13 @@ window.genBatchReport=function(c,n){
                 }
 
                 if(isStage1 || isStage2) {
-                    let oS='', shiftDV=0;
+                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
+                    if(otherRawTotal<0) otherRawTotal=0;
+
+                    let shiftTotalInput = usedAmt + usedSemiAmt + otherRawTotal;
+                    let ratio = shiftTotalInput > 0 ? (usedAmt + usedSemiAmt) / shiftTotalInput : 1;
+
+                    let oS='', shiftDV=0, scaledShiftDV=0;
                     if(v.items) {
                         v.items.forEach(x=>{
                             let w=(x.q*x.w)+(x.l||0); if(!w&&x.amount) w=parseFloat(x.amount)||0;
@@ -898,19 +929,21 @@ window.genBatchReport=function(c,n){
                                 let isDV=x.type==='DV';
                                 if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) isDV=true;
                                 
-                                // Если это Этап 1 и на выходе П/Ф - запоминаем его имя
                                 if(isStage1 && (x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm))) {
                                     semiNames.add(nm.toLowerCase());
                                 }
 
-                                if(isDV){ shiftDV+=w; sumDV[nm]=(sumDV[nm]||0)+w; }
-                                else { sumOther[nm]=(sumOther[nm]||0)+w; }
+                                let scaledW = w * ratio;
+
+                                if(isDV){ shiftDV+=w; scaledShiftDV+=scaledW; sumDV[nm]=(sumDV[nm]||0)+scaledW; }
+                                else { sumOther[nm]=(sumOther[nm]||0)+scaledW; }
                             }
                         });
                     }
-                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
-                    if(otherRawTotal<0) otherRawTotal=0;
-                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:shiftDV, stage: isStage1 ? 1 : 2});
+                    if(ratio < 0.999 && oS !== '') {
+                        oS += `<div style="color:#d97706;font-size:10px;margin-top:4px;font-weight:bold;">Доля партии в выходе: ${(ratio*100).toFixed(1)}%</div>`;
+                    }
+                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:shiftDV, scaledShiftDV:scaledShiftDV, stage: isStage1 ? 1 : 2});
                 }
             } else if(shift.type === 'fas') {
                 if(v.items) {
@@ -924,16 +957,24 @@ window.genBatchReport=function(c,n){
                     });
                 }
                 if(isStage1 || isStage2) {
+                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
+                    if(otherRawTotal<0) otherRawTotal=0;
+
+                    let shiftTotalInput = usedAmt + usedSemiAmt + otherRawTotal;
+                    let ratio = shiftTotalInput > 0 ? (usedAmt + usedSemiAmt) / shiftTotalInput : 1;
+
                     let oS='';
                     if(v.outputItems) {
                         v.outputItems.forEach(x=>{
                             oS+=`${esc(x.name)} (${x.count}шт)<br>`;
-                            sumFas[x.name]=(sumFas[x.name]||0)+x.count;
+                            let scaledCount = x.count * ratio;
+                            sumFas[x.name]=(sumFas[x.name]||0)+scaledCount;
                         });
                     }
-                    let otherRawTotal = shiftTotalRaw - usedAmt - usedSemiAmt;
-                    if(otherRawTotal<0) otherRawTotal=0;
-                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:0, stage: isStage1 ? 1 : 2});
+                    if(ratio < 0.999 && oS !== '') {
+                        oS += `<div style="color:#d97706;font-size:10px;margin-top:4px;font-weight:bold;">Доля партии в выходе: ${(ratio*100).toFixed(1)}%</div>`;
+                    }
+                    rep.push({dt:shift.origD, dFmt:shift.d.split('-').reverse().join('.'), shop:shift.shop, used:usedAmt, usedSemi:usedSemiAmt, otherRaw:otherRawTotal, otherRaws:otherRaws, oS:oS, shiftDV:0, scaledShiftDV:0, stage: isStage1 ? 1 : 2});
                 }
             }
         });
@@ -945,11 +986,12 @@ window.genBatchReport=function(c,n){
             totalUsedRaw += r.used;
             totalUsedSemi += r.usedSemi;
             totalDV += r.shiftDV;
+            totalScaledDV += r.scaledShiftDV;
             if(r.otherRaw) totalOtherRaw += r.otherRaw;
             
             let shiftTotalInput = r.used + r.usedSemi + (r.otherRaw||0);
             let pct = (shiftTotalInput>0 && r.shiftDV>0) ? ((r.shiftDV/shiftTotalInput)*100).toFixed(1) : 0;
-            let pctHtml = pct>0 ? `<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Выход (ДВ): ${pct}%</div>` : '';
+            let pctHtml = pct>0 ? `<div style="font-size:11px;color:var(--s);font-weight:900;text-align:right;margin-top:4px">Общий выход смены (ДВ): ${pct}%</div>` : '';
             
             let otherRawHtml='';
             if(r.otherRaws && r.otherRaws.length>0) {
@@ -964,7 +1006,7 @@ window.genBatchReport=function(c,n){
 
             let stageBadge = r.stage === 2 ? `<span style="background:#8b5cf6;color:#fff;padding:2px 4px;border-radius:4px;font-size:9px;">ЭТАП 2 (П/Ф)</span>` : '';
 
-            rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;align-items:center"><span style="font-weight:900">${r.dFmt} ${stageBadge}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div>${usedHtml}${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
+            rows+=`<div class="rep-card" style="margin-bottom:8px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;align-items:center"><span style="font-weight:900">${r.dFmt} ${stageBadge}</span><span style="color:var(--p);font-weight:900">${r.shop}</span></div>${usedHtml}${otherRawHtml}<div style="font-size:12px;margin-bottom:4px;margin-top:4px"><b>Получено сменной продукции:</b><br>${r.oS||'-'}</div>${pctHtml}</div>`;
         });
         if(!rows) rows=`<div style="text-align:center;padding:15px;color:#64748b;font-weight:900">Движений по партии не найдено</div>`;
         
@@ -983,19 +1025,17 @@ window.genBatchReport=function(c,n){
         }
         if(!hIn) hIn=`<div style="font-size:11px;color:#64748b;text-align:center">Нет данных о приходе</div>`;
         
-        // Считаем % выхода от ИСХОДНОГО СЫРЬЯ + ВСЕХ ДОБАВОК
-        let totalInputAll = totalUsedRaw + totalOtherRaw;
-        let avgPct = (totalInputAll > 0 && totalDV > 0) ? ((totalDV / totalInputAll) * 100).toFixed(1) : 0;
+        let avgPct = (totalUsedRaw > 0 && totalScaledDV > 0) ? ((totalScaledDV / totalUsedRaw) * 100).toFixed(1) : 0;
         
-        let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px">ИТОГОВЫЙ ВЫХОД ПАРТИИ</div>`;
+        let titleSuffix = totalOtherRaw > 0 ? ' <br><span style="font-size:10px;color:#d97706">(ПРОПОРЦИОНАЛЬНО ДОЛЕ ПАРТИИ)</span>' : '';
+        let sumHtml=`<div class="rep-card" style="background:#f8fafc; border:2px solid #cbd5e1; margin-top:10px;"><div style="text-align:center;font-weight:900;color:var(--p);margin-bottom:5px;font-size:13px;line-height:1.2">ИТОГОВЫЙ ВЫХОД ПАРТИИ${titleSuffix}</div>`;
         if(Object.keys(sumDV).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:var(--s);margin-top:5px;margin-bottom:2px">ГОТОВАЯ ПРОДУКЦИЯ (ДВ):</div>`;Object.entries(sumDV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} кг</b></div>`;});}
         if(Object.keys(sumOther).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#d97706;margin-top:8px;margin-bottom:2px">ОТХОДЫ И П/Ф:</div>`;Object.entries(sumOther).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} кг</b></div>`;});}
-        if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${v} шт</b></div>`;});}
+        if(Object.keys(sumFas).length>0){sumHtml+=`<div style="font-size:11px;font-weight:900;color:#0369a1;margin-top:8px;margin-bottom:2px">РАСФАСОВАНО:</div>`;Object.entries(sumFas).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{sumHtml+=`<div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px dashed #e2e8f0;padding:2px 0"><span>${esc(k)}</span><b>${parseFloat(v).toFixed(1).replace(/\.0$/,'')} шт</b></div>`;});}
         
         let totalOutputWeight = 0;
         Object.values(sumDV).forEach(v => totalOutputWeight += v);
         
-        // Добавляем к итогу ТОЛЬКО КОРМА, игнорируя П/Ф и сечку
         Object.keys(sumOther).forEach(k => {
             let isSemi = /(сечк|полуфабрикат)/i.test(k) || semiNames.has(k.toLowerCase());
             if (!isSemi) {
@@ -1005,9 +1045,27 @@ window.genBatchReport=function(c,n){
         
         if(totalOutputWeight > 0) {
             sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:900;color:#0f172a;border-top:1px dashed #94a3b8;padding-top:4px"><span>ОБЩИЙ ВЕС (Готовая + Отходы):</span><span>${parseFloat(totalOutputWeight.toFixed(1))} кг</span></div>`;
+            
+            if (totalIn > 0) {
+                let diff = totalOutputWeight - totalIn;
+                let diffPct = (Math.abs(diff) / totalIn) * 100;
+                let diffText = '';
+                let diffColor = '';
+                if (diff < -0.01) {
+                    diffText = `${diff.toFixed(1)} кг (потеря ${diffPct.toFixed(1)}%)`;
+                    diffColor = '#dc2626';
+                } else if (diff > 0.01) {
+                    diffText = `+${diff.toFixed(1)} кг (излишек ${diffPct.toFixed(1)}%)`;
+                    diffColor = '#059669';
+                } else {
+                    diffText = `0 кг`;
+                    diffColor = '#64748b';
+                }
+                sumHtml += `<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;font-weight:900;color:${diffColor};"><span>Фактически по партии:</span><span>${diffText}</span></div>`;
+            }
         }
         
-        sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ(сырьё+добавка):</span><span>${avgPct}%</span></div></div>`;
+        sumHtml+=`<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:900;color:var(--s);border-top:2px solid #cbd5e1;padding-top:4px"><span>СРЕДНИЙ ВЫХОД ПАРТИИ:</span><span>${avgPct}%</span></div></div>`;
         
         let otherRawTotalHtml=totalOtherRaw>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#d97706;font-size:12px"><b>Использовано добавок:</b> <b>${parseFloat(totalOtherRaw.toFixed(1))} кг</b></div>`:'';
         
@@ -1476,56 +1534,69 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
 
 window.previewFas=function(){
-    const d=gID('fD').value,ds=d.split('-').reverse().join('.'),ts=gID('fTS').value,te=gID('fTE').value,op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
-    const main=[],add=[],out=[];let tRaw=0;
+    const dEl=gID('fD');
+    const d=dEl ? dEl.value : '';
+    const ds=d ? d.split('-').reverse().join('.') : '';
     
-    for(let x of gID('fInRows').children){
-        const i=x.id.split('_')[1],s=gID('fis_'+i).value,n=gID('fin_'+i).value,q=parseFloat(gID('fiq_'+i).value);
-        if(n&&q>0){
-            if(s==='Этикетка'||s==='Пакеты'||s==='Скотч'||s==='Пленка'||s==='Гофротара'){add.push({s,n,q});}
-            else{main.push({s,n,q});tRaw+=q;}
+    const main=[],add=[],out=[];
+    let tRaw=0;
+    
+    const inRowsBox = gID('fasRows');
+    if(inRowsBox) {
+        for(let x of inRowsBox.children){
+            const i=x.id.split('_')[1];
+            const sEl=gID('fs_'+i), nEl=gID('fn_'+i), qEl=gID('fq_'+i);
+            const s=sEl?sEl.value:'', n=nEl?nEl.value:'', q=qEl?parseFloat(qEl.value)||0:0;
+            
+            if(n&&q>0){
+                if(s==='Этикетка'||s==='Пакеты'||s==='Скотч'||s==='Пленка'||s==='Гофротара'||s==='Стрейч пленка'||s==='Термо лента'){add.push({s,n,q});}
+                else{main.push({s,n,q});tRaw+=q;}
+            }
         }
     }
-    for(let x of gID('fOutRows').children){
-        const i=x.id.split('_')[1],n=gID('fon_'+i).value,q=parseFloat(gID('foq_'+i).value);
-        if(n&&q>0){out.push({n,count:q});}
+
+    const outRowsBox = gID('fasOutRows');
+    if(outRowsBox) {
+        for(let x of outRowsBox.children){
+            const i=x.id.split('_')[1];
+            const nEl=gID('on_'+i), qEl=gID('oq_'+i), szEl=gID('os_'+i);
+            const n=nEl?nEl.value:'', q=qEl?parseFloat(qEl.value)||0:0, sz=szEl?szEl.value:'';
+            if(n&&q>0){out.push({n,count:q,sz});}
+        }
     }
+    
     if(!main.length||!out.length)return alert('ВНИМАНИЕ: Заполните сырье и выход продукции!');
 
-    let tOutW=0,hOut='',hIn='',hAdd='';
+    let hOut='',hIn='',hAdd='';
     let totalPackCost=0;
     let rawCost=0;
-
-    let pkTotal = 0;
+    let pkTotal=0;
 
     out.forEach(x=>{
         pkTotal += x.count;
-        let pW=0;
-        if(data.PriceList){
-            const obj=Object.values(data.PriceList).find(item=>item.name===x.n);
-            if(obj) pW=parseFloat(obj.weight)||0;
-        }
-        let kg=(x.count*pW).toFixed(2);
-        tOutW+=parseFloat(kg);
-        hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.count}шт <span style="font-size:10px;color:#64748b">(${kg}кг)</span></span></div>`;
+        hOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span>${x.count}шт</span></div>`;
     });
 
-    const lS={'Stock_DV':'ДВ','Stock_Semi':'п/ф','WeightStock':'весовка','Пакеты':'пакеты','Пленка':'пленка','Этикетка':'этикетка','Скотч':'скотч','Гофротара':'ящики'};
+    const lS={'Stock_DV':'ДВ вес','Stock_Semi':'п/ф','WeightStock':'покупная','Пакеты':'пакеты','Пленка':'пленка','Этикетка':'этикетка','Скотч':'скотч','Гофротара':'ящики'};
     
     main.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
         rawCost += x.q * p;
-        hIn+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
+        hIn+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]||x.s})</span></span><span>${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></span></div>`;
     });
 
     add.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
         let cost = x.q * p;
         totalPackCost += cost;
-        hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
+        hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]||x.s})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
     });
 
-    const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
+    const vzEl=gID('fVz'), osEl=gID('fOs');
+    const vz=vzEl?vzEl.value:'0', os=osEl?(parseFloat(osEl.value)||0):0;
+    const vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
+    const fU=Math.max(0,vt-os);
+    
     let mN=out[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';
     let pk={};
 
@@ -1570,71 +1641,24 @@ window.previewFas=function(){
         packCost += cStretch;
     }
 
-    const pct=tRaw>0?((tOutW/tRaw)*100).toFixed(1):0;
-    const loss=tRaw-tOutW;
+    let powerFasNorm = parseFloat(costSet.powerFas) || 0;
+    let powerPrice = parseFloat(costSet.powerPrice) || 0;
+    let energyCost = (pkTotal / 1000) * powerFasNorm * powerPrice;
 
-    const getDec = (tStr) => { const [h,m]=String(tStr||'00:00').split(':').map(Number); return h+(m/60); };
-    const wsS = getDec(ts);
-    let wsE = getDec(te);
-    if (wsE < wsS) wsE += 24; 
-    let hours = wsE - wsS;
-
-    const pwrUsage = parseFloat(costSet.powerFas)||3; 
-    const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
-
-    let salCost = 0;
-    let opFound = false;
-    let asFound = false;
-    let opHours = 0;
-    let asHours = 0;
-
-    if (data.Timesheet) {
-        let opClean = String(op || '').trim();
-        let asClean = String(as || '').trim();
-        Object.values(data.Timesheet).forEach(t => {
-            let tNameClean = String(t.name || '').trim();
-            if (t.date === d) {
-                if (!opFound && tNameClean === opClean) {
-                    let wS = getDec(t.start);
-                    let wE = getDec(t.end);
-                    if (wE < wS) wE += 24;
-                    let overlapStart = Math.max(wsS, wS);
-                    let overlapEnd = Math.min(wsE, wE);
-                    opHours = Math.max(0, overlapEnd - overlapStart);
-                    
-                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += opHours * hRate;
-                    opFound = true;
-                }
-                if (!asFound && asClean !== '-' && tNameClean === asClean) {
-                    let wS = getDec(t.start);
-                    let wE = getDec(t.end);
-                    if (wE < wS) wE += 24;
-                    let overlapStart = Math.max(wsS, wS);
-                    let overlapEnd = Math.min(wsE, wE);
-                    asHours = Math.max(0, overlapEnd - overlapStart);
-                    
-                    let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += asHours * hRate;
-                    asFound = true;
-                }
-            }
-        });
-    }
-
-    let salHtmlStr = `Зарплата (Оп:${opHours.toFixed(1)}ч`;
-    if (asFound) salHtmlStr += ` + Пом:${asHours.toFixed(1)}ч`;
-    salHtmlStr += `):`;
+    let salaryFasRate = parseFloat(costSet.salaryFas) || 0;
+    let salCost = pkTotal * salaryFasRate;
 
     const netCost = rawCost + packCost + totalPackCost + energyCost + salCost;
     const costPerItem = pkTotal > 0 ? (netCost / pkTotal).toFixed(2) : 0;
 
     const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">ФАСОВКА</div>
-    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
-    <div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div>
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span></div>
+    
     <div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hIn}
     ${hAdd?`<div class="conf-sec"><b>расходники (ручное списание):</b></div>${hAdd}`:''}
+    
     <div class="conf-sec"><b>готовая продукция:</b></div>${hOut}
+    
     <div class="conf-sec"><b>расход упаковки:</b></div>${hPk}
     <div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mN)}</span><span>${fU.toFixed(2)}кг <span style="font-size:9px;color:#059669">[~${cFilm.toFixed(2)} грн]</span></span></div>
     ${tapeUsed>0?`<div style="display:flex;justify-content:space-between"><span>Скотч:</span><span>${tapeUsed}шт <span style="font-size:9px;color:#059669">[~${cTape.toFixed(2)} грн]</span></span></div>`:''}
@@ -1642,15 +1666,13 @@ window.previewFas=function(){
     ${stretchRolls>0?`<div style="display:flex;justify-content:space-between"><span>Стрейч пленка:</span><span>${stretchRolls} шт <span style="font-size:9px;color:#059669">[~${cStretch.toFixed(2)} грн]</span></span></div>`:''}
     
     <div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between;font-size:11px"><span>Израсходовано сырья:</span><span>${tRaw}кг</span></div>
-    <div style="font-weight:900;display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>Вес готовой:</span><span>${tOutW.toFixed(2)}кг</span></div>
-    <div style="font-weight:900;display:flex;justify-content:space-between;font-size:11px;color:${loss>0?'var(--d)':'#000'}"><span>Потери:</span><span>${loss.toFixed(2)}кг</span></div>
     
     <div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px; margin-top:10px;">
         <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${(packCost + totalPackCost).toFixed(2)} грн</span></div>
-        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
-        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>${salHtmlStr}</span><span>${salCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет:</span><span>${energyCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Зарплата:</span><span>${salCost.toFixed(2)} грн</span></div>
         <div style="font-weight:900; font-size:13px; display:flex; justify-content:space-between; margin-top:5px; border-top:1px solid #ca8a04; padding-top:4px;">
             <span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span style="color:#dc2626">${costPerItem} грн</span>
         </div>
@@ -1669,7 +1691,25 @@ window.previewFas=function(){
             const itAdd=add.map(x=>({name:x.n,amount:x.q,source:x.s}));
             const itOut=out.map(x=>({name:x.n,size:x.sz,count:x.count}));
             
-            u['/Фасовка/'+id]={date:d+"T12:00:00Z",timeStart:ts,timeEnd:te,operator:op,assistant:as,items:it,addItems:itAdd,outputItems:itOut,vzial:vt,ostatok:os,filmName:mN, costPerPack: parseFloat(costPerItem)||0, totalCost: netCost, rawCost: rawCost, packCost: (packCost+totalPackCost), cFilm: cFilm, cPackets: cPackets, cTape: cTape, cTherm: cTherm, energyCost: energyCost, salCost: salCost};
+            u['/Фасовка/'+id]={
+                date:d+"T12:00:00Z",
+                items:it,
+                addItems:itAdd,
+                outputItems:itOut,
+                vzial:vt,
+                ostatok:os,
+                filmName:mN, 
+                costPerPack: parseFloat(costPerItem)||0, 
+                totalCost: netCost, 
+                rawCost: rawCost, 
+                packCost: (packCost+totalPackCost), 
+                cFilm: cFilm, 
+                cPackets: cPackets, 
+                cTape: cTape, 
+                cTherm: cTherm, 
+                energyCost: energyCost, 
+                salCost: salCost
+            };
             
             main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:'Списание на фасовку',fLink:id,ts:tsStr};});
             add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:'Расходник фасовка',fLink:id,ts:tsStr};});
@@ -1682,7 +1722,7 @@ window.previewFas=function(){
             if(thermalUsed>0) u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             if(stretchRolls>0) u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-stretchRolls,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             
-            if(totalCount > 0) {
+            if(pkTotal > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
                 const prodItems = out.map(x => ({n: x.n, a: x.count, p: parseFloat(costPerItem)||0}));
                 u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Свое производство', num: 'Смена ФАСОВКА ' + ds, type: 'PACK', ts: tsStr, items: prodItems };
@@ -1991,8 +2031,9 @@ window.previewWorkshop=function(k){
         function genDayReport(){const d=gID('repDate').value;if(!d)return;const ds=d.split('-').reverse().join('.');const rOutFas={},rOutVes={},rOutFeed={},rInc={},rToProd={},rFromProd={},rAuto={};const addV=(obj,key,val,unit,name='',src='',dest='')=>{if(!obj[key])obj[key]={v:0,u:unit,n:name||key,src,dest};obj[key].v+=Math.abs(val);};const catLabels={'Stock_DV':'ДВ вес','Stock_Semi':'полуфабрикат','Stock_Feed':'отходы','Stock_Raw':'сырье','WeightStock':'покупная','Готовая':'фасованная продукция'};if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.date&&v.date.startsWith(d)){if(v.items){v.items.forEach(it=>addV(rInc,it.n,it.a,'кг',it.n));}else if(v.name){addV(rInc,v.name,v.amount,'кг',v.name);}}});if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.date&&v.date.startsWith(d)){let n=v.name;let u=v.category==='Пленка'?'кг':'шт';addV(rInc,n,v.amount,u,n);}});const catsToCheck=['Stock_DV','Stock_Semi','Stock_Feed','Stock_Raw','WeightStock','Готовая','Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];catsToCheck.forEach(cat=>{if(!data[cat])return;let isPack=['Пакеты','Пленка','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(cat);let defUnit=(isPack&&cat!=='Пленка')||cat==='Готовая'?'шт':'кг';Object.values(data[cat]).forEach(v=>{if(!v.date||!v.date.startsWith(d)||!v.name)return;let amt=v.amount,note=v.note||'',n=v.name;if(amt<0){if(note.startsWith('Отгр:')&&cat!=='Стрейч пленка'){if(cat==='Готовая')addV(rOutFas,n,amt,defUnit,n);else if(cat==='WeightStock')addV(rOutVes,n+'::покупная',amt,defUnit,n,'покупная');else if(cat==='Stock_DV')addV(rOutVes,n+'::ДВ вес',amt,defUnit,n,'ДВ вес');else if(cat==='Stock_Feed')addV(rOutFeed,n,amt,defUnit,n);}else if(isPack){addV(rAuto,n,amt,defUnit,n);}else{addV(rToProd,n+'::'+cat+'::'+note,amt,defUnit,n,catLabels[cat]||cat,note);}}else if(amt>0){if(isPack||cat==='Stock_Raw'||cat==='WeightStock'){if(note.startsWith('Кор:'))addV(rFromProd,n+' (корр.)',amt,defUnit,n+' (корр.)');return;}if(note==='Приход'||note==='Приход сырья')return;let suffix=note.startsWith('Кор:')?' (корр.)':'';addV(rFromProd,n+suffix,amt,defUnit,n+suffix);}});});const fmt=(x)=>{let r=`<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v%1===0?x.v:x.v.toFixed(2)}${x.u}</span></div>`;if(x.src&&x.dest&&x.dest!=='Авто'&&x.dest!=='Фас'&&!x.dest.startsWith('(авто)'))r+=`<div class="dr-hint" style="width:100%; text-align:right; margin-top:-2px; font-size:10px; color:#64748b;">(${x.src} -> ${x.dest})</div>`;r+=`</div>`;return r;};const renderList=(obj)=>{let vals=Object.values(obj).sort((a,b)=>a.n.localeCompare(b.n));if(!vals.length)return '<div style="color:#94a3b8; font-size:11px;">-</div>';return vals.map(fmt).join('');};let blockOutFas=renderList(rOutFas),blockOutVes=renderList(rOutVes),blockOutFeed=renderList(rOutFeed),blockInc=renderList(rInc),blockToProd=renderList(rToProd),blockFromProd=renderList(rFromProd),blockAuto=renderList(rAuto);let screenHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-card"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub">- отходы</div><div>${blockOutFeed}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-card"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div>${blockToProd}</div></div><div class="dr-card"><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div>${blockFromProd}</div></div><div class="dr-card"><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div>`;let printHtml=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:#000;">ДНЕВНОЙ ОТЧЕТ ${ds}</div><div class="dr-print-wrap"><div class="dr-print-col"><div class="dr-sec">ОТГРУЗКИ СО СКЛАДА:</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- фасованная продукция</div><div style="margin-bottom:8px;">${blockOutFas}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- весовая продукция</div><div style="margin-bottom:8px;">${blockOutVes}</div><div class="dr-sub" style="margin-bottom:4px; font-weight:bold;">- отходы</div><div style="margin-bottom:15px;">${blockOutFeed}</div><div class="dr-sec">ПРИХОД НА СКЛАД:</div><div>${blockInc}</div></div><div class="dr-print-col"><div class="dr-sec">УШЛО В ПЕРЕРАБОТКУ:</div><div style="margin-bottom:15px;">${blockToProd}</div><div class="dr-sec">ПРИХОД НА СКЛАД С ПРОИЗВОДСТВА:</div><div style="margin-bottom:15px;">${blockFromProd}</div><div class="dr-sec">АВТОСПИСАНИЕ УПАКОВКИ:</div><div>${blockAuto}</div></div></div>`;gID('print-view').innerHTML=printHtml;gID('mB').innerHTML=screenHtml+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
         function genMonthReport(){const m=gID('repMth').value;if(!m)return alert('Месяц?');const [y,mt]=m.split('-');const sd=`${y}-${mt}-01`,ed=`${y}-${mt}-31`;const res={};const catsP1=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Semi','Stock_Raw'];const catsP2=['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];const allCats=[...catsP1,...catsP2];const catNames={'Готовая':'Фасованная продукция','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Корма (Отходы)','Stock_Semi':'Полуфабрикат','Stock_Raw':'Сырье','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};allCats.forEach(c=>{if(data[c]){Object.values(data[c]).forEach(v=>{if(v.name){if(!res[c])res[c]={};if(!res[c][v.name])res[c][v.name]={s:0,i:0,o:0,e:0};const a=parseFloat(v.amount)||0,vd=v.date.split('T')[0];if(vd<sd){res[c][v.name].s+=a;res[c][v.name].e+=a;}else if(vd<=ed){if(a>0)res[c][v.name].i+=a;else res[c][v.name].o+=Math.abs(a);res[c][v.name].e+=a;}}})}});const buildTable=(catList)=>{let h=`<table class="m-rep-table"><thead><tr><th>НАИМЕНОВАНИЕ</th><th>НАЧАЛО</th><th>ПРИХОД</th><th>РАСХОД</th><th>КОНЕЦ</th></tr></thead><tbody>`;catList.forEach(c=>{if(!res[c])return;let rows='';Object.keys(res[c]).sort().forEach(n=>{const d=res[c][n];if(Math.abs(d.s)<0.01&&Math.abs(d.i)<0.01&&Math.abs(d.o)<0.01&&Math.abs(d.e)<0.01)return;let u=(c==='Готовая'||['Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(c))?' шт':' кг';let fmt=(v)=>(c==='Пленка'||c==='Скотч 360 грамм')?v.toFixed(2):Math.round(v);rows+=`<tr><td>${esc(n)}</td><td>${fmt(d.s)}${u}</td><td>${fmt(d.i)}${u}</td><td>${fmt(d.o)}${u}</td><td><b>${fmt(d.e)}${u}</b></td></tr>`;});if(rows){h+=`<tr><td colspan="5" class="m-rep-cat">${catNames[c]||c}</td></tr>`+rows;}});h+=`</tbody></table>`;return h;};const mStr=`${mt}.${y}`;let html=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr})</div>`;html+=buildTable(catsP1);html+=`<div class="page-break"></div>`;html+=`<div class="m-rep-head">МЕСЯЧНЫЙ ОТЧЕТ (${mStr}) - УПАКОВКА</div>`;html+=buildTable(catsP2);gID('print-view').innerHTML=html;gID('mB').innerHTML=`<div style="font-weight:900;text-align:center;font-size:16px;margin-bottom:15px;color:var(--p)">ОТЧЕТ ЗА ${mStr}</div>`+buildTable(catsP1).replace(/m-rep-table/g,'mini-inv')+buildTable(catsP2).replace(/m-rep-table/g,'mini-inv')+`<button class="btn-main" onclick="window.print()" style="margin-top:15px;background:#0f172a">🖨️ ПЕЧАТЬ</button>`;}
         function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;}
-        function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
-        function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);return s.style.display==='none'?i.value:s.value}
+function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(!s||!i)return;if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
+function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);if(!s)return'';return s.style.display==='none'?(i?i.value:''):s.value}
+
 window.calcAvgPrice = function(itemName, category) {
     let curStock = 0;
     // Узнаем текущий остаток на складе
@@ -2470,7 +2511,7 @@ window.calcFinances = async function() {
             Object.entries(d).forEach(([k,v]) => {
                 if(v.name){
                     if(!w[v.name]) w[v.name] = {t:0,s:0}; 
-                    if(daysToRender.includes(v.date)){
+                    if(daysToRender.includes(v.date) && !v.isPayout){
                         w[v.name].t += parseFloat(v.rate) || 0;
                         w[v.name].s += 1;
                     }
@@ -2502,6 +2543,7 @@ window.calcFinances = async function() {
             const year = y !== undefined ? y : defY;
             const month = m !== undefined ? m : defM; 
             const todayStr = new Date().toISOString().split('T')[0];
+            const monthKey = year + '-' + String(month + 1).padStart(2, '0');
             
             const daysToRender = [];
             if (year === 2026 && month === 2) { 
@@ -2521,14 +2563,42 @@ window.calcFinances = async function() {
             
             const ts = data.Timesheet || {};
             const shifts = {};
+            let totalZp = 0;
+            let totalShifts = 0;
+            let earned1to15 = 0;
+            let advanceAmt = 0;
+            let salaryAmt = 0;
             
             Object.entries(ts).forEach(([k, v]) => {
-                if (v.name === name && daysToRender.includes(v.date)) {
-                    if(!shifts[v.date]) shifts[v.date] = [];
-                    shifts[v.date].push({id: k, ...v});
+                if (v.name === name) {
+                    if (v.isPayout && v.forMonth === monthKey) {
+                        if (v.payoutType === 'Аванс') advanceAmt += parseFloat(v.payoutAmount) || 0;
+                        if (v.payoutType === 'Зарплата') salaryAmt += parseFloat(v.payoutAmount) || 0;
+                        
+                        if (daysToRender.includes(v.date)) {
+                            if(!shifts[v.date]) shifts[v.date] = [];
+                            shifts[v.date].push({id: k, ...v});
+                        }
+                    } 
+                    else if (!v.isPayout && daysToRender.includes(v.date)) {
+                        if(!shifts[v.date]) shifts[v.date] = [];
+                        shifts[v.date].push({id: k, ...v});
+                        
+                        let rt = parseFloat(v.rate) || 0;
+                        totalZp += rt;
+                        totalShifts++;
+                        
+                        let dNum = parseInt(v.date.split('-')[2]);
+                        if (dNum <= 15) {
+                            earned1to15 += rt;
+                        }
+                    }
                 }
             });
             
+            let calcAdv = Math.round((earned1to15 * 0.8) / 1000) * 1000;
+            let remZp = totalZp - advanceAmt - salaryAmt;
+
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
             
             let prevM = month - 1, prevY = year;
@@ -2556,9 +2626,6 @@ window.calcFinances = async function() {
                 h += `<div style="background:#f1f5f9;border-radius:4px;min-height:50px;border:1px solid transparent"></div>`;
             }
             
-            let totalZp = 0;
-            let totalShifts = 0;
-            
             for (let i = 0; i < daysToRender.length; i++) {
                 const dateStr = daysToRender[i];
                 const dayNum = parseInt(dateStr.split('-')[2]);
@@ -2577,14 +2644,20 @@ window.calcFinances = async function() {
                     cellBg = '#ecfdf5';
                     cellBorder = '1px solid #10b981';
                     dayShifts.forEach(s => {
-                        totalZp += parseFloat(s.rate) || 0;
-                        totalShifts++;
-                        let bHtml = (parseFloat(s.bonus)>0) ? `<div style="color:#d97706;font-size:8px;margin-bottom:1px;font-weight:900">+${s.bonus}</div>` : '';
-                        innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
-                            ${bHtml}
-                            ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
-                            ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${dayNum} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
-                        </div>`;
+                        if (s.isPayout) {
+                            innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#e0e7ff;padding:2px;border-radius:2px;color:#3730a3;font-weight:bold;text-align:center;border:1px solid #a5b4fc">
+                                ${s.payoutType.toUpperCase()}<br><span style="color:#dc2626">${s.payoutAmount}₴</span>
+                                ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить выплату?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                            </div>`;
+                            cellBg = '#f8fafc'; 
+                        } else {
+                            let bHtml = (parseFloat(s.bonus)>0) ? `<div style="color:#d97706;font-size:8px;margin-bottom:1px;font-weight:900">+${s.bonus}</div>` : '';
+                            innerHtml += `<div style="font-size:8px;line-height:1.1;margin-bottom:2px;background:#d1fae5;padding:2px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                                ${bHtml}
+                                ${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                                ${isAdmin ? `<br><span style="color:#b91c1c;text-decoration:underline;cursor:pointer;display:block;margin-top:3px;font-size:7px" onclick="event.stopPropagation();if(confirm('Удалить смену за ${dayNum} число?')){delRec('Timesheet','${s.id}');setTimeout(()=>openWorkerCalendar('${esc(name)}',${year},${month}),500)}">УДАЛИТЬ</span>` : ''}
+                            </div>`;
+                        }
                     });
                 } else {
                     if (!isWeekend && !isFuture) {
@@ -2598,15 +2671,202 @@ window.calcFinances = async function() {
             }
             
             h += `</div>`;
-            h += `<div style="margin-top:10px;background:#fefce8;border:1px dashed #ca8a04;padding:10px;border-radius:8px;text-align:center;font-weight:900">
-                <div style="font-size:11px;color:#a16207">ИТОГО ЗА ПЕРИОД</div>
-                <div style="color:var(--p);font-size:15px;margin-top:2px">Смен: ${totalShifts} | ЗП: ${totalZp} грн</div>
+            
+            let actionsHtml = `<div style="display:flex;gap:5px;margin-top:10px;">`;
+            if (advanceAmt === 0 && earned1to15 > 0 && calcAdv > 0) {
+                actionsHtml += `<button class="btn-main" style="flex:1;background:#3b82f6;font-size:10px;margin:0;" onclick="issuePayout('${esc(name)}', '${monthKey}', 'Аванс', ${calcAdv})">💸 АВАНС (~${calcAdv}₴)</button>`;
+            }
+            if (remZp > 0) {
+                actionsHtml += `<button class="btn-main" style="flex:1;background:#10b981;font-size:10px;margin:0;" onclick="issuePayout('${esc(name)}', '${monthKey}', 'Зарплата', ${remZp})">💰 ЗАРПЛАТА (${remZp}₴)</button>`;
+            }
+            actionsHtml += `</div>`;
+
+            h += `<div style="margin-top:10px;background:#f8fafc;border:1px solid #cbd5e1;padding:10px;border-radius:8px;text-align:center;font-weight:900;font-size:12px;">
+                <div style="color:#475569;font-size:10px;margin-bottom:4px;text-transform:uppercase;">ФИНАНСЫ ЗА ПЕРИОД</div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Заработано (смен: ${totalShifts}):</span> <span style="color:#059669">${totalZp} ₴</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Выдан аванс:</span> <span style="color:#2563eb">${advanceAmt} ₴</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:14px;">
+                    <span>Остаток к выплате:</span> <span style="color:#dc2626">${remZp} ₴</span>
+                </div>
             </div>`;
+            h += actionsHtml;
             
             gID('mT').innerText = 'ТАБЕЛЬ: ' + name;
             gID('mB').innerHTML = h;
             gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
             gID('mdl').style.display = 'flex';
+        };
+
+        window.issuePayout = async function(name, monthKey, type, defaultAmt) {
+            let amtStr = prompt(`Введите сумму выплаты (${type}) для ${name}:`, defaultAmt);
+            if (!amtStr) return;
+            let amt = parseInt(amtStr.replace(/\\D/g, ''));
+            if (isNaN(amt) || amt <= 0) return alert('Некорректная сумма');
+            
+            let payoutDate = prompt(`Введите дату выплаты (ГГГГ-ММ-ДД):\\n(В эту дату запись появится в календаре)`, new Date().toISOString().split('T')[0]);
+            if (!payoutDate) return;
+
+            showLoad();
+            try {
+                await db.child('Timesheet').push({
+                    date: payoutDate,
+                    name: name,
+                    isPayout: true,
+                    payoutType: type,
+                    payoutAmount: amt,
+                    forMonth: monthKey,
+                    ts: new Date().toISOString()
+                });
+                hideLoad();
+                alert(`Выплата (${type}) сохранена!`);
+                let [y, m] = monthKey.split('-').map(Number);
+                openWorkerCalendar(name, y, m - 1);
+            } catch(e) {
+                hideLoad();
+                alert(e.message);
+            }
+        };
+
+        window.printTsList = function() {
+            const dObj = new Date();
+            let defY = dObj.getFullYear();
+            let defM = dObj.getMonth();
+            if (defY === 2026 && defM === 2 && dObj.getDate() >= 27) defM = 3;
+            
+            const req = prompt('Введите месяц и год для печати (ММ.ГГГГ):', String(defM + 1).padStart(2, '0') + '.' + defY);
+            if (!req) return;
+            const pts = req.split('.');
+            if (pts.length !== 2) return alert('Формат: ММ.ГГГГ');
+            
+            const month = parseInt(pts[0]) - 1;
+            const year = parseInt(pts[1]);
+            const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+            const todayStr = new Date().toISOString().split('T')[0];
+            const monthKey = year + '-' + String(month + 1).padStart(2, '0');
+            
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+            }
+
+            const firstDateStr = daysToRender[0];
+            const firstDayObj = new Date(firstDateStr);
+            let firstDayOfWeek = firstDayObj.getDay();
+            let startDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; 
+
+            const ts = data.Timesheet || {};
+            const workers = {};
+            const payoutsForMonth = {};
+            
+            Object.entries(ts).forEach(([k, v]) => {
+                if (v.name) {
+                    if (v.isPayout && v.forMonth === monthKey) {
+                        if (!payoutsForMonth[v.name]) payoutsForMonth[v.name] = { adv: 0, sal: 0 };
+                        if (v.payoutType === 'Аванс') payoutsForMonth[v.name].adv += parseFloat(v.payoutAmount) || 0;
+                        if (v.payoutType === 'Зарплата') payoutsForMonth[v.name].sal += parseFloat(v.payoutAmount) || 0;
+                    }
+                    if (daysToRender.includes(v.date)) {
+                        if(!workers[v.name]) workers[v.name] = [];
+                        workers[v.name].push({id: k, ...v});
+                    }
+                }
+            });
+
+            if(Object.keys(workers).length === 0) return alert('Нет данных за ' + monthNames[month] + ' ' + year);
+
+            let h = `<div style="font-family:sans-serif;color:#000;padding:10px;">
+                     <h3 style="text-align:center;margin:0 0 10px 0;text-transform:uppercase;font-size:14px;">ТАБЕЛЬ ЗА ${monthNames[month]} ${year}</h3>
+                     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;align-items:start;">`;
+
+            Object.keys(workers).sort().forEach(name => {
+                const shiftsByDate = {};
+                workers[name].forEach(s => {
+                    if(!shiftsByDate[s.date]) shiftsByDate[s.date] = [];
+                    shiftsByDate[s.date].push(s);
+                });
+
+                let calHtml = `<div style="border:1px solid #94a3b8;padding:4px;border-radius:6px;break-inside:avoid;page-break-inside:avoid;background:#fff;max-height:300px;">
+                    <div style="font-weight:900;color:#000;font-size:11px;text-transform:uppercase;text-align:center;margin-bottom:4px;">${esc(name)}</div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;text-align:center;font-size:7px;font-weight:900;color:#64748b;margin-bottom:2px">
+                        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div style="color:#dc2626">СБ</div><div style="color:#dc2626">ВС</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;">`;
+
+                for (let i = 0; i < startDay; i++) {
+                    calHtml += `<div style="background:#f8fafc;border-radius:2px;min-height:30px;border:1px solid transparent"></div>`;
+                }
+
+                let totalZp = 0;
+                let totalShifts = 0;
+
+                for (let i = 0; i < daysToRender.length; i++) {
+                    const dateStr = daysToRender[i];
+                    const dayNum = parseInt(dateStr.split('-')[2]); 
+                    const dayShifts = shiftsByDate[dateStr];
+                    const isFuture = dateStr > todayStr;
+                    
+                    const col = (startDay + i) % 7;
+                    const isWeekend = (col === 5 || col === 6);
+                    
+                    let cellBg = '#fff';
+                    let cellBorder = isWeekend ? '1px solid #fca5a5' : '1px solid #e2e8f0';
+                    let innerHtml = `<div style="font-weight:900;font-size:9px;color:${isWeekend?'#dc2626':'#0f172a'};text-align:right;padding:1px 2px 0 0">${dayNum}</div>`;
+                    
+                    if (dayShifts && dayShifts.length > 0) {
+                        cellBg = '#ecfdf5';
+                        cellBorder = '1px solid #10b981';
+                        dayShifts.forEach(s => {
+                            if (s.isPayout) {
+                                innerHtml += `<div style="font-size:7px;line-height:1;margin-bottom:1px;background:#e0e7ff;padding:1px;border-radius:2px;color:#3730a3;font-weight:bold;text-align:center">
+                                    ${s.payoutType.slice(0,2)}: ${s.payoutAmount}₴
+                                </div>`;
+                            } else {
+                                totalZp += parseFloat(s.rate) || 0;
+                                totalShifts++;
+                                let bHtml = (parseFloat(s.bonus)>0) ? `<span style="color:#d97706;font-weight:900">+${s.bonus}</span> ` : '';
+                                innerHtml += `<div style="font-size:7px;line-height:1;margin-bottom:1px;background:#d1fae5;padding:1px;border-radius:2px;color:#047857;font-weight:bold;text-align:center">
+                                    ${bHtml}${s.start}-${s.end}<br><span style="color:#dc2626">${s.rate}₴</span>
+                                </div>`;
+                            }
+                        });
+                    } else {
+                        if (!isWeekend && !isFuture) {
+                            cellBg = '#e2e8f0'; 
+                            cellBorder = '2px solid #64748b'; 
+                        }
+                    }
+                    
+                    calHtml += `<div style="background:${cellBg};border:${cellBorder};border-radius:2px;min-height:30px;display:flex;flex-direction:column;padding:1px;overflow:hidden">${innerHtml}</div>`;
+                }
+
+                let pAdv = payoutsForMonth[name] ? payoutsForMonth[name].adv : 0;
+                let pSal = payoutsForMonth[name] ? payoutsForMonth[name].sal : 0;
+                let pRem = totalZp - pAdv - pSal;
+
+                calHtml += `</div>
+                    <div style="margin-top:4px;background:#fefce8;border:1px dashed #ca8a04;padding:3px;border-radius:4px;text-align:center;font-weight:900">
+                        <div style="color:#000;font-size:10px;">Смен: ${totalShifts} | ЗП: ${totalZp} ₴</div>
+                        <div style="color:#2563eb;font-size:9px;">Аванс: ${pAdv} ₴ | Остаток: <span style="color:#dc2626">${pRem} ₴</span></div>
+                    </div>
+                </div>`;
+                
+                h += calHtml;
+            });
+
+            h += `</div></div>`;
+            gID('print-view').innerHTML=h;
+            window.print();
+            setTimeout(()=>gID('print-view').innerHTML='',800);
         };
 
         window.openWorkersMgmt = function() {
@@ -2677,7 +2937,8 @@ window.calcFinances = async function() {
         window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.sPrice=async function(){const n=gID('prN').value,p=gID('prP').value,o=parseFloat(gID('prO').value)||0,r=parseFloat(gID('prR').value)||0,b=parseFloat(gID('prB').value)||0;if(!n)return alert('Название?');const k=aId||db.child('PriceList').push().key;try{await db.child('PriceList/'+k).set({name:n,printName:p,priceOpt:o,priceRoz:r,priceBN:b});closeModal()}catch(e){alert(e)}};
-        window.delPrice=async function(i){if(confirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
+        window.delPrice=async function(i){if(await appConfirm('Удалить?')){await db.child('PriceList/'+i).remove();loadData()}};
+
         window.printPriceList=function(){const d=data.PriceList||{};const cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{let po=parseFloat(v.priceOpt||v.price||0),pr=parseFloat(v.priceRoz||0),pb=parseFloat(v.priceBN||v.priceOpt||v.price||0);if(po===0&&pr===0&&pb===0)return;if(g.has(v.name))cats['Фасованная продукция'].push({v,po,pr,pb});else if(w.has(v.name))cats['Покупная продукция'].push({v,po,pr,pb});else if(dv.has(v.name))cats['ДВ вес'].push({v,po,pr,pb});else if(f.has(v.name))cats['Отходы производства'].push({v,po,pr,pb});else cats['Прочее'].push({v,po,pr,pb});});const ds=new Date().toLocaleDateString('ru-RU');let h=`<div style="font-family:sans-serif; color:#000;">`;h+=`<div style="font-weight:900;font-size:18px;margin-bottom:15px;text-align:center;">ПРАЙС-ЛИСТ от ${ds}</div>`;Object.keys(cats).forEach(k=>{if(!cats[k].length)return;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name));h+=`<div style="font-weight:bold; font-size:16px; margin-top:15px; margin-bottom:5px; border-bottom:1px solid #000; padding-bottom:2px; display:inline-block; padding-right:30px;">${k}</div>`;h+=`<table style="border-collapse:collapse; font-size:12px; line-height:1.1; margin-bottom:10px; width:auto;">`;h+=`<thead><tr><th style="text-align:left; border-bottom:1px solid #ccc; padding:2px 10px 2px 0;">Наименование</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Опт</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 10px;">Розница</th><th style="text-align:right; border-bottom:1px solid #ccc; padding:2px 0 2px 10px;">Б/Н</th></tr></thead><tbody>`;cats[k].forEach(item=>{let n=esc(item.v.printName||item.v.name);let opt=item.po>0?item.po:'-';let roz=item.pr>0?item.pr:'-';let bn=item.pb>0?item.pb:'-';h+=`<tr><td style="padding:2px 10px 2px 0; border-bottom:1px dashed #eee;">${n}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${opt}</td><td style="text-align:right; font-weight:bold; padding:2px 10px; border-bottom:1px dashed #eee;">${roz}</td><td style="text-align:right; font-weight:bold; padding:2px 0 2px 10px; border-bottom:1px dashed #eee;">${bn}</td></tr>`;});h+=`</tbody></table>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
         function rPriceList(c){if(!isAdmin){c.innerHTML='<div style="text-align:center;padding:20px">Только для админа</div>';return}const d=data.PriceList||{},cats={'Фасованная продукция':[],'Покупная продукция':[],'ДВ вес':[],'Отходы производства':[],'Прочее':[]};const g=new Set();if(data.Готовая)Object.values(data.Готовая).forEach(x=>g.add(x.name));const w=new Set();if(data.WeightStock)Object.values(data.WeightStock).forEach(x=>w.add(x.name));const dv=new Set();if(data.Stock_DV)Object.values(data.Stock_DV).forEach(x=>dv.add(x.name));const f=new Set();if(data.Stock_Feed)Object.values(data.Stock_Feed).forEach(x=>f.add(x.name));Object.entries(d).forEach(([i,v])=>{if(g.has(v.name))cats['Фасованная продукция'].push({i,v});else if(w.has(v.name))cats['Покупная продукция'].push({i,v});else if(dv.has(v.name))cats['ДВ вес'].push({i,v});else if(f.has(v.name))cats['Отходы производства'].push({i,v});else cats['Прочее'].push({i,v});});let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" onclick="openAddPrice()" style="margin:0">+ ТОВАР В ПРАЙС</button><button class="btn-main" onclick="printPriceList()" style="background:#0f172a;margin:0">🖨️ ПЕЧАТЬ ПРАЙСА</button></div>`;Object.keys(cats).forEach(k=>{if(cats[k].length){h+=`<div class="cat-head">${k}</div>`;cats[k].sort((a,b)=>a.v.name.localeCompare(b.v.name)).forEach(({i,v})=>{let p_opt=v.priceOpt||(v.price||0);let p_bn=v.priceBN||p_opt;h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:900">${esc(v.name)}</div>${v.printName?`<div style="font-size:10px;color:#0369a1">Печать: ${esc(v.printName)}</div>`:''}<div style="font-size:11px;color:#666">Опт: <span style="color:var(--p);font-weight:900">${p_opt}</span> | Розн: <span style="color:var(--s);font-weight:900">${v.priceRoz||0}</span> | Б/Н: <span style="color:#dc2626;font-weight:900">${p_bn}</span></div></div><div><button onclick="editPrice('${i}','${esc(v.name)}','${esc(v.printName||'')}',${p_opt},${v.priceRoz||0},${p_bn})" style="background:#eef2ff;border:none;padding:5px 10px;border-radius:5px;margin-right:5px">✏️</button><button onclick="delPrice('${i}')" style="background:#fee2e2;color:red;border:none;padding:5px 10px;border-radius:5px">🗑️</button></div></div>`});}});c.innerHTML=h;}
                 function rConsolidated(c){let h=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:15px"><button class="btn-main" onclick="openModal('dayRep')" style="background:#0f172a;font-size:10px;margin:0">ДНЕВНОЙ</button><button class="btn-main" onclick="openModal('monthRep')" style="background:#0f172a;font-size:10px;margin:0">МЕСЯЧНЫЙ</button><button class="btn-main" onclick="printConsolidated()" style="background:var(--s);font-size:10px;margin:0">🖨️ ПЕЧАТЬ</button><button class="btn-main" onclick="shareConsolidated()" style="background:#2563eb;font-size:10px;margin:0">📤 ОТПРАВИТЬ</button></div>`;const r={};stockCatsAll.forEach(cat=>{if(data[cat]){Object.values(data[cat]).forEach(v=>{if(v.name){if(!r[cat])r[cat]={};r[cat][v.name]=(r[cat][v.name]||0)+v.amount;}})}});const drawCat=(name,key)=>{if(!r[key])return '';let ch=`<div class="cat-head">${name}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,has=!1;Object.keys(r[key]).sort().forEach(n=>{const v=r[key][n];if(Math.abs(v)>0.1){has=!0;ch+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div></div>`}});ch+='</div>';return has?ch:'';};h+=drawCat('Фасованная продукция','Готовая')+drawCat('Покупная продукция','WeightStock')+drawCat('ДВ вес','Stock_DV')+drawCat('Отходы производства','Stock_Feed')+drawCat('Сырье','Stock_Raw')+drawCat('П/Ф','Stock_Semi');const pk={'Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};Object.keys(pk).forEach(k=>{if(r[k]){let ph=`<div class="cat-head">${pk[k]}</div><div class="item-grid compact-grid" style="grid-template-columns:1fr 1fr">`,hp=!1;Object.keys(r[k]).sort().forEach(n=>{const v=r[k][n];if(Math.abs(v)>0.1){hp=!0;ph+=`<div class="item-card"><div class="item-title">${esc(n)}</div><div class="item-qty ${v>=0?'val-pos':'val-neg'}">${(k==='Пленка'||k==='Скотч 360 грамм')?v.toFixed(2):Math.round(v)}</div></div>`}});ph+='</div>';if(hp)h+=ph;}});if(isAdmin)h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:20px"><button class="btn-main" onclick="openModal('arch')" style="background:red;font-size:10px;padding:8px 2px">СВЕРТЫВАНИЕ</button><button class="btn-main" onclick="openModal('closeMonth')" style="background:orange;color:#000;font-size:10px;padding:8px 2px">ЗАКРЫТЬ МЕС.</button><button class="btn-main" onclick="openModal('invCheck')" style="background:#dc2626;font-size:10px;padding:8px 2px">ПЕРЕУЧЕТ</button></div>`;c.innerHTML=h;}
@@ -3413,6 +3674,17 @@ window.showShipChart = function() {
         <button class="btn-main" id="btnInstallConfirm" style="background:#16a34a; margin:0;">УСТАНОВИТЬ</button>
     </div>
 </div>
+<div id="customDialog" class="modal" style="z-index: 100001;">
+  <div class="modal-box" style="max-width: 300px; text-align: center; padding: 20px;">
+    <div id="dialogMsg" style="font-weight: 900; margin-bottom: 15px; font-size: 14px; color: var(--t);"></div>
+    <input type="text" id="dialogInp" class="fas-inp" style="display: none; margin-bottom: 15px; width: 100%; text-align: center;" />
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <button id="dialogBtnNo" class="btn-main" style="background: #e2e8f0; color: #475569; margin: 0;">ОТМЕНА</button>
+      <button id="dialogBtnYes" class="btn-main" style="background: #16a34a; margin: 0;">ОК</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let deferredPrompt;
 const installPopup = document.getElementById('installPopup');
