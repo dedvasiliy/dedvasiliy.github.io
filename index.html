@@ -1533,8 +1533,8 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.updFasRawList=function(i){const src=gID('fs_'+i).value,sel=gID('fn_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
 
-window.previewFas=function(){
-    const d=gID('fD').value,ds=d.split('-').reverse().join('.'),ts=gID('fTS').value,te=gID('fTE').value,op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
+Window.previewFas=function(){
+    const d=gID('fD')?gID('fD').value:'',ds=d?d.split('-').reverse().join('.'):'',ts=gID('fTS')?gID('fTS').value:'',te=gID('fTE')?gID('fTE').value:'',op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
     const main=[],add=[],out=[];let tRaw=0;
     
     for(let x of gID('fInRows').children){
@@ -1583,7 +1583,7 @@ window.previewFas=function(){
         hAdd+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(x.n)} <span style="color:#64748b;font-size:9px">(${lS[x.s]})</span></span><span>${x.q}${x.s==='Пленка'?'кг':'шт'} <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
     });
 
-    const vz=gID('fVz').value,os=parseFloat(gID('fOs').value)||0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
+    const vz=gID('fVz')?gID('fVz').value:'0',os=gID('fOs')?parseFloat(gID('fOs').value)||0:0,vt=vz.split('+').reduce((a,b)=>a+parseFloat(b)||0,0),fU=Math.max(0,vt-os);
     let mN=out[0].n;if(mN==='Арнаутка 1 1/0.9'||mN==='Арнаутка 2 1/0.9')mN='Арнаутка 1/0.9';
     let pk={};
 
@@ -1740,7 +1740,7 @@ window.previewFas=function(){
             if(thermalUsed>0) u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             if(stretchRolls>0) u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-stretchRolls,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             
-            if(totalCount > 0) {
+            if(typeof totalCount !== 'undefined' && totalCount > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
                 const prodItems = out.map(x => ({n: x.n, a: x.count, p: parseFloat(costPerItem)||0}));
                 u['/ArchIncoming/'+archKey] = { date: d+"T12:00:00Z", supplier: 'Свое производство', num: 'Смена ФАСОВКА ' + ds, type: 'PACK', ts: tsStr, items: prodItems };
