@@ -1533,7 +1533,7 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.updFasRawList=function(i){const src=gID('fs_'+i).value,sel=gID('fn_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
     window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
 
-Window.previewFas=function(){
+window.previewFas=function(){
     const d=gID('fD')?gID('fD').value:'',ds=d?d.split('-').reverse().join('.'):'',ts=gID('fTS')?gID('fTS').value:'',te=gID('fTE')?gID('fTE').value:'',op=getSmartVal('fOp')||'-',as=getSmartVal('fAs')||'-';
     const main=[],add=[],out=[];let tRaw=0;
     
