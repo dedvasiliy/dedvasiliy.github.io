@@ -2120,7 +2120,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
     </div>`);
 }
 
-    window.saveTimesheetBatch = function() {
+        window.saveTimesheetBatch = function() {
         const d = gID('gTD').value;
         const ds = d.split('-').reverse().join('.');
         const cr = [];
@@ -2128,6 +2128,14 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         let previewHtml = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:10px">СМЕНА ЗА ${ds}</div><table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:15px"><tr style="background:#f1f5f9;font-weight:bold;text-align:center"><td>ФИО</td><td>ВРЕМЯ</td><td>СТАТУС / ЗП</td></tr>`;
         
         const wDb = data.Workers || {};
+        let fasCount = 0;
+        
+        // Считаем общее количество пачек на фасовке за эту дату
+        if (data['Фасовка']) Object.values(data['Фасовка']).forEach(f => {
+            if (f.date && f.date.startsWith(d) && f.outputItems) {
+                f.outputItems.forEach(out => fasCount += (parseFloat(out.count) || 0));
+            }
+        });
 
         D.querySelectorAll('#tsRows .ts-row').forEach(r => {
             const k = r.id.split('_')[1];
@@ -2138,8 +2146,8 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             const isAbs = gID('abs_'+k).checked;
             
             if (n) {
-                let rt = 0;
-                Object.values(wDb).forEach(w => { if(w.name === n) rt = parseFloat(w.defRate) || 0; });
+                let rt = 0, dRt = 0, fRt = 0;
+                Object.values(wDb).forEach(w => { if(w.name === n) { rt = parseFloat(w.defRate)||0; dRt = parseFloat(w.dayRate)||0; fRt = parseFloat(w.fasRate)||0; } });
 
                 let status = '';
                 let hrs = 0;
@@ -2147,18 +2155,34 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                 
                 if (isAbs) {
                     status = '<span style="color:#dc2626;font-weight:bold">Н/Я (Пропуск)</span>';
-                } else if (rt > 0 || b > 0) {
+                } else {
                     const [sH, sM] = s.split(':').map(Number);
                     const [eH, eM] = e.split(':').map(Number);
                     hrs = (eH + eM/60) - (sH + sM/60);
                     if(hrs < 0) hrs += 24;
-                    pay = Math.round(hrs * rt) + b;
-                    totalZp += pay;
                     
-                    let bHtml = b > 0 ? ` <span style="color:#d97706;font-size:10px;font-weight:bold">(+${b})</span>` : '';
-                    status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <span style="font-size:9px;color:#64748b">(${hrs.toFixed(1)}ч)</span>`;
-                } else {
-                    status = '<span style="color:#94a3b8">0 грн (нет тарифа)</span>';
+                    let calcDet = '';
+                    if (fRt > 0 || dRt > 0) {
+                        if (fasCount > 0 && fRt > 0) {
+                            pay = parseFloat((fasCount * fRt).toFixed(2));
+                            calcDet = `Фас: ${fasCount}шт × ${fRt}₴`;
+                        } else if (dRt > 0) {
+                            pay = dRt;
+                            calcDet = `Ставка: ${dRt}₴/день`;
+                        } else { pay = Math.round(hrs * rt); }
+                    } else if (rt > 0) {
+                        pay = Math.round(hrs * rt);
+                    }
+                    
+                    pay += b;
+                    
+                    if (pay > 0 || b > 0) {
+                        totalZp += pay;
+                        let bHtml = b > 0 ? ` <span style="color:#d97706;font-size:10px;font-weight:bold">(+${b})</span>` : '';
+                        status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <br><span style="font-size:9px;color:#64748b">${calcDet || hrs.toFixed(1)+'ч'}</span>`;
+                    } else {
+                        status = '<span style="color:#94a3b8">0 грн (нет тарифа)</span>';
+                    }
                 }
                 
                 cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1)});
@@ -2596,8 +2620,12 @@ window.calcFinances = async function() {
                 }
             });
             
+            let mRt = 0;
+            if (data.Workers) Object.values(data.Workers).forEach(wk => { if(wk.name === name) mRt = parseFloat(wk.monthRate) || 0; });
+            
+            totalZp = parseFloat(totalZp.toFixed(2));
             let calcAdv = Math.round((earned1to15 * 0.8) / 1000) * 1000;
-            let remZp = totalZp - advanceAmt - salaryAmt;
+            let remZp = parseFloat((totalZp + mRt - advanceAmt - salaryAmt).toFixed(2));
 
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
             
@@ -2685,6 +2713,11 @@ window.calcFinances = async function() {
                 <div style="color:#475569;font-size:10px;margin-bottom:4px;text-transform:uppercase;">ФИНАНСЫ ЗА ПЕРИОД</div>
                 <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
                     <span>Заработано (смен: ${totalShifts}):</span> <span style="color:#059669">${totalZp} ₴</span>
+                </div>
+                ${mRt > 0 ? `<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Ставка за месяц:</span> <span style="color:#059669">${mRt} ₴</span>
+                </div>` : ''}
+
                 </div>
                 <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
                     <span>Выдан аванс:</span> <span style="color:#2563eb">${advanceAmt} ₴</span>
@@ -2870,10 +2903,13 @@ window.calcFinances = async function() {
         };
 
         window.openWorkersMgmt = function() {
-            let h = `<div style="margin-bottom:15px;display:flex;gap:5px;">
-                <input type="text" id="newWorkerName" placeholder="Имя..." class="fas-inp" style="flex:2;">
-                <input type="number" id="newWorkerRate" placeholder="Тариф ₴/час" class="fas-inp" style="flex:1;">
-                <button class="btn-main" style="width:auto;margin:0;padding:0 15px;" onclick="addWorker()">ДОБАВИТЬ</button>
+            let h = `<div style="margin-bottom:15px;display:flex;flex-wrap:wrap;gap:5px;">
+                <input type="text" id="newWorkerName" placeholder="Имя..." class="fas-inp" style="flex:1;min-width:100px;">
+                <input type="number" id="newWorkerRate" placeholder="₴/час" class="fas-inp" style="flex:1;min-width:60px;">
+                <input type="number" id="newWorkerDay" placeholder="₴/день" class="fas-inp" style="flex:1;min-width:60px;">
+                <input type="number" id="newWorkerFas" placeholder="₴/шт(фас)" class="fas-inp" style="flex:1;min-width:60px;">
+                <input type="number" id="newWorkerMonth" placeholder="₴/мес" class="fas-inp" style="flex:1;min-width:60px;">
+                <button class="btn-main" style="width:100%;margin:0;" onclick="addWorker()">ДОБАВИТЬ</button>
             </div>
             <div id="workersList"></div>`;
             gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
@@ -2889,11 +2925,13 @@ window.calcFinances = async function() {
             const w = data.Workers || {};
             let h = '';
             Object.keys(w).sort((a,b) => (w[a].name||'').localeCompare(w[b].name||'')).forEach(k => {
-                const rt = w[k].defRate || 0;
+                const rt = w[k].defRate || 0, dRt = w[k].dayRate || 0, fRt = w[k].fasRate || 0, mRt = w[k].monthRate || 0;
+                let inf = [];
+                if(rt) inf.push(`${rt}₴/ч`); if(dRt) inf.push(`${dRt}₴/д`); if(fRt) inf.push(`${fRt}₴/шт`); if(mRt) inf.push(`${mRt}₴/мес`);
                 h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:4px;">
-                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)} <span style="color:#059669;font-size:11px">(${rt} ₴/ч)</span></div>
+                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)} <div style="color:#059669;font-size:9px">${inf.join(' | ')}</div></div>
                     <div style="display:flex;gap:5px;">
-                        <button style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="editWorkerRate('${k}', '${rt}')">ТАРИФ</button>
+                        <button style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="editWorkerRates('${k}', '${rt}', '${dRt}', '${fRt}', '${mRt}')">ТАРИФЫ</button>
                         <button style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="delWorker('${k}')">УДАЛИТЬ</button>
                     </div>
                 </div>`;
@@ -2904,24 +2942,33 @@ window.calcFinances = async function() {
         window.addWorker = async function() {
             const n = gID('newWorkerName').value.trim();
             const r = parseFloat(gID('newWorkerRate').value) || 0;
+            const dr = parseFloat(gID('newWorkerDay').value) || 0;
+            const fr = parseFloat(gID('newWorkerFas').value) || 0;
+            const mr = parseFloat(gID('newWorkerMonth').value) || 0;
             if(!n) return;
             showLoad();
             try {
-                await db.child('Workers').push({ name: n, defRate: r });
-                gID('newWorkerName').value = '';
-                gID('newWorkerRate').value = '';
+                await db.child('Workers').push({ name: n, defRate: r, dayRate: dr, fasRate: fr, monthRate: mr });
+                openWorkersMgmt(); 
                 hideLoad();
             } catch(e) { hideLoad(); alert(e); }
         };
 
-        window.editWorkerRate = async function(id, oldRate) {
-            const nr = prompt('Введите новый тариф (₴/час):', oldRate);
-            if(nr === null) return;
-            const r = parseFloat(nr.replace(',', '.')) || 0;
+        window.editWorkerRates = async function(id, rt, drt, frt, mrt) {
+            const nrt = prompt('Часовая ставка (₴/час):', rt) || 0; if(nrt===null) return;
+            const ndrt = prompt('Дневная ставка (₴/день):', drt) || 0; if(ndrt===null) return;
+            const nfrt = prompt('Сдельная за фасовку (₴/шт):', frt) || 0; if(nfrt===null) return;
+            const nmrt = prompt('Фиксированная ставка за месяц (₴/мес):', mrt) || 0; if(nmrt===null) return;
             showLoad();
             try {
-                await db.child('Workers/' + id).update({ defRate: r });
+                await db.child('Workers/' + id).update({ 
+                    defRate: parseFloat(String(nrt).replace(',', '.')) || 0,
+                    dayRate: parseFloat(String(ndrt).replace(',', '.')) || 0,
+                    fasRate: parseFloat(String(nfrt).replace(',', '.')) || 0,
+                    monthRate: parseFloat(String(nmrt).replace(',', '.')) || 0
+                });
                 hideLoad();
+                renderWorkersList();
             } catch(e) { hideLoad(); alert(e); }
         };
 
