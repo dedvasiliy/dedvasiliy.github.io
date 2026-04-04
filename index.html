@@ -2241,119 +2241,151 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         }
     };
 
-    window.printTsList = function() {
-        const d = data.Timesheet || {};
-        const wDb = data.Workers || {};
-        const pDb = data.Payouts || {};
-        
-        const dObj = new Date();
-        let year = dObj.getFullYear();
-        let month = dObj.getMonth();
-        if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
+            window.printTsList = function() {
+            const d = data.Timesheet || {};
+            const wDb = data.Workers || {};
+            const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
+            
+            const dObj = new Date();
+            let year = dObj.getFullYear();
+            let month = dObj.getMonth();
+            if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
 
-        const daysToRender = [];
-        if (year === 2026 && month === 2) { 
-            for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
-        } else if (year === 2026 && month === 3) { 
-            for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
-            for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
-        } else {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
-        }
-        
-        let minD = daysToRender[0].split('-').reverse().join('.');
-        let maxD = daysToRender[daysToRender.length-1].split('-').reverse().join('.');
-        let periodStr = `${minD} - ${maxD}`;
-
-        let payoutsForMonth = {};
-        Object.values(pDb).forEach(p => {
-            if (!p.date || !daysToRender.includes(p.date)) return;
-            if (!payoutsForMonth[p.name]) payoutsForMonth[p.name] = { adv: 0, sal: 0 };
-            if (p.type === 'Аванс') payoutsForMonth[p.name].adv += parseFloat(p.amount) || 0;
-            if (p.type === 'Зарплата') payoutsForMonth[p.name].sal += parseFloat(p.amount) || 0;
-        });
-
-        let wData = {};
-        Object.values(wDb).forEach(bw => {
-            if(bw.name) {
-                wData[bw.name] = {
-                    defRate: parseFloat(bw.defRate)||0,
-                    shifts: [],
-                    totalZp: 0,
-                    totalHrs: 0
-                };
+            const daysToRender = [];
+            if (year === 2026 && month === 2) { 
+                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+            } else if (year === 2026 && month === 3) { 
+                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+            } else {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
             }
-        });
+            
+            let minD = daysToRender[0].split('-').reverse().join('.');
+            let maxD = daysToRender[daysToRender.length-1].split('-').reverse().join('.');
+            let periodStr = `${minD} - ${maxD}`;
 
-        Object.values(d).forEach(v => {
-            if(v.name && daysToRender.includes(v.date) && !v.isPayout) {
-                if(!wData[v.name]) wData[v.name] = { defRate:0, shifts:[], totalZp:0, totalHrs:0 };
-                
-                let pay = parseFloat(v.rate) || 0;
-                let hrs = parseFloat(v.hours) || 0;
-                let fDate = v.date.split('-').reverse().slice(0,2).join('.');
-                
-                wData[v.name].totalZp += pay;
-                wData[v.name].totalHrs += hrs;
-                wData[v.name].shifts.push({ d: fDate, s: v.start, e: v.end, pay: pay });
+            let wData = {};
+            Object.values(wDb).forEach(bw => {
+                if(bw.name) {
+                    let b = getBase(bw.name);
+                    let isSub = b !== bw.name;
+                    if(!wData[b]) wData[b] = { mainRate: 0, subRate: 0, shiftsByDate: {}, mainSum: 0, mainHrs: 0, subSum: 0, subHrs: 0, adv: 0, uniqueDays: new Set() };
+                    if(isSub) {
+                        if(parseFloat(bw.defRate) > wData[b].subRate) wData[b].subRate = parseFloat(bw.defRate);
+                    } else {
+                        if(parseFloat(bw.defRate) > wData[b].mainRate) wData[b].mainRate = parseFloat(bw.defRate);
+                    }
+                }
+            });
+
+            Object.values(d).forEach(v => {
+                if(v.name && daysToRender.includes(v.date)) {
+                    let b = getBase(v.name);
+                    let isSub = b !== v.name;
+                    if(!wData[b]) wData[b] = { mainRate: 0, subRate: 0, shiftsByDate: {}, mainSum: 0, mainHrs: 0, subSum: 0, subHrs: 0, adv: 0, uniqueDays: new Set() };
+                    
+                    if (v.isPayout) {
+                        wData[b].adv += parseFloat(v.payoutAmount) || 0;
+                    } else {
+                        let pay = parseFloat(v.rate) || 0;
+                        let hrs = parseFloat(v.hours) || 0;
+                        let fDate = v.date.split('-').reverse().slice(0,2).join('.');
+                        
+                        if (!wData[b].shiftsByDate[fDate]) wData[b].shiftsByDate[fDate] = [];
+                        wData[b].shiftsByDate[fDate].push({ isSub: isSub, s: v.start, e: v.end, pay: pay });
+                        
+                        wData[b].uniqueDays.add(v.date);
+                        
+                        if (isSub) {
+                            wData[b].subSum += pay;
+                            wData[b].subHrs += hrs;
+                        } else {
+                            wData[b].mainSum += pay;
+                            wData[b].mainHrs += hrs;
+                        }
+                    }
+                }
+            });
+
+            let activeWorkers = Object.keys(wData).filter(n => Object.keys(wData[n].shiftsByDate).length > 0).sort();
+
+            let h = `<div style="font-family: sans-serif; font-size: 10px; color: #000; background: #fff; line-height: 1.2; padding: 5px;">`;
+            h += `<h3 style="text-align:center; font-size: 14px; margin-bottom: 15px;">Табель начисления ${periodStr}</h3>`;
+
+            if(activeWorkers.length === 0) {
+                h += `<div style="text-align:center;">Нет данных за период</div></div>`;
+                gID('print-view').innerHTML = h;
+                window.print();
+                setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
+                return;
             }
-        });
 
-        let activeWorkers = Object.keys(wData).filter(n => wData[n].shifts.length > 0).sort();
+            h += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">`;
 
-        let h = `<div style="font-family: sans-serif; font-size: 10px; color: #000; background: #fff; line-height: 1.2; padding: 5px;">`;
-        h += `<h3 style="text-align:center; font-size: 14px; margin-bottom: 15px;">Табель начисления ${periodStr}</h3>`;
+            activeWorkers.forEach(w => {
+                let wd = wData[w];
+                let toPay = parseFloat((wd.mainSum + wd.subSum - wd.adv).toFixed(2));
+                
+                // Автоматический расчет тарифа, если его нет в базе сотрудников, но часы и сумма есть
+                let actualMainRate = wd.mainRate > 0 ? wd.mainRate : (wd.mainHrs > 0 ? parseFloat((wd.mainSum / wd.mainHrs).toFixed(2)) : 0);
+                let actualSubRate = wd.subRate > 0 ? wd.subRate : (wd.subHrs > 0 ? parseFloat((wd.subSum / wd.subHrs).toFixed(2)) : 0);
 
-        if(activeWorkers.length === 0) {
-            h += `<div style="text-align:center;">Нет данных за период</div></div>`;
+                h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
+                h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
+                
+                let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
+                    let [dA, mA] = a.split('.');
+                    let [dB, mB] = b.split('.');
+                    if (mA !== mB) return mA - mB;
+                    return dA - dB;
+                });
+
+                sortedDates.forEach(dateStr => {
+                    let dayShifts = wd.shiftsByDate[dateStr];
+                    // Сначала выводим основную смену, под ней - подработку
+                    dayShifts.sort((s1, s2) => (s1.isSub === s2.isSub) ? 0 : s1.isSub ? 1 : -1);
+                    
+                    dayShifts.forEach((sh, idx) => {
+                        // Показываем дату только для первой записи в дне
+                        let dLabel = idx === 0 ? dateStr : '<span style="color:transparent">00.00</span>';
+                        h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                <span style="display:inline-block; width: 35px;">${dLabel}</span>
+                                <span style="flex:1; text-align:left; margin-left: 5px;">${sh.s}-${sh.e}</span>
+                                <span>${parseFloat(sh.pay.toFixed(2))} грн</span>
+                              </div>`;
+                    });
+                });
+
+                h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
+                h += `<div style="display:flex; justify-content:space-between;"><span>Количество смен</span> <span><b>${wd.uniqueDays.size}</b></span></div>`;
+                h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество часов</span> <span><b>${parseFloat(wd.mainHrs.toFixed(1))}</b></span></div>`;
+                h += `<div style="display:flex; justify-content:space-between;"><span>Тариф</span> <span><b>${actualMainRate} грн/час</b></span></div>`;
+                
+                if (wd.subHrs > 0 || wd.subSum > 0) {
+                    h += `<div style="display:flex; justify-content:space-between;"><span>Подработка</span> <span><b>${parseFloat(wd.subHrs.toFixed(1))} часов</b></span></div>`;
+                    h += `<div style="display:flex; justify-content:space-between;"><span>Тариф (подработка)</span> <span><b>${actualSubRate} грн/час</b></span></div>`;
+                }
+
+                h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
+                h += `<div style="display:flex; justify-content:space-between;"><span>Всего заработано:</span> <span><b>${parseFloat(wd.mainSum.toFixed(2))} грн</b></span></div>`;
+                
+                if (wd.subSum > 0) {
+                    h += `<div style="display:flex; justify-content:space-between;"><span>Подработка:</span> <span><b>${parseFloat(wd.subSum.toFixed(2))} грн</b></span></div>`;
+                }
+                
+                h += `<div style="display:flex; justify-content:space-between;"><span>Аванс:</span> <span><b>${wd.adv} грн</b></span></div>`;
+                h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 6px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay} грн</span></div>`;
+                h += `</div></div>`; 
+            });
+
+            h += `</div></div>`;
+            
             gID('print-view').innerHTML = h;
             window.print();
             setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
-            return;
-        }
-
-        // Вывод сеткой по 4 колонки
-        h += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">`;
-
-        activeWorkers.forEach(w => {
-            let wd = wData[w];
-            wd.shifts.sort((a,b) => a.d.localeCompare(b.d));
-            
-            let adv = payoutsForMonth[w] ? (payoutsForMonth[w].adv + payoutsForMonth[w].sal) : 0;
-            let toPay = parseFloat((wd.totalZp - adv).toFixed(2));
-
-            h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
-            h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
-            
-            // Список смен
-            wd.shifts.forEach(sh => {
-                h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                        <span>${sh.d} ${sh.s}-${sh.e}</span>
-                        <span>${sh.pay} грн</span>
-                      </div>`;
-            });
-
-            // Общий итог (по новому шаблону)
-            h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
-            h += `<div style="display:flex; justify-content:space-between;"><span>Количество смен</span> <span><b>${wd.shifts.length}</b></span></div>`;
-            h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество часов</span> <span><b>${parseFloat(wd.totalHrs.toFixed(1))}</b></span></div>`;
-            h += `<div style="display:flex; justify-content:space-between;"><span>Тариф</span> <span><b>${wd.defRate} грн/час</b></span></div>`;
-            h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
-            h += `<div style="display:flex; justify-content:space-between;"><span>Всего заработано:</span> <span><b>${wd.totalZp} грн</b></span></div>`;
-            h += `<div style="display:flex; justify-content:space-between;"><span>Аванс:</span> <span><b>${adv} грн</b></span></div>`;
-            h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 6px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay} грн</span></div>`;
-            h += `</div>`; 
-
-            h += `</div>`; 
-        });
-
-        h += `</div></div>`;
-        
-        gID('print-view').innerHTML = h;
-        window.print();
-        setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
-    };
+        };
 
 window.calcFinances = async function() {
     const dFrom = gID('finFrom').value;
