@@ -2505,10 +2505,13 @@ window.calcFinances = async function() {
     }
 };
 
-                window.renderTsList = function(c){
+        window.renderTsList = function(c){
             const d = data.Timesheet || {};
             const dbW = data.Workers || {};
             const w = {};
+            
+            // Функция, которая отбрасывает цифру в конце имени (Петя2 -> Петя)
+            const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
             
             const dObj = new Date();
             let year = dObj.getFullYear();
@@ -2527,15 +2530,21 @@ window.calcFinances = async function() {
             }
             
             Object.values(dbW).forEach(bw => {
-                if(bw.name) w[bw.name] = {t:0, s:0, mRt: parseFloat(bw.monthRate)||0};
+                if(bw.name){
+                    let b = getBase(bw.name);
+                    if(!w[b]) w[b] = {t:0, s:0, mRt: 0}; 
+                    let mRt = parseFloat(bw.monthRate)||0;
+                    if(mRt > w[b].mRt) w[b].mRt = mRt;
+                }
             });
 
             Object.entries(d).forEach(([k,v]) => {
                 if(v.name){
-                    if(!w[v.name]) w[v.name] = {t:0,s:0,mRt:0}; 
+                    let b = getBase(v.name);
+                    if(!w[b]) w[b] = {t:0,s:0,mRt:0}; 
                     if(daysToRender.includes(v.date) && !v.isPayout){
-                        w[v.name].t += parseFloat(v.rate) || 0;
-                        w[v.name].s += 1;
+                        w[b].t += parseFloat(v.rate) || 0;
+                        w[b].s += 1;
                     }
                 }
             });
