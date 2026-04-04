@@ -137,9 +137,6 @@ input:focus,select:focus{border-color:var(--p);background:#f8fafc;outline:2px so
 @media(min-width:800px){body,.bottom-nav,#lockScreen{max-width:450px;margin:0 auto;left:0;right:0;transform:none} .modal-box{max-width:1150px}}
 .spinner { width: 50px; height: 50px; border: 5px solid #f8fafc; border-top: 5px solid var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin: auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-...
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
 /* ВСТАВЛЯТЬ СЮДА */
 #toast-container {
   position: fixed;
@@ -178,9 +175,6 @@ body.dark-theme .toast-msg {
   to { opacity: 0; transform: translateY(-10px); }
 }
 /* КОНЕЦ ВСТАВКИ */
-
-</style>
-
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4338ca">
@@ -1424,8 +1418,6 @@ else if(t==='regOut'){
     };
 
     window.backToIncBuilder=function(){gID('incPreview').style.display='none';gID('incBuilder').style.display='block';gID('mT').innerText='ПРИХОД НА СКЛАД';};
-
-    window.backToIncBuilder=function(){gID('incPreview').style.display='none';gID('incBuilder').style.display='block';gID('mT').innerText='ПРИХОД (ПОКУПНАЯ)';};
         window.previewRaw=function(){const d=gID('rD').value,s=getSmartVal('rSupp'),nm=gID('rNum').value,dop=parseFloat(gID('rDop').value)||0;if(!s||!nm)return alert('Заполните поставщика и номер накладной');saveRawDraft();const itms=[];let tw=0;let tsBase=0;const dtObj=new Date(d),dStr=dtObj.getDate().toString().padStart(2,'0')+'.'+(dtObj.getMonth()+1).toString().padStart(2,'0')+'.'+dtObj.getFullYear();const sr=data['Stock_Raw']||{};const existingBals={};Object.values(sr).forEach(v=>{if(v.name)existingBals[v.name]=(existingBals[v.name]||0)+v.amount;});const existingNames=new Set();Object.keys(existingBals).forEach(k=>{if(existingBals[k]>0.01)existingNames.add(k);});for(let x of gID('rawRows').children){const i=x.id.split('_')[1];let n=gID('rNn_'+i).value;const a=parseFloat(gID('rNa_'+i).value);const p=parseFloat(gID('rNp_'+i).value)||0;if(n&&a>0){let rawBase=n.replace(/\s\[.*?\](.*)?$/,'').trim();let baseName=`${rawBase} [${s}]`;if(existingNames.has(baseName)){if(!confirm(`На складе уже есть папка '${baseName}'. Добавить вес в неё?\n(ОК - добавить, Отмена - создать новую с датой)`)){baseName=`${baseName} ${dStr}`;}}itms.push({n:baseName,a,pBase:p});tw+=a;tsBase+=(a*p);}}if(!itms.length)return alert('Добавьте сырье с весом');let dopPerKg=tw>0?(dop/tw):0;let tsTotal=0;itms.forEach(x=>{x.p=x.pBase+dopPerKg;x.s=x.a*x.p;tsTotal+=x.s;});let h=`<div style="text-align:center"><b>ПРИХОД СЫРЬЯ</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}<br><b>Доп. расходы:</b> ${dop.toFixed(2)} грн (размазано по +${dopPerKg.toFixed(2)} грн/кг)</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ (ПАПКА)</td><td style="text-align:center">ВЕС</td><td style="text-align:center">ИТОГ. ЦЕНА</td><td style="text-align:center">СУММА</td></tr>`;itms.forEach(x=>{h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?x.p.toFixed(2):'-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p>0?x.s.toFixed(2):'-'}</td></tr>`});h+=`<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal>0?tsTotal.toFixed(2):''}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToRawBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sRawInc()" style="margin:0">СОХРАНИТЬ</button></div>`;window.tempRawData={d,s,nm,itms,dop};gID('rawBuilder').style.display='none';gID('rawPreview').innerHTML=h;gID('rawPreview').style.display='block';gID('mT').innerText='ПРОВЕРКА';};
 
     window.backToRawBuilder=function(){gID('rawPreview').style.display='none';gID('rawBuilder').style.display='block';gID('mT').innerText='ПРИХОД СЫРЬЯ';};
@@ -3935,126 +3927,6 @@ window.viewRegOut = function() {
     gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА';
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
-
-window.openMassAdvance = function() {
-    const dObj = new Date();
-    let y = dObj.getFullYear();
-    let m = dObj.getMonth();
-    
-    // Определяем дату X (13, 14 или 15)
-    let targetDate = 15;
-    let checkD = new Date(y, m, targetDate);
-    if (checkD.getDay() === 6) targetDate = 14; // Суббота -> Пятница
-    if (checkD.getDay() === 0) targetDate = 13; // Воскресенье -> Пятница
-    
-    const monthStr = String(m + 1).padStart(2, '0');
-    const maxDateStr = `${y}-${monthStr}-${String(targetDate).padStart(2, '0')}`;
-    const minDateStr = `${y}-${monthStr}-01`;
-    const monthKey = `${y}-${monthStr}`;
-
-    const ts = data.Timesheet || {};
-    let earnings = {};
-    
-    const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
-    
-    // Считаем заработок с 1 по дату X
-    Object.values(ts).forEach(v => {
-        if (v.name && !v.isPayout && v.date >= minDateStr && v.date <= maxDateStr) {
-            let b = getBase(v.name);
-            earnings[b] = (earnings[b] || 0) + (parseFloat(v.rate) || 0);
-        }
-    });
-    
-    let rowsHtml = '';
-    let totalAdv = 0;
-    
-    Object.keys(earnings).sort().forEach(name => {
-        let earned = earnings[name];
-        let adv = Math.round((earned * 0.8) / 1000) * 1000;
-        if (adv > 0) {
-            rowsHtml += `<div class="fas-row-out" style="grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
-                <div style="font-weight:900; font-size:13px; color:#0f172a">${esc(name)}</div>
-                <input type="number" class="fas-inp adv-inp" data-name="${esc(name)}" value="${adv}" oninput="calcMassAdvTotal()" style="font-weight:bold;text-align:center;font-size:14px;">
-                <button onclick="this.parentElement.remove(); calcMassAdvTotal();" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
-            </div>`;
-            totalAdv += adv;
-        }
-    });
-    
-    if (!rowsHtml) rowsHtml = '<div style="text-align:center;padding:10px;font-weight:bold;color:#64748b;">Нет данных для расчета (с 1 числа)</div>';
-    
-    let h = `<div style="margin-bottom:15px; font-size:11px; color:#64748b; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
-        <b>Период:</b> 01.${monthStr}.${y} — ${String(targetDate).padStart(2,'0')}.${monthStr}.${y}<br>
-        <b>Алгоритм:</b> 80% от заработанного, округление до тысяч.
-    </div>
-    <div id="mAdvRows" style="max-height:50vh; overflow-y:auto; margin-bottom:10px; padding-right:5px;">${rowsHtml}</div>
-    <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
-        ОБЩАЯ СУММА: <span id="mAdvTotal" style="color:#dc2626">${totalAdv}</span> грн
-    </div>
-    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">ВЫДАТЬ АВАНС ВСЕМ</button>`;
-    
-    gID('mT').innerText = 'МАССОВЫЙ АВАНС';
-    gID('mB').innerHTML = h;
-    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
-    gID('mdl').style.display = 'flex';
-};
-
-window.calcMassAdvTotal = function() {
-    let total = 0;
-    document.querySelectorAll('#mAdvRows .adv-inp').forEach(inp => {
-        total += parseFloat(inp.value) || 0;
-    });
-    let el = document.getElementById('mAdvTotal');
-    if (el) el.innerText = total;
-};
-
-window.saveMassAdvance = async function(monthKey) {
-    const inputs = document.querySelectorAll('#mAdvRows .adv-inp');
-    if (inputs.length === 0) return alert('Список пуст');
-    
-    let dObj = new Date();
-    let payoutDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
-    
-    if (!confirm('Записать авансы в табель датой: ' + payoutDate.split('-').reverse().join('.') + '?')) return;
-    
-    showLoad();
-    try {
-        const u = {};
-        const tsStr = new Date().toISOString();
-        
-        inputs.forEach(inp => {
-            let amt = parseFloat(inp.value) || 0;
-            let name = inp.dataset.name;
-            if (amt > 0 && name) {
-                let k = db.child('Timesheet').push().key;
-                u['/Timesheet/' + k] = {
-                    date: payoutDate,
-                    name: name,
-                    isPayout: true,
-                    payoutType: 'Аванс',
-                    payoutAmount: amt,
-                    forMonth: monthKey,
-                    ts: tsStr,
-                    note: 'Массовый аванс'
-                };
-            }
-        });
-        
-        if (Object.keys(u).length > 0) {
-            await db.update(u);
-            hideLoad();
-            closeModal();
-            alert('Авансы успешно записаны!');
-            renderTsList(gID('cnt')); // Обновляем экран табеля
-        } else {
-            hideLoad();
-            alert('Нет сумм для сохранения');
-        }
-    } catch (e) {
-        hideLoad();
-        alert(e.message);
-    }
-};
 window.openMassAdvance = function() {
     const dObj = new Date();
     let y = dObj.getFullYear();
@@ -4107,7 +3979,7 @@ window.openMassAdvance = function() {
     <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
         ОБЩАЯ СУММА: <span id="mAdvTotal" style="color:#dc2626">${totalAdv}</span> грн
     </div>
-    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">СОХРАНИТЬ И ВЫДАТЬ ВСЕМ</button>`;
+    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">ВЫДАТЬ АВАНС ВСЕМ</button>`;
     
     gID('mT').innerText = 'МАССОВЫЙ АВАНС';
     gID('mB').innerHTML = h;
@@ -4165,6 +4037,7 @@ window.saveMassAdvance = async function(monthKey) {
             hideLoad();
             closeModal();
             alert('Авансы успешно записаны!');
+            if (typeof renderTsList === 'function' && gID('cnt')) renderTsList(gID('cnt'));
         } else {
             hideLoad();
             alert('Нет сумм для сохранения');
@@ -4174,6 +4047,5 @@ window.saveMassAdvance = async function(monthKey) {
         alert(e.message);
     }
 };
-
 </script>
 </body></html>
