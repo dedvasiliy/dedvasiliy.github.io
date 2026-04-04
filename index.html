@@ -510,22 +510,24 @@ function renderHome(){
  if(!isLogged)return;
  cur='Home';D.body.classList.remove('nav-active');gID('act').innerHTML='';
  const adm=isAdmin?`<button onclick="tryAdmin()" class="btn-top btn-adm-on">АДМИН ВКЛ</button>`:`<button onclick="tryAdmin()" class="btn-top btn-adm-off">АДМИН</button>`;
- 
- const currentVer = 796;
- const lastRead = parseInt(localStorage.getItem('lastReadVer')) || 0;
- const isNew = currentVer > lastRead;
-
- const ver=`<div class="ver-info ${isNew ? 'alarm-blink' : ''}" onclick="localStorage.setItem('lastReadVer', '${currentVer}'); openModal('changelog'); renderHome();" style="cursor:pointer; background:#fff; border:1px solid #cbd5e1; padding:4px 6px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align:center;">
-  <span style="color:${isNew ? '#b91c1c' : 'var(--p)'}; font-size:10px; font-weight:900">v ${currentVer} ℹ️</span><br>
-  <span style="font-size:9px; color:${isNew ? '#b91c1c' : '#d97706'}; font-weight:900">${isNew ? '🔥 ОБНОВЛЕНИЕ' : 'ЧТО НОВОГО?'}</span><br>
-  <span style="font-size:8px; color:#94a3b8; font-weight:normal;">${document.lastModified}</span>
+  const ver=`<div class="ver-info" style="background:#fff; border:1px solid #cbd5e1; padding:4px 6px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align:center;">
+  <span style="color:var(--p); font-size:9px; font-weight:900">ОБНОВЛЕНО:</span><br>
+  <span style="font-size:8px; color:#94a3b8; font-weight:bold;">${document.lastModified}</span>
  </div>`;
 
- gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
- <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
-  <div style="text-align:center;margin-bottom:10px;"><span onclick="downloadShadowBackup()" style="font-size:10px;font-weight:900;color:#047857;background:#ecfdf5;padding:4px 8px;border-radius:6px;border:1px solid #a7f3d0;cursor:pointer;">💾 БЭКАП: <span id="backupTimeDisplay">${localStorage.getItem('shadowBackupTime')||'Создается...'}</span></span></div>
+          const dObj = new Date();
+         let tgt = 15;
+         let chk = new Date(dObj.getFullYear(), dObj.getMonth(), tgt);
+         if (chk.getDay() === 6) tgt = 14;
+         if (chk.getDay() === 0) tgt = 13;
+         let advBtn = (dObj.getDate() === tgt) ? `<button class="btn-main alarm-blink" onclick="openMassAdvance()" style="background:#10b981;margin-bottom:15px;font-size:14px;padding:15px;border:2px solid #059669!important;color:#fff!important;">💸 СЕГОДНЯ ДЕНЬ АВАНСА.<br>СФОРМИРОВАТЬ СПИСОК?</button>` : '';
 
- <div class="dash-grid">
+         gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
+         <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
+          <div style="text-align:center;margin-bottom:10px;"><span onclick="downloadShadowBackup()" style="font-size:10px;font-weight:900;color:#047857;background:#ecfdf5;padding:4px 8px;border-radius:6px;border:1px solid #a7f3d0;cursor:pointer;">💾 БЭКАП: <span id="backupTimeDisplay">${localStorage.getItem('shadowBackupTime')||'Создается...'}</span></span></div>
+         ${advBtn}
+         <div class="dash-grid">
+
   <div class="dash-item" onclick="setCat('StockRoot')"><span>📂 СКЛАД</span></div>
   <div class="dash-item" onclick="setCat('ProdSub')"><span>🛠️ ПРОИЗВОДСТВО</span></div>
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
@@ -1243,100 +1245,6 @@ else if(t==='regOut'){
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
           else if(t==='invCheck'){h.innerText='ФИКСАЦИЯ ПЕРЕУЧЕТА';m.innerHTML=`<div>ДАТА <input type="date" id="invCheckDate" value="${d}"></div><button class="btn-main" onclick="runInvCheck()" style="background:#dc2626">ЗАФИКСИРОВАТЬ</button>`}
-
-          else if(t==='changelog'){
-      h.innerText='ИСТОРИЯ ОБНОВЛЕНИЙ';
-      m.innerHTML=`
-            <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 796 (20.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>🔥 <b>ГЛОБАЛЬНОЕ ОБНОВЛЕНИЕ: УМНАЯ СЕБЕСТОИМОСТЬ!</b></li>
-  <li>В "Настройках" добавлен пульт <b>"СЕБЕСТОИМОСТЬ"</b>. Здесь вы можете задать тарифы на свет, зарплаты сменам, % усушки/пыли и цены на отходы.</li>
-  <li>Теперь при закрытии смены в <b>Цехах</b> система сама собирает все затраты (сырье, упаковка, электроэнергия, ЗП) минус заработок с отходов, и выдает точную себестоимость 1 кг продукции.</li>
-  <li>На <b>Фасовке</b> появился свой финансовый калькулятор: он сводит стоимость ДВ-веса, пакетов, пленки, скотча и выдает чистую себестоимость 1 готовой пачки.</li>
-  <li>Цены автоматически "перетекают" по цепочке: от закупки сырья до отгрузки клиенту!</li>
-  <li>Исправлен баг с открытием папки "Упаковка".</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 795 (20.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>В «Реестре отгрузок» добавлена кнопка <b>«ПРОСМОТР»</b>.</li>
-  <li>Теперь любой сформированный отчет (по клиентам, товарам или датам) можно удобно изучать прямо на экране телефона или ПК, без необходимости сразу отправлять его на печать.</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 794 (19.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Полностью переработан <b>"РЕЕСТР ОТГРУЗОК"</b>. Теперь это мощный инструмент для аналитики продаж!</li>
-  <li>Добавлены гибкие фильтры: формируйте отчеты по <b>конкретному клиенту</b> или <b>конкретному товару</b> за любой период.</li>
-  <li>Появился выбор формата печати: от краткого списка накладных до детальной расшифровки с группировкой по дням, клиентам или позициям.</li>
-  <li>В детальном отчете добавлена колонка с <b>ценой</b> товара, а сами продажи теперь визуально разделены на удобные блоки по каждой накладной с подсчетом промежуточных итогов.</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 793 (17.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>На главный экран добавлена новая папка <b>"АНАЛИТИКА"</b> для визуального контроля показателей.</li>
-  <li>Кнопка смены темы перенесена в раздел "НАСТРОЙКИ", чтобы сделать меню логичнее.</li>
-  <li>В Аналитике появились столбчатые графики выработки цехов (Крупорушка, ЗШМ, Вибростол). Теперь можно наглядно сравнить затраченное сырье и полученную готовую продукцию (ДВ) за последние 14 рабочих смен.</li>
- </ul>
-</div>
-
-            <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 792 (17.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>В раздел "Настройки" добавлена красная кнопка для восстановления базы данных из резервной копии (.json) с сайта.Которая напрямую запишет последнюю сохранёную базу даных в Firebase</li>
-  <li>Встроена защита: перед перезаписью базы требуется вручную ввести подтверждающее слово, чтобы избежать случайной потери данных.</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 791 (17.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Добавлено автоматическое "теневое" резервное копирование базы данных.</li>
-  <li>Программа сама делает слепок данных в память телефона после каждого изменения на складе.</li>
-  <li>На главном экране добавлен индикатор времени последнего бэкапа и кнопка для его скачивания (файл .json).</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 790 (16.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Системные окна заменены на всплывающие уведомления.</li>
-  <li>Они появляются внизу экрана, не блокируют работу и исчезают сами через 3 секунды.</li>
- </ul>
-</div>
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 789 (16.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Добавлен визуальный индикатор загрузки (спиннер). Теперь всегда понятно, когда данные отправляются в базу.</li>
-  <li>Добавлена защита от двойных нажатий кнопки "Сохранить" (предотвращает дублирование при слабом интернете).</li>
- </ul>
-</div>
-
-      <div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 788 (16.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Добавлена тёмная тема для комфортной работы при слабом освещении.</li>
-  <li>На главный экран выведена кнопка быстрого переключения темы (сохраняется при перезаходе).</li>
- </ul>
-</div>
-<div class="rep-card" style="margin-bottom:10px; border:2px solid var(--p)">
- <div style="font-weight:900; color:var(--p); font-size:13px; margin-bottom:5px">v 787 (13.03.2026)</div>
- <ul style="margin:0; padding-left:20px; font-size:12px; line-height:1.4">
-  <li>Добавлена возможность установки на главный экран устройства.</li>
-  <li>Теперь программа запускается на весь экран как полноценное приложение (без адресной строки браузера)</li>
-  <li>Добавлена фирменная иконка с логотипом</li>
- </ul>
-</div>
-      <div style="font-size:10px; color:#64748b; text-align:center; margin-top:10px;">
-      </div>
-      `;
-     }
      else if(t==='voiceSet'){
       h.innerText='СЛОВАРЬ ГОЛОСА';
       let txt = '';
@@ -2707,11 +2615,12 @@ window.calcFinances = async function() {
                 }
             });
 
-            let h = `<div style="display:flex;gap:8px;margin-bottom:10px">
-                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;flex:1">🖨️ ПЕЧАТЬ</button>
-                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;flex:1">👥 СОТРУДНИКИ</button>
+            let h = `<div style="display:flex;gap:5px;margin-bottom:10px">
+                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;flex:1;font-size:10px;padding:10px 5px">🖨️ ПЕЧАТЬ</button>
+                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;flex:1;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
+                <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;flex:1;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
             </div><div class="dash-grid">`;
-            
+
             Object.keys(w).sort().forEach(n=>{
                 let finalZp = parseFloat((w[n].t + w[n].mRt).toFixed(2));
                 h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')">
@@ -4025,6 +3934,245 @@ window.viewRegOut = function() {
     if (!h) return;
     gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА';
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
+};
+
+window.openMassAdvance = function() {
+    const dObj = new Date();
+    let y = dObj.getFullYear();
+    let m = dObj.getMonth();
+    
+    // Определяем дату X (13, 14 или 15)
+    let targetDate = 15;
+    let checkD = new Date(y, m, targetDate);
+    if (checkD.getDay() === 6) targetDate = 14; // Суббота -> Пятница
+    if (checkD.getDay() === 0) targetDate = 13; // Воскресенье -> Пятница
+    
+    const monthStr = String(m + 1).padStart(2, '0');
+    const maxDateStr = `${y}-${monthStr}-${String(targetDate).padStart(2, '0')}`;
+    const minDateStr = `${y}-${monthStr}-01`;
+    const monthKey = `${y}-${monthStr}`;
+
+    const ts = data.Timesheet || {};
+    let earnings = {};
+    
+    const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
+    
+    // Считаем заработок с 1 по дату X
+    Object.values(ts).forEach(v => {
+        if (v.name && !v.isPayout && v.date >= minDateStr && v.date <= maxDateStr) {
+            let b = getBase(v.name);
+            earnings[b] = (earnings[b] || 0) + (parseFloat(v.rate) || 0);
+        }
+    });
+    
+    let rowsHtml = '';
+    let totalAdv = 0;
+    
+    Object.keys(earnings).sort().forEach(name => {
+        let earned = earnings[name];
+        let adv = Math.round((earned * 0.8) / 1000) * 1000;
+        if (adv > 0) {
+            rowsHtml += `<div class="fas-row-out" style="grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
+                <div style="font-weight:900; font-size:13px; color:#0f172a">${esc(name)}</div>
+                <input type="number" class="fas-inp adv-inp" data-name="${esc(name)}" value="${adv}" oninput="calcMassAdvTotal()" style="font-weight:bold;text-align:center;font-size:14px;">
+                <button onclick="this.parentElement.remove(); calcMassAdvTotal();" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+            </div>`;
+            totalAdv += adv;
+        }
+    });
+    
+    if (!rowsHtml) rowsHtml = '<div style="text-align:center;padding:10px;font-weight:bold;color:#64748b;">Нет данных для расчета (с 1 числа)</div>';
+    
+    let h = `<div style="margin-bottom:15px; font-size:11px; color:#64748b; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
+        <b>Период:</b> 01.${monthStr}.${y} — ${String(targetDate).padStart(2,'0')}.${monthStr}.${y}<br>
+        <b>Алгоритм:</b> 80% от заработанного, округление до тысяч.
+    </div>
+    <div id="mAdvRows" style="max-height:50vh; overflow-y:auto; margin-bottom:10px; padding-right:5px;">${rowsHtml}</div>
+    <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
+        ОБЩАЯ СУММА: <span id="mAdvTotal" style="color:#dc2626">${totalAdv}</span> грн
+    </div>
+    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">ВЫДАТЬ АВАНС ВСЕМ</button>`;
+    
+    gID('mT').innerText = 'МАССОВЫЙ АВАНС';
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+};
+
+window.calcMassAdvTotal = function() {
+    let total = 0;
+    document.querySelectorAll('#mAdvRows .adv-inp').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
+    let el = document.getElementById('mAdvTotal');
+    if (el) el.innerText = total;
+};
+
+window.saveMassAdvance = async function(monthKey) {
+    const inputs = document.querySelectorAll('#mAdvRows .adv-inp');
+    if (inputs.length === 0) return alert('Список пуст');
+    
+    let dObj = new Date();
+    let payoutDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
+    
+    if (!confirm('Записать авансы в табель датой: ' + payoutDate.split('-').reverse().join('.') + '?')) return;
+    
+    showLoad();
+    try {
+        const u = {};
+        const tsStr = new Date().toISOString();
+        
+        inputs.forEach(inp => {
+            let amt = parseFloat(inp.value) || 0;
+            let name = inp.dataset.name;
+            if (amt > 0 && name) {
+                let k = db.child('Timesheet').push().key;
+                u['/Timesheet/' + k] = {
+                    date: payoutDate,
+                    name: name,
+                    isPayout: true,
+                    payoutType: 'Аванс',
+                    payoutAmount: amt,
+                    forMonth: monthKey,
+                    ts: tsStr,
+                    note: 'Массовый аванс'
+                };
+            }
+        });
+        
+        if (Object.keys(u).length > 0) {
+            await db.update(u);
+            hideLoad();
+            closeModal();
+            alert('Авансы успешно записаны!');
+            renderTsList(gID('cnt')); // Обновляем экран табеля
+        } else {
+            hideLoad();
+            alert('Нет сумм для сохранения');
+        }
+    } catch (e) {
+        hideLoad();
+        alert(e.message);
+    }
+};
+window.openMassAdvance = function() {
+    const dObj = new Date();
+    let y = dObj.getFullYear();
+    let m = dObj.getMonth();
+    
+    let targetDate = 15;
+    let checkD = new Date(y, m, targetDate);
+    if (checkD.getDay() === 6) targetDate = 14;
+    if (checkD.getDay() === 0) targetDate = 13;
+    
+    const monthStr = String(m + 1).padStart(2, '0');
+    const maxDateStr = `${y}-${monthStr}-${String(targetDate).padStart(2, '0')}`;
+    const minDateStr = `${y}-${monthStr}-01`;
+    const monthKey = `${y}-${monthStr}`;
+
+    const ts = data.Timesheet || {};
+    let earnings = {};
+    const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
+    
+    Object.values(ts).forEach(v => {
+        if (v.name && !v.isPayout && v.date >= minDateStr && v.date <= maxDateStr) {
+            let b = getBase(v.name);
+            earnings[b] = (earnings[b] || 0) + (parseFloat(v.rate) || 0);
+        }
+    });
+    
+    let rowsHtml = '';
+    let totalAdv = 0;
+    
+    Object.keys(earnings).sort().forEach(name => {
+        let earned = earnings[name];
+        let adv = Math.round((earned * 0.8) / 1000) * 1000;
+        if (adv > 0) {
+            rowsHtml += `<div class="fas-row-out" style="grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
+                <div style="font-weight:900; font-size:13px; color:#0f172a">${esc(name)}</div>
+                <input type="number" class="fas-inp adv-inp" data-name="${esc(name)}" value="${adv}" oninput="calcMassAdvTotal()" style="font-weight:bold;text-align:center;font-size:14px;">
+                <button onclick="this.parentElement.remove(); calcMassAdvTotal();" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+            </div>`;
+            totalAdv += adv;
+        }
+    });
+    
+    if (!rowsHtml) rowsHtml = '<div style="text-align:center;padding:10px;font-weight:bold;color:#64748b;">Нет данных для расчета (с 1 числа)</div>';
+    
+    let h = `<div style="margin-bottom:15px; font-size:11px; color:#64748b; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
+        <b>Период:</b> 01.${monthStr}.${y} — ${String(targetDate).padStart(2,'0')}.${monthStr}.${y}<br>
+        <b>Алгоритм:</b> 80% от заработанного, округление до тысяч.
+    </div>
+    <div id="mAdvRows" style="max-height:50vh; overflow-y:auto; margin-bottom:10px; padding-right:5px;">${rowsHtml}</div>
+    <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
+        ОБЩАЯ СУММА: <span id="mAdvTotal" style="color:#dc2626">${totalAdv}</span> грн
+    </div>
+    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">СОХРАНИТЬ И ВЫДАТЬ ВСЕМ</button>`;
+    
+    gID('mT').innerText = 'МАССОВЫЙ АВАНС';
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+};
+
+window.calcMassAdvTotal = function() {
+    let total = 0;
+    document.querySelectorAll('#mAdvRows .adv-inp').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
+    let el = document.getElementById('mAdvTotal');
+    if (el) el.innerText = total;
+};
+
+window.saveMassAdvance = async function(monthKey) {
+    const inputs = document.querySelectorAll('#mAdvRows .adv-inp');
+    if (inputs.length === 0) return alert('Список пуст');
+    
+    let dObj = new Date();
+    let d = String(dObj.getDate()).padStart(2, '0');
+    let m = String(dObj.getMonth() + 1).padStart(2, '0');
+    let y = dObj.getFullYear();
+    let payoutDate = `${y}-${m}-${d}`;
+    let displayDate = `${d}.${m}.${y}`; 
+    
+    if (!confirm('Записать авансы в табель датой: ' + displayDate + '?')) return;
+    
+    showLoad();
+    try {
+        const u = {};
+        const tsStr = new Date().toISOString();
+        
+        inputs.forEach(inp => {
+            let amt = parseFloat(inp.value) || 0;
+            let name = inp.dataset.name;
+            if (amt > 0 && name) {
+                let k = db.child('Timesheet').push().key;
+                u['/Timesheet/' + k] = {
+                    date: payoutDate,
+                    name: name,
+                    isPayout: true,
+                    payoutType: 'Аванс',
+                    payoutAmount: amt,
+                    forMonth: monthKey,
+                    ts: tsStr,
+                    note: 'Массовый аванс'
+                };
+            }
+        });
+        
+        if (Object.keys(u).length > 0) {
+            await db.update(u);
+            hideLoad();
+            closeModal();
+            alert('Авансы успешно записаны!');
+        } else {
+            hideLoad();
+            alert('Нет сумм для сохранения');
+        }
+    } catch (e) {
+        hideLoad();
+        alert(e.message);
+    }
 };
 
 </script>
