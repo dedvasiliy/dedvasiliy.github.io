@@ -2508,7 +2508,7 @@ window.calcFinances = async function() {
     }
 };
 
-        window.renderTsList = function(c){
+                window.renderTsList = function(c){
             const d = data.Timesheet || {};
             const dbW = data.Workers || {};
             const w = {};
@@ -2530,12 +2530,12 @@ window.calcFinances = async function() {
             }
             
             Object.values(dbW).forEach(bw => {
-                if(bw.name) w[bw.name] = {t:0, s:0};
+                if(bw.name) w[bw.name] = {t:0, s:0, mRt: parseFloat(bw.monthRate)||0};
             });
 
             Object.entries(d).forEach(([k,v]) => {
                 if(v.name){
-                    if(!w[v.name]) w[v.name] = {t:0,s:0}; 
+                    if(!w[v.name]) w[v.name] = {t:0,s:0,mRt:0}; 
                     if(daysToRender.includes(v.date) && !v.isPayout){
                         w[v.name].t += parseFloat(v.rate) || 0;
                         w[v.name].s += 1;
@@ -2549,10 +2549,11 @@ window.calcFinances = async function() {
             </div><div class="dash-grid">`;
             
             Object.keys(w).sort().forEach(n=>{
+                let finalZp = parseFloat((w[n].t + w[n].mRt).toFixed(2));
                 h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')">
                     <div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div>
                     <div style="font-size:10px;color:#64748b">Смен (тек. период): <b>${w[n].s}</b></div>
-                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за период: ${w[n].t} грн</div>
+                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за период: ${finalZp} ГРН</div>
                 </div>`;
             });
             h += '</div>';
@@ -2883,17 +2884,21 @@ window.calcFinances = async function() {
                     calHtml += `<div style="background:${cellBg};border:${cellBorder};border-radius:2px;min-height:30px;display:flex;flex-direction:column;padding:1px;overflow:hidden">${innerHtml}</div>`;
                 }
 
+                let mRt = 0;
+                Object.values(data.Workers || {}).forEach(wk => { if(wk.name === name) mRt = parseFloat(wk.monthRate) || 0; });
+                
+                totalZp = parseFloat(totalZp.toFixed(2));
                 let pAdv = payoutsForMonth[name] ? payoutsForMonth[name].adv : 0;
                 let pSal = payoutsForMonth[name] ? payoutsForMonth[name].sal : 0;
-                let pRem = totalZp - pAdv - pSal;
+                let pRem = parseFloat((totalZp + mRt - pAdv - pSal).toFixed(2));
 
                 calHtml += `</div>
                     <div style="margin-top:4px;background:#fefce8;border:1px dashed #ca8a04;padding:3px;border-radius:4px;text-align:center;font-weight:900">
-                        <div style="color:#000;font-size:10px;">Смен: ${totalShifts} | ЗП: ${totalZp} ₴</div>
-                        <div style="color:#2563eb;font-size:9px;">Аванс: ${pAdv} ₴ | Остаток: <span style="color:#dc2626">${pRem} ₴</span></div>
+                        <div style="color:#000;font-size:10px;">Смен: ${totalShifts} | ЗП (смены): ${totalZp} ₴ ${mRt>0 ? '<br>Ставка за месяц: '+mRt+' ₴' : ''}</div>
+                        <div style="color:#2563eb;font-size:9px;margin-top:2px;">Аванс: ${pAdv} ₴ | Остаток: <span style="color:#dc2626">${pRem} ₴</span></div>
                     </div>
                 </div>`;
-                
+
                 h += calHtml;
             });
 
