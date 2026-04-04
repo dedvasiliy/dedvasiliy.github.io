@@ -2293,23 +2293,12 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     } else {
                         let pay = parseFloat(v.rate) || 0;
                         let hrs = parseFloat(v.hours) || 0;
-                        let isFas = v.isFas || false;
                         let fDate = v.date.split('-').reverse().slice(0,2).join('.');
                         
                         if (!wData[b].shiftsByDate[fDate]) wData[b].shiftsByDate[fDate] = [];
                         wData[b].uniqueDays.add(v.date);
                         
-                        if (isFas) {
-                            wData[b].fasSum += pay;
-                            let detStr = 'Фасовка';
-                            let items = 0;
-                            if (wData[b].fRt > 0) {
-                                items = Math.round(pay / wData[b].fRt);
-                                wData[b].fasItems += items;
-                                detStr = `Фасовка (${items} шт)`;
-                            }
-                            wData[b].shiftsByDate[fDate].push({ isSub: false, isFas: true, items: items, s: v.start, e: v.end, det: detStr, pay: pay });
-                        } else if (isSub) {
+                        if (isSub) {
                             wData[b].subSum += pay;
                             wData[b].subHrs += hrs;
                             wData[b].shiftsByDate[fDate].push({ isSub: true, isFas: false, s: v.start, e: v.end, det: `${v.start}-${v.end} (доп)`, pay: pay });
@@ -2352,45 +2341,52 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                 });
 
                 if (isNikonor) {
-                    // --- ИНДИВИДУАЛЬНЫЙ РАСЧЕТ ДЛЯ НИКОНОРА ---
+                    // --- СТРОГИЙ ШАБЛОН ДЛЯ НИКОНОРА ---
                     let prodShifts = 0;
                     let fasShifts = 0;
                     let totalFasItems = 0;
                     
-                    let nMainRate = wd.mainRate || 0; 
-                    let nFasRate = wd.fRt || 0; 
-                    let nMonthRate = wd.mRt || 0; 
+                    let nMainRate = wd.mainRate || 1700; // Обычный тариф
+                    let nFasRate = wd.fRt || 0.28;       // Тариф за фасовку
+                    let nMonthRate = wd.mRt || 13500;    // Ставка за месяц
 
                     let linesHtml = "";
 
                     sortedDates.forEach(dateStr => {
                         let dayShifts = wd.shiftsByDate[dateStr];
-                        let isFasDay = dayShifts.some(s => s.isFas);
                         
-                        if (isFasDay) {
-                            fasShifts++;
-                            let dayItems = 0;
-                            dayShifts.forEach(s => { if(s.isFas) dayItems += (s.items || 0); });
-                            totalFasItems += dayItems;
-                            let dayPay = dayItems * nFasRate;
+                        dayShifts.forEach((sh, idx) => {
+                            let dLabel = idx === 0 ? dateStr : '<span style="color:transparent">00.00</span>';
+                            let p = sh.pay;
                             
-                            linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                                    <span style="display:inline-block; width: 35px;">${dateStr}</span>
-                                    <span style="flex:1; text-align:left; margin-left: 5px;">фас. ${dayItems}шт.</span>
-                                    <span>${parseFloat(dayPay.toFixed(2))} грн</span>
-                                  </div>`;
-                        } else {
-                            prodShifts++;
-                            let sTime = "07:00-17:00"; 
-                            let mainShift = dayShifts.find(s => !s.isSub && !s.isFas);
-                            if (mainShift && mainShift.s && mainShift.e) sTime = `${mainShift.s}-${mainShift.e}`;
+                            // Жесткое правило определения смены: если сумма не равна дневной ставке - это фасовка
+                            let isPacking = true;
+                            if (p === nMainRate || p === 1500 || p === 0) {
+                                isPacking = false;
+                            }
                             
-                            linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                                    <span style="display:inline-block; width: 35px;">${dateStr}</span>
-                                    <span style="flex:1; text-align:left; margin-left: 5px;">${sTime}</span>
-                                    <span>${parseFloat(nMainRate.toFixed(2))} грн</span>
-                                  </div>`;
-                        }
+                            if (isPacking) {
+                                fasShifts++;
+                                let items = nFasRate > 0 ? Math.round(p / nFasRate) : 0;
+                                totalFasItems += items;
+                                let calcPay = items * nFasRate;
+                                
+                                linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                        <span style="display:inline-block; width: 35px;">${dLabel}</span>
+                                        <span style="flex:1; text-align:left; margin-left: 5px;">фас. ${items}шт.</span>
+                                        <span>${calcPay.toFixed(2)} грн</span>
+                                      </div>`;
+                            } else {
+                                prodShifts++;
+                                let sTime = (sh.s && sh.e) ? `${sh.s}-${sh.e}` : "07:00-17:00"; 
+                                
+                                linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                        <span style="display:inline-block; width: 35px;">${dLabel}</span>
+                                        <span style="flex:1; text-align:left; margin-left: 5px;">${sTime}</span>
+                                        <span>${nMainRate.toFixed(2)} грн</span>
+                                      </div>`;
+                            }
+                        });
                     });
 
                     h += linesHtml;
@@ -2414,17 +2410,17 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
 
                     h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
                     if (prodShifts > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${parseFloat(totalProdPay.toFixed(2))} грн</b></span></div>`;
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${totalProdPay.toFixed(2)} грн</b></span></div>`;
                     }
                     if (fasShifts > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${totalFasItems} шт]</span> <span><b>${parseFloat(totalFasPay.toFixed(2))} грн</b></span></div>`;
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${totalFasItems} шт]</span> <span><b>${totalFasPay.toFixed(2)} грн</b></span></div>`;
                     }
                     if (nMonthRate > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Ставка:</span> <span><b>${nMonthRate} грн</b></span></div>`;
                     }
 
                     h += `<div style="display:flex; justify-content:space-between; margin-top:3px;"><span>Аванс:</span> <span><b>${wd.adv} грн</b></span></div>`;
-                    h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay} грн</span></div>`;
+                    h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay.toFixed(2)} грн</span></div>`;
                     h += `</div></div>`;
 
                 } else {
