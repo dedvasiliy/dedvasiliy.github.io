@@ -2264,7 +2264,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         
         let minD = daysToRender[0].split('-').reverse().join('.');
         let maxD = daysToRender[daysToRender.length-1].split('-').reverse().join('.');
-        let periodStr = `${minD}-${maxD}`;
+        let periodStr = `${minD} - ${maxD}`;
 
         let payoutsForMonth = {};
         Object.values(pDb).forEach(p => {
@@ -2278,102 +2278,81 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         Object.values(wDb).forEach(bw => {
             if(bw.name) {
                 wData[bw.name] = {
-                    mRt: parseFloat(bw.monthRate)||0,
-                    dRt: parseFloat(bw.dayRate)||0,
-                    fRt: parseFloat(bw.fasRate)||0,
+                    defRate: parseFloat(bw.defRate)||0,
                     shifts: [],
                     totalZp: 0,
-                    fasItems: 0,
-                    fasSum: 0,
-                    dayShifts: 0,
-                    daySum: 0,
-                    otherSum: 0
+                    totalHrs: 0
                 };
             }
         });
 
         Object.values(d).forEach(v => {
             if(v.name && daysToRender.includes(v.date) && !v.isPayout) {
-                if(!wData[v.name]) wData[v.name] = { mRt:0, dRt:0, fRt:0, shifts:[], totalZp:0, fasItems:0, fasSum:0, dayShifts:0, daySum:0, otherSum:0 };
+                if(!wData[v.name]) wData[v.name] = { defRate:0, shifts:[], totalZp:0, totalHrs:0 };
                 
                 let pay = parseFloat(v.rate) || 0;
-                let isFas = v.isFas || false;
+                let hrs = parseFloat(v.hours) || 0;
                 let fDate = v.date.split('-').reverse().slice(0,2).join('.');
-                let details = '';
-                
-                if(isFas && wData[v.name].fRt > 0) {
-                    let items = Math.round(pay / wData[v.name].fRt);
-                    wData[v.name].fasItems += items;
-                    wData[v.name].fasSum += pay;
-                    details = `${items}×${wData[v.name].fRt}=${parseFloat(pay.toFixed(2))}`;
-                } else if (!isFas && wData[v.name].dRt > 0 && pay === wData[v.name].dRt) {
-                    wData[v.name].dayShifts += 1;
-                    wData[v.name].daySum += pay;
-                    details = `${pay}`;
-                } else {
-                    wData[v.name].otherSum += pay;
-                    details = `${pay}`;
-                }
                 
                 wData[v.name].totalZp += pay;
-                wData[v.name].shifts.push({ d: fDate, s: v.start, e: v.end, isFas: isFas, pay: pay, det: details });
+                wData[v.name].totalHrs += hrs;
+                wData[v.name].shifts.push({ d: fDate, s: v.start, e: v.end, pay: pay });
             }
         });
 
-        let h = `<div style="padding:15px; font-family: monospace; font-size: 14px; color: #000; background: #fff; line-height: 1.4;">`;
-        h += `<div style="text-align:center; font-weight:bold; font-size: 16px; margin-bottom: 20px;">Табель начисления ${periodStr}</div>`;
-        
-        let hasData = false;
+        let activeWorkers = Object.keys(wData).filter(n => wData[n].shifts.length > 0).sort();
 
-        Object.keys(wData).sort().forEach(n => {
-            let wd = wData[n];
-            if(wd.shifts.length === 0 && wd.mRt === 0) return;
-            hasData = true;
+        let h = `<div style="font-family: sans-serif; font-size: 10px; color: #000; background: #fff; line-height: 1.2; padding: 5px;">`;
+        h += `<h3 style="text-align:center; font-size: 14px; margin-bottom: 15px;">Табель начисления ${periodStr}</h3>`;
 
+        if(activeWorkers.length === 0) {
+            h += `<div style="text-align:center;">Нет данных за период</div></div>`;
+            gID('print-view').innerHTML = h;
+            window.print();
+            setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
+            return;
+        }
+
+        // Вывод сеткой по 4 колонки
+        h += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">`;
+
+        activeWorkers.forEach(w => {
+            let wd = wData[w];
             wd.shifts.sort((a,b) => a.d.localeCompare(b.d));
-
-            h += `<div style="border-bottom: 1px dashed #000; padding-bottom: 15px; margin-bottom: 15px;">`;
-            h += `<div style="font-weight:bold; font-size: 16px; margin-bottom: 8px;">${n}</div>`;
             
-            if(wd.mRt > 0) {
-                h += `<div style="display:flex; justify-content:space-between; margin-bottom: 5px; border-bottom: 1px solid #eee;"><span>Ставка</span><span>${wd.mRt}</span></div>`;
-            }
+            let adv = payoutsForMonth[w] ? (payoutsForMonth[w].adv + payoutsForMonth[w].sal) : 0;
+            let toPay = parseFloat((wd.totalZp - adv).toFixed(2));
 
+            h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
+            h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
+            
+            // Список смен
             wd.shifts.forEach(sh => {
-                let fasMarker = sh.isFas ? ' (Ф)' : '';
                 h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                        <span>${sh.d} ${sh.s}-${sh.e}${fasMarker}</span>
-                        <span>${sh.det}</span>
+                        <span>${sh.d} ${sh.s}-${sh.e}</span>
+                        <span>${sh.pay} грн</span>
                       </div>`;
             });
 
-            h += `<div style="margin-top: 10px; font-weight: bold; border-top: 1px solid #000; padding-top: 5px;">Итого:</div>`;
-            if(wd.mRt > 0) h += `<div>Ставка: 1 × ${wd.mRt}</div>`;
-            if(wd.dayShifts > 0) h += `<div>Смен: ${wd.dayShifts} × ${wd.dRt} = ${wd.daySum}</div>`;
-            if(wd.fasItems > 0) h += `<div>Фасовка: ${wd.fasItems} × ${wd.fRt} = ${parseFloat(wd.fasSum.toFixed(2))}</div>`;
-            if(wd.otherSum > 0) h += `<div>Другое/Почасовка: ${parseFloat(wd.otherSum.toFixed(2))}</div>`;
-            
-            let finalZp = parseFloat((wd.totalZp + wd.mRt).toFixed(2));
-            let adv = payoutsForMonth[n] ? payoutsForMonth[n].adv : 0;
-            let sal = payoutsForMonth[n] ? payoutsForMonth[n].sal : 0;
-            let toPay = parseFloat((finalZp - adv - sal).toFixed(2));
+            // Общий итог (по новому шаблону)
+            h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
+            h += `<div style="display:flex; justify-content:space-between;"><span>Количество смен</span> <span><b>${wd.shifts.length}</b></span></div>`;
+            h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество часов</span> <span><b>${parseFloat(wd.totalHrs.toFixed(1))}</b></span></div>`;
+            h += `<div style="display:flex; justify-content:space-between;"><span>Тариф</span> <span><b>${wd.defRate} грн/час</b></span></div>`;
+            h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
+            h += `<div style="display:flex; justify-content:space-between;"><span>Всего заработано:</span> <span><b>${wd.totalZp} грн</b></span></div>`;
+            h += `<div style="display:flex; justify-content:space-between;"><span>Аванс:</span> <span><b>${adv} грн</b></span></div>`;
+            h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 6px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay} грн</span></div>`;
+            h += `</div>`; 
 
-            h += `<div style="margin-top: 10px;">Общая зарплата ${periodStr}: <span style="font-weight:bold">${finalZp}</span></div>`;
-            h += `<div>Аванс: ${adv}</div>`;
-            h += `<div style="font-size: 15px; font-weight: bold; margin-top: 5px;">К выплате: ${toPay}</div>`;
-            
-            h += `</div>`;
+            h += `</div>`; 
         });
 
-        if(!hasData) h += `<div style="text-align:center;">Нет данных за период</div>`;
-        
-        h += `</div>`;
+        h += `</div></div>`;
         
         gID('print-view').innerHTML = h;
         window.print();
-        setTimeout(() => {
-            gID('print-view').innerHTML = '';
-        }, 800);
+        setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
     };
 
 window.calcFinances = async function() {
