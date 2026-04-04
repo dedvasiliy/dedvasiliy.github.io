@@ -2339,72 +2339,88 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
 
             activeWorkers.forEach(w => {
                 let wd = wData[w];
-                let totalEarned = parseFloat((wd.mainSum + wd.subSum + wd.fasSum + wd.mRt).toFixed(2));
-                let toPay = parseFloat((totalEarned - wd.adv).toFixed(2));
+                let isNikonor = (w.trim().toLowerCase() === 'никонор' || w.trim().toLowerCase() === 'никанор');
                 
-                if (w.trim().toLowerCase() === 'никонор' || w.trim().toLowerCase() === 'никанор') {
-                    // --- СПЕЦИАЛЬНЫЙ ШАБЛОН ДЛЯ НИКОНОРА ---
+                h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
+                h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
+                
+                let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
+                    let [dA, mA] = a.split('.');
+                    let [dB, mB] = b.split('.');
+                    if (mA !== mB) return mA - mB;
+                    return dA - dB;
+                });
+
+                if (isNikonor) {
+                    // --- ИНДИВИДУАЛЬНЫЙ РАСЧЕТ ДЛЯ НИКОНОРА ---
                     let prodShifts = 0;
                     let fasShifts = 0;
+                    let totalFasItems = 0;
                     
-                    h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
-                    h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
-                    
-                    let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
-                        let [dA, mA] = a.split('.');
-                        let [dB, mB] = b.split('.');
-                        if (mA !== mB) return mA - mB;
-                        return dA - dB;
-                    });
+                    let nMainRate = wd.mainRate || 0; 
+                    let nFasRate = wd.fRt || 0; 
+                    let nMonthRate = wd.mRt || 0; 
+
+                    let linesHtml = "";
 
                     sortedDates.forEach(dateStr => {
                         let dayShifts = wd.shiftsByDate[dateStr];
-                        dayShifts.sort((s1, s2) => (s1.isSub === s2.isSub) ? 0 : s1.isSub ? 1 : -1);
+                        let isFasDay = dayShifts.some(s => s.isFas);
                         
-                        dayShifts.forEach((sh, idx) => {
-                            let dLabel = idx === 0 ? dateStr : '<span style="color:transparent">00.00</span>';
-                            if (sh.isFas) {
-                                fasShifts++;
-                                h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                                        <span style="display:inline-block; width: 35px;">${dLabel}</span>
-                                        <span style="flex:1; text-align:left; margin-left: 5px;">фас. ${sh.items || 0}шт.</span>
-                                        <span>${parseFloat(sh.pay.toFixed(2))} грн</span>
-                                      </div>`;
-                            } else {
-                                prodShifts++;
-                                let timeStr = (sh.s && sh.e) ? `${sh.s}-${sh.e}` : sh.det;
-                                h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-                                        <span style="display:inline-block; width: 35px;">${dLabel}</span>
-                                        <span style="flex:1; text-align:left; margin-left: 5px;">${timeStr}</span>
-                                        <span>${parseFloat(sh.pay.toFixed(2))} грн</span>
-                                      </div>`;
-                            }
-                        });
+                        if (isFasDay) {
+                            fasShifts++;
+                            let dayItems = 0;
+                            dayShifts.forEach(s => { if(s.isFas) dayItems += (s.items || 0); });
+                            totalFasItems += dayItems;
+                            let dayPay = dayItems * nFasRate;
+                            
+                            linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                    <span style="display:inline-block; width: 35px;">${dateStr}</span>
+                                    <span style="flex:1; text-align:left; margin-left: 5px;">фас. ${dayItems}шт.</span>
+                                    <span>${parseFloat(dayPay.toFixed(2))} грн</span>
+                                  </div>`;
+                        } else {
+                            prodShifts++;
+                            let sTime = "07:00-17:00"; 
+                            let mainShift = dayShifts.find(s => !s.isSub && !s.isFas);
+                            if (mainShift && mainShift.s && mainShift.e) sTime = `${mainShift.s}-${mainShift.e}`;
+                            
+                            linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+                                    <span style="display:inline-block; width: 35px;">${dateStr}</span>
+                                    <span style="flex:1; text-align:left; margin-left: 5px;">${sTime}</span>
+                                    <span>${parseFloat(nMainRate.toFixed(2))} грн</span>
+                                  </div>`;
+                        }
                     });
 
-                    let prodTariff = prodShifts > 0 ? parseFloat((wd.mainSum / prodShifts).toFixed(2)) : 0;
+                    h += linesHtml;
+
+                    let totalProdPay = prodShifts * nMainRate;
+                    let totalFasPay = totalFasItems * nFasRate;
+                    let totalEarned = totalProdPay + totalFasPay + nMonthRate;
+                    let toPay = parseFloat((totalEarned - wd.adv).toFixed(2));
 
                     h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
-                    h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество смен:</span> <span><b>${wd.uniqueDays.size}</b></span></div>`;
+                    h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество смен:</span> <span><b>${prodShifts + fasShifts}</b></span></div>`;
                     
                     if (prodShifts > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Производство смен:</span> <span><b>${prodShifts}</b></span></div>`;
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Тариф:</span> <span><b>${prodTariff} грн/день</b></span></div>`;
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Тариф:</span> <span><b>${nMainRate} грн/день</b></span></div>`;
                     }
                     if (fasShifts > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка смен:</span> <span><b>${fasShifts}</b></span></div>`;
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Тариф:</span> <span><b>${wd.fRt} грн/шт</b></span></div>`;
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Тариф:</span> <span><b>${nFasRate} грн/шт</b></span></div>`;
                     }
 
                     h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
-                    if (wd.mainSum > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${parseFloat(wd.mainSum.toFixed(2))} грн</b></span></div>`;
+                    if (prodShifts > 0) {
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${parseFloat(totalProdPay.toFixed(2))} грн</b></span></div>`;
                     }
-                    if (wd.fasSum > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${wd.fasItems || 0} шт]</span> <span><b>${parseFloat(wd.fasSum.toFixed(2))} грн</b></span></div>`;
+                    if (fasShifts > 0) {
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${totalFasItems} шт]</span> <span><b>${parseFloat(totalFasPay.toFixed(2))} грн</b></span></div>`;
                     }
-                    if (wd.mRt > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Ставка:</span> <span><b>${wd.mRt} грн</b></span></div>`;
+                    if (nMonthRate > 0) {
+                        h += `<div style="display:flex; justify-content:space-between;"><span>Ставка:</span> <span><b>${nMonthRate} грн</b></span></div>`;
                     }
 
                     h += `<div style="display:flex; justify-content:space-between; margin-top:3px;"><span>Аванс:</span> <span><b>${wd.adv} грн</b></span></div>`;
@@ -2412,7 +2428,10 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     h += `</div></div>`;
 
                 } else {
-                    // --- СТАНДАРТНЫЙ ШАБЛОН ДЛЯ ОСТАЛЬНЫХ ---
+                    // --- СТАНДАРТНЫЙ РАСЧЕТ ДЛЯ ОСТАЛЬНЫХ ---
+                    let totalEarned = parseFloat((wd.mainSum + wd.subSum + wd.fasSum + wd.mRt).toFixed(2));
+                    let toPay = parseFloat((totalEarned - wd.adv).toFixed(2));
+
                     let actualMainRate = '';
                     if (wd.mainRate > 0) {
                         actualMainRate = `${wd.mainRate} грн/час`;
@@ -2426,16 +2445,6 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     } else if (wd.subHrs > 0 && wd.subSum > 0) {
                         actualSubRate = `${parseFloat((wd.subSum / wd.subHrs).toFixed(2))} грн/час`;
                     }
-
-                    h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
-                    h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
-                    
-                    let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
-                        let [dA, mA] = a.split('.');
-                        let [dB, mB] = b.split('.');
-                        if (mA !== mB) return mA - mB;
-                        return dA - dB;
-                    });
 
                     sortedDates.forEach(dateStr => {
                         let dayShifts = wd.shiftsByDate[dateStr];
