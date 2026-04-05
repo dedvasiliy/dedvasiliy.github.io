@@ -609,8 +609,7 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
  }
 
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
-  else if(c==='Analytics'){ct.innerHTML=`<div class="z-head">АНАЛИТИКА</div><div class="dash-grid"><div class="dash-item" style="border:2px solid var(--p)" onclick="showShipChart()">📈 ОТГРУЗКИ</div>
-<div class="dash-item" onclick="showWsChart('KRUP')">📊 КРУПОРУШКА</div><div class="dash-item" onclick="showWsChart('ZSHM')">📊 ЗШМ</div><div class="dash-item" onclick="showWsChart('VIBRO')">📊 ВИБРОСТОЛ</div></div><div style="text-align:center; padding:20px; color:#64748b; font-size:12px; font-weight:bold;">Здесь скоро появятся графики приходов и остатков.</div>`;}
+   else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за 60 дней...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 600)}
 
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
@@ -3688,6 +3687,74 @@ window.showWsChart = function(k) {
         });
     }, 100);
 };
+window.renderAdvancedAnalytics = function(container) {
+    const dInv = data['ArchInvoices'] || {};
+    const stockFas = data['Готовая'] || {};
+    const stockDV = data['Stock_DV'] || {};
+    
+    const currentStock = {};
+    Object.values(stockFas).forEach(v => { if (v.name) currentStock[v.name] = (currentStock[v.name] || 0) + v.amount; });
+    Object.values(stockDV).forEach(v => { if (v.name) currentStock[v.name] = (currentStock[v.name] || 0) + v.amount; });
+
+    const dObj = new Date();
+    dObj.setDate(dObj.getDate() - 60);
+    const date60DaysAgo = dObj.toISOString().split('T')[0];
+
+    const salesQty = {};
+    Object.values(dInv).forEach(inv => {
+        const dt = (inv.date || '').split('T')[0];
+        if (dt >= date60DaysAgo && inv.items) {
+            inv.items.forEach(it => {
+                const p = it.split('|');
+                const name = p[0], qty = parseFloat(p[1]) || 0, cat = p[3];
+                if (cat === 'Готовая' || cat === 'Stock_DV') salesQty[name] = (salesQty[name] || 0) + qty;
+            });
+        }
+    });
+
+    const results = [];
+    Object.keys(currentStock).forEach(name => {
+        const stock = currentStock[name];
+        if (stock <= 0 && !salesQty[name]) return; 
+
+        const soldIn60Days = salesQty[name] || 0;
+        const avgDaily = soldIn60Days / 60;
+        let daysLeft = 999;
+        
+        if (avgDaily > 0) daysLeft = stock / avgDaily;
+        else if (stock <= 0) daysLeft = 0;
+
+        results.push({ name, stock, avgDaily, daysLeft });
+    });
+
+    results.sort((a, b) => a.daysLeft - b.daysLeft);
+
+    let h = `<div class="z-head">АНАЛИТИКА: ПРОГНОЗ ЗАПАСОВ</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1">
+        <div style="text-align:left">ТОВАР</div><div>ОСТАТОК</div><div>УХОД/ДЕНЬ</div><div>ХВАТИТ НА</div>
+    </div><div style="max-height:75vh;overflow-y:auto;padding-right:4px;">`;
+
+    results.forEach(r => {
+        const isCritical = r.daysLeft < 7;
+        const bg = isCritical ? '#fee2e2' : '#fff';
+        const brd = isCritical ? '#fca5a5' : '#e2e8f0';
+        const textColor = isCritical ? '#dc2626' : '#0f172a';
+        let daysStr = r.daysLeft === 999 ? '∞' : Math.round(r.daysLeft) + ' дн';
+        if (r.stock <= 0 && r.avgDaily > 0) daysStr = '0 дн';
+
+        h += `<div class="rep-card" style="background:${bg};border:1px solid ${brd};padding:8px;margin-bottom:6px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;align-items:center;">
+            <div style="font-weight:900;font-size:11px;line-height:1.1;color:${textColor}">${esc(r.name)}</div>
+            <div style="text-align:center;font-size:12px;font-weight:bold">${Math.round(r.stock)}</div>
+            <div style="text-align:center;font-size:11px;color:#64748b">${r.avgDaily.toFixed(1)}</div>
+            <div style="text-align:center;font-size:12px;font-weight:900;color:${textColor}">${daysStr}</div>
+        </div>`;
+    });
+
+    if (results.length === 0) h += `<div style="text-align:center;color:#94a3b8;padding:20px;">Нет данных за 60 дней</div>`;
+    h += `</div>`;
+    container.innerHTML = h;
+};
+
 let shipChartInstance = null;
 window.showShipChart = function() {
     const d = data['ArchInvoices'] || {};
