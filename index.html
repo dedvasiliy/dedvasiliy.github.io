@@ -3697,13 +3697,16 @@ window.renderAdvancedAnalytics = function(container) {
     Object.values(stockDV).forEach(v => { if (v.name) currentStock[v.name] = (currentStock[v.name] || 0) + v.amount; });
 
     const dObj = new Date();
-    dObj.setDate(dObj.getDate() - 60);
-    const date60DaysAgo = dObj.toISOString().split('T')[0];
+    dObj.setDate(dObj.getDate() - 90); // Смотрим на 90 календарных дней назад (3 месяца)
+    const date90DaysAgo = dObj.toISOString().split('T')[0];
 
     const salesQty = {};
+    const workDaysSet = new Set(); // Считаем только дни, когда были отгрузки
+
     Object.values(dInv).forEach(inv => {
         const dt = (inv.date || '').split('T')[0];
-        if (dt >= date60DaysAgo && inv.items) {
+        if (dt >= date90DaysAgo && inv.items) {
+            workDaysSet.add(dt); // Записываем дату как рабочий день
             inv.items.forEach(it => {
                 const p = it.split('|');
                 const name = p[0], qty = parseFloat(p[1]) || 0, cat = p[3];
@@ -3712,13 +3715,15 @@ window.renderAdvancedAnalytics = function(container) {
         }
     });
 
+    const totalWorkDays = workDaysSet.size > 0 ? workDaysSet.size : 1; // Точное количество рабочих дней
+
     const results = [];
     Object.keys(currentStock).forEach(name => {
         const stock = currentStock[name];
         if (stock <= 0 && !salesQty[name]) return; 
 
-        const soldIn60Days = salesQty[name] || 0;
-        const avgDaily = soldIn60Days / 60;
+        const soldInPeriod = salesQty[name] || 0;
+        const avgDaily = soldInPeriod / totalWorkDays; // Делим только на реальные рабочие дни
         let daysLeft = 999;
         
         if (avgDaily > 0) daysLeft = stock / avgDaily;
@@ -3730,6 +3735,7 @@ window.renderAdvancedAnalytics = function(container) {
     results.sort((a, b) => a.daysLeft - b.daysLeft);
 
     let h = `<div class="z-head">АНАЛИТИКА: ПРОГНОЗ ЗАПАСОВ</div>
+    <div style="font-size:10px;color:#64748b;text-align:center;margin-bottom:8px">Анализ за 3 месяца (фактических рабочих дней: <b>${totalWorkDays}</b>)</div>
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1">
         <div style="text-align:left">ТОВАР</div><div>ОСТАТОК</div><div>УХОД/ДЕНЬ</div><div>ХВАТИТ НА</div>
     </div><div style="max-height:75vh;overflow-y:auto;padding-right:4px;">`;
@@ -3750,7 +3756,7 @@ window.renderAdvancedAnalytics = function(container) {
         </div>`;
     });
 
-    if (results.length === 0) h += `<div style="text-align:center;color:#94a3b8;padding:20px;">Нет данных за 60 дней</div>`;
+    if (results.length === 0) h += `<div style="text-align:center;color:#94a3b8;padding:20px;">Нет данных</div>`;
     h += `</div>`;
     container.innerHTML = h;
 };
