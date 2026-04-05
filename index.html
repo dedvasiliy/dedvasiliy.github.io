@@ -583,10 +583,11 @@ function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML
  }
 
  else if(c==='TsCal'){ct.innerHTML=`<div class="z-head">ВЫБЕРИТЕ</div><div id="tsList" class="item-grid"></div>`;loadData()}
- else if(c==='StockRoot'){
-  let b=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХОД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ОТГРУЗКА</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:5px">🔧 КОРРЕКЦИЯ</button><button class="btn-main" onclick="retroAutoDeduct()" style="background:#d97706;margin-bottom:15px">🔄 ПЕРЕРАСЧЕТ СПИСАНИЯ</button>`:'';
+  else if(c==='StockRoot'){
+  let b=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХОД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ОТГРУЗКА</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:5px">🔧 КОРРЕКЦИЯ</button><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:15px"><button class="btn-main" onclick="retroAutoDeduct()" style="background:#d97706;margin:0">🔄 ПЕРЕРАСЧЕТ</button><button class="btn-main" onclick="openModal('inventory')" style="background:#8b5cf6;margin:0">📋 ИНВЕНТАРИЗ.</button></div>`:'';
     ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('PriceList')">💰 ПРАЙС</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`
  }
+
  else if(c==='Stock_Raw'){ct.innerHTML=(isAdmin?`<button class="btn-main" style="background:#e0f2fe;color:#0369a1;margin-bottom:10px" onclick="setCat('StockArchive')">🗄️ АРХИВ</button>`:'')+`<div class="z-head">СЫРЬЕ</div><div id="rawList">...</div>`;if(isAdmin&&!corrMode)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s);padding:8px" onclick="openModal('addRaw')">ПРИХОД</button>`}
  else if(c==='PackSub'){if(isAdmin)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s)" onclick="openModal('addMatPack')">ПРИХОД</button>`;ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Пленка')">ПЛЕНКА</div><div class="dash-item" onclick="setCat('Пакеты')">ПАКЕТЫ</div><div class="dash-item" onclick="setCat('Скотч 360 грамм')">СКОТЧ</div><div class="dash-item" onclick="setCat('Мешки')">МЕШКИ</div><div class="dash-item" onclick="setCat('Нитки')">НИТКИ</div><div class="dash-item" onclick="setCat('Этикетка')">ЭТИКЕТКА</div><div class="dash-item" onclick="setCat('Стрейч пленка')">СТРЕЙЧ</div><div class="dash-item" onclick="setCat('Термо лента')">ТЕРМО</div><div class="dash-item" onclick="setCat('ArchPackIn')" style="background:#f1f5f9;color:#64748b">АРХИВ</div></div>`}
  else if(c==='ProdSub'){ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="setCat('Фасовка')">ФАСОВКА</div><div class="dash-item" onclick="setCat('Kruporushka')">КРУПОРУШКА</div><div class="dash-item" onclick="setCat('ZSHM')">ЗШМ</div><div class="dash-item" onclick="setCat('Vibro')">ВИБРОСТОЛ</div></div>`;if(isAdmin)ct.innerHTML+=`<button class="btn-main" style="background:var(--s);margin-top:10px" onclick="openModal('addRaw')">ПРИХОД СЫРЬЯ</button>`}
@@ -1181,6 +1182,11 @@ function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gI
           loadBulk(cur==='StockRoot'?'Готовая':cur); updShipTotal();
       }, 50);
      }
+     else if(t==='inventory'){
+      h.innerText='ИНВЕНТАРИЗАЦИЯ';
+      m.innerHTML=`<div class="grid-2"><div><span class="lbl-small">ДАТА</span><input type="date" id="invDate" value="${d}"></div><div><span class="lbl-small">СКЛАД</span><select id="invCat" class="fas-inp" onchange="loadInvList()"><option value="">Выберите...</option><option value="Готовая">Фасованная</option><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option><option value="Stock_Feed">Отходы</option><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option></select></div></div><div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-top:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1"><div>ТОВАР</div><div>УЧЕТ</div><div>ФАКТ</div><div>РАЗНИЦА</div></div><div id="invList" style="max-height:50vh;overflow-y:auto;padding-right:5px;margin-top:5px"></div><button class="btn-main" onclick="execInventory()" style="background:#10b981;margin-top:10px">ПРИМЕНИТЬ ФАКТ</button>`;
+     }
+
           else if(t==='addRaw'){
       let dD=d, dNum='', dS='', dDop=0; let dr = localStorage.getItem('rawDraft'); let items=[];
       if(dr){ try{ let p=JSON.parse(dr); if(p.d)dD=p.d; if(p.num)dNum=p.num; if(p.s)dS=p.s; if(p.dop)dDop=p.dop; if(p.items)items=p.items; }catch(e){} }
@@ -1273,6 +1279,42 @@ else if(t==='regOut'){
       setTimeout(updatePreview, 100);
      }
     }
+window.loadInvList = function() {
+    const cat = gID('invCat').value;
+    const cont = gID('invList');
+    if(!cat) { cont.innerHTML = ''; return; }
+    const bals = {};
+    if(data[cat]) {
+        Object.values(data[cat]).forEach(v => {
+            if(v.name) bals[v.name] = (bals[v.name] || 0) + v.amount;
+        });
+    }
+    let h = '';
+    Object.keys(bals).sort().forEach(n => {
+        let u = bals[n];
+        let uf = (cat==='Пленка'||cat==='Скотч 360 грамм') ? u.toFixed(2) : Math.round(u);
+        h += `<div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;margin-bottom:5px;align-items:center;border-bottom:1px dashed #e2e8f0;padding-bottom:4px">
+                <div style="font-size:11px;font-weight:900;line-height:1.1">${esc(n)}</div>
+                <div style="text-align:center;font-size:12px;color:#64748b;font-weight:bold">${uf}</div>
+                <input type="number" class="fas-inp inv-fact" data-n="${esc(n)}" data-u="${u}" placeholder="Факт" oninput="calcInvDiff(this)" style="text-align:center;font-weight:bold;padding:0">
+                <div class="inv-diff" style="text-align:center;font-size:12px;font-weight:900">0</div>
+              </div>`;
+    });
+    cont.innerHTML = h || '<div style="text-align:center;padding:10px;color:#999">Пусто</div>';
+};
+
+window.calcInvDiff = function(inp) {
+    let f = parseFloat(inp.value);
+    let u = parseFloat(inp.dataset.u);
+    let dEl = inp.parentElement.querySelector('.inv-diff');
+    if(isNaN(f)) { dEl.innerText = '0'; dEl.style.color = '#000'; return; }
+    let d = f - u;
+    let cat = gID('invCat').value;
+    let df = (cat==='Пленка'||cat==='Скотч 360 грамм') ? d.toFixed(2) : Math.round(d);
+    dEl.innerText = d > 0 ? '+' + df : df;
+    dEl.style.color = d > 0 ? '#059669' : (d < 0 ? '#dc2626' : '#000');
+};
+window.execInventory=async function(){const cat=gID('invCat').value,d=gID('invDate').value;if(!cat||!d)return alert('Выберите склад и дату!');const inps=document.querySelectorAll('#invList .inv-fact');let u={},c=0,ts=new Date().toISOString();inps.forEach(i=>{let v=i.value;if(v==='')return;let f=parseFloat(v),uc=parseFloat(i.dataset.u),df=f-uc,n=i.dataset.n;if(Math.abs(df)>=0.01){let nt=df>0?'Инвентаризация: Излишек':'Инвентаризация: Недостача';u['/'+cat+'/'+db.child(cat).push().key]={name:n,amount:df,date:d+"T12:00:00Z",note:nt,ts:ts};c++;}});if(c===0)return alert('Нет изменений!');if(!confirm(`Сохранить изменения? Позиций: ${c}`))return;showLoad();try{await db.update(u);hideLoad();closeModal();alert('Инвентаризация сохранена!');loadData();}catch(e){hideLoad();alert(e);}};
 
     window.saveShipSet = function() {
         shipSet = {
