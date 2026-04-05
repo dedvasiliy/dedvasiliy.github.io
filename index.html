@@ -215,7 +215,7 @@ body.dark-theme .toast-msg {
 </div>
 
 <div id="act"></div><div id="cnt"></div>
-<div class="bottom-nav"><button id="navM" onclick="renderHome()">МЕНЮ</button><button id="navB" onclick="goBack()">НАЗАД</button></div>
+<div class="bottom-nav"><button id="navM" onclick="setCat('Home')">МЕНЮ</button><button id="navB" onclick="goBack()">НАЗАД</button></div>
 <div id="mdl" class="modal"><div class="modal-box"><div class="modal-header"><div style="display:flex;align-items:center;gap:10px;"><h4 id="mT" style="margin:0;font-size:15px;font-weight:900"></h4><span id="mQty" style="color:var(--p);font-weight:900;font-size:14px;display:none;">0 шт/кг</span></div><button onclick="closeModal()" style="border:none;background:#fee2e2;color:#dc2626;font-size:12px;font-weight:900;padding:8px 14px;border-radius:8px;cursor:pointer">✕ ЗАКРЫТЬ</button></div><div id="mB" class="modal-body"></div></div></div>
 <div id="confMdl" class="modal"><div id="confBox" class="modal-box" style="text-align:center;padding:20px"><h3 style="margin:0 0 10px">ПОДТВЕРЖДЕНИЕ</h3><div id="confContent" class="conf-report" style="max-height:60vh;overflow-y:auto;margin-bottom:15px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeConf()" style="background:#ccc;color:#333">НЕТ</button><button class="btn-main" onclick="doConfirm()" style="background:green">ДА</button></div></div></div>
 <div id="print-view"></div>
@@ -546,7 +546,7 @@ function updNav(){
 
 function ensureData(p){if(!Array.isArray(p))p=[p];p.forEach(x=>{if(!data[x])db.child(x).on('value',s=>{data[x]=s.val()||{};loadData()})})}
 
-function setCat(c){cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
+function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, '', ''); cur=c;D.body.classList.add('nav-active');gID('act').innerHTML='';const ct=gID('cnt');
  if(c==='Home'){renderHome();return}
   if(c==='Finances'){
     ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Timesheet','Krup_Report','Vibro_Report','ZSHM_Report','Фасовка']);
@@ -1152,7 +1152,7 @@ window.saveShipDraft=function(){if(!gID('shipBuilder')||gID('shipBuilder').style
                 window.saveRawDraft=function(){if(!gID('rawBuilder')||gID('rawBuilder').style.display==='none')return;const items=[];for(let x of gID('rawRows').children){const i=x.id.split('_')[1],n=gID('rNn_'+i).value,a=parseFloat(gID('rNa_'+i).value),p=parseFloat(gID('rNp_'+i).value)||0;if(n||a)items.push({n,a,p});}localStorage.setItem('rawDraft',JSON.stringify({d:gID('rD').value,num:gID('rNum').value,s:getSmartVal('rSupp'),dop:parseFloat(gID('rDop').value)||0,items}));};
 
     window.updRawTotal=function(){let sum=0;if(gID('rawRows')){for(let x of gID('rawRows').children){const i=x.id.split('_')[1];sum+=parseFloat(gID('rNa_'+i).value)||0;}}const mq=gID('mQty');if(mq){mq.innerText=sum+' кг';mq.style.display=sum>0?'inline':'none';}};
-function openModal(t,a,b){gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=getLocalDateStr();m.innerHTML='';aId=a;const mBox=gID('mdl').querySelector('.modal-box');if(t==='fas'||t==='workshop'||t==='dayRep'||t==='monthRep'){mBox.style.maxWidth='450px';}else{mBox.style.maxWidth='';}
+function openModal(t,a,b){history.pushState({cat: cur, modal: true}, '', ''); gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=getLocalDateStr();m.innerHTML='';aId=a;const mBox=gID('mdl').querySelector('.modal-box');if(t==='fas'||t==='workshop'||t==='dayRep'||t==='monthRep'){mBox.style.maxWidth='450px';}else{mBox.style.maxWidth='';}
      if(t==='inc'){
       let dD=d, dNum='', dS='', dCat='WeightStock'; let dr = localStorage.getItem('incDraft'); let items=[];
       if(dr){ try{ let p=JSON.parse(dr); if(p.d)dD=p.d; if(p.num)dNum=p.num; if(p.s)dS=p.s; if(p.c)dCat=p.c; if(p.items)items=p.items; }catch(e){} }
@@ -4030,6 +4030,24 @@ window.openMassAdvance = function() {
     gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
     gID('mdl').style.display = 'flex';
 };
+window.addEventListener('popstate', function(e) {
+    let isModalOpen = false;
+    if (gID('mdl').style.display === 'flex' || gID('confMdl').style.display === 'flex' || (gID('shipPreview') && gID('shipPreview').style.display === 'block') || (gID('incPreview') && gID('incPreview').style.display === 'block') || (gID('rawPreview') && gID('rawPreview').style.display === 'block')) {
+        isModalOpen = true;
+        if(typeof closeModal === 'function') closeModal();
+        if(typeof closeConf === 'function') closeConf();
+        if(gID('shipPreview')) { gID('shipPreview').style.display = 'none'; if(gID('shipBuilder')) gID('shipBuilder').style.display = 'block'; }
+        if(gID('incPreview')) { gID('incPreview').style.display = 'none'; if(gID('incBuilder')) gID('incBuilder').style.display = 'block'; }
+        if(gID('rawPreview')) { gID('rawPreview').style.display = 'none'; if(gID('rawBuilder')) gID('rawBuilder').style.display = 'block'; }
+    }
+    
+    if (e.state && e.state.cat) {
+        setCat(e.state.cat, true);
+    } else {
+        setCat('Home', true);
+    }
+});
+history.replaceState({cat: 'Home'}, '', '');
 
 window.calcMassAdvTotal = function() {
     let total = 0;
