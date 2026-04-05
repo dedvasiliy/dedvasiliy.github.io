@@ -1470,7 +1470,32 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     async function sPack(){const cat=gID('pCat').value,d=gID('pD').value+"T12:00:00Z",s=getSmartVal('pS'),n=getSmartVal('pProd'),a=parseFloat(gID('pA').value),p=parseFloat(gID('pPrice').value)||0,nm=gID('pNum').value;if(!s||!n||!a)return alert('Укажите поставщика, товар и количество');showLoad();try{const k=db.child('ArchPackIn').push().key,u={};const tSum=a*p;u['/ArchPackIn/'+k]={date:d,supplier:s,name:n,amount:a,price:p,totalSum:tSum,category:cat,num:nm,ts:new Date().toISOString()};u['/'+cat+'/'+db.child(cat).push().key]={name:n,amount:a,date:d,note:p>0?`Приход (по ${p} грн)`:'Приход',fLink:k,ts:new Date().toISOString()};await db.update(u);hideLoad();closeModal();alert('Приход упаковки сохранен');}catch(e){hideLoad();alert(e)}}
 
     function updPackList(){const c=gID('pCat').value;let l=[];if(c==='Пленка')l=["Пленка 300х400","Пленка 370х500","Пленка 400х500","Пленка 420х550"];else if(c==='Пакеты')l=["300x400","370x500","400x500","420x550"];else if(c==='Мешки')l=["Мешок 25кг","Мешок 50кг","Мешок белый"];else if(c==='Нитки')l=["Нитки"];else if(c==='Этикетка')l=["Этикетка"];else if(c==='Стрейч пленка')l=["Стрейч пленка"];else if(c==='Термо лента')l=["Термо лента"];else if(c==='Скотч 360 грамм')l=["Скотч 360 грамм"];const s=new Set(l);if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s.add(v.name.replace(/х/gi,'x'))});gID('pProdCont').innerHTML=makeSmart('pProd',Array.from(s).sort(),'Товар')}
-    async function sCorr(){const c=corrCtx.cat,n=corrCtx.name,d=gID('cD').value+"T12:00:00Z",na=parseFloat(gID('cA').value),r=gID('cR').value;if(isNaN(na))return alert('Число?');let cur=0;if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===n)cur+=v.amount});const diff=na-cur;if(Math.abs(diff)<0.001)return alert('Не изменилось');try{await db.child(c).push({name:n,amount:diff,date:d,note:`Кор: ${r}`,ts:new Date().toISOString()});closeModal()}catch(e){alert(e)}}
+async function sCorr(){
+    const c=corrCtx.cat, n=corrCtx.name, d=gID('cD').value+"T12:00:00Z", na=parseFloat(gID('cA').value), r=gID('cR').value;
+    if(isNaN(na))return alert('Число?');
+    let cur=0;
+    if(data[c])Object.values(data[c]).forEach(v=>{if(v.name===n)cur+=v.amount});
+    const diff=na-cur;
+    if(Math.abs(diff)<0.001)return alert('Не изменилось');
+    
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+    const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};
+    let cName = catNames[c] || c;
+    
+    let m = `⚠️ РУЧНАЯ КОРРЕКЦИЯ ОСТАТКА!\n👤 Кто: ${usr}\n📂 Раздел: ${cName}\n📦 Товар: ${n}\n📊 Было: ${parseFloat(cur.toFixed(2))}\n📈 Стало: ${na}\n📝 Причина: ${r||'Не указана'}`;
+    
+    try{
+        await db.child(c).push({name:n,amount:diff,date:d,note:`Кор: ${r}`,ts:new Date().toISOString()});
+        closeModal();
+        const t="8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk", cid="-5206571034";
+        fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: cid, text: m})
+        }).catch(e=>console.log("TG",e));
+    }catch(e){alert(e)}
+}
+
     async function renameItem(oldN,cat){const newN=prompt("Новое название:",oldN);if(!newN||newN===oldN)return;if(!confirm(`Переименовать "${oldN}" -> "${newN}"?`))return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===oldN)u[`/${cat}/${k}/name`]=newN});if(Object.keys(u).length){await db.update(u);closeModal();alert('ОК')}else alert('Не найдено')}
     async function delItemBatch(nm,cat){if(!confirm(`УДАЛИТЬ ВСЮ ИСТОРИЮ "${nm}"? ЭТО НЕОБРАТИМО!`))return;if(prompt('Введите DELETE')!=='DELETE')return;const u={},d=data[cat]||{};Object.entries(d).forEach(([k,v])=>{if(v.name===nm)u[`/${cat}/${k}`]=null});if(Object.keys(u).length){await db.update(u);closeModal();alert('Удалено')}else alert('Не найдено')}
     window.calcFilm=function(){const vz=gID('fVz').value.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);const os=parseFloat(gID('fOs').value)||0;const u=Math.max(0,vz-os);gID('fUsed').value=u.toFixed(2)+' кг';};
@@ -2041,7 +2066,54 @@ window.calcAvgPrice = function(itemName, category) {
 };
 
         function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
-window.delRec=async(c,i)=>{if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;let r=data[c]&&data[c][i]?data[c][i]:{};let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';let dStr='Нет даты';if(r.date){let dx=new Date(r.date);if(!isNaN(dx))dStr=String(dx.getDate()).padStart(2,'0')+'.'+String(dx.getMonth()+1).padStart(2,'0')+'.'+dx.getFullYear()}let nm=r.num?`\n🏷 Док: ${r.num}`:'';let sp=r.supplier?`\n🚚 Поставщик: ${r.supplier}`:'';let it='';if(r.items&&Array.isArray(r.items)){it='\n📦 Состав:\n'+r.items.map(x=>`• ${x.n||'Товар'} — ${x.a||0}`).join('\n')}let m=`⚠️ ВНИМАНИЕ: УДАЛЕНИЕ!\n👤 Кто: ${usr}\n📅 Дата: ${dStr}\n📂 Раздел: ${c}${nm}${sp}${it}`;const u={};u[`/${c}/${i}`]=null;stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});try{await db.update(u);alert('Удалено, товар возвращен');const t="8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk",cid="-5206571034";fetch(`https://api.telegram.org/bot${t}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(m)}`).catch(e=>console.log("TG",e));}catch(e){alert(e)}};
+window.delRec=async(c,i)=>{
+    if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;
+    let r=data[c]&&data[c][i]?data[c][i]:{};
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+    let dStr='Нет даты';
+    if(r.date){let dx=new Date(r.date);if(!isNaN(dx))dStr=String(dx.getDate()).padStart(2,'0')+'.'+String(dx.getMonth()+1).padStart(2,'0')+'.'+dx.getFullYear()}
+    let nm=r.num?`\n🏷 Док: ${r.num}`:'';
+    let sp=r.supplier?`\n🚚 Поставщик: ${r.supplier}`:'';
+    
+    const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Фасовка':'Смена (Фасовка)','Krup_Report':'Смена (Крупорушка)','Vibro_Report':'Смена (Вибростол)','ZSHM_Report':'Смена (ЗШМ)','Timesheet':'Табель','PriceList':'Прайс-лист','Suppliers':'Поставщик'};
+    let cName = catNames[c] || c;
+
+    let it='';
+    if(r.items){
+        let pItems=[];
+        let arr = Array.isArray(r.items) ? r.items : Object.values(r.items);
+        arr.forEach(x=>{
+            if(typeof x==='string'){
+                let p=x.split('|');
+                if(p.length>=2) pItems.push(`• ${p[0]} — ${p[1]}`);
+            }else if(typeof x==='object'){
+                let n=x.n||x.name||'Товар';
+                let q=x.a||((x.q||0)*(x.w||0)+(x.l||0))||x.amount||x.count||0;
+                pItems.push(`• ${n} — ${q}`);
+            }
+        });
+        if(pItems.length) it='\n📦 Состав:\n'+pItems.join('\n');
+    } else if (r.name && r.amount !== undefined) {
+        it = `\n📦 Товар: ${r.name} — ${r.amount}`;
+    }
+
+    let m=`⚠️ ВНИМАНИЕ: УДАЛЕНИЕ!\n👤 Кто: ${usr}\n📅 Дата: ${dStr}\n📂 Раздел: ${cName}${nm}${sp}${it}`;
+    if(m.length>4000) m = m.substring(0, 4000) + '\n...[текст обрезан]';
+    
+    const u={};
+    u[`/${c}/${i}`]=null;
+    stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});
+    try{
+        await db.update(u);
+        alert('Удалено, товар возвращен');
+        const t="8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk", cid="-5206571034";
+        fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: cid, text: m})
+        }).catch(e=>console.log("TG",e));
+    }catch(e){alert(e)}
+};
 
 function addTimeRow(n='',r='',ts='',te='',b=''){
     const i=Date.now()+Math.random().toString().slice(2,7);
