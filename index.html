@@ -609,7 +609,7 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
  }
 
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
-   else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за 60 дней...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 600)}
+ else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за 3 месяца...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 800)}
 
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
@@ -3688,77 +3688,170 @@ window.showWsChart = function(k) {
     }, 100);
 };
 window.renderAdvancedAnalytics = function(container) {
-    const dInv = data['ArchInvoices'] || {};
-    const stockFas = data['Готовая'] || {};
-    const stockDV = data['Stock_DV'] || {};
-    
-    const currentStock = {};
-    Object.values(stockFas).forEach(v => { if (v.name) currentStock[v.name] = (currentStock[v.name] || 0) + v.amount; });
-    Object.values(stockDV).forEach(v => { if (v.name) currentStock[v.name] = (currentStock[v.name] || 0) + v.amount; });
-
     const dObj = new Date();
-    dObj.setDate(dObj.getDate() - 90); // Смотрим на 90 календарных дней назад (3 месяца)
+    dObj.setDate(dObj.getDate() - 90);
     const date90DaysAgo = dObj.toISOString().split('T')[0];
 
-    const salesQty = {};
-    const workDaysSet = new Set(); // Считаем только дни, когда были отгрузки
+    const packCats = ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];
+    const stocks = { fas: {}, dv: {}, pack: {} };
+    const usage = { fas: {}, dv: {}, pack: {} };
+    const workDaysSet = new Set();
 
-    Object.values(dInv).forEach(inv => {
-        const dt = (inv.date || '').split('T')[0];
-        if (dt >= date90DaysAgo && inv.items) {
-            workDaysSet.add(dt); // Записываем дату как рабочий день
-            inv.items.forEach(it => {
-                const p = it.split('|');
-                const name = p[0], qty = parseFloat(p[1]) || 0, cat = p[3];
-                if (cat === 'Готовая' || cat === 'Stock_DV') salesQty[name] = (salesQty[name] || 0) + qty;
+    // 1. Собираем текущие остатки
+    if (data['Готовая']) Object.values(data['Готовая']).forEach(v => { if(v.name) stocks.fas[v.name] = (stocks.fas[v.name] || 0) + v.amount; });
+    if (data['Stock_DV']) Object.values(data['Stock_DV']).forEach(v => { if(v.name) stocks.dv[v.name] = (stocks.dv[v.name] || 0) + v.amount; });
+    packCats.forEach(cat => {
+        if (data[cat]) Object.values(data[cat]).forEach(v => { if(v.name) stocks.pack[v.name] = (stocks.pack[v.name] || 0) + v.amount; });
+    });
+
+    // 2. Считаем продажи (Фасовка и ДВ)
+    if (data['ArchInvoices']) {
+        Object.values(data['ArchInvoices']).forEach(inv => {
+            const dt = (inv.date || '').split('T')[0];
+            if (dt >= date90DaysAgo && inv.items) {
+                workDaysSet.add(dt);
+                inv.items.forEach(it => {
+                    const p = it.split('|');
+                    const name = p[0], qty = parseFloat(p[1]) || 0, cat = p[3];
+                    if (cat === 'Готовая') usage.fas[name] = (usage.fas[name] || 0) + qty;
+                    if (cat === 'Stock_DV') usage.dv[name] = (usage.dv[name] || 0) + qty;
+                });
+            }
+        });
+    }
+
+    // 3. Считаем расход упаковки (внутреннее списание, исключая ручные коррекции)
+    packCats.forEach(cat => {
+        if (data[cat]) {
+            Object.values(data[cat]).forEach(v => {
+                const dt = (v.date || '').split('T')[0];
+                if (dt >= date90DaysAgo && v.amount < 0) {
+                    if (!(v.note || '').startsWith('Кор:')) {
+                        workDaysSet.add(dt);
+                        usage.pack[v.name] = (usage.pack[v.name] || 0) + Math.abs(v.amount);
+                    }
+                }
             });
         }
     });
 
-    const totalWorkDays = workDaysSet.size > 0 ? workDaysSet.size : 1; // Точное количество рабочих дней
+    const totalWorkDays = workDaysSet.size > 0 ? workDaysSet.size : 1;
 
-    const results = [];
-    Object.keys(currentStock).forEach(name => {
-        const stock = currentStock[name];
-        if (stock <= 0 && !salesQty[name]) return; 
+    // Функция формирования результатов
+    const buildResults = (stockObj, usageObj) => {
+        const res = [];
+        Object.keys(stockObj).forEach(name => {
+            const stock = stockObj[name];
+            if (stock <= 0 && !usageObj[name]) return;
+            const used = usageObj[name] || 0;
+            const avgDaily = used / totalWorkDays;
+            let daysLeft = 999;
+            if (avgDaily > 0) daysLeft = stock / avgDaily;
+            else if (stock <= 0) daysLeft = 0;
+            res.push({ name, stock, avgDaily, daysLeft });
+        });
+        return res.sort((a, b) => a.daysLeft - b.daysLeft);
+    };
 
-        const soldInPeriod = salesQty[name] || 0;
-        const avgDaily = soldInPeriod / totalWorkDays; // Делим только на реальные рабочие дни
-        let daysLeft = 999;
+    const resFas = buildResults(stocks.fas, usage.fas);
+    const resDV = buildResults(stocks.dv, usage.dv);
+    const resPack = buildResults(stocks.pack, usage.pack);
+
+    // Сохраняем данные для печати
+    window.analyticsPrintData = { resFas, resDV, resPack, totalWorkDays };
+
+    // Построение HTML для блоков
+    const renderBlock = (title, resArr) => {
+        if (!resArr.length) return '';
+        let html = `<div class="cat-head" style="margin-top:15px; font-size:15px">${title}</div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #cbd5e1">
+            <div style="text-align:left">ТОВАР</div><div>ОСТАТОК</div><div>УХОД/ДЕНЬ</div><div>ХВАТИТ НА</div>
+        </div>`;
         
-        if (avgDaily > 0) daysLeft = stock / avgDaily;
-        else if (stock <= 0) daysLeft = 0;
+        resArr.forEach(r => {
+            const isCritical = r.daysLeft < 7;
+            const bg = isCritical ? '#fee2e2' : '#fff';
+            const brd = isCritical ? '#fca5a5' : '#e2e8f0';
+            const textColor = isCritical ? '#dc2626' : '#0f172a';
+            let daysStr = r.daysLeft === 999 ? '∞' : Math.round(r.daysLeft) + ' дн';
+            if (r.stock <= 0 && r.avgDaily > 0) daysStr = '0 дн';
+            
+            let st = (r.name.includes('Пленка') || r.name.includes('Скотч')) ? r.stock.toFixed(2) : Math.round(r.stock);
 
-        results.push({ name, stock, avgDaily, daysLeft });
-    });
-
-    results.sort((a, b) => a.daysLeft - b.daysLeft);
+            html += `<div class="rep-card" style="background:${bg};border:1px solid ${brd};padding:8px;margin-bottom:6px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;align-items:center;">
+                <div style="font-weight:900;font-size:11px;line-height:1.1;color:${textColor}">${esc(r.name)}</div>
+                <div style="text-align:center;font-size:12px;font-weight:bold">${st}</div>
+                <div style="text-align:center;font-size:11px;color:#64748b">${r.avgDaily.toFixed(1)}</div>
+                <div style="text-align:center;font-size:12px;font-weight:900;color:${textColor}">${daysStr}</div>
+            </div>`;
+        });
+        return html;
+    };
 
     let h = `<div class="z-head">АНАЛИТИКА: ПРОГНОЗ ЗАПАСОВ</div>
+    <button class="btn-main" onclick="window.printAdvancedAnalytics()" style="background:#0f172a;margin-bottom:10px">🖨️ ПЕЧАТЬ АНАЛИТИКИ</button>
     <div style="font-size:10px;color:#64748b;text-align:center;margin-bottom:8px">Анализ за 3 месяца (фактических рабочих дней: <b>${totalWorkDays}</b>)</div>
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1">
-        <div style="text-align:left">ТОВАР</div><div>ОСТАТОК</div><div>УХОД/ДЕНЬ</div><div>ХВАТИТ НА</div>
-    </div><div style="max-height:75vh;overflow-y:auto;padding-right:4px;">`;
+    <div style="max-height:75vh;overflow-y:auto;padding-right:4px;">`;
+    
+    h += renderBlock('ФАСОВКА (Продажи)', resFas);
+    h += renderBlock('ДВ ВЕС (Продажи)', resDV);
+    h += renderBlock('УПАКОВКА (Внутренний расход)', resPack);
 
-    results.forEach(r => {
-        const isCritical = r.daysLeft < 7;
-        const bg = isCritical ? '#fee2e2' : '#fff';
-        const brd = isCritical ? '#fca5a5' : '#e2e8f0';
-        const textColor = isCritical ? '#dc2626' : '#0f172a';
-        let daysStr = r.daysLeft === 999 ? '∞' : Math.round(r.daysLeft) + ' дн';
-        if (r.stock <= 0 && r.avgDaily > 0) daysStr = '0 дн';
-
-        h += `<div class="rep-card" style="background:${bg};border:1px solid ${brd};padding:8px;margin-bottom:6px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;align-items:center;">
-            <div style="font-weight:900;font-size:11px;line-height:1.1;color:${textColor}">${esc(r.name)}</div>
-            <div style="text-align:center;font-size:12px;font-weight:bold">${Math.round(r.stock)}</div>
-            <div style="text-align:center;font-size:11px;color:#64748b">${r.avgDaily.toFixed(1)}</div>
-            <div style="text-align:center;font-size:12px;font-weight:900;color:${textColor}">${daysStr}</div>
-        </div>`;
-    });
-
-    if (results.length === 0) h += `<div style="text-align:center;color:#94a3b8;padding:20px;">Нет данных</div>`;
+    if (!resFas.length && !resDV.length && !resPack.length) h += `<div style="text-align:center;color:#94a3b8;padding:20px;">Нет данных</div>`;
     h += `</div>`;
     container.innerHTML = h;
+};
+
+window.printAdvancedAnalytics = function() {
+    const d = window.analyticsPrintData;
+    if (!d) return;
+
+    let h = `<style>
+        body { font-family: sans-serif; color: #000; }
+        h2 { text-align: center; font-size: 16px; margin-bottom: 5px; }
+        .sub { text-align: center; font-size: 12px; color: #555; margin-bottom: 20px; }
+        table { border-collapse: collapse; margin-bottom: 20px; width: max-content; }
+        th, td { border: 1px solid #000; padding: 4px 8px; font-size: 11px; white-space: nowrap; }
+        th { background: #eee; font-weight: bold; text-align: center; }
+        .num { text-align: right; font-weight: bold; }
+        .crit { color: #d00; font-weight: bold; }
+        .cat-h { font-size: 15px; font-weight: bold; margin-bottom: 5px; margin-top:15px; text-transform: uppercase; }
+    </style>`;
+
+    h += `<h2>АНАЛИТИКА: ПРОГНОЗ ЗАПАСОВ</h2>
+          <div class="sub">Анализ за 3 месяца (рабочих дней: ${d.totalWorkDays})</div>`;
+
+    const buildPrintTable = (title, arr) => {
+        if (!arr.length) return '';
+        let t = `<div class="cat-h">${title}</div><table>
+            <tr><th>ТОВАР</th><th>ОСТАТОК</th><th>УХОД/ДЕНЬ</th><th>ХВАТИТ НА (ДНЕЙ)</th></tr>`;
+        
+        arr.forEach(r => {
+            const isCritical = r.daysLeft < 7;
+            const crClass = isCritical ? 'crit' : '';
+            let daysStr = r.daysLeft === 999 ? '∞' : Math.round(r.daysLeft);
+            if (r.stock <= 0 && r.avgDaily > 0) daysStr = '0';
+            
+            let st = (r.name.includes('Пленка') || r.name.includes('Скотч')) ? r.stock.toFixed(2) : Math.round(r.stock);
+
+            t += `<tr class="${crClass}">
+                <td>${esc(r.name)}</td>
+                <td class="num">${st}</td>
+                <td class="num">${r.avgDaily.toFixed(1)}</td>
+                <td class="num">${daysStr}</td>
+            </tr>`;
+        });
+        t += `</table>`;
+        return t;
+    };
+
+    h += buildPrintTable('ФАСОВКА (ПРОДАЖИ)', d.resFas);
+    h += buildPrintTable('ДВ ВЕС (ПРОДАЖИ)', d.resDV);
+    h += buildPrintTable('УПАКОВКА (РАСХОД)', d.resPack);
+
+    document.getElementById('print-view').innerHTML = h;
+    window.print();
+    setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
 };
 
 let shipChartInstance = null;
