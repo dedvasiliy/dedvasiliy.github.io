@@ -4442,11 +4442,19 @@ window.renderPrintExport = function() {
         { title: 'Сводный отчет (Остатки)', print: "printConsolidated()", csv: "exportCSV('consolidated')", desc: 'Текущие остатки складов' },
         { title: 'Прайс-лист', print: "printPriceList()", csv: "exportCSV('price')", desc: 'Текущие цены' },
         { title: 'Реестр отгрузок', print: "openModal('regOut')", csv: "exportCSV('invoices')", desc: 'Архив продаж' },
-        { title: 'История: Фасовка', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' },
-        { title: 'История: Крупорушка', print: "printWorkshop('KRUP')", csv: "", desc: 'Отчеты цеха' },
-        { title: 'История: ЗШМ', print: "printWorkshop('ZSHM')", csv: "", desc: 'Отчеты цеха' },
-        { title: 'История: Вибростол', print: "printWorkshop('VIBRO')", csv: "", desc: 'Отчеты цеха' },
-        { title: 'Табель', print: "printTsList()", csv: "", desc: 'Зарплаты и выходы' }
+        { title: 'История: Фасовка (Цех)', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' },
+        { title: 'История: Крупорушка', print: "printWorkshop('KRUP')", csv: "exportCSV('workshop', 'KRUP')", desc: 'Отчеты цеха' },
+        { title: 'История: ЗШМ', print: "printWorkshop('ZSHM')", csv: "exportCSV('workshop', 'ZSHM')", desc: 'Отчеты цеха' },
+        { title: 'История: Вибростол', print: "printWorkshop('VIBRO')", csv: "exportCSV('workshop', 'VIBRO')", desc: 'Отчеты цеха' },
+        { title: 'Табель', print: "printTsList()", csv: "exportCSV('timesheet')", desc: 'Зарплаты и выходы' },
+        { title: 'Отчет: Итог партии (Сырье)', print: "exportPromptBatch()", csv: "", desc: 'Отчет по конкретной партии' },
+        { title: 'Движения: Фасовка', print: "exportPromptHistory('Готовая')", csv: "exportCSV('history_all', 'Готовая')", desc: 'История движений склада' },
+        { title: 'Движения: ДВ Вес', print: "exportPromptHistory('Stock_DV')", csv: "exportCSV('history_all', 'Stock_DV')", desc: 'История движений склада' },
+        { title: 'Движения: Покупная', print: "exportPromptHistory('WeightStock')", csv: "exportCSV('history_all', 'WeightStock')", desc: 'История движений склада' },
+        { title: 'Движения: Сырье', print: "exportPromptHistory('Stock_Raw')", csv: "exportCSV('history_all', 'Stock_Raw')", desc: 'История движений склада' },
+        { title: 'Движения: П/Ф', print: "exportPromptHistory('Stock_Semi')", csv: "exportCSV('history_all', 'Stock_Semi')", desc: 'История движений склада' },
+        { title: 'Движения: Отходы', print: "exportPromptHistory('Stock_Feed')", csv: "exportCSV('history_all', 'Stock_Feed')", desc: 'История движений склада' },
+        { title: 'Движения: Упаковка', print: "exportPromptHistory('Pack')", csv: "exportCSV('history_pack')", desc: 'Пленка, пакеты, скотч...' }
     ];
 
     items.forEach(i => {
@@ -4462,6 +4470,25 @@ window.renderPrintExport = function() {
         </div>`;
     });
     ct.innerHTML = h;
+};
+
+window.exportPromptHistory = function(cat) {
+    let actualCat = cat;
+    if(cat === 'Pack') {
+         actualCat = prompt("Введите склад (Пленка, Пакеты, Мешки, Скотч 360 грамм, Нитки, Этикетка, Стрейч пленка, Термо лента):", "Пленка");
+         if(!actualCat) return;
+    }
+    const n = prompt("Введите точное название товара для печати его истории:");
+    if(!n) return;
+    printHistory(actualCat, n);
+};
+
+window.exportPromptBatch = function() {
+    const cat = prompt("Где искать? (Stock_Raw - текущее сырье, Stock_Archive - архив)", "Stock_Raw");
+    if(!cat) return;
+    const n = prompt("Введите точное название партии (сырья):");
+    if(!n) return;
+    genBatchReport(cat, n);
 };
 
 window.downloadCSV = function(filename, csv) {
@@ -4484,7 +4511,7 @@ window.exportCSV = function(type, param) {
 
     if (type === 'analytics') {
         if (!window.analyticsPrintData) {
-            alert('Сначала нажмите "ПЕЧАТЬ" на этой вкладке (система откроет Аналитику и подготовит данные для Excel). Затем нажмите "Назад" и скачайте файл.');
+            alert('Сначала нажмите "ПЕЧАТЬ" на этой вкладке. Затем вернитесь и скачайте файл.');
             return;
         }
         const dData = window.analyticsPrintData;
@@ -4540,37 +4567,6 @@ window.exportCSV = function(type, param) {
         ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].forEach(k => addCat(k, k));
         filename = 'Ostatki_' + d + '.csv';
     }
-    else if (type === 'stock') {
-        csv += 'ТОВАР;ОСТАТОК\n';
-        const t = {};
-        if(data[param]) {
-            Object.values(data[param]).forEach(v => {
-                if(v.name) t[v.name] = (t[v.name] || 0) + v.amount;
-            });
-        }
-        Object.keys(t).sort().forEach(n => {
-            if(Math.abs(t[n]) > 0.1) csv += escCsv(n) + ';' + t[n].toFixed(2) + '\n';
-        });
-        filename = 'Sklad_' + param + '_' + d + '.csv';
-    }
-    else if (type === 'pack') {
-        csv += 'КАТЕГОРИЯ;ТОВАР;ОСТАТОК\n';
-        const t = {};
-        ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].forEach(cat => {
-            if(data[cat]) Object.values(data[cat]).forEach(v => {
-                if(v.name) {
-                    if(!t[cat]) t[cat] = {};
-                    t[cat][v.name] = (t[cat][v.name]||0) + v.amount;
-                }
-            });
-        });
-        Object.keys(t).forEach(cat => {
-            Object.keys(t[cat]).sort().forEach(n => {
-                if(Math.abs(t[cat][n]) > 0.1) csv += escCsv(cat) + ';' + escCsv(n) + ';' + t[cat][n].toFixed(2) + '\n';
-            });
-        });
-        filename = 'Upakovka_' + d + '.csv';
-    }
     else if (type === 'price') {
         csv += 'ТОВАР;ПЕЧАТНОЕ ИМЯ;ОПТ;РОЗНИЦА;БЕЗНАЛ\n';
         if (data.PriceList) {
@@ -4601,6 +4597,59 @@ window.exportCSV = function(type, param) {
             });
         }
         filename = 'Fasovka_History_' + d + '.csv';
+    }
+    else if (type === 'workshop') {
+        csv += 'ДАТА;СМЕНА;ОПЕРАТОР;СЫРЬЕ;ВЫХОД\n';
+        const dbN = WS_CFG[param].db;
+        if(data[dbN]) {
+            Object.values(data[dbN]).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                let dt = (v.date||'').split('T')[0];
+                let shift = (v.timeStart||'') + '-' + (v.timeEnd||'');
+                let op = (v.operator||'') + '/' + (v.assistant||'');
+                let raw = '';
+                if(v.rawBase) raw += v.rawBase.n + ': ' + v.rawBase.w + 'кг. ';
+                if(v.rawAdd) v.rawAdd.forEach(x=> raw += x.n + ': ' + x.w + 'кг. ');
+                let out = '';
+                if(v.items) v.items.forEach(x=> out += (x.n||x.name) + ': ' + (((x.q||0)*(x.w||0))+(x.l||0)||x.amount||0) + 'кг. ');
+                csv += dt + ';' + escCsv(shift) + ';' + escCsv(op) + ';' + escCsv(raw) + ';' + escCsv(out) + '\n';
+            });
+        }
+        filename = 'Workshop_' + param + '_' + d + '.csv';
+    }
+    else if (type === 'timesheet') {
+        csv += 'ДАТА;СОТРУДНИК;ЧАСЫ;СУММА\n';
+        if(data.Timesheet) {
+            Object.values(data.Timesheet).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                if(!v.isPayout) {
+                    csv += (v.date||'').split('T')[0] + ';' + escCsv(v.name) + ';' + (v.hours||'') + ';' + (v.rate||0) + '\n';
+                }
+            });
+        }
+        filename = 'Timesheet_' + d + '.csv';
+    }
+    else if (type === 'history_all') {
+        csv += 'ДАТА;ТОВАР;ПРИХОД/РАСХОД;ПРИМЕЧАНИЕ\n';
+        if (data[param]) {
+            Object.values(data[param]).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                let dt = (v.date||'').split('T')[0];
+                let amt = v.amount > 0 ? '+' + v.amount : v.amount;
+                csv += dt + ';' + escCsv(v.name) + ';' + amt + ';' + escCsv(v.note) + '\n';
+            });
+        }
+        filename = 'Movements_' + param + '_' + d + '.csv';
+    }
+    else if (type === 'history_pack') {
+        csv += 'КАТЕГОРИЯ;ДАТА;ТОВАР;ПРИХОД/РАСХОД;ПРИМЕЧАНИЕ\n';
+        ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].forEach(cat => {
+            if (data[cat]) {
+                Object.values(data[cat]).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                    let dt = (v.date||'').split('T')[0];
+                    let amt = v.amount > 0 ? '+' + v.amount : v.amount;
+                    csv += escCsv(cat) + ';' + dt + ';' + escCsv(v.name) + ';' + amt + ';' + escCsv(v.note) + '\n';
+                });
+            }
+        });
+        filename = 'Movements_Pack_' + d + '.csv';
     }
 
     window.downloadCSV(filename, csv);
