@@ -611,7 +611,8 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
  }
 
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
- else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за год (365 дней)...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 800)}
+ else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за год (365 дней)...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','Фасовка']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 800)}
+
   else if(c==='PrintExport'){
      ensureData(['Готовая','Stock_DV','WeightStock','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','PriceList','Фасовка','Krup_Report','Vibro_Report','ZSHM_Report','Timesheet','Workers','ArchIncoming','ArchPackIn']);
      ct.innerHTML='<div class="z-head">ЦЕНТР ПЕЧАТИ И ЭКСПОРТА</div><div id="peList" style="padding-top:20px;text-align:center;font-weight:bold;color:var(--p)">Сбор данных...</div>';
@@ -3732,17 +3733,6 @@ window.renderAdvancedAnalytics = function(container) {
         });
     }
 
-    const prodEvents = {};
-    if (data['Готовая']) {
-        Object.values(data['Готовая']).forEach(v => {
-            if (v.amount > 0 && v.date >= date365DaysAgo && !(v.note||'').startsWith('Кор:')) {
-                const timeKey = (v.date || '').substring(0, 16);
-                prodEvents[timeKey] = (prodEvents[timeKey] || 0) + v.amount;
-            }
-        });
-    }
-
-    const filmYieldData = {};
     allPackCats.forEach(cat => {
         if (data[cat]) {
             Object.values(data[cat]).forEach(v => {
@@ -3751,16 +3741,7 @@ window.renderAdvancedAnalytics = function(container) {
                     if (!(v.note || '').startsWith('Кор:')) {
                         workDaysPack.add(dt);
                         const amt = Math.abs(v.amount);
-                        if (cat === 'Пленка') {
-                            usage.film[v.name] = (usage.film[v.name] || 0) + amt;
-                            const timeKey = (v.date || '').substring(0, 16);
-                            const pcs = prodEvents[timeKey] || 0;
-                            if (pcs > 0) {
-                                if (!filmYieldData[v.name]) filmYieldData[v.name] = { pieces: 0, kgUsed: 0 };
-                                filmYieldData[v.name].pieces += pcs;
-                                filmYieldData[v.name].kgUsed += amt;
-                            }
-                        }
+                        if (cat === 'Пленка') usage.film[v.name] = (usage.film[v.name] || 0) + amt;
                         else if (cat === 'Пакеты') usage.packets[v.name] = (usage.packets[v.name] || 0) + amt;
                         else if (cat === 'Этикетка') usage.labels[v.name] = (usage.labels[v.name] || 0) + amt;
                         else usage.other[v.name] = (usage.other[v.name] || 0) + amt;
@@ -3769,6 +3750,33 @@ window.renderAdvancedAnalytics = function(container) {
             });
         }
     });
+
+    const filmYieldData = {};
+    if (data['Фасовка']) {
+        Object.values(data['Фасовка']).forEach(v => {
+            const dt = (v.date || '').split('T')[0];
+            if (dt >= date365DaysAgo) {
+                const fName = v.filmName;
+                let usedFilm = 0;
+                if (v.vzial !== undefined) {
+                    const vz = String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
+                    const os = parseFloat(v.ostatok)||0;
+                    usedFilm = Math.max(0, vz - os);
+                }
+                
+                let outPcs = 0;
+                if (v.outputItems) {
+                    v.outputItems.forEach(out => outPcs += (parseFloat(out.count) || 0));
+                }
+                
+                if (fName && usedFilm > 0 && outPcs > 0) {
+                    if (!filmYieldData[fName]) filmYieldData[fName] = { pieces: 0, kgUsed: 0 };
+                    filmYieldData[fName].pieces += outPcs;
+                    filmYieldData[fName].kgUsed += usedFilm;
+                }
+            }
+        });
+    }
 
     const totalWorkSales = workDaysSales.size > 0 ? workDaysSales.size : 1;
     const totalWorkPack = workDaysPack.size > 0 ? workDaysPack.size : 1;
