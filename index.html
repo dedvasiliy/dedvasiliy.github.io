@@ -526,14 +526,16 @@ function renderHome(){
   <div class="dash-item" onclick="setCat('Timesheet')"><span>📅 ТАБЕЛЬ</span></div>
   <div class="dash-item" onclick="setCat('Consolidated')"><span>📊 СВОДНЫЙ</span></div>
     <div class="dash-item" onclick="setCat('Analytics')"><span>📈 АНАЛИТИКА</span></div>
-    <div class="dash-item" style="border:2px solid #ca8a04;color:#ca8a04" onclick="setCat('Finances')"><span>💰 ФИНАНСЫ</span></div>
+          <div class="dash-item" style="border:2px solid #ca8a04;color:#ca8a04" onclick="setCat('Finances')"><span>💰 ФИНАНСЫ</span></div>
+      <div class="dash-item" style="border:2px solid #0f172a;color:#0f172a" onclick="setCat('PrintExport')"><span>🖨️ ЭКСПОРТ</span></div>
+
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
  updNav();
 }
 
 function goBack() {
- const m={'Finances':'Home','Analytics':'Home','StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'StockRoot','PrintSettings':'Home','Contractors':'PrintSettings'};
+ const m={'Finances':'Home','PrintExport':'Home','Analytics':'Home','StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'StockRoot','PrintSettings':'Home','Contractors':'PrintSettings'};
  let n=m[cur]||'Home';
  if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';
  setCat(n);
@@ -610,6 +612,11 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
 
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
  else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за год (365 дней)...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 800)}
+ else if(c==='PrintExport'){
+     ensureData(['Готовая','Stock_DV','WeightStock','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','PriceList','Фасовка']);
+     ct.innerHTML='<div class="z-head">ЦЕНТР ПЕЧАТИ И ЭКСПОРТА</div><div id="peList" style="padding-top:20px;text-align:center;font-weight:bold;color:var(--p)">Сбор данных...</div>';
+     setTimeout(window.renderPrintExport, 800);
+ }
 
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
@@ -4424,5 +4431,179 @@ window.saveMassAdvance = async function(monthKey) {
         alert(e.message);
     }
 };
+window.renderPrintExport = function() {
+    const ct = document.getElementById('peList');
+    if(!ct) return;
+    let h = '';
+    const items = [
+        { title: 'Аналитика (Прогноз)', print: "setCat('Analytics')", csv: "exportCSV('analytics')", desc: 'Прогноз запасов' },
+        { title: 'Сводный отчет', print: "printConsolidated()", csv: "exportCSV('consolidated')", desc: 'Все склады вместе' },
+        { title: 'Склад: Фасовка', print: "", csv: "exportCSV('stock', 'Готовая')", desc: 'Текущие остатки' },
+        { title: 'Склад: ДВ Вес', print: "", csv: "exportCSV('stock', 'Stock_DV')", desc: 'Текущие остатки' },
+        { title: 'Склад: Покупная', print: "", csv: "exportCSV('stock', 'WeightStock')", desc: 'Текущие остатки' },
+        { title: 'Склад: Сырье', print: "", csv: "exportCSV('stock', 'Stock_Raw')", desc: 'Текущие остатки' },
+        { title: 'Вся Упаковка', print: "", csv: "exportCSV('pack')", desc: 'Пленка, пакеты, скотч...' },
+        { title: 'Прайс-лист', print: "printPriceList()", csv: "exportCSV('price')", desc: 'Текущие цены' },
+        { title: 'Реестр отгрузок', print: "openModal('regOut')", csv: "exportCSV('invoices')", desc: 'Архив продаж' },
+        { title: 'История Фасовки', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' }
+    ];
+
+    items.forEach(i => {
+        h += `<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:12px;margin-bottom:8px">
+            <div style="width:45%">
+                <div style="font-weight:900;font-size:13px">${i.title}</div>
+                <div style="font-size:10px;color:#64748b">${i.desc}</div>
+            </div>
+            <div style="display:flex;gap:5px;width:55%;justify-content:flex-end">
+                ${i.print ? `<button class="btn-main" onclick="${i.print}" style="margin:0;padding:8px;font-size:10px;background:#0f172a;width:auto;flex:1">🖨️ ПЕЧАТЬ</button>` : ''}
+                ${i.csv ? `<button class="btn-main" onclick="${i.csv}" style="margin:0;padding:8px;font-size:10px;background:#16a34a;width:auto;flex:1">💾 EXCEL</button>` : ''}
+            </div>
+        </div>`;
+    });
+    ct.innerHTML = h;
+};
+
+window.downloadCSV = function(filename, csv) {
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+};
+
+window.exportCSV = function(type, param) {
+    let csv = '';
+    let filename = 'export.csv';
+    const dObj = new Date();
+    const d = String(dObj.getDate()).padStart(2, '0') + '.' + String(dObj.getMonth() + 1).padStart(2, '0') + '.' + dObj.getFullYear();
+    const escCsv = (str) => '"' + String(str||'').replace(/"/g, '""') + '"';
+
+    if (type === 'analytics') {
+        if (!window.analyticsPrintData) {
+            alert('Сначала нажмите "ПЕЧАТЬ" на этой вкладке (система откроет Аналитику и подготовит данные для Excel). Затем нажмите "Назад" и скачайте файл.');
+            return;
+        }
+        const dData = window.analyticsPrintData;
+        csv += 'КАТЕГОРИЯ;ТОВАР;ОСТАТОК;УХОД/ДЕНЬ;ХВАТИТ ДО (ДАТА)\n';
+        const getTargetDate = (daysLeft) => {
+            if (daysLeft === 999) return '∞';
+            if (daysLeft <= 0) return 'Пусто';
+            const dt = new Date();
+            dt.setDate(dt.getDate() + Math.round(daysLeft));
+            return String(dt.getDate()).padStart(2, '0') + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + dt.getFullYear();
+        };
+        const addRows = (catName, arr) => {
+            if(!arr) return;
+            arr.forEach(r => {
+                let st = (r.name.includes('Пленка') || r.name.includes('Скотч')) ? r.stock.toFixed(2) : Math.round(r.stock);
+                csv += escCsv(catName) + ';' + escCsv(r.name) + ';' + st + ';' + r.avgDaily.toFixed(1) + ';' + getTargetDate(r.daysLeft) + '\n';
+            });
+        };
+        addRows('ФАСОВКА', dData.resFas);
+        addRows('ДВ ВЕС', dData.resDV);
+        addRows('ПЛЕНКА', dData.resFilm);
+        addRows('ПАКЕТЫ', dData.resPackets);
+        addRows('ЭТИКЕТКА', dData.resLabels);
+        addRows('ПРОЧЕЕ', dData.resOther);
+        filename = 'Analitika_' + d + '.csv';
+    } 
+    else if (type === 'consolidated') {
+        csv += 'КАТЕГОРИЯ;ТОВАР;ОСТАТОК\n';
+        const r = {};
+        const cats = ['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'];
+        cats.forEach(cat => {
+            if (data[cat]) Object.values(data[cat]).forEach(v => {
+                if (v.name) {
+                    if (!r[cat]) r[cat] = {};
+                    r[cat][v.name] = (r[cat][v.name] || 0) + v.amount;
+                }
+            });
+        });
+        const addCat = (catName, dbKey) => {
+            if(r[dbKey]){
+                Object.keys(r[dbKey]).sort().forEach(n => {
+                    let val = r[dbKey][n];
+                    if(Math.abs(val)>0.1) csv += escCsv(catName) + ';' + escCsv(n) + ';' + val.toFixed(2) + '\n';
+                });
+            }
+        };
+        addCat('Фасовка', 'Готовая');
+        addCat('Покупная', 'WeightStock');
+        addCat('ДВ Вес', 'Stock_DV');
+        addCat('Отходы', 'Stock_Feed');
+        addCat('Сырье', 'Stock_Raw');
+        addCat('П/Ф', 'Stock_Semi');
+        ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].forEach(k => addCat(k, k));
+        filename = 'Ostatki_' + d + '.csv';
+    }
+    else if (type === 'stock') {
+        csv += 'ТОВАР;ОСТАТОК\n';
+        const t = {};
+        if(data[param]) {
+            Object.values(data[param]).forEach(v => {
+                if(v.name) t[v.name] = (t[v.name] || 0) + v.amount;
+            });
+        }
+        Object.keys(t).sort().forEach(n => {
+            if(Math.abs(t[n]) > 0.1) csv += escCsv(n) + ';' + t[n].toFixed(2) + '\n';
+        });
+        filename = 'Sklad_' + param + '_' + d + '.csv';
+    }
+    else if (type === 'pack') {
+        csv += 'КАТЕГОРИЯ;ТОВАР;ОСТАТОК\n';
+        const t = {};
+        ['Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].forEach(cat => {
+            if(data[cat]) Object.values(data[cat]).forEach(v => {
+                if(v.name) {
+                    if(!t[cat]) t[cat] = {};
+                    t[cat][v.name] = (t[cat][v.name]||0) + v.amount;
+                }
+            });
+        });
+        Object.keys(t).forEach(cat => {
+            Object.keys(t[cat]).sort().forEach(n => {
+                if(Math.abs(t[cat][n]) > 0.1) csv += escCsv(cat) + ';' + escCsv(n) + ';' + t[cat][n].toFixed(2) + '\n';
+            });
+        });
+        filename = 'Upakovka_' + d + '.csv';
+    }
+    else if (type === 'price') {
+        csv += 'ТОВАР;ПЕЧАТНОЕ ИМЯ;ОПТ;РОЗНИЦА;БЕЗНАЛ\n';
+        if (data.PriceList) {
+            Object.values(data.PriceList).sort((a,b)=>a.name.localeCompare(b.name)).forEach(v => {
+                csv += escCsv(v.name) + ';' + escCsv(v.printName) + ';' + (v.priceOpt||0) + ';' + (v.priceRoz||0) + ';' + (v.priceBN||0) + '\n';
+            });
+        }
+        filename = 'Price_' + d + '.csv';
+    }
+    else if (type === 'invoices') {
+        csv += 'ДАТА;КЛИЕНТ;НОМЕР;ДОГОВОР;АДРЕС;СУММА\n';
+        if (data.ArchInvoices) {
+            Object.values(data.ArchInvoices).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                let dt = (v.date||'').split('T')[0];
+                csv += dt + ';' + escCsv(v.client) + ';' + escCsv(v.num) + ';' + escCsv(v.agreement) + ';' + escCsv(v.address) + ';' + (v.totalSum||0).toFixed(2) + '\n';
+            });
+        }
+        filename = 'Otgruzki_' + d + '.csv';
+    }
+    else if (type === 'fas') {
+        csv += 'ДАТА;ПЛЕНКА;СЫРЬЕ;ВЫХОД (ШТ);СЕБЕСТОИМОСТЬ\n';
+        if (data['Фасовка']) {
+            Object.values(data['Фасовка']).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(v => {
+                let dt = (v.date||'').split('T')[0];
+                let raw = (v.items||[]).map(x=> x.name + ': ' + x.amount + 'кг').join(', ');
+                let out = (v.outputItems||[]).map(x=> x.name + ': ' + x.count + 'шт').join(', ');
+                csv += dt + ';' + escCsv(v.filmName) + ';' + escCsv(raw) + ';' + escCsv(out) + ';' + (v.costPerPack||0).toFixed(2) + '\n';
+            });
+        }
+        filename = 'Fasovka_History_' + d + '.csv';
+    }
+
+    window.downloadCSV(filename, csv);
+};
+
 </script>
 </body></html>
