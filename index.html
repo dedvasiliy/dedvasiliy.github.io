@@ -3825,32 +3825,29 @@ window.renderAdvancedAnalytics = function(container) {
     h += `</div>`;
     container.innerHTML = h;
 };
-
 window.printAdvancedAnalytics = function() {
     const d = window.analyticsPrintData;
     if (!d) return;
 
     let h = `<style>
-        body { font-family: sans-serif; color: #000; }
-        h2 { text-align: center; font-size: 16px; margin-bottom: 5px; text-transform: uppercase; }
-        .sub { text-align: center; font-size: 12px; color: #555; margin-bottom: 20px; }
+        body { font-family: sans-serif; color: #000; margin: 0; padding: 0; }
+        h2 { text-align: center; font-size: 14px; margin: 0 0 2px 0; text-transform: uppercase; }
+        .sub { text-align: center; font-size: 10px; color: #555; margin-bottom: 10px; }
         
-        /* Сетка в 2 колонки */
+        /* Жесткая сетка: 2 равные колонки */
         .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start; }
         
-        /* Блок, чтобы таблица не разрывалась посередине */
-        .table-wrap { break-inside: avoid; margin-bottom: 15px; }
-        
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #000; padding: 4px 6px; font-size: 11px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+        /* Уменьшаем отступы и размер текста */
+        th, td { border: 1px solid #000; padding: 2px 4px; font-size: 10px; }
         th { background: #eee; font-weight: bold; text-align: center; }
         .num { text-align: right; font-weight: bold; }
         .crit { color: #d00; font-weight: bold; }
-        .cat-h { font-size: 13px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; background: #e2e8f0; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #cbd5e1; }
+        .cat-h { font-size: 11px; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; background: #e2e8f0; padding: 2px; text-align: center; border-radius: 2px; border: 1px solid #cbd5e1; }
     </style>`;
 
     h += `<h2>АНАЛИТИКА: ПРОГНОЗ ДО ДАТЫ</h2>
-          <div class="sub">Анализ за год (фактических рабочих дней: ${d.totalWorkDays})</div>`;
+          <div class="sub">Продажи: год (${d.totalWorkSales} р.д.) | Упаковка: 30 дней (${d.totalWorkPack} р.д.)</div>`;
 
     const getTargetDate = (daysLeft) => {
         if (daysLeft === 999) return '∞';
@@ -3865,14 +3862,13 @@ window.printAdvancedAnalytics = function() {
 
     const buildPrintTable = (title, arr) => {
         if (!arr.length) return '';
-        let t = `<div class="table-wrap"><div class="cat-h">${title}</div><table>
-            <tr><th>ТОВАР</th><th>ОСТАТОК</th><th>УХОД/ДЕНЬ</th><th>ХВАТИТ ДО</th></tr>`;
+        let t = `<div><div class="cat-h">${title}</div><table>
+            <tr><th>ТОВАР</th><th>ОСТАТОК</th><th>УХОД</th><th>ХВАТИТ ДО</th></tr>`;
             
         arr.forEach(r => {
             const isCritical = r.daysLeft < 7;
             const crClass = isCritical ? 'crit' : '';
             const dateStr = getTargetDate(r.daysLeft);
-            
             let st = (r.name.includes('Пленка') || r.name.includes('Скотч')) ? r.stock.toFixed(2) : Math.round(r.stock);
 
             t += `<tr class="${crClass}">
@@ -3887,12 +3883,21 @@ window.printAdvancedAnalytics = function() {
     };
 
     h += `<div class="print-grid">`;
+    
+    // ЛЕВАЯ КОЛОНКА (Фасовка и ДВ)
+    h += `<div>`;
     h += buildPrintTable('ФАСОВКА (ПРОДАЖИ)', d.resFas);
     h += buildPrintTable('ДВ ВЕС (ПРОДАЖИ)', d.resDV);
+    h += `</div>`;
+
+    // ПРАВАЯ КОЛОНКА (Вся упаковка)
+    h += `<div>`;
     h += buildPrintTable('УПАКОВКА: ПЛЕНКА', d.resFilm);
     h += buildPrintTable('УПАКОВКА: ПАКЕТЫ', d.resPackets);
     h += buildPrintTable('УПАКОВКА: ЭТИКЕТКА', d.resLabels);
     h += buildPrintTable('УПАКОВКА: ПРОЧЕЕ', d.resOther);
+    h += `</div>`;
+    
     h += `</div>`;
 
     document.getElementById('print-view').innerHTML = h;
