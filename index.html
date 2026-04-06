@@ -612,8 +612,8 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
 
  else if(c==='Consolidated'){ct.innerHTML='<div style="text-align:center;padding:20px">Загрузка...</div>';loadData()}
  else if(c==='Analytics'){ct.innerHTML='<div style="text-align:center;padding:20px;font-weight:900;color:var(--p)">Сбор данных за год (365 дней)...</div>';ensureData(['Готовая','Stock_DV','ArchInvoices','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента']);setTimeout(()=>window.renderAdvancedAnalytics(ct), 800)}
- else if(c==='PrintExport'){
-     ensureData(['Готовая','Stock_DV','WeightStock','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','PriceList','Фасовка']);
+  else if(c==='PrintExport'){
+     ensureData(['Готовая','Stock_DV','WeightStock','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','PriceList','Фасовка','Krup_Report','Vibro_Report','ZSHM_Report','Timesheet','Workers','ArchIncoming','ArchPackIn']);
      ct.innerHTML='<div class="z-head">ЦЕНТР ПЕЧАТИ И ЭКСПОРТА</div><div id="peList" style="padding-top:20px;text-align:center;font-weight:bold;color:var(--p)">Сбор данных...</div>';
      setTimeout(window.renderPrintExport, 800);
  }
@@ -4436,16 +4436,17 @@ window.renderPrintExport = function() {
     if(!ct) return;
     let h = '';
     const items = [
+        { title: 'Дневной отчет', print: "openModal('dayRep')", csv: "", desc: 'Движения за день' },
+        { title: 'Месячный отчет', print: "openModal('monthRep')", csv: "", desc: 'Итоги месяца' },
         { title: 'Аналитика (Прогноз)', print: "setCat('Analytics')", csv: "exportCSV('analytics')", desc: 'Прогноз запасов' },
-        { title: 'Сводный отчет', print: "printConsolidated()", csv: "exportCSV('consolidated')", desc: 'Все склады вместе' },
-        { title: 'Склад: Фасовка', print: "", csv: "exportCSV('stock', 'Готовая')", desc: 'Текущие остатки' },
-        { title: 'Склад: ДВ Вес', print: "", csv: "exportCSV('stock', 'Stock_DV')", desc: 'Текущие остатки' },
-        { title: 'Склад: Покупная', print: "", csv: "exportCSV('stock', 'WeightStock')", desc: 'Текущие остатки' },
-        { title: 'Склад: Сырье', print: "", csv: "exportCSV('stock', 'Stock_Raw')", desc: 'Текущие остатки' },
-        { title: 'Вся Упаковка', print: "", csv: "exportCSV('pack')", desc: 'Пленка, пакеты, скотч...' },
+        { title: 'Сводный отчет (Остатки)', print: "printConsolidated()", csv: "exportCSV('consolidated')", desc: 'Текущие остатки складов' },
         { title: 'Прайс-лист', print: "printPriceList()", csv: "exportCSV('price')", desc: 'Текущие цены' },
         { title: 'Реестр отгрузок', print: "openModal('regOut')", csv: "exportCSV('invoices')", desc: 'Архив продаж' },
-        { title: 'История Фасовки', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' }
+        { title: 'История: Фасовка', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' },
+        { title: 'История: Крупорушка', print: "printWorkshop('KRUP')", csv: "", desc: 'Отчеты цеха' },
+        { title: 'История: ЗШМ', print: "printWorkshop('ZSHM')", csv: "", desc: 'Отчеты цеха' },
+        { title: 'История: Вибростол', print: "printWorkshop('VIBRO')", csv: "", desc: 'Отчеты цеха' },
+        { title: 'Табель', print: "printTsList()", csv: "", desc: 'Зарплаты и выходы' }
     ];
 
     items.forEach(i => {
