@@ -4471,24 +4471,73 @@ window.renderPrintExport = function() {
     });
     ct.innerHTML = h;
 };
+window.showSelectModal = function(title, options, onSelect) {
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:15px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--w,#fff);width:100%;max-width:350px;border-radius:10px;padding:15px;max-height:80vh;display:flex;flex-direction:column;';
+    
+    box.innerHTML = `<div style="font-weight:bold;font-size:16px;margin-bottom:15px;text-align:center;color:var(--t,#000)">${title}</div>`;
+    
+    const list = document.createElement('div');
+    list.style.cssText = 'overflow-y:auto;flex:1;';
+    
+    if (options.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:gray;">Нет данных</div>';
+    } else {
+        options.forEach(opt => {
+            const b = document.createElement('button');
+            b.style.cssText = 'width:100%;margin-bottom:8px;background:var(--p,#4338ca);color:#fff;border:none;border-radius:6px;padding:12px;font-size:14px;text-align:left;';
+            b.innerText = opt;
+            b.onclick = () => { document.body.removeChild(bg); onSelect(opt); };
+            list.appendChild(b);
+        });
+    }
+    box.appendChild(list);
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.style.cssText = 'width:100%;margin-top:10px;background:var(--d,#dc2626);color:#fff;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:bold;';
+    closeBtn.innerText = 'ОТМЕНА';
+    closeBtn.onclick = () => document.body.removeChild(bg);
+    box.appendChild(closeBtn);
+    
+    bg.appendChild(box);
+    document.body.appendChild(bg);
+};
 
 window.exportPromptHistory = function(cat) {
-    let actualCat = cat;
-    if(cat === 'Pack') {
-         actualCat = prompt("Введите склад (Пленка, Пакеты, Мешки, Скотч 360 грамм, Нитки, Этикетка, Стрейч пленка, Термо лента):", "Пленка");
-         if(!actualCat) return;
+    if (cat === 'Pack') {
+        const packCats = ['Пленка', 'Пакеты', 'Мешки', 'Скотч 360 грамм', 'Нитки', 'Этикетка', 'Стрейч пленка', 'Термо лента'];
+        window.showSelectModal('Выберите склад упаковки:', packCats, function(sel) {
+            window.exportPromptHistory(sel);
+        });
+        return;
     }
-    const n = prompt("Введите точное название товара для печати его истории:");
-    if(!n) return;
-    printHistory(actualCat, n);
+    
+    let names = [];
+    if (data[cat]) {
+        Object.values(data[cat]).forEach(v => {
+            if (v.name && !names.includes(v.name)) names.push(v.name);
+        });
+    }
+    window.showSelectModal(`Выберите товар:`, names.sort(), function(sel) {
+        printHistory(cat, sel);
+    });
 };
 
 window.exportPromptBatch = function() {
-    const cat = prompt("Где искать? (Stock_Raw - текущее сырье, Stock_Archive - архив)", "Stock_Raw");
-    if(!cat) return;
-    const n = prompt("Введите точное название партии (сырья):");
-    if(!n) return;
-    genBatchReport(cat, n);
+    const dbs = ['Stock_Raw', 'Stock_Archive'];
+    window.showSelectModal('Где искать партию?', dbs, function(db) {
+        let names = [];
+        if (data[db]) {
+            Object.values(data[db]).forEach(v => {
+                if (v.name && !names.includes(v.name)) names.push(v.name);
+            });
+        }
+        window.showSelectModal('Выберите партию:', names.sort(), function(sel) {
+            genBatchReport(db, sel);
+        });
+    });
 };
 
 window.downloadCSV = function(filename, csv) {
