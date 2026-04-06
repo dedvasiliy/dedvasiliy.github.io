@@ -1698,7 +1698,6 @@ window.previewFas=function(){
             if(tapeUsed>0) u['/Скотч 360 грамм/'+db.child('Скотч 360 грамм').push().key]={name:'Скотч 360 грамм',amount:-tapeUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             if(thermalUsed>0) u['/Термо лента/'+db.child('Термо лента').push().key]={name:'Термо лента',amount:-thermalUsed,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
             if(stretchRolls>0) u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-stretchRolls,date:d+"T12:00:00Z",note:'(авто) фасовка '+mN,fLink:id,ts:tsStr};
-            
             if(pkTotal > 0) {
                 const archKey = db.child('ArchIncoming').push().key;
                 const prodItems = out.map(x => ({n: x.n, a: x.count, p: parseFloat(costPerItem)||0}));
@@ -1706,7 +1705,45 @@ window.previewFas=function(){
             }
 
             await db.update(u);
+            
+            // --- ОТПРАВКА В TELEGRAM ПРИ НЕДОСТАЧЕ ---
+            try {
+                let actualTotalWeight = 0;
+                let mainPackWeight = 0;
+                let mainProdName = "";
+                
+                out.forEach(x => {
+                    let match = x.n.match(/1\/(\d+(?:\.\d+)?)/); // Ищем вес после "1/"
+                    if (match) {
+                        let pw = parseFloat(match[1]);
+                        actualTotalWeight += x.count * pw;
+                        if (!mainPackWeight) { mainPackWeight = pw; mainProdName = x.n; }
+                    }
+                });
+                
+                // Если фактический вес меньше взятого сырья
+                if (mainPackWeight > 0 && actualTotalWeight < tRaw - 0.01) {
+                    let diffKg = tRaw - actualTotalWeight;
+                    let diffPcs = Math.round(diffKg / mainPackWeight);
+                    
+                    if (diffPcs > 0) {
+                        let msg = `${ds} Фасовка\nПродукт ${mainProdName} недостача -${diffPcs} штук`;
+                        const tgToken = "8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk";
+                        const tgChat = "-5206571034";
+                        fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({chat_id: tgChat, text: msg})
+                        }).catch(e => console.log("TG Error:", e));
+                    }
+                }
+            } catch (err) {
+                console.log("Shortage calc err:", err);
+            }
+            // --- КОНЕЦ ВСТАВКИ ---
+
             hideLoad();closeConf();closeModal();setCat(cur);
+
         }catch(e){
             hideLoad();alert(e);
         }finally{
