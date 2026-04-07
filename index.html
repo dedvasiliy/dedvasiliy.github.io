@@ -983,8 +983,8 @@ window.genBatchReport=function(c,n){
             }
         });
         
-        rep.sort((a,b)=>b.dt.localeCompare(a.dt));
-        
+    rep.sort((a,b)=>(b.dt||'').localeCompare(a.dt||''));
+
         let rows='';
         rep.forEach(r=>{
             totalUsedRaw += r.used;
