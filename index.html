@@ -2272,7 +2272,6 @@ window.delRec=async(c,i)=>{
     
     const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Фасовка':'Смена (Фасовка)','Krup_Report':'Смена (Крупорушка)','Vibro_Report':'Смена (Вибростол)','ZSHM_Report':'Смена (ЗШМ)','Timesheet':'Табель','PriceList':'Прайс-лист','Suppliers':'Поставщик'};
     let cName = catNames[c] || c;
-
     let it='';
     if(r.items){
         let pItems=[];
@@ -2291,8 +2290,18 @@ window.delRec=async(c,i)=>{
     } else if (r.name && r.amount !== undefined) {
         it = `\n📦 Товар: ${r.name} — ${r.amount}`;
     }
-
+    if(r.outputItems){
+        let oItems=[];
+        let arr = Array.isArray(r.outputItems) ? r.outputItems : Object.values(r.outputItems);
+        arr.forEach(x=>{
+            let n=x.n||x.name||'Товар';
+            let q=x.count||x.amount||0;
+            oItems.push(`• ${n} — ${q} шт`);
+        });
+        if(oItems.length) it+='\n🛍 Готовая продукция:\n'+oItems.join('\n');
+    }
     let m=`⚠️ ВНИМАНИЕ: УДАЛЕНИЕ!\n👤 Кто: ${usr}\n📅 Дата: ${dStr}\n📂 Раздел: ${cName}${nm}${sp}${it}`;
+
     if(m.length>4000) m = m.substring(0, 4000) + '\n...[текст обрезан]';
     
     const u={};
