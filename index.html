@@ -3234,88 +3234,126 @@ window.calcFinances = async function() {
             gID('mdl').style.display = 'flex';
         };
 window.openGoodsPayout = function(name, monthKey) {
-    let opts = '<option value="">Выберите товар...</option>';
+    window.gpCatOptions = '<option value="">Выбрать...</option>';
     const cats = {'Готовая': 'ФАСОВКА', 'WeightStock': 'ПОКУПНАЯ ПРОДУКЦИЯ', 'Stock_DV': 'ДВ ВЕС', 'Stock_Feed': 'КОРМА И ОТХОДЫ'};
     
     for(let c in cats) {
         let items = [];
         if(data[c]) Object.values(data[c]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
         if(items.length > 0) {
-            opts += `<optgroup label="${cats[c]}">`;
-            items.sort().forEach(p => opts += `<option value="${c}::${esc(p)}">${esc(p)}</option>`);
-            opts += `</optgroup>`;
+            window.gpCatOptions += `<optgroup label="${cats[c]}">`;
+            items.sort().forEach(p => window.gpCatOptions += `<option value="${c}::${esc(p)}">${esc(p)}</option>`);
+            window.gpCatOptions += `</optgroup>`;
         }
     }
 
     let h = `
     <div style="text-align:center;font-weight:900;margin-bottom:10px;font-size:14px;color:var(--p);">${esc(name)}</div>
-    <div><span class="lbl-small">ДАТА СПИСАНИЯ</span><input type="date" id="gpDate" class="fas-inp" value="${getLocalDateStr()}"></div>
-    <div style="margin-top:10px"><span class="lbl-small">ВЫБЕРИТЕ ТОВАР</span>
-        <select id="gpItem" class="fas-inp" onchange="calcGoodsPayout()">${opts}</select>
+    <div style="margin-bottom:10px;"><span class="lbl-small">ДАТА СПИСАНИЯ</span><input type="date" id="gpDate" class="fas-inp" value="${getLocalDateStr()}"></div>
+    
+    <div id="gpRows"></div>
+    <button class="btn-main" style="background:#3b82f6;font-size:11px;margin-bottom:10px;padding:6px;width:140px;" onclick="addGpRow()">+ ДОБАВИТЬ ТОВАР</button>
+    
+    <div style="text-align:right;font-weight:900;font-size:14px;color:var(--p);margin-top:10px;padding-top:10px;border-top:1px solid #cbd5e1;">
+        ИТОГО: <span id="gpTotalSum">0</span> ₴
     </div>
-    <div style="margin-top:10px"><span class="lbl-small">КОЛИЧЕСТВО (ШТ/КГ)</span><input type="number" id="gpQty" class="fas-inp" oninput="calcGoodsPayout()"></div>
-    <div style="margin-top:10px"><span class="lbl-small">СУММА УДЕРЖАНИЯ (₴)</span><input type="number" id="gpSum" class="fas-inp" style="background:#eef2ff;font-weight:900;color:var(--p);"></div>
-    <div style="font-size:10px;color:#64748b;margin-top:5px;">* Сумма рассчитывается автоматически по прайсу (ОПТ), но её можно изменить вручную.</div>
-    <button class="btn-main" style="margin-top:15px;background:#d97706;" onclick="execGoodsPayout('${esc(name)}', '${monthKey}')">ВЫДАТЬ ТОВАР</button>`;
+    <div style="font-size:10px;color:#64748b;margin-top:5px;">* Сумма (ОПТ) считается сама, но можно исправить вручную.</div>
+    <button class="btn-main" style="margin-top:15px;background:#d97706;" onclick="execGoodsPayout('${esc(name)}', '${monthKey}')">ВЫДАТЬ ТОВАРЫ</button>`;
     
     gID('mT').innerText = 'ТОВАР В СЧЕТ ЗП';
     gID('mB').innerHTML = h;
     gID('mdl').style.display = 'flex';
+    
+    setTimeout(() => addGpRow(), 50); // Автоматически добавляем первую пустую строку
 };
 
-window.calcGoodsPayout = function() {
-    let itemVal = gID('gpItem').value;
-    let qty = parseFloat(gID('gpQty').value) || 0;
-    if (!itemVal || qty <= 0) {
-        gID('gpSum').value = '';
-        return;
+window.addGpRow = function() {
+    let i = Date.now() + Math.random().toString().slice(2,7);
+    let html = `
+    <div class="gp-row" style="display:grid;grid-template-columns:1fr 50px 65px 30px;gap:3px;margin-bottom:5px;align-items:center;">
+        <select class="gp-item fas-inp" style="margin:0;height:32px;font-size:11px;padding:0 2px;" onchange="calcGpRow(this)">${window.gpCatOptions}</select>
+        <input type="number" class="gp-qty fas-inp" style="margin:0;height:32px;font-size:11px;text-align:center;" placeholder="Кол" oninput="calcGpRow(this)">
+        <input type="number" class="gp-sum fas-inp" style="margin:0;height:32px;font-size:11px;background:#eef2ff;font-weight:bold;text-align:center;" placeholder="Сумма ₴" oninput="calcGpTotal()">
+        <button class="btn-main" style="margin:0;height:32px;background:#ef4444;padding:0;" onclick="this.parentElement.remove();calcGpTotal()">✕</button>
+    </div>`;
+    gID('gpRows').insertAdjacentHTML('beforeend', html);
+};
+
+window.calcGpRow = function(el) {
+    let row = el.parentElement;
+    let itemVal = row.querySelector('.gp-item').value;
+    let qty = parseFloat(row.querySelector('.gp-qty').value) || 0;
+    let sumInput = row.querySelector('.gp-sum');
+    
+    if(itemVal && qty > 0) {
+        let n = itemVal.split('::')[1];
+        let price = 0;
+        if(data.PriceList) {
+            let pObj = Object.values(data.PriceList).find(x => x.name === n);
+            if(pObj) price = pObj.priceOpt !== undefined ? parseFloat(pObj.priceOpt) : (parseFloat(pObj.price) || 0);
+        }
+        if(price > 0) sumInput.value = Math.round(price * qty);
     }
-    let n = itemVal.split('::')[1];
-    let price = 0;
-    if(data.PriceList) {
-        let pObj = Object.values(data.PriceList).find(x => x.name === n);
-        if(pObj) price = pObj.priceOpt !== undefined ? parseFloat(pObj.priceOpt) : (parseFloat(pObj.price) || 0);
-    }
-    if (price > 0) {
-        gID('gpSum').value = Math.round(price * qty);
-    } else {
-        gID('gpSum').value = '';
-    }
+    calcGpTotal();
+};
+
+window.calcGpTotal = function() {
+    let total = 0;
+    document.querySelectorAll('.gp-sum').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
+    gID('gpTotalSum').innerText = total;
 };
 
 window.execGoodsPayout = async function(name, monthKey) {
-    let itemVal = gID('gpItem').value;
-    let qty = parseFloat(gID('gpQty').value);
-    let sum = parseFloat(gID('gpSum').value);
     let dStr = gID('gpDate').value;
+    let rows = document.getElementById('gpRows').children;
+    if(!dStr || rows.length === 0) return alert('Заполните дату и добавьте товары!');
     
-    if(!itemVal || !qty || qty <= 0 || !sum || sum <= 0 || !dStr) return alert('Заполните все поля корректно!');
+    let totalSum = 0;
+    let itemsList = [];
+    let stockUpdates = {};
+    const dIso = dStr + "T12:00:00Z";
+    const tsStr = new Date().toISOString();
     
-    let cat = itemVal.split('::')[0];
-    let n = itemVal.split('::')[1];
-    
-    if(!confirm('Списать со склада:\\n' + n + ' - ' + qty + ' шт/кг\\n\\nУдержать с зарплаты:\\n' + sum + ' ₴\\n\\nПодтверждаете?')) return;
-    
-    showLoad();
-    try {
-        const dIso = dStr + "T12:00:00Z";
-        const tsStr = new Date().toISOString();
-        let u = {};
+    for(let row of rows) {
+        let itemVal = row.querySelector('.gp-item').value;
+        let qty = parseFloat(row.querySelector('.gp-qty').value);
+        let sum = parseFloat(row.querySelector('.gp-sum').value);
         
-        u['/' + cat + '/' + db.child(cat).push().key] = {
+        if(!itemVal || !qty || qty <= 0 || !sum || sum < 0) {
+            return alert('Заполните все поля добавленных товаров (название, кол-во, сумма)!');
+        }
+        
+        let cat = itemVal.split('::')[0];
+        let n = itemVal.split('::')[1];
+        
+        totalSum += sum;
+        itemsList.push(n + ' (' + qty + ' шт)');
+        
+        stockUpdates['/' + cat + '/' + db.child(cat).push().key] = {
             name: n,
             amount: -qty,
             date: dIso,
             note: 'В счет ЗП: ' + name,
             ts: tsStr
         };
+    }
+    
+    if(totalSum <= 0) return alert('Общая сумма должна быть больше нуля!');
+    
+    if(!confirm('Списать со склада позиций: ' + rows.length + '\\nНа общую сумму: ' + totalSum + ' ₴\\n\\nУдержать с ЗП рабочего: ' + name + '\\nПодтверждаете?')) return;
+    
+    showLoad();
+    try {
+        let u = { ...stockUpdates };
         
         u['/Timesheet/' + db.child('Timesheet').push().key] = {
             date: dStr,
             name: name,
             isPayout: true,
-            payoutType: 'Товар: ' + n,
-            payoutAmount: sum,
+            payoutType: 'Товар: ' + itemsList.join(', '),
+            payoutAmount: totalSum,
             forMonth: monthKey,
             ts: tsStr
         };
@@ -3323,7 +3361,7 @@ window.execGoodsPayout = async function(name, monthKey) {
         await db.update(u);
         hideLoad();
         closeModal();
-        alert('Товар успешно выдан!');
+        alert('Товары успешно выданы!');
         
         let [y, m] = monthKey.split('-').map(Number);
         openWorkerCalendar(name, y, m - 1);
