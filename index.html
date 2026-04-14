@@ -811,6 +811,74 @@ window.printHistory = function(c, n) {
  
  gID('print-view').innerHTML = h; window.print(); setTimeout(() => gID('print-view').innerHTML = '', 800);
 };
+window.openSpoilageModal = function(n) {
+    gID('mdl').style.display='flex';
+    gID('mT').innerText='СПИСАНИЕ БРАКА';
+    gID('mB').innerHTML=`<div style="text-align:center;font-weight:900;margin-bottom:10px;color:var(--p);font-size:14px;">${n}</div>
+    <div><span class="lbl-small">КОЛИЧЕСТВО БРАКА (ШТ)</span><input type="number" id="spoilQty" class="fas-inp"></div>
+    <div style="margin-top:10px"><span class="lbl-small">ПРИЧИНА</span>
+    <select id="spoilReason" class="fas-inp" onchange="document.getElementById('spoilWeightBlock').style.display = this.value === 'В переработку' ? 'block' : 'none'">
+        <option value="В мусор">В мусор</option>
+        <option value="В переработку">В переработку (на склад П/Ф)</option>
+    </select></div>
+    <div id="spoilWeightBlock" style="display:none;margin-top:10px;">
+        <span class="lbl-small">ВЕС ОДНОЙ ПАЧКИ (ГРАММ)</span>
+        <input type="number" id="spoilWeight" class="fas-inp" placeholder="Например: 900">
+    </div>
+    <button class="btn-main" style="margin-top:15px;background:#dc2626;" onclick="execSpoilage('${n}')">СПИСАТЬ</button>`;
+};
+
+window.execSpoilage = async function(n) {
+    const qty = parseFloat(gID('spoilQty').value);
+    const reason = gID('spoilReason').value;
+    if(!qty || qty <= 0) return alert('Укажите количество!');
+    
+    let note = reason;
+    let kg = 0;
+    
+    if(reason === 'В переработку') {
+        const w = parseFloat(gID('spoilWeight').value);
+        if(!w || w <= 0) return alert('Укажите вес пачки в граммах!');
+        kg = (qty * w) / 1000;
+        note = 'В переработку (' + kg + ' кг)';
+    }
+
+    if(!confirm('Списать ' + qty + ' шт (' + note + ')?')) return;
+    
+    showLoad();
+    try {
+        const dStr = getLocalDateStr() + "T12:00:00Z";
+        const tsStr = new Date().toISOString();
+        let u = {};
+        
+        u['/Готовая/' + db.child('Готовая').push().key] = {
+            name: n,
+            amount: -qty,
+            date: dStr,
+            note: 'Брак: ' + note,
+            ts: tsStr
+        };
+        
+        if(reason === 'В переработку') {
+            u['/Stock_Semi/' + db.child('Stock_Semi').push().key] = {
+                name: 'Брак: ' + n,
+                amount: kg,
+                date: dStr,
+                note: 'Брак фасовки (' + qty + ' шт)',
+                ts: tsStr
+            };
+        }
+        
+        await db.update(u);
+        hideLoad();
+        closeModal();
+        alert('Брак успешно списан!');
+        loadData();
+    } catch(e) {
+        hideLoad();
+        alert(e.message);
+    }
+};
 
 function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
@@ -820,6 +888,10 @@ function showH(c,n){
  
  let topBtns = `<button class="btn-main" onclick="printHistory('${c}','${esc(n)}')" style="background:var(--s);font-size:10px;margin:0 0 10px 0;">🖨️ ПЕЧАТЬ ИСТОРИИ</button>`;
  h += topBtns;
+  if(c === 'Готовая') {
+  h += `<button class="btn-main" onclick="openSpoilageModal('${esc(n)}')" style="background:#dc2626;font-size:10px;margin:0 0 10px 0;">🗑️ СПИСАНИЕ БРАКА</button>`;
+ }
+
  if(['Stock_Raw','Stock_Archive'].includes(c)){
   let btns = `<button class="btn-main" onclick="genBatchReport('${c}','${esc(n)}')" style="background:#0f172a;font-size:10px;margin:0;width:auto;flex:1">📄 ОТЧЕТ ПАРТИИ</button>`;
   if(isAdmin && c==='Stock_Raw') btns+=`<button class="btn-main" onclick="archiveRawBatch('${esc(n)}')" style="background:#e0f2fe;color:#0369a1;font-size:10px;margin:0;width:auto;flex:1;border:1px solid #bae6fd">📦 В АРХИВ</button>`;
