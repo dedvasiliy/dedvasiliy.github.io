@@ -839,7 +839,7 @@ window.execSpoilage = async function(n) {
     if(reason === 'В переработку') {
         const w = parseFloat(gID('spoilWeight').value);
         if(!w || w <= 0) return alert('Укажите вес пачки в граммах!');
-        kg = (qty * w) / 1000;
+        kg = Math.round((qty * w) / 1000);
         note = 'В переработку (' + kg + ' кг)';
     }
 
