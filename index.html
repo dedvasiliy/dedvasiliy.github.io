@@ -3010,11 +3010,11 @@ window.calcFinances = async function() {
                     }
                 }
             });
-
-            let h = `<div style="display:flex;gap:5px;margin-bottom:10px">
-                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;flex:1;font-size:10px;padding:10px 5px">🖨️ ПЕЧАТЬ</button>
-                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;flex:1;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
-                <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;flex:1;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
+            let h = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;font-size:10px;padding:10px 5px">🖨️ ПЕЧАТЬ</button>
+                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
+                <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
+                <button class="btn-main" onclick="openGoodsReport()" style="background:#d97706;margin:0;font-size:10px;padding:10px 5px">🛒 ТОВАРЫ ПОД З/П</button>
             </div><div class="dash-grid">`;
 
             Object.keys(w).sort().forEach(n=>{
@@ -3063,6 +3063,7 @@ window.calcFinances = async function() {
             let uniqueDays = new Set();
             let earned1to15 = 0;
             let advanceAmt = 0;
+            let goodsAmt = 0;
             let salaryAmt = 0;
             
             Object.entries(ts).forEach(([k, v]) => {
@@ -3070,6 +3071,8 @@ window.calcFinances = async function() {
                     if (v.isPayout && v.forMonth === monthKey) {
                         if (v.payoutType === 'Аванс') advanceAmt += parseFloat(v.payoutAmount) || 0;
                         if (v.payoutType === 'Зарплата') salaryAmt += parseFloat(v.payoutAmount) || 0;
+                                               if (v.payoutType && v.payoutType.startsWith('Товар')) goodsAmt += parseFloat(v.payoutAmount) || 0;
+ 
                         
                         if (daysToRender.includes(v.date)) {
                             if(!shifts[v.date]) shifts[v.date] = [];
@@ -3105,7 +3108,7 @@ window.calcFinances = async function() {
             let totalShifts = uniqueDays.size;
             totalZp = parseFloat(totalZp.toFixed(2));
             let calcAdv = Math.round((earned1to15 * 0.8) / 1000) * 1000;
-            let remZp = parseFloat((totalZp + mRt - advanceAmt - salaryAmt).toFixed(2));
+            let remZp = parseFloat((totalZp + mRt - advanceAmt - salaryAmt - goodsAmt).toFixed(2));
 
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
             
@@ -3220,11 +3223,15 @@ window.calcFinances = async function() {
                     <span>Ставка за месяц:</span> <span style="color:#059669">${mRt} ₴</span>
                 </div>` : ''}
                 <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
-                    <span>Выдан аванс:</span> <span style="color:#2563eb">${advanceAmt + salaryAmt} ₴</span>
+                    <span>Выдан аванс/ЗП:</span> <span style="color:#2563eb">${advanceAmt + salaryAmt} ₴</span>
                 </div>
+                ${goodsAmt > 0 ? `<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;margin-bottom:2px;">
+                    <span>Товар под З/П:</span> <span style="color:#d97706">${goodsAmt} ₴</span>
+                </div>` : ''}
                 <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:14px;">
                     <span>Остаток к выплате:</span> <span style="color:#dc2626">${remZp} ₴</span>
                 </div>
+
             </div>`;
             h += actionsHtml;
             
@@ -3399,6 +3406,42 @@ window.execGoodsPayout = async function(name, monthKey) {
                 hideLoad();
                 alert(e.message);
             }
+        };
+        window.openGoodsReport = function() {
+            const ts = data.Timesheet || {};
+            let list = [];
+            
+            Object.values(ts).forEach(v => {
+                if (v.isPayout && v.payoutType && v.payoutType.startsWith('Товар')) {
+                    list.push(v);
+                }
+            });
+            
+            list.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            let h = '';
+            if (list.length === 0) {
+                h = '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900;">Нет выданных товаров</div>';
+            } else {
+                list.forEach(v => {
+                    let dArr = v.date.split('-'); 
+                    let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
+                    
+                    h += `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px;margin-bottom:5px;">
+                        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:4px;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;">
+                            <span>${dFormat}</span>
+                            <span style="font-weight:900;color:#0f172a;">${esc(v.name)}</span>
+                        </div>
+                        <div style="font-size:12px;font-weight:900;color:var(--p);">${v.payoutType.replace('Товар: ', '')}</div>
+                        <div style="text-align:right;font-size:12px;font-weight:900;color:#dc2626;margin-top:4px;">Сумма: ${v.payoutAmount} ₴</div>
+                    </div>`;
+                });
+            }
+            
+            gID('mT').innerText = 'ВЫДАННЫЕ ТОВАРЫ ПОД З/П';
+            gID('mB').innerHTML = h;
+            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+            gID('mdl').style.display = 'flex';
         };
 
         window.openWorkersMgmt = function() {
