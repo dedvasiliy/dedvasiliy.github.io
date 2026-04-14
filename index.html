@@ -2038,7 +2038,7 @@ window.previewWorkshop=function(k){
                 if(b>0){
 
                     if(w!==threadsExcl) totalBagsForThreads+=b;
-                    let matchName=autoBagsNames.some(autoName=>n.toLowerCase().includes(autoName));
+                    let cleanNameForCheck = n.toLowerCase().replace(/\[.*?\]/g, '').trim();                     let matchName = autoBagsNames.some(autoName => cleanNameForCheck === autoName);
                     if(matchName&&w===autoBagsWeight){
                         bagsToDeduct['Мешок 25кг']=(bagsToDeduct['Мешок 25кг']||0)+b;
                         let cleanN=n.toLowerCase();
