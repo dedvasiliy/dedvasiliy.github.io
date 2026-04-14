@@ -3311,7 +3311,6 @@ window.calcGpTotal = function() {
     });
     gID('gpTotalSum').innerText = total;
 };
-
 window.execGoodsPayout = async function(name, monthKey) {
     let dStr = gID('gpDate').value;
     let rows = document.getElementById('gpRows').children;
@@ -3336,7 +3335,8 @@ window.execGoodsPayout = async function(name, monthKey) {
         let n = itemVal.split('::')[1];
         
         totalSum += sum;
-        itemsList.push(n + ' (' + qty + ' шт)');
+        // Записываем детально: Название — кол-во шт/кг (сумма ₴)
+        itemsList.push(n + ' — ' + qty + ' шт/кг (' + sum + ' ₴)');
         
         stockUpdates['/' + cat + '/' + db.child(cat).push().key] = {
             name: n,
@@ -3359,7 +3359,8 @@ window.execGoodsPayout = async function(name, monthKey) {
             date: dStr,
             name: name,
             isPayout: true,
-            payoutType: 'Товар: ' + itemsList.join(', '),
+            payoutType: 'Товар под З/П', // В календаре будет только эта короткая надпись
+            goodsDetails: itemsList.join('<br>'), // А здесь прячем детальный список для отчета
             payoutAmount: totalSum,
             forMonth: monthKey,
             ts: tsStr
@@ -3417,6 +3418,7 @@ window.execGoodsPayout = async function(name, monthKey) {
                 }
             });
             
+            // Сортировка: новые записи всегда сверху
             list.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             let h = '';
@@ -3427,13 +3429,16 @@ window.execGoodsPayout = async function(name, monthKey) {
                     let dArr = v.date.split('-'); 
                     let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
                     
+                    // Берем скрытые детали или старое название (если запись старая)
+                    let details = v.goodsDetails ? v.goodsDetails : v.payoutType.replace('Товар: ', '');
+                    
                     h += `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px;margin-bottom:5px;">
                         <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:4px;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;">
                             <span>${dFormat}</span>
-                            <span style="font-weight:900;color:#0f172a;">${esc(v.name)}</span>
+                            <span style="font-weight:900;color:#0f172a;font-size:12px;">${esc(v.name)}</span>
                         </div>
-                        <div style="font-size:12px;font-weight:900;color:var(--p);">${v.payoutType.replace('Товар: ', '')}</div>
-                        <div style="text-align:right;font-size:12px;font-weight:900;color:#dc2626;margin-top:4px;">Сумма: ${v.payoutAmount} ₴</div>
+                        <div style="font-size:11px;font-weight:bold;color:#0369a1;margin-bottom:4px;line-height:1.5;">${details}</div>
+                        <div style="text-align:right;font-size:12px;font-weight:900;color:#dc2626;border-top:1px dashed #cbd5e1;padding-top:4px;">Итого удержано: ${v.payoutAmount} ₴</div>
                     </div>`;
                 });
             }
