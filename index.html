@@ -508,12 +508,17 @@ function renderHome(){
   <span style="font-size:8px; color:#94a3b8; font-weight:bold;">${document.lastModified}</span>
  </div>`;
 
-          const dObj = new Date();
+         const dObj = new Date();
          let tgt = 15;
          let chk = new Date(dObj.getFullYear(), dObj.getMonth(), tgt);
          if (chk.getDay() === 6) tgt = 14;
          if (chk.getDay() === 0) tgt = 13;
-         let advBtn = (dObj.getDate() === tgt) ? `<button class="btn-main alarm-blink" onclick="openMassAdvance()" style="background:#10b981;margin-bottom:15px;font-size:14px;padding:15px;border:2px solid #059669!important;color:#fff!important;">💸 СЕГОДНЯ ДЕНЬ АВАНСА.<br>СФОРМИРОВАТЬ СПИСОК?</button>` : '';
+         
+         // Проверяем, не выдавали ли уже аванс в этом месяце
+         let advKey = 'adv_issued_' + dObj.getFullYear() + '_' + dObj.getMonth();
+         let isIssued = localStorage.getItem(advKey) === 'true';
+         
+         let advBtn = (dObj.getDate() === tgt && !isIssued) ? `<button class="btn-main alarm-blink" id="mainAdvBtn" onclick="openMassAdvance()" style="background:#10b981;margin-bottom:15px;font-size:14px;padding:15px;border:2px solid #059669!important;color:#fff!important;">💸 СЕГОДНЯ ДЕНЬ АВАНСА.<br>СФОРМИРОВАТЬ СПИСОК?</button>` : '';
 
          gID('cnt').innerHTML=adm+ver+`<button onclick="firebase.auth().signOut()" class="btn-top btn-exit">ВЫХОД</button>
          <div class="logo-box"><img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="logo-img"></div>
@@ -4801,9 +4806,9 @@ window.openMassAdvance = function() {
         let earned = earnings[name];
         let adv = Math.round((earned * 0.8) / 1000) * 1000;
         if (adv > 0) {
-            rowsHtml += `<div class="fas-row-out" style="grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
+            rowsHtml += `<div class="fas-row-out" style="display:grid; grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
                 <div style="font-weight:900; font-size:13px; color:#0f172a">${esc(name)}</div>
-                <input type="number" class="fas-inp adv-inp" data-name="${esc(name)}" value="${adv}" oninput="calcMassAdvTotal()" style="font-weight:bold;text-align:center;font-size:14px;">
+                <input type="number" class="fas-inp adv-inp" data-name="${esc(name)}" value="${adv}" oninput="calcMassAdvTotal()" style="font-weight:bold;text-align:center;font-size:14px;margin:0;">
                 <button onclick="this.parentElement.remove(); calcMassAdvTotal();" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
             </div>`;
             totalAdv += adv;
@@ -4820,13 +4825,17 @@ window.openMassAdvance = function() {
     <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
         ОБЩАЯ СУММА: <span id="mAdvTotal" style="color:#dc2626">${totalAdv}</span> грн
     </div>
-    <button class="btn-main" style="background:#10b981;" onclick="saveMassAdvance('${monthKey}')">ВЫДАТЬ АВАНС ВСЕМ</button>`;
+    <div style="display:flex; gap:5px;">
+        <button class="btn-main" style="background:#0f172a; flex:1; margin:0;" onclick="printMassAdvances()">🖨️ ПЕЧАТЬ</button>
+        <button class="btn-main" style="background:#10b981; flex:2; margin:0;" onclick="saveMassAdvance('${monthKey}')">ВЫДАТЬ АВАНС ВСЕМ</button>
+    </div>`;
     
     gID('mT').innerText = 'МАССОВЫЙ АВАНС';
     gID('mB').innerHTML = h;
     gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
     gID('mdl').style.display = 'flex';
 };
+
 window.addEventListener('popstate', function(e) {
     let isModalOpen = false;
     if (gID('mdl').style.display === 'flex' || gID('confMdl').style.display === 'flex' || (gID('shipPreview') && gID('shipPreview').style.display === 'block') || (gID('incPreview') && gID('incPreview').style.display === 'block') || (gID('rawPreview') && gID('rawPreview').style.display === 'block')) {
@@ -4854,7 +4863,6 @@ window.calcMassAdvTotal = function() {
     let el = document.getElementById('mAdvTotal');
     if (el) el.innerText = total;
 };
-
 window.saveMassAdvance = async function(monthKey) {
     const inputs = document.querySelectorAll('#mAdvRows .adv-inp');
     if (inputs.length === 0) return alert('Список пуст');
@@ -4893,8 +4901,14 @@ window.saveMassAdvance = async function(monthKey) {
         
         if (Object.keys(u).length > 0) {
             await db.update(u);
+            
+            let advKey = 'adv_issued_' + y + '_' + dObj.getMonth();
+            localStorage.setItem(advKey, 'true');
+            let mainBtn = document.getElementById('mainAdvBtn');
+            if(mainBtn) mainBtn.style.display = 'none';
+
             hideLoad();
-            closeModal();
+            if(typeof closeModal === 'function') closeModal();
             alert('Авансы успешно записаны!');
             if (typeof renderTsList === 'function' && gID('cnt')) renderTsList(gID('cnt'));
         } else {
@@ -4906,6 +4920,25 @@ window.saveMassAdvance = async function(monthKey) {
         alert(e.message);
     }
 };
+window.printMassAdvances = function() {
+    let content = document.getElementById('mAdvRows').innerHTML;
+    let total = document.getElementById('mAdvTotal').innerText;
+    let dObj = new Date();
+    let dateStr = String(dObj.getDate()).padStart(2, '0') + '.' + String(dObj.getMonth() + 1).padStart(2, '0') + '.' + dObj.getFullYear();
+    
+    let win = window.open('', '', 'height=800,width=600');
+    win.document.write('<html><head><title>Авансы</title>');
+    win.document.write('<style>body{font-family:sans-serif;} .fas-row-out{display:flex; justify-content:space-between; font-size:18px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:5px;} input{border:none; text-align:right; font-weight:bold; font-size:18px;} button{display:none;}</style>');
+    win.document.write('</head><body>');
+    win.document.write('<h2>Список авансов (' + dateStr + ')</h2>');
+    win.document.write(content);
+    win.document.write('<h3 style="text-align:right;">ОБЩАЯ СУММА: ' + total + ' грн</h3>');
+    win.document.write('</body></html>');
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 500);
+};
+
 window.renderPrintExport = function() {
     const ct = document.getElementById('peList');
     if(!ct) return;
