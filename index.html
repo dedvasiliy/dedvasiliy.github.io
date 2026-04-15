@@ -4921,6 +4921,11 @@ window.saveMassAdvance = async function(monthKey) {
     }
 };
 window.printMassAdvances = function() {
+    // Принудительно записываем новые введенные значения в HTML перед печатью
+    document.querySelectorAll('#mAdvRows .adv-inp').forEach(inp => {
+        inp.setAttribute('value', inp.value);
+    });
+
     let content = document.getElementById('mAdvRows').innerHTML;
     let total = document.getElementById('mAdvTotal').innerText;
     let dObj = new Date();
