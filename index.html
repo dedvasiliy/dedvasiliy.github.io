@@ -396,7 +396,7 @@ function initAppData(){
       runAutoBackup();
     })
   });
-  db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; runAutoBackup();});
+  db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; if(cur==='Home') renderHome(); runAutoBackup();});
   db.child('Workers').on('value',s=>{data.Workers=s.val()||{}; if(cur==='Timesheet' || cur==='TsCal') loadData(); runAutoBackup();});
 
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
@@ -507,16 +507,23 @@ function renderHome(){
   <span style="color:var(--p); font-size:9px; font-weight:900">ОБНОВЛЕНО:</span><br>
   <span style="font-size:8px; color:#94a3b8; font-weight:bold;">${document.lastModified}</span>
  </div>`;
-
          const dObj = new Date();
          let tgt = 15;
          let chk = new Date(dObj.getFullYear(), dObj.getMonth(), tgt);
          if (chk.getDay() === 6) tgt = 14;
          if (chk.getDay() === 0) tgt = 13;
          
-         // Проверяем, не выдавали ли уже аванс в этом месяце
-         let advKey = 'adv_issued_' + dObj.getFullYear() + '_' + dObj.getMonth();
-         let isIssued = localStorage.getItem(advKey) === 'true';
+         // Проверяем базу данных (табель), выдавался ли массовый аванс в этом месяце
+         let monthKey = dObj.getFullYear() + '-' + String(dObj.getMonth() + 1).padStart(2, '0');
+         let isIssued = false;
+         if (data.Timesheet) {
+             Object.values(data.Timesheet).forEach(v => {
+                 // Ищем, есть ли уже записи "Массовый аванс" за этот месяц
+                 if (v.isPayout && v.payoutType === 'Аванс' && v.forMonth === monthKey && v.note === 'Массовый аванс') {
+                     isIssued = true;
+                 }
+             });
+         }
          
          let advBtn = (dObj.getDate() === tgt && !isIssued) ? `<button class="btn-main alarm-blink" id="mainAdvBtn" onclick="openMassAdvance()" style="background:#10b981;margin-bottom:15px;font-size:14px;padding:15px;border:2px solid #059669!important;color:#fff!important;">💸 СЕГОДНЯ ДЕНЬ АВАНСА.<br>СФОРМИРОВАТЬ СПИСОК?</button>` : '';
 
