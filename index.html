@@ -5663,9 +5663,17 @@ window.downloadAsFile = function(filename) {
 window.editFasReport = function(id) {
     const v = data['Фасовка'][id];
     if(!v) return;
-    // Делаем копии данных: оригинал (чтобы вычесть) и новую версию (чтобы редактировать)
     window.curEditFas = { id: id, orig: JSON.parse(JSON.stringify(v)), newV: JSON.parse(JSON.stringify(v)) };
     renderEditFas();
+};
+
+window.updateFasData = function() {
+    const d = window.curEditFas.newV;
+    d.date = gID('efDate').value + 'T12:00:00Z';
+    d.items.forEach((it, i) => { let el = gID(`efRaw_${i}`); if(el) it.amount = parseFloat(el.value)||0; });
+    d.outputItems.forEach((it, i) => { let el = gID(`efOut_${i}`); if(el) it.count = parseInt(el.value)||0; });
+    d.vzial = gID('efVz').value;
+    d.ostatok = parseFloat(gID('efOst').value)||0;
 };
 
 window.renderEditFas = function() {
@@ -5676,22 +5684,26 @@ window.renderEditFas = function() {
 
     d.items.forEach((it, i) => {
         h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;background:#f8fafc;padding:5px;border-radius:6px">
-            <div style="font-size:12px;font-weight:bold">${esc(it.name)} <span style="font-weight:normal;color:#888;font-size:10px">(${it.source})</span></div>
-            <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="efRaw_${i}" value="${it.amount}" oninput="updateFasData()"> <span style="font-size:10px;width:15px">кг</span></div>
+            <div style="font-size:12px;font-weight:bold;width:55%">${esc(it.name)} <div style="font-weight:normal;color:#888;font-size:9px">${it.source}</div></div>
+            <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:70px;margin:0" id="efRaw_${i}" value="${it.amount}" oninput="updateFasData()"> <span style="font-size:10px;">кг</span>
+            <button onclick="updateFasData(); window.curEditFas.newV.items.splice(${i},1); renderEditFas();" style="background:#fee2e2;color:red;border:none;border-radius:4px;width:30px;height:30px;font-weight:900">✕</button></div>
         </div>`;
     });
+    h += `<button class="btn-main" onclick="addFasRawBtn()" style="background:#f8fafc;color:var(--p);border:1px dashed var(--p);margin-top:5px;padding:5px;font-size:12px">+ ДОБАВИТЬ СЫРЬЕ</button>`;
 
     h += `<div class="z-head" style="margin-top:10px">ГОТОВАЯ ПРОДУКЦИЯ</div>`;
     d.outputItems.forEach((it, i) => {
         h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;background:#f0fdf4;padding:5px;border-radius:6px">
-            <div style="font-size:12px;font-weight:bold">${esc(it.name)}</div>
-            <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="efOut_${i}" value="${it.count}" oninput="updateFasData()"> <span style="font-size:10px;width:15px">шт</span></div>
+            <div style="font-size:12px;font-weight:bold;width:55%">${esc(it.name)}</div>
+            <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:70px;margin:0" id="efOut_${i}" value="${it.count}" oninput="updateFasData()"> <span style="font-size:10px;">шт</span>
+            <button onclick="updateFasData(); window.curEditFas.newV.outputItems.splice(${i},1); renderEditFas();" style="background:#fee2e2;color:red;border:none;border-radius:4px;width:30px;height:30px;font-weight:900">✕</button></div>
         </div>`;
     });
+    h += `<button class="btn-main" onclick="addFasOutBtn()" style="background:#f0fdf4;color:#166534;border:1px dashed #166534;margin-top:5px;padding:5px;font-size:12px">+ ДОБАВИТЬ ПРОДУКЦИЮ</button>`;
 
     h += `<div class="z-head" style="margin-top:10px">ПЛЕНКА (${esc(d.filmName || '')})</div>
     <div class="grid-2">
-        <div><span class="lbl-small">ВЗЯЛ (можно с плюсом, напр. 10+5)</span><input type="text" class="fas-inp" id="efVz" value="${d.vzial||''}" oninput="updateFasData()"></div>
+        <div><span class="lbl-small">ВЗЯЛ</span><input type="text" class="fas-inp" id="efVz" value="${d.vzial||''}" oninput="updateFasData()"></div>
         <div><span class="lbl-small">ОСТАТОК</span><input type="number" class="fas-inp" id="efOst" value="${d.ostatok||0}" oninput="updateFasData()"></div>
     </div>
     
@@ -5709,13 +5721,64 @@ window.renderEditFas = function() {
     gID('mdl').style.display = 'flex';
 };
 
-window.updateFasData = function() {
-    const d = window.curEditFas.newV;
-    d.date = gID('efDate').value + 'T12:00:00Z';
-    d.items.forEach((it, i) => { let el = gID(`efRaw_${i}`); if(el) it.amount = parseFloat(el.value)||0; });
-    d.outputItems.forEach((it, i) => { let el = gID(`efOut_${i}`); if(el) it.count = parseInt(el.value)||0; });
-    d.vzial = gID('efVz').value;
-    d.ostatok = parseFloat(gID('efOst').value)||0;
+window.addFasRawBtn = function() {
+    updateFasData();
+    let opts = '<option value="">Выберите сырье...</option>';
+    ['Stock_Raw','WeightStock','Stock_DV','Stock_Feed','Stock_Semi'].forEach(cat => {
+        if(data[cat]) {
+            opts += `<optgroup label="${cat}">`;
+            let items = [];
+            Object.values(data[cat]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+            items.sort().forEach(n => { opts += `<option value="${esc(n)}|${cat}">${esc(n)}</option>`; });
+            opts += `</optgroup>`;
+        }
+    });
+    showSelectModalFas('Добавить сырье', opts, (val) => {
+        if(!val) return;
+        let [n, c] = val.split('|');
+        window.curEditFas.newV.items.push({ name: n, source: c, amount: 0 });
+        renderEditFas();
+    });
+};
+
+window.addFasOutBtn = function() {
+    updateFasData();
+    let opts = '<option value="">Выберите продукцию...</option>';
+    if(data['Готовая']) {
+        let items = [];
+        Object.values(data['Готовая']).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+        items.sort().forEach(n => { opts += `<option value="${esc(n)}">${esc(n)}</option>`; });
+    }
+    showSelectModalFas('Добавить готовую продукцию', opts, (val) => {
+        if(!val) return;
+        let sz = 'Пакеты';
+        if(data.PriceList) {
+            let p = Object.values(data.PriceList).find(x => x.name === val);
+            if(p && p.packSize) sz = p.packSize;
+        }
+        window.curEditFas.newV.outputItems.push({ name: val, count: 0, size: sz });
+        renderEditFas();
+    });
+};
+
+window.showSelectModalFas = function(title, optionsHtml, callback) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:15px;';
+    m.innerHTML = `
+    <div style="background:#fff;width:100%;max-width:350px;border-radius:10px;padding:15px;">
+        <h4 style="margin-top:0;font-size:14px;">${title}</h4>
+        <select id="tmpSelFas" class="fas-inp" style="height:40px;font-size:14px;margin-bottom:15px;">${optionsHtml}</select>
+        <div style="display:flex;gap:5px;">
+            <button class="btn-main" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#ccc;color:#333;margin:0;">ОТМЕНА</button>
+            <button class="btn-main" id="tmpBtnFas" style="background:var(--p);margin:0;">ДОБАВИТЬ</button>
+        </div>
+    </div>`;
+    document.body.appendChild(m);
+    document.getElementById('tmpBtnFas').onclick = () => {
+        let v = document.getElementById('tmpSelFas').value;
+        callback(v);
+        document.body.removeChild(m);
+    };
 };
 
 window.saveEditFas = async function() {
@@ -5730,7 +5793,6 @@ window.saveEditFas = async function() {
         let u = {};
         const tsStr = new Date().toISOString();
 
-        // 1. Обновляем отчет фасовки
         u[`/Фасовка/${id}/date`] = newV.date;
         u[`/Фасовка/${id}/items`] = newV.items;
         u[`/Фасовка/${id}/outputItems`] = newV.outputItems;
@@ -5738,52 +5800,50 @@ window.saveEditFas = async function() {
         u[`/Фасовка/${id}/ostatok`] = newV.ostatok;
 
         const getVz = (vStr) => String(vStr||'0').split('+').reduce((a,b)=>a+parseFloat(b)||0,0);
-        
         let stockDiffs = {}; 
 
-        // СЫРЬЕ
         orig.items.forEach(it => {
             let k = `${it.source}|${it.name}`;
-            stockDiffs[k] = (stockDiffs[k]||0) + it.amount; // возвращаем старое
+            stockDiffs[k] = (stockDiffs[k]||0) + it.amount; 
         });
         newV.items.forEach(it => {
             let k = `${it.source}|${it.name}`;
-            stockDiffs[k] = (stockDiffs[k]||0) - it.amount; // списываем новое
+            stockDiffs[k] = (stockDiffs[k]||0) - it.amount; 
         });
 
-        // ГОТОВАЯ ПРОДУКЦИЯ И ПАКЕТЫ
         let oldPk = 0, newPk = 0;
         let packK = 1; 
         orig.outputItems.forEach(it => {
             let k = `Готовая|${it.name}`;
-            stockDiffs[k] = (stockDiffs[k]||0) - it.count; // убираем старую готовую
+            stockDiffs[k] = (stockDiffs[k]||0) - it.count; 
             oldPk += it.count;
             if(window.autoSet && it.name === autoSet.packK2Name) packK = parseFloat(autoSet.packK2 || 1);
             else packK = parseFloat(window.autoSet ? autoSet.packK1 : 1);
         });
         newV.outputItems.forEach(it => {
             let k = `Готовая|${it.name}`;
-            stockDiffs[k] = (stockDiffs[k]||0) + it.count; // добавляем новую готовую
+            stockDiffs[k] = (stockDiffs[k]||0) + it.count; 
             newPk += it.count;
         });
 
-        // ПЛЕНКА
         if (orig.filmName) {
             let oldFilmUsed = getVz(orig.vzial) - (orig.ostatok||0);
             let newFilmUsed = getVz(newV.vzial) - (newV.ostatok||0);
             let k = `Пленка|${orig.filmName}`;
-            stockDiffs[k] = (stockDiffs[k]||0) + oldFilmUsed; // возвращаем старую
-            stockDiffs[k] = (stockDiffs[k]||0) - newFilmUsed; // списываем новую
+            stockDiffs[k] = (stockDiffs[k]||0) + oldFilmUsed; 
+            stockDiffs[k] = (stockDiffs[k]||0) - newFilmUsed; 
         }
 
-        // ПАКЕТЫ
         let oldPacks = Math.round(oldPk / packK);
         let newPacks = Math.round(newPk / packK);
-        let packSz = (newV.outputItems[0] && newV.outputItems[0].size) ? newV.outputItems[0].size : 'Пакеты';
+        
+        let packSz = 'Пакеты';
+        if (newV.outputItems.length > 0 && newV.outputItems[0].size) packSz = newV.outputItems[0].size;
+        else if (orig.outputItems.length > 0 && orig.outputItems[0].size) packSz = orig.outputItems[0].size;
+        
         let pkKey = `Пакеты|${packSz}`;
         stockDiffs[pkKey] = (stockDiffs[pkKey]||0) + oldPacks - newPacks;
 
-        // Применяем разницу к складам
         Object.keys(stockDiffs).forEach(k => {
             let val = stockDiffs[k];
             if(Math.abs(val) > 0.001) {
