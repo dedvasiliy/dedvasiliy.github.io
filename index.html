@@ -1175,7 +1175,7 @@ window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<s
     function rFas(c){const d=data['Фасовка']||{},l=Object.entries(d).map(([id,v])=>({...v,id,_date:v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let h=`<button class="btn-main" onclick="printFas()" style="background:var(--s);margin-bottom:10px">🖨️ ПЕЧАТЬ ФАСОВКИ</button>`;c.innerHTML=h+rMonthGroup(l,v=>{const dt=v.date.split('T')[0].split('-').reverse().join('.');const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');let rRaw='';if(v.items)v.items.forEach(x=>{rRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`});let rOut='';let pk=0,sz='';if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.count}шт</span></div>`;pk+=x.count;if(!sz)sz=x.size;});let packs=0;if(v.outputItems&&v.outputItems.length>0){const k=v.outputItems[0].name===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);packs=Math.round(pk/k);}const vt=v.vzial?String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0):0;let filmUsed=Math.abs(vt-(v.ostatok||0));let costHtml='';if(v.costPerPack!==undefined){let packDetail='';if(v.cFilm!==undefined){packDetail=`<div style="display:flex;justify-content:space-between;color:#64748b;padding-left:10px;font-size:9px"><span>- Пленка:</span><span>${(v.cFilm||0).toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between;color:#64748b;padding-left:10px;font-size:9px"><span>- Пакеты:</span><span>${(v.cPackets||0).toFixed(2)} грн</span></div>`;if(v.cTape)packDetail+=`<div style="display:flex;justify-content:space-between;color:#64748b;padding-left:10px;font-size:9px"><span>- Скотч:</span><span>${v.cTape.toFixed(2)} грн</span></div>`;if(v.cTherm)packDetail+=`<div style="display:flex;justify-content:space-between;color:#64748b;padding-left:10px;font-size:9px"><span>- Термолента:</span><span>${v.cTherm.toFixed(2)} грн</span></div>`;}let det=v.rawCost!==undefined?`<div style="display:flex;justify-content:space-between"><span>Сырье:</span><span>${v.rawCost.toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between"><span>Упаковка:</span><span>${v.packCost.toFixed(2)} грн</span></div>${packDetail}<div style="display:flex;justify-content:space-between;margin-top:2px"><span>Свет:</span><span>${v.energyCost.toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between"><span>Зарплата:</span><span>${v.salCost.toFixed(2)} грн</span></div>`:`<div style="text-align:center;color:#94a3b8">Детали не сохранены</div>`;costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px;cursor:pointer" onclick="const d=this.querySelector('.f-det');d.style.display=d.style.display==='none'?'block':'none'"><div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px"><span>Общие затраты:</span><span>${(v.totalCost||0).toFixed(2)} грн <span style="font-size:8px">▼</span></span></div><div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px"><span>СЕБЕСТОИМОСТЬ 1 ПАЧКИ:</span><span>${v.costPerPack.toFixed(2)} грн</span></div><div class="f-det" style="display:none;margin-top:5px;padding-top:5px;border-top:1px dotted #ccc;font-size:10px;color:#475569">${det}</div></div>`;}return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${esc(mName)}</span></div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${rRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${rOut}<div class="conf-sec"><b>расход упаковки:</b></div><div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz||'-'}</span><span>${packs}шт</span></div><div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mName)}</span><span>${filmUsed.toFixed(2)}кг</span></div>${costHtml}${isAdmin?`<div style="display:flex;gap:5px;margin-top:10px;"><button onclick="editFasReport('${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button><button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button></div>`:''}</div>`;});}
 
     window.printWorkshop=function(k){const c=WS_CFG[k];const defM=new Date().toISOString().substring(0,7);const m=prompt('За какой месяц печатать? (ГГГГ-ММ)\nОставьте пустым для печати за все время:',defM);if(m===null)return;const dbN=c.db,d=data[dbN]||{},r=[];Object.entries(d).forEach(([id,v])=>{const dt=(v.date||'2000-01-01').split('T')[0];if(!m||dt.startsWith(m))r.push({...v,id,_date:dt});});r.sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let h=`<h3 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">ИСТОРИЯ ЦЕХА: ${c.title} ${m?'за '+m:''}</h3><div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; font-family:sans-serif; font-size:9px;">`;r.forEach(v=>{const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');const ts=v.timeStart||'08:00',te=v.timeEnd||'17:00';let hRaw='';let tR=0;if(v.rawBase){hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Осн: ${esc(v.rawBase.n)}</span><b>${v.rawBase.w}кг</b></div>`;tR+=v.rawBase.w;}else if(v.rawMix){hRaw+=`<div style="border-bottom:1px dotted #ccc">Смесь: ${esc(v.rawMix)}</div>`;let matches=String(v.rawMix).match(/\d+(?:\.\d+)?/g);if(matches)matches.forEach(num=>tR+=parseFloat(num));}if(v.rawAdd){v.rawAdd.forEach(x=>{hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Доб: ${esc(x.n)}</span><b>${x.w}кг</b></div>`;tR+=x.w;});}let hOut='';let tD=0;if(v.items){v.items.forEach(x=>{let wght=((x.q||0)*(x.w||0))+(x.l||0);if(!wght&&x.amount)wght=parseFloat(x.amount)||0;let isDV=x.type==='DV'||(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(x.n||x.name||''));hOut+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>${esc(x.n||x.name||'')}</span><b>${wght}кг</b></div>`;if(isDV)tD+=wght;});}let pct=tR>0&&tD>0?((tD/tR)*100).toFixed(1):0;h+=`<div style="border:1px solid #000; border-radius:6px; padding:4px; page-break-inside:avoid; box-sizing:border-box;"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;margin-bottom:2px;padding-bottom:2px;"><b>${dt} (${ts}-${te})</b><b>Выход: ${pct}%</b></div><div style="text-align:center;font-style:italic;margin-bottom:2px;font-size:8px;">${esc(v.operator||'-')} | ${esc(v.assistant||'-')}</div><div style="color:#444"><i>Сырье (всего ${tR}кг):</i></div>${hRaw}<div style="color:#444;margin-top:2px;"><i>Выход:</i></div>${hOut}</div>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
-        function rWorkshopList(c,k){const dbN=WS_CFG[k].db,d=data[dbN]||{};const l=Object.entries(d).map(([id,v])=>({...v,id,_date:(v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let headBtn=`<button class="btn-main" onclick="printWorkshop('${k}')" style="background:var(--s);margin-bottom:10px">🖨️ ПЕЧАТЬ ЦЕХА</button>`;c.innerHTML=headBtn+rMonthGroup(l,v=>{const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');const tStart=v.timeStart||'08:00',tEnd=v.timeEnd||'17:00';const op=v.operator||'-',as=v.assistant||'-';let hRaw='';let totalRaw=0;if(v.rawBase){hRaw+=`<div>Основа: ${esc(v.rawBase.n)} ${v.rawBase.w}кг</div>`;totalRaw+=v.rawBase.w;}else if(v.rawMix){hRaw+=`<div>Основа (старая): ${esc(v.rawMix)}</div>`;let matches=String(v.rawMix).match(/\d+(?:\.\d+)?/g);if(matches){matches.forEach(num=>totalRaw+=parseFloat(num));}}if(v.rawAdd&&v.rawAdd.length){v.rawAdd.forEach(x=>{hRaw+=`<div>Добавка: ${esc(x.n)} ${x.w}кг</div>`;totalRaw+=x.w;});}let hOutDV='',hOutSemi='',hOutFeed='';let totalDV=0;if(v.items){v.items.forEach(x=>{let q=x.q||0,w=x.w||0,l=x.l||0;let typ=x.type||'DV';let wght=(q*w)+l;if(!wght&&x.amount)wght=parseFloat(x.amount)||0;let nm=x.n||x.name||'';let isDV=typ==='DV';if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm))isDV=!1;let row='';if(q&&w)row=`<div>${esc(nm)} ${q}м×${w}кг${l?'+'+l+'кг':''}</div>`;else row=`<div>${esc(nm)} ${wght}кг</div>`;if(isDV){hOutDV+=row;totalDV+=wght;}else if(typ==='Semi'||/(сечк|полуфабрикат)/i.test(nm))hOutSemi+=row;else hOutFeed+=row;});}let outBlock='';if(hOutDV)outBlock+=`<div class="conf-sec"><b>ДВ вес:</b></div>${hOutDV}`;if(hOutSemi)outBlock+=`<div class="conf-sec"><b>полуфабрикат:</b></div>${hOutSemi}`;if(hOutFeed)outBlock+=`<div class="conf-sec"><b>отходы:</b></div>${hOutFeed}`;let percent=totalRaw>0&&totalDV>0?((totalDV/totalRaw)*100).toFixed(1):0;let costHtml='';if(v.costPerKg!==undefined){costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px"><div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px"><span>Общие затраты:</span><span>${(v.totalCost||0).toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px"><span>СЕБЕСТОИМОСТЬ 1 КГ:</span><span>${v.costPerKg.toFixed(2)} грн</span></div></div>`;}return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${outBlock}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой (ДВ):</span><span>${percent}%</span></div>${costHtml}${isAdmin?`<button onclick="delRec('${dbN}','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;margin-top:10px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button>`:''}</div>`;});}
+        function rWorkshopList(c,k){const dbN=WS_CFG[k].db,d=data[dbN]||{};const l=Object.entries(d).map(([id,v])=>({...v,id,_date:(v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let headBtn=`<button class="btn-main" onclick="printWorkshop('${k}')" style="background:var(--s);margin-bottom:10px">🖨️ ПЕЧАТЬ ЦЕХА</button>`;c.innerHTML=headBtn+rMonthGroup(l,v=>{const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');const tStart=v.timeStart||'08:00',tEnd=v.timeEnd||'17:00';const op=v.operator||'-',as=v.assistant||'-';let hRaw='';let totalRaw=0;if(v.rawBase){hRaw+=`<div>Основа: ${esc(v.rawBase.n)} ${v.rawBase.w}кг</div>`;totalRaw+=v.rawBase.w;}else if(v.rawMix){hRaw+=`<div>Основа (старая): ${esc(v.rawMix)}</div>`;let matches=String(v.rawMix).match(/\d+(?:\.\d+)?/g);if(matches){matches.forEach(num=>totalRaw+=parseFloat(num));}}if(v.rawAdd&&v.rawAdd.length){v.rawAdd.forEach(x=>{hRaw+=`<div>Добавка: ${esc(x.n)} ${x.w}кг</div>`;totalRaw+=x.w;});}let hOutDV='',hOutSemi='',hOutFeed='';let totalDV=0;if(v.items){v.items.forEach(x=>{let q=x.q||0,w=x.w||0,l=x.l||0;let typ=x.type||'DV';let wght=(q*w)+l;if(!wght&&x.amount)wght=parseFloat(x.amount)||0;let nm=x.n||x.name||'';let isDV=typ==='DV';if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm))isDV=!1;let row='';if(q&&w)row=`<div>${esc(nm)} ${q}м×${w}кг${l?'+'+l+'кг':''}</div>`;else row=`<div>${esc(nm)} ${wght}кг</div>`;if(isDV){hOutDV+=row;totalDV+=wght;}else if(typ==='Semi'||/(сечк|полуфабрикат)/i.test(nm))hOutSemi+=row;else hOutFeed+=row;});}let outBlock='';if(hOutDV)outBlock+=`<div class="conf-sec"><b>ДВ вес:</b></div>${hOutDV}`;if(hOutSemi)outBlock+=`<div class="conf-sec"><b>полуфабрикат:</b></div>${hOutSemi}`;if(hOutFeed)outBlock+=`<div class="conf-sec"><b>отходы:</b></div>${hOutFeed}`;let percent=totalRaw>0&&totalDV>0?((totalDV/totalRaw)*100).toFixed(1):0;let costHtml='';if(v.costPerKg!==undefined){costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px"><div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px"><span>Общие затраты:</span><span>${(v.totalCost||0).toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px"><span>СЕБЕСТОИМОСТЬ 1 КГ:</span><span>${v.costPerKg.toFixed(2)} грн</span></div></div>`;}return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${outBlock}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой (ДВ):</span><span>${percent}%</span></div>${costHtml}${isAdmin?`<div style="display:flex;gap:5px;margin-top:10px;"><button onclick="editWorkshopReport('${k}', '${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button><button onclick="delRec('${dbN}','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button></div>`:''}</div>`;});}
     function rArchPack(c){
         const d=data.ArchPackIn||{};
         const l=Object.entries(d).map(([id,v])=>({...v,id,_date:v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});
@@ -5720,7 +5720,6 @@ window.renderEditFas = function() {
     gID('mT').innerText = 'РЕДАКТИРОВАНИЕ';
     gID('mdl').style.display = 'flex';
 };
-
 window.addFasRawBtn = function() {
     updateFasData();
     let opts = '<option value="">Выберите сырье...</option>';
@@ -5732,12 +5731,30 @@ window.addFasRawBtn = function() {
 
     ['WeightStock', 'Stock_DV'].forEach(cat => {
         if(data[cat]) {
-            let items = [];
-            Object.values(data[cat]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+            // 1. Считаем реальные остатки по каждому товару на складе
+            let totals = {};
+            Object.values(data[cat]).forEach(v => {
+                if(v.name) {
+                    totals[v.name] = (totals[v.name] || 0) + (parseFloat(v.amount) || 0);
+                }
+            });
+
+            // 2. Отбираем только те, где остаток больше нуля
+            let validItems = [];
+            Object.keys(totals).forEach(n => {
+                if(totals[n] > 0.001) {
+                    // Округляем до 2 знаков, если есть дроби (например, 125.5)
+                    let amt = Math.round(totals[n] * 100) / 100;
+                    validItems.push({ name: n, amount: amt });
+                }
+            });
             
-            if(items.length > 0) {
+            // 3. Формируем список с указанием веса в скобках
+            if(validItems.length > 0) {
                 opts += `<optgroup label="—— ${catNames[cat]} ——">`;
-                items.sort().forEach(n => { opts += `<option value="${esc(n)}|${cat}">${esc(n)}</option>`; });
+                validItems.sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+                    opts += `<option value="${esc(item.name)}|${cat}">${esc(item.name)} [${item.amount} кг]</option>`;
+                });
                 opts += `</optgroup>`;
             }
         }
@@ -5878,6 +5895,213 @@ window.saveEditFas = async function() {
     } catch(e) {
         hideLoad();
         alert(e.message);
+    }
+};
+window.editWorkshopReport = function(k, id) {
+    const dbN = WS_CFG[k].db;
+    const v = data[dbN][id];
+    if(!v) return;
+    // Создаем копии: оригинал для отката складов и новую для редактирования
+    window.curEditWS = { k: k, dbN: dbN, id: id, orig: JSON.parse(JSON.stringify(v)), newV: JSON.parse(JSON.stringify(v)) };
+    renderEditWorkshop();
+};
+
+window.updateWSData = function() {
+    const d = window.curEditWS.newV;
+    d.date = gID('ewsDate').value + 'T12:00:00Z';
+    d.timeStart = gID('ewsTS').value;
+    d.timeEnd = gID('ewsTE').value;
+    d.operator = gID('ewsOp').value;
+    d.assistant = gID('ewsAs').value;
+
+    if(d.rawBase) d.rawBase.w = parseFloat(gID('ewsRbW').value) || 0;
+    
+    if(d.rawAdd) {
+        d.rawAdd.forEach((x, i) => {
+            let el = gID(`ewsRaW_${i}`);
+            if(el) x.w = parseFloat(el.value) || 0;
+        });
+    }
+    
+    if(d.items) {
+        d.items.forEach((x, i) => {
+            let eq = gID(`ewsItQ_${i}`);
+            let ew = gID(`ewsItW_${i}`);
+            let el = gID(`ewsItL_${i}`);
+            let ea = gID(`ewsItA_${i}`);
+
+            if(eq) x.q = parseInt(eq.value) || 0;
+            if(ew) x.w = parseFloat(ew.value) || 0;
+            if(el) x.l = parseFloat(el.value) || 0;
+            if(ea) x.amount = parseFloat(ea.value) || 0;
+        });
+    }
+};
+
+window.renderEditWorkshop = function() {
+    const d = window.curEditWS.newV;
+    const k = window.curEditWS.k;
+    let h = `<div style="font-weight:900;text-align:center;margin-bottom:10px;color:var(--p)">РЕДАКТИРОВАНИЕ: ${WS_CFG[k].title}</div>
+    <div class="grid-2">
+        <div><span class="lbl-small">ДАТА</span><input type="date" class="fas-inp" id="ewsDate" value="${(d.date||'').split('T')[0]}" oninput="updateWSData()"></div>
+        <div style="display:flex;gap:5px;">
+            <div style="flex:1"><span class="lbl-small">С</span><input type="time" class="fas-inp" id="ewsTS" value="${d.timeStart||''}" oninput="updateWSData()"></div>
+            <div style="flex:1"><span class="lbl-small">ПО</span><input type="time" class="fas-inp" id="ewsTE" value="${d.timeEnd||''}" oninput="updateWSData()"></div>
+        </div>
+    </div>
+    <div class="grid-2">
+        <div><span class="lbl-small">ОПЕРАТОР</span><input type="text" class="fas-inp" id="ewsOp" value="${esc(d.operator||'')}" oninput="updateWSData()"></div>
+        <div><span class="lbl-small">ПОМОЩНИК</span><input type="text" class="fas-inp" id="ewsAs" value="${esc(d.assistant||'')}" oninput="updateWSData()"></div>
+    </div>
+    
+    <div class="z-head" style="margin-top:10px">СЫРЬЕ</div>`;
+
+    if(d.rawBase) {
+        h += `<div style="background:#f8fafc;padding:5px;border-radius:6px;margin-bottom:5px;">
+            <div style="font-size:12px;font-weight:bold;margin-bottom:2px;color:#1e293b">Основа: ${esc(d.rawBase.n)}</div>
+            <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="ewsRbW" value="${d.rawBase.w}" oninput="updateWSData()"> <span style="font-size:10px">кг</span></div>
+        </div>`;
+    }
+    if(d.rawAdd && d.rawAdd.length) {
+        d.rawAdd.forEach((x, i) => {
+            h += `<div style="background:#f8fafc;padding:5px;border-radius:6px;margin-bottom:5px;">
+                <div style="font-size:12px;font-weight:bold;margin-bottom:2px;color:#475569">Добавка: ${esc(x.n)}</div>
+                <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="ewsRaW_${i}" value="${x.w}" oninput="updateWSData()"> <span style="font-size:10px">кг</span></div>
+            </div>`;
+        });
+    }
+
+    h += `<div class="z-head" style="margin-top:10px">ВЫПУСК (ДВ / ПФ / ОТХОДЫ)</div>`;
+    if(d.items && d.items.length) {
+        d.items.forEach((x, i) => {
+            let nm = x.n || x.name || '';
+            let tColor = x.type==='DV' ? '#f0fdf4' : (x.type==='Semi' ? '#fffbeb' : '#fef2f2');
+            let tName = x.type==='DV' ? 'ДВ вес' : (x.type==='Semi' ? 'Полуфабрикат' : 'Отход');
+            
+            h += `<div style="background:${tColor};padding:5px;border-radius:6px;margin-bottom:5px;border:1px solid #e2e8f0">
+                <div style="font-size:12px;font-weight:bold;margin-bottom:2px">${esc(nm)} <span style="font-weight:normal;color:#64748b;font-size:9px">(${tName})</span></div>
+                <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">`;
+            
+            if(x.q !== undefined && x.w !== undefined) {
+                h += `<input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItQ_${i}" value="${x.q}" oninput="updateWSData()"> <span style="font-size:10px">м ×</span>
+                      <input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItW_${i}" value="${x.w}" oninput="updateWSData()"> <span style="font-size:10px">кг +</span>
+                      <input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItL_${i}" value="${x.l||0}" oninput="updateWSData()"> <span style="font-size:10px">кг (хвост)</span>`;
+            } else {
+                 h += `<input type="number" class="fas-inp" style="width:90px;margin:0" id="ewsItA_${i}" value="${x.amount||0}" oninput="updateWSData()"> <span style="font-size:10px">кг</span>`;
+            }
+            h += `</div></div>`;
+        });
+    }
+
+    h += `<div style="font-size:10px;color:#64748b;text-align:center;margin-top:10px;line-height:1.2">
+    *В целях защиты складов изменение позиций отключено. Вы можете исправить любые веса и количества. Финансы пересчитаны не будут.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:15px;">
+        <button class="btn-main" onclick="gID('mdl').style.display='none'" style="background:#64748b;margin:0;">⬅ ОТМЕНА</button>
+        <button class="btn-main" onclick="saveEditWorkshop()" style="background:#10b981;margin:0;">💾 СОХРАНИТЬ</button>
+    </div>`;
+
+    gID('mB').innerHTML = h;
+    gID('mT').innerText = 'РЕДАКТИРОВАНИЕ ЦЕХА';
+    gID('mdl').style.display = 'flex';
+};
+
+window.saveEditWorkshop = async function() {
+    updateWSData();
+    const orig = window.curEditWS.orig;
+    const newV = window.curEditWS.newV;
+    const dbN = window.curEditWS.dbN;
+    const id = window.curEditWS.id;
+
+    if(!confirm("Сохранить изменения и пересчитать склады?")) return;
+    showLoad();
+    try {
+        let u = {};
+        const tsStr = new Date().toISOString();
+
+        // 1. Сохраняем новые цифры в самом отчете
+        u[`/${dbN}/${id}/date`] = newV.date;
+        u[`/${dbN}/${id}/timeStart`] = newV.timeStart;
+        u[`/${dbN}/${id}/timeEnd`] = newV.timeEnd;
+        u[`/${dbN}/${id}/operator`] = newV.operator;
+        u[`/${dbN}/${id}/assistant`] = newV.assistant;
+        if(newV.rawBase) u[`/${dbN}/${id}/rawBase`] = newV.rawBase;
+        if(newV.rawAdd) u[`/${dbN}/${id}/rawAdd`] = newV.rawAdd;
+        if(newV.items) u[`/${dbN}/${id}/items`] = newV.items;
+
+        let stockDiffs = {}; 
+        
+        const addDiff = (cat, name, val) => {
+            if(!name) return;
+            let k = `${cat}|${name}`;
+            stockDiffs[k] = (stockDiffs[k]||0) + val;
+        };
+
+        // 2. Считаем разницу для СЫРЬЯ (Основа и Добавки)
+        if(orig.rawBase && newV.rawBase) {
+            // Возвращаем старый вес и списываем новый
+            addDiff(orig.rawBase.c || 'Stock_Raw', orig.rawBase.n, orig.rawBase.w);
+            addDiff(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w);
+        }
+        
+        if(orig.rawAdd) orig.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, x.w));
+        if(newV.rawAdd) newV.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, -x.w));
+
+        // 3. Считаем разницу для ВЫПУСКА (ДВ, ПФ, Отходы)
+        const calcW = (it) => {
+            if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0);
+            return parseFloat(it.amount)||0;
+        };
+
+        const getOutCat = (typ) => {
+            if(typ==='DV') return 'Stock_DV';
+            if(typ==='Semi') return 'Stock_Semi';
+            if(typ==='Feed') return 'Stock_Feed';
+            return 'Stock_DV'; 
+        };
+
+        if(orig.items) orig.items.forEach(x => {
+            let w = calcW(x);
+            let cat = getOutCat(x.type);
+            addDiff(cat, x.n || x.name, -w); // Откатываем старый приход
+        });
+        
+        if(newV.items) newV.items.forEach(x => {
+            let w = calcW(x);
+            let cat = getOutCat(x.type);
+            addDiff(cat, x.n || x.name, w); // Начисляем новый приход
+        });
+
+        // 4. Записываем разницу на склады
+        Object.keys(stockDiffs).forEach(k => {
+            let val = stockDiffs[k];
+            if(Math.abs(val) > 0.001) { // Если есть хоть какая-то разница
+                let [cat, n] = k.split('|');
+                
+                let act = val > 0 ? "Возврат" : "Списание";
+                // Красивые названия операций для готовой продукции
+                if(cat==='Stock_DV' || cat==='Stock_Semi' || cat==='Stock_Feed') {
+                     act = val > 0 ? "Доп. приход" : "Корректировка (уменьшение)";
+                }
+                
+                u[`/${cat}/${db.child(cat).push().key}`] = {
+                    name: n,
+                    amount: Math.round(val * 100) / 100, // округляем, чтобы не было хвостов вроде 0.00001
+                    date: newV.date,
+                    note: `${act} (ред. отчета от ${newV.date.split('T')[0]})`,
+                    fLink: id,
+                    ts: tsStr
+                };
+            }
+        });
+
+        await db.update(u);
+        hideLoad();
+        alert('Отчет успешно обновлен, остатки на складах скорректированы!');
+        gID('mdl').style.display='none';
+        if(typeof loadData === 'function') loadData(); // перезагружаем данные на экране
+    } catch(e) {
+        hideLoad();
+        alert('Ошибка: ' + e.message);
     }
 };
 
