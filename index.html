@@ -1236,7 +1236,8 @@ window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<s
     function rInvC(c){rInvGen(c,'client')}
 window.archInFilter=window.archInFilter||'ALL';window.setArchInFilter=function(f,key){window.archInFilter=f;rInvGen(document.getElementById('cnt'),key);};function rInvGen(c,key){const k=archSub==='In'?'ArchIncoming':'ArchInvoices',d=data[k]||{};let l=Object.entries(d).map(([id,v])=>({...v,id,_date:v.date.split('T')[0]}));let fH='';if(k==='ArchIncoming'){const iA=window.archInFilter==='ALL'?'active':'';const iE=window.archInFilter==='EXT'?'active':'';const iI=window.archInFilter==='INT'?'active':'';fH=`<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:10px;"><button class="btn-sel ${iA}" onclick="setArchInFilter('ALL', '${key}')">ВСЕ</button><button class="btn-sel ${iE}" onclick="setArchInFilter('EXT', '${key}')">ВНЕШНИЕ</button><button class="btn-sel ${iI}" onclick="setArchInFilter('INT', '${key}')">ВНУТРЕННИЕ</button></div>`;if(window.archInFilter==='EXT'){l=l.filter(v=>v.supplier!=='Свое производство'&&v.supplier!=='Фасовка');}else if(window.archInFilter==='INT'){l=l.filter(v=>v.supplier==='Свое производство'||v.supplier==='Фасовка');}}const renderRow=v=>{const i=v.id;if(k==='ArchInvoices'){let rows='';if(v.items)v.items.forEach((it,idx)=>{if(idx<4){const p=it.split('|');rows+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]).substring(0,12))}..</td><td>${p[1]}</td><td>${parseFloat(p[5]).toFixed(2)}</td></tr>`}});if(v.items&&v.items.length>4)rows+=`<tr><td colspan="4">...</td></tr>`;return `<div class="j-card" onclick="viewInvoice('${i}')" style="padding:8px;cursor:pointer;"><div class="j-head" style="font-size:11px">${v.date.split('T')[0].split('-').reverse().join('.')} | №${esc(v.num)||'-'} ${v.priceMode==='bn'?'<span style="color:#dc2626;float:right">Б/Н</span>':''}</div><div style="font-size:11px;font-weight:700;margin-bottom:2px">${esc(v.client)||'-'}</div><table class="mini-inv"><tr><th>№</th><th>Товар</th><th>Кол-во</th><th>Сумма</th></tr>${rows}</table><div style="text-align:right;font-size:10px;font-weight:900;margin-top:4px">Всего: ${parseFloat(v.totalSum||0).toFixed(2)}</div>${isAdmin?`<button onclick="event.stopPropagation();delRec('${k}','${i}')" style="color:red;border:none;background:0 0;margin-top:5px;width:100%">УДАЛИТЬ</button>`:''}</div>`;}else{let itmsHtml='';let u=v.supplier==='Фасовка'?'шт':'кг';let sC=(v.supplier==='Свое производство'||v.supplier==='Фасовка')?'color:#8b5cf6;':'color:var(--p);';if(v.items){v.items.forEach(x=>{itmsHtml+=`<div style="font-size:12px;display:flex;justify-content:space-between"><span>${esc(x.n)}</span><span style="font-weight:bold">${x.a}${u}</span></div>`;});}else{itmsHtml=`<div style="font-size:12px;display:flex;justify-content:space-between"><span>${esc(v.name)}</span><span style="font-weight:bold">${v.amount}${u}</span></div>`;}let bnBadge = v.payType==='bn' ? '<span style="color:#dc2626;float:right;font-size:10px;margin-left:5px">Б/Н</span>' : ''; return `<div class="j-card" onclick="viewIncomingInvoice('${i}')" style="cursor:pointer;"><div class="j-head" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px"><span>${v.date.split('T')[0].split('-').reverse().join('.')}</span><span>№${esc(v.num)||'-'} ${bnBadge}</span></div><div style="font-size:13px;margin:5px 0;${sC}font-weight:900">${esc(v.supplier)||'-'}</div>${itmsHtml}${isAdmin?`<button onclick="event.stopPropagation();delRec('${k}','${i}')" style="color:red;border:1px solid #fee2e2;background:#fee2e2;border-radius:6px;padding:4px;margin-top:8px;width:100%;font-weight:900">УДАЛИТЬ НАКЛАДНУЮ</button>`:''}</div>`;}};if(key==='date'){l.sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});c.innerHTML=fH+rMonthGroup(l,renderRow);}else{c.innerHTML=fH+rNameGroup(l,renderRow,k==='ArchIncoming');}}
 
-    window.viewInvoice=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;let totalNoVat=0;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;totalNoVat+=sum;}h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;});let total=parseFloat(v.totalSum||0);if(isBN){let vat=total-totalNoVat;h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><button class="btn-main" onclick="reprintInv('${id}')" style="margin-top:15px;background:#0f172a">🖨️ ДРУК</button></div>`;gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex';};
+    window.viewInvoice=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;let totalNoVat=0;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;totalNoVat+=sum;}h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;});let total=parseFloat(v.totalSum||0);if(isBN){let vat=total-totalNoVat;h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><div style="display:flex;gap:5px;margin-top:15px;"><button class="btn-main" onclick="editInvoice('${id}')" style="margin:0;background:#ca8a04">✏️ ИЗМЕНИТЬ</button><button class="btn-main" onclick="reprintInv('${id}')" style="margin:0;background:#0f172a">🖨️ ДРУК</button></div></div>`;gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex';};
+
     window.viewIncomingInvoice=function(id){const v=data.ArchIncoming[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0,ts=0;let defU=v.supplier==='Фасовка'?'шт':'кг';const isBN=v.payType==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Прибуткова накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplier)||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>(без ПДВ)</th><th>Сума<br>(без ПДВ)</th><th>Ціна<br>з ПДВ</th><th>Сума<br>з ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items){v.items.forEach((it,idx)=>{let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);tw+=w;ts+=sum;if(isBN){let pVat=it.pVat||(prc*1.2);let sVat=it.sVat||(sum*1.2);h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td><td style="text-align:center">${pVat>0?pVat.toFixed(2):'-'}</td><td style="text-align:center">${sVat>0?sVat.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td></tr>`;}});}else if(v.name){let w=parseFloat(v.amount)||0;tw+=w;h+=`<tr><td style="text-align:center">1</td><td>${esc(v.name)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td colspan="${isBN?'4':'2'}" style="text-align:center">-</td></tr>`;}let totalSum=parseFloat(v.totalSum||ts||0);if(isBN){let noVat=parseFloat(v.totalNoVat||ts||0);let vat=parseFloat(v.vatSum||(noVat*0.2)||0);h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div></div>`;gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';};
 
     window.reprintInv=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';const curSet=isBN?invSetBN:invSet;const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';let totalNoVat=0;let tSum=parseFloat(v.totalSum||0);if(v.items&&isBN){v.items.forEach(it=>{const p=it.split('|');const w=parseFloat(p[1])||0;let prc=Math.round((parseFloat(p[4])/1.2)*100)/100;totalNoVat+=prc*w;});}let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};}</style>`;let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;}h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;});if(isBN){let vat=tSum-totalNoVat;h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}else{h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}h+=`</tbody></table>`;h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
@@ -5221,6 +5222,246 @@ window.exportCSV = function(type, param) {
     }
 
     window.downloadCSV(filename, csv);
+};
+window.editInvoice = function(id) {
+    const v = data.ArchInvoices[id];
+    if(!v) return;
+    
+    let parsedItems = [];
+    if(v.items) {
+        parsedItems = v.items.map(it => {
+            const p = it.split('|');
+            return { origStr: it, n: p[0], w: parseFloat(p[1]) || 0, u: p[2], c: p[3] || 'Готовая', p: parseFloat(p[4]) || 0, s: parseFloat(p[5]) || 0 };
+        });
+    }
+
+    window.currentEditInvoice = { id: id, orig: JSON.parse(JSON.stringify(v)), items: parsedItems, isBN: v.priceMode === 'bn' };
+    renderEditInvoiceForm();
+};
+
+window.renderEditInvoiceForm = function() {
+    const d = window.currentEditInvoice;
+    const v = d.orig;
+    const isBN = d.isBN;
+    
+    let h = `
+    <div style="font-weight:900;text-align:center;margin-bottom:10px;color:var(--p)">РЕДАКТИРОВАНИЕ НАКЛАДНОЙ</div>
+    <div class="grid-2">
+        <div><span class="lbl-small">ДАТА</span><input type="date" class="fas-inp" id="eiDate" value="${v.date ? v.date.split('T')[0] : ''}"></div>
+        <div><span class="lbl-small">НОМЕР</span><input type="text" class="fas-inp" id="eiNum" value="${esc(v.num)}"></div>
+    </div>
+    <div class="grid-2">
+        <div><span class="lbl-small">КЛИЕНТ</span><input type="text" class="fas-inp" id="eiClient" value="${esc(v.client)}"></div>
+        <div><span class="lbl-small">ПОСТАВЩИК</span><input type="text" class="fas-inp" id="eiSupplier" value="${esc(v.supplierName)}"></div>
+    </div>
+    <div class="grid-2">
+        <div><span class="lbl-small">СДЕЛКА</span><input type="text" class="fas-inp" id="eiAg" value="${esc(v.agreement)}"></div>
+        <div><span class="lbl-small">АДРЕС</span><input type="text" class="fas-inp" id="eiAddr" value="${esc(v.address)}"></div>
+    </div>
+    <div style="margin-top:5px; margin-bottom:10px;"><span class="lbl-small">ТИП ОПЛАТЫ</span>
+        <select id="eiBN" class="fas-inp" onchange="window.currentEditInvoice.isBN = (this.value==='bn'); renderEditInvoiceForm();">
+            <option value="opt" ${!isBN?'selected':''}>НАЛ (ОПТ / РОЗНИЦА)</option>
+            <option value="bn" ${isBN?'selected':''}>БЕЗНАЛ (Б/Н)</option>
+        </select>
+    </div>
+    <div class="z-head">ТОВАРЫ</div>
+    <div id="eiItems">`;
+
+    let totalSum = 0;
+    d.items.forEach((it, i) => {
+        let prc = it.p;
+        let sum = it.w * it.p;
+        totalSum += sum;
+
+        h += `
+        <div class="j-card" style="padding:8px; margin-bottom:5px; display:flex; flex-direction:column; gap:5px;" id="ei_row_${i}">
+            <div style="font-weight:900;font-size:12px">${esc(it.n)} <span style="color:#888;font-weight:normal">(${it.c})</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 30px;gap:5px;align-items:end;">
+                <div><span class="lbl-small">КОЛ-ВО</span><input type="number" class="fas-inp" id="ei_w_${i}" value="${it.w}" oninput="calcEditInvoice()"></div>
+                <div><span class="lbl-small">ЦЕНА</span><input type="number" class="fas-inp" id="ei_p_${i}" value="${prc.toFixed(2)}" oninput="calcEditInvoice()"></div>
+                <div><span class="lbl-small">СУММА</span><input type="text" class="fas-inp" id="ei_s_${i}" value="${sum.toFixed(2)}" readonly style="background:#eef2ff;font-weight:bold;color:#1e40af;"></div>
+                <button onclick="removeEditItem(${i})" style="margin-bottom:2px;background:#fee2e2;color:red;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+            </div>
+        </div>`;
+    });
+
+    h += `</div>
+    <button class="btn-main" onclick="addEditItem()" style="background:#f8fafc;color:var(--p);border:1px dashed var(--p);margin-top:5px;">+ ДОБАВИТЬ ТОВАР</button>
+    
+    <div style="margin-top:15px;text-align:right;font-size:16px;font-weight:900;color:var(--p);border-top:2px solid #e2e8f0;padding-top:10px;">
+        <span id="eiTotalText">ИТОГО: ${totalSum.toFixed(2)} грн</span>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:15px;">
+        <button class="btn-main" onclick="viewInvoice('${d.id}')" style="background:#64748b;margin:0;">⬅ ОТМЕНА</button>
+        <button class="btn-main" onclick="saveEditInvoice()" style="background:#10b981;margin:0;">💾 СОХРАНИТЬ</button>
+    </div>
+    `;
+
+    gID('mB').innerHTML = h;
+    gID('mT').innerText = 'РЕДАКТИРОВАНИЕ';
+};
+
+window.calcEditInvoice = function() {
+    const d = window.currentEditInvoice;
+    let totalSum = 0;
+    
+    d.items.forEach((it, i) => {
+        let wEl = gID(`ei_w_${i}`);
+        let pEl = gID(`ei_p_${i}`);
+        let sEl = gID(`ei_s_${i}`);
+        if(wEl && pEl && sEl) {
+            let w = parseFloat(wEl.value) || 0;
+            let pInput = parseFloat(pEl.value) || 0; 
+            let sumInput = w * pInput; 
+            sEl.value = sumInput.toFixed(2);
+            totalSum += sumInput;
+        }
+    });
+    
+    gID('eiTotalText').innerText = `ИТОГО: ${totalSum.toFixed(2)} грн`;
+};
+
+window.removeEditItem = function(i) {
+    if(!confirm("Удалить товар из накладной?")) return;
+    window.currentEditInvoice.items.splice(i, 1);
+    renderEditInvoiceForm();
+};
+
+window.addEditItem = function() {
+    let opts = '<option value="">Выберите товар...</option>';
+    let cats = ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Feed', 'Stock_Semi', 'Stock_Raw'];
+    cats.forEach(cat => {
+        if(data[cat]) {
+            opts += `<optgroup label="${cat}">`;
+            let items = [];
+            Object.values(data[cat]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+            items.sort().forEach(n => { opts += `<option value="${esc(n)}|${cat}">${esc(n)}</option>`; });
+            opts += `</optgroup>`;
+        }
+    });
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:15px;';
+    modal.innerHTML = `
+    <div style="background:#fff;width:100%;max-width:350px;border-radius:10px;padding:15px;">
+        <h4 style="margin-top:0;font-size:14px;">Добавить товар в накладную</h4>
+        <select id="eiNewItemSel" class="fas-inp" style="height:40px;font-size:14px;margin-bottom:15px;">${opts}</select>
+        <div style="display:flex;gap:5px;">
+            <button class="btn-main" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#ccc;color:#333;margin:0;">ОТМЕНА</button>
+            <button class="btn-main" id="eiBtnAddNew" style="background:var(--p);margin:0;">ДОБАВИТЬ</button>
+        </div>
+    </div>`;
+    document.body.appendChild(modal);
+    
+    document.getElementById('eiBtnAddNew').onclick = () => {
+        const val = document.getElementById('eiNewItemSel').value;
+        if(!val) return alert("Выберите товар!");
+        const [n, c] = val.split('|');
+        let u = c === 'Готовая' ? 'шт' : 'кг';
+        let p = 0;
+        if(data.PriceList) {
+            let pObj = Object.values(data.PriceList).find(x => x.name === n);
+            if(pObj) {
+                if(window.currentEditInvoice.isBN) p = pObj.priceBN || pObj.priceOpt || 0;
+                else p = pObj.priceOpt || pObj.price || 0;
+            }
+        }
+        window.currentEditInvoice.items.push({ origStr: null, n: n, w: 1, u: u, c: c, p: p, s: p * 1 });
+        document.body.removeChild(modal);
+        renderEditInvoiceForm();
+    };
+};
+
+window.saveEditInvoice = async function() {
+    const d = window.currentEditInvoice;
+    
+    let dateVal = gID('eiDate').value;
+    if(!dateVal) return alert('Введите дату!');
+    
+    let newItemsStrings = [];
+    let totalSum = 0;
+    
+    for(let i=0; i<d.items.length; i++) {
+        let wEl = gID(`ei_w_${i}`);
+        let pEl = gID(`ei_p_${i}`);
+        if(!wEl || !pEl) continue;
+        let w = parseFloat(wEl.value);
+        let pInput = parseFloat(pEl.value);
+        
+        if(isNaN(w) || w <= 0) return alert(`Некорректное количество для ${d.items[i].n}`);
+        if(isNaN(pInput) || pInput < 0) return alert(`Некорректная цена для ${d.items[i].n}`);
+        
+        let realSum = w * pInput;
+        
+        d.items[i].w = w;
+        d.items[i].p = pInput;
+        d.items[i].s = realSum;
+        
+        totalSum += realSum;
+        newItemsStrings.push(`${d.items[i].n}|${w}|${d.items[i].u}|${d.items[i].c}|${pInput}|${realSum}`);
+    }
+    
+    if(newItemsStrings.length === 0) return alert('В накладной нет товаров!');
+    if(!confirm("Сохранить изменения в накладной и пересчитать остатки на складах?")) return;
+    
+    showLoad();
+    try {
+        let u = {};
+        let dIso = dateVal + "T12:00:00Z";
+        u[`/ArchInvoices/${d.id}/date`] = dIso;
+        u[`/ArchInvoices/${d.id}/num`] = gID('eiNum').value;
+        u[`/ArchInvoices/${d.id}/client`] = gID('eiClient').value;
+        u[`/ArchInvoices/${d.id}/supplierName`] = gID('eiSupplier').value;
+        u[`/ArchInvoices/${d.id}/agreement`] = gID('eiAg').value;
+        u[`/ArchInvoices/${d.id}/address`] = gID('eiAddr').value;
+        u[`/ArchInvoices/${d.id}/priceMode`] = d.isBN ? 'bn' : 'opt';
+        u[`/ArchInvoices/${d.id}/totalSum`] = totalSum;
+        u[`/ArchInvoices/${d.id}/items`] = newItemsStrings;
+        
+        let stockDiffs = {}; 
+        
+        if(d.orig.items) {
+            d.orig.items.forEach(it => {
+                let p = it.split('|');
+                let n = p[0], origW = parseFloat(p[1]), cat = p[3] || 'Готовая';
+                let key = cat + '|' + n;
+                stockDiffs[key] = (stockDiffs[key] || 0) + origW;
+            });
+        }
+        
+        d.items.forEach(it => {
+            let key = it.c + '|' + it.n;
+            stockDiffs[key] = (stockDiffs[key] || 0) - it.w;
+        });
+        
+        const tsStr = new Date().toISOString();
+        Object.keys(stockDiffs).forEach(k => {
+            let diff = stockDiffs[k];
+            if(Math.abs(diff) > 0.001) {
+                let [cat, n] = k.split('|');
+                let note = diff > 0 ? `Возврат с ред. накл.: ${gID('eiClient').value}` : `Списание с ред. накл.: ${gID('eiClient').value}`;
+                u[`/${cat}/${db.child(cat).push().key}`] = {
+                    name: n,
+                    amount: diff, 
+                    date: dIso,
+                    note: note,
+                    fLink: d.id,
+                    ts: tsStr
+                };
+            }
+        });
+        
+        await db.update(u);
+        hideLoad();
+        alert('Накладная успешно обновлена!');
+        if(typeof loadData === 'function') loadData();
+        setTimeout(() => viewInvoice(d.id), 100);
+        
+    } catch(err) {
+        hideLoad();
+        alert(err.message);
+    }
 };
 
 </script>
