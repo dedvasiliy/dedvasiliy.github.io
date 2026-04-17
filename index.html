@@ -1238,7 +1238,7 @@ window.archInFilter=window.archInFilter||'ALL';window.setArchInFilter=function(f
 
     window.viewInvoice=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplierName)||'-'}</span><br><span class="pr-lbl">Кому:</span> <span class="pr-val">${esc(v.client)}</span><br><span class="pr-lbl">Угода:</span> <span class="pr-val">${esc(v.agreement)||'-'}</span>${isBN?`<br><span class="pr-lbl">Адреса:</span> <span class="pr-val">${esc(v.address)||'-'}</span>`:''}</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна (без ПДВ)</th><th>Сума (без ПДВ)</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;let totalNoVat=0;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;totalNoVat+=sum;}h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;});let total=parseFloat(v.totalSum||0);if(isBN){let vat=total-totalNoVat;h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><div style="display:flex;gap:5px;margin-top:15px;"><button class="btn-main" onclick="editInvoice('${id}')" style="margin:0;background:#ca8a04">✏️ ИЗМЕНИТЬ</button><button class="btn-main" onclick="reprintInv('${id}')" style="margin:0;background:#0f172a">🖨️ ДРУК</button></div></div>`;gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex';};
 
-    window.viewIncomingInvoice=function(id){const v=data.ArchIncoming[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0,ts=0;let defU=v.supplier==='Фасовка'?'шт':'кг';const isBN=v.payType==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Прибуткова накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplier)||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>(без ПДВ)</th><th>Сума<br>(без ПДВ)</th><th>Ціна<br>з ПДВ</th><th>Сума<br>з ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items){v.items.forEach((it,idx)=>{let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);tw+=w;ts+=sum;if(isBN){let pVat=it.pVat||(prc*1.2);let sVat=it.sVat||(sum*1.2);h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td><td style="text-align:center">${pVat>0?pVat.toFixed(2):'-'}</td><td style="text-align:center">${sVat>0?sVat.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td></tr>`;}});}else if(v.name){let w=parseFloat(v.amount)||0;tw+=w;h+=`<tr><td style="text-align:center">1</td><td>${esc(v.name)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td colspan="${isBN?'4':'2'}" style="text-align:center">-</td></tr>`;}let totalSum=parseFloat(v.totalSum||ts||0);if(isBN){let noVat=parseFloat(v.totalNoVat||ts||0);let vat=parseFloat(v.vatSum||(noVat*0.2)||0);h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div></div>`;gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';};
+    window.viewIncomingInvoice=function(id){const v=data.ArchIncoming[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0,ts=0;let defU=v.supplier==='Фасовка'?'шт':'кг';const isBN=v.payType==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Прибуткова накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplier)||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>(без ПДВ)</th><th>Сума<br>(без ПДВ)</th><th>Ціна<br>з ПДВ</th><th>Сума<br>з ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items){v.items.forEach((it,idx)=>{let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);tw+=w;ts+=sum;if(isBN){let pVat=it.pVat||(prc*1.2);let sVat=it.sVat||(sum*1.2);h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td><td style="text-align:center">${pVat>0?pVat.toFixed(2):'-'}</td><td style="text-align:center">${sVat>0?sVat.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td></tr>`;}});}else if(v.name){let w=parseFloat(v.amount)||0;tw+=w;h+=`<tr><td style="text-align:center">1</td><td>${esc(v.name)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td colspan="${isBN?'4':'2'}" style="text-align:center">-</td></tr>`;}let totalSum=parseFloat(v.totalSum||ts||0);if(isBN){let noVat=parseFloat(v.totalNoVat||ts||0);let vat=parseFloat(v.vatSum||(noVat*0.2)||0);h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div><button class="btn-main" onclick="editIncoming('${id}')" style="margin-top:15px;background:#ca8a04">✏️ ИЗМЕНИТЬ</button></div>`;gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';};
 
     window.reprintInv=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';const curSet=isBN?invSetBN:invSet;const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';let totalNoVat=0;let tSum=parseFloat(v.totalSum||0);if(v.items&&isBN){v.items.forEach(it=>{const p=it.split('|');const w=parseFloat(p[1])||0;let prc=Math.round((parseFloat(p[4])/1.2)*100)/100;totalNoVat+=prc*w;});}let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};}</style>`;let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;}h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;});if(isBN){let vat=tSum-totalNoVat;h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}else{h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}h+=`</tbody></table>`;h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
     function numToWords(n){const u_m=['','один','два','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const u_f=['','одна','дві','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const t1=['десять','одинадцять','дванадцять','тринадцять','чотирнадцять','п\'ятнадцять','шістнадцять','сімнадцять','вісімнадцять','дев\'ятнадцять'];const t2=['','','двадцять','тридцять','сорок','п\'ятдесят','шістдесят','сімдесят','вісімдесят','дев\'яносто'];const h=['','сто','двісті','триста','чотириста','п\'ятдесят','шістсот','сімсот','вісімсот','дев\'ятсот'];let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');if(ip===0)return `Нуль гривень ${fs} копійок`;function gg(n,isFem){let r='',c=Math.floor(n/100),d=Math.floor((n%100)/10),u0=n%10;if(c>0)r+=h[c]+' ';if(d===1)r+=t1[u0]+' ';else{if(d>1)r+=t2[d]+' ';if(u0>0)r+=(isFem&&(u0===1||u0===2)?u_f[u0]:u_m[u0])+' ';}return r;}let w='',m=Math.floor(ip/1000000),th=Math.floor((ip%1000000)/1000),rm=ip%1000;if(m>0){w+=gg(m,0);let l=m%10,l2=m%100;if(l2>=11&&l2<=14)w+='мільйонів ';else if(l===1)w+='мільйон ';else if(l>=2&&l<=4)w+='мільйони ';else w+='мільйонів ';}if(th>0){w+=gg(th,1);let l=th%10,l2=th%100;if(l2>=11&&l2<=14)w+='тисяч ';else if(l===1)w+='тисяча ';else if(l>=2&&l<=4)w+='тисячі ';else w+='тисяч ';}if(rm>0)w+=gg(rm,0);w=w.trim();w=w.charAt(0).toUpperCase()+w.slice(1);let l=ip%10,l2=ip%100,cr='гривень';if(l2>=11&&l2<=14)cr='гривень';else if(l===1)cr='гривня';else if(l>=2&&l<=4)cr='гривні';return `${w} ${cr} ${fs} копійок`;}
@@ -5457,6 +5457,151 @@ window.saveEditInvoice = async function() {
         alert('Накладная успешно обновлена!');
         if(typeof loadData === 'function') loadData();
         setTimeout(() => viewInvoice(d.id), 100);
+        
+    } catch(err) {
+        hideLoad();
+        alert(err.message);
+    }
+};
+window.editIncoming = function(id) {
+    const v = data.ArchIncoming[id];
+    if(!v) return;
+    
+    let items = [];
+    if(v.items) {
+        items = v.items.map(it => {
+            return { n: it.n, a: parseFloat(it.a) || 0, p: parseFloat(it.p) || 0, s: parseFloat(it.s) || 0, cat: it.cat || 'Stock_Raw' };
+        });
+    } else if (v.name) {
+        // Поддержка очень старых приходов, где был только 1 товар без массива
+        items.push({ n: v.name, a: parseFloat(v.amount) || 0, p: parseFloat(v.price) || 0, s: 0, cat: v.cat || 'Stock_Raw' });
+    }
+
+    window.currentEditInc = { id: id, orig: JSON.parse(JSON.stringify(v)), items: items };
+    renderEditIncForm();
+};
+
+window.renderEditIncForm = function() {
+    const d = window.currentEditInc;
+    const v = d.orig;
+    
+    let h = `
+    <div style="font-weight:900;text-align:center;margin-bottom:10px;color:var(--p)">РЕДАКТИРОВАНИЕ ПРИХОДА</div>
+    <div class="grid-2">
+        <div><span class="lbl-small">ДАТА</span><input type="date" class="fas-inp" id="eincDate" value="${v.date ? v.date.split('T')[0] : ''}"></div>
+        <div><span class="lbl-small">ПОСТАВЩИК</span><input type="text" class="fas-inp" id="eincSup" value="${esc(v.supplier || v.s || '')}"></div>
+    </div>
+    <div class="z-head">ТОВАРЫ ПРИХОДА</div>
+    <div id="eincItems">`;
+
+    d.items.forEach((it, i) => {
+        h += `
+        <div class="j-card" style="padding:8px; margin-bottom:5px;" id="einc_row_${i}">
+            <div style="font-weight:900;font-size:12px;margin-bottom:5px">${esc(it.n)}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 30px;gap:5px;align-items:end;">
+                <div><span class="lbl-small">КОЛ-ВО</span><input type="number" class="fas-inp" id="einc_a_${i}" value="${it.a}" oninput="calcEditInc()"></div>
+                <div><span class="lbl-small">ЦЕНА</span><input type="number" class="fas-inp" id="einc_p_${i}" value="${it.p}" oninput="calcEditInc()"></div>
+                <button onclick="removeEditIncItem(${i})" style="background:#fee2e2;color:red;border:none;border-radius:6px;height:32px;font-weight:900">✕</button>
+            </div>
+        </div>`;
+    });
+
+    h += `</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:15px;">
+        <button class="btn-main" onclick="viewIncomingInvoice('${d.id}')" style="background:#64748b;margin:0;">⬅ ОТМЕНА</button>
+        <button class="btn-main" onclick="saveEditIncoming()" style="background:#10b981;margin:0;">💾 СОХРАНИТЬ</button>
+    </div>`;
+
+    gID('mB').innerHTML = h;
+    gID('mT').innerText = 'РЕДАКТИРОВАНИЕ';
+};
+
+window.calcEditInc = function() {
+    const d = window.currentEditInc;
+    d.items.forEach((it, i) => {
+        let aEl = gID(`einc_a_${i}`);
+        let pEl = gID(`einc_p_${i}`);
+        if(aEl && pEl) {
+            it.a = parseFloat(aEl.value) || 0;
+            it.p = parseFloat(pEl.value) || 0;
+        }
+    });
+};
+
+window.removeEditIncItem = function(i) {
+    if(!confirm("Удалить позицию из прихода?")) return;
+    window.currentEditInc.items.splice(i, 1);
+    renderEditIncForm();
+};
+
+window.saveEditIncoming = async function() {
+    const d = window.currentEditInc;
+    let dateVal = gID('eincDate').value;
+    if(!dateVal) return alert('Укажите дату!');
+    
+    if(!confirm("Сохранить изменения и скорректировать остатки на складах?")) return;
+    
+    showLoad();
+    try {
+        let u = {};
+        let dIso = dateVal + "T12:00:00Z";
+        const tsStr = new Date().toISOString();
+        
+        u[`/ArchIncoming/${d.id}/date`] = dIso;
+        u[`/ArchIncoming/${d.id}/supplier`] = gID('eincSup').value;
+        
+        let totalSum = 0;
+        d.items.forEach(it => {
+           it.s = it.a * it.p;
+           totalSum += it.s;
+        });
+        
+        u[`/ArchIncoming/${d.id}/items`] = d.items;
+        u[`/ArchIncoming/${d.id}/totalSum`] = totalSum;
+
+        if (d.orig.name) {
+            u[`/ArchIncoming/${d.id}/name`] = null;
+            u[`/ArchIncoming/${d.id}/amount`] = null;
+            u[`/ArchIncoming/${d.id}/price`] = null;
+        }
+        
+        let diffs = {};
+        
+        if (d.orig.items) {
+            d.orig.items.forEach(it => {
+                let key = (it.cat || 'Stock_Raw') + '|' + it.n;
+                diffs[key] = (diffs[key] || 0) - parseFloat(it.a);
+            });
+        } else if (d.orig.name) {
+            let key = (d.orig.cat || 'Stock_Raw') + '|' + d.orig.name;
+            diffs[key] = (diffs[key] || 0) - parseFloat(d.orig.amount);
+        }
+        
+        d.items.forEach(it => {
+            let key = (it.cat || 'Stock_Raw') + '|' + it.n;
+            diffs[key] = (diffs[key] || 0) + parseFloat(it.a);
+        });
+        
+        Object.keys(diffs).forEach(k => {
+            let val = diffs[k];
+            if(Math.abs(val) > 0.001) {
+                let [cat, n] = k.split('|');
+                u[`/${cat}/${db.child(cat).push().key}`] = {
+                    name: n,
+                    amount: val,
+                    date: dIso,
+                    note: `Коррекция прихода: ${gID('eincSup').value}`,
+                    fLink: d.id,
+                    ts: tsStr
+                };
+            }
+        });
+        
+        await db.update(u);
+        hideLoad();
+        alert('Приход успешно отредактирован!');
+        if(typeof loadData === 'function') loadData();
+        setTimeout(() => viewIncomingInvoice(d.id), 100);
         
     } catch(err) {
         hideLoad();
