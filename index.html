@@ -5724,15 +5724,25 @@ window.renderEditFas = function() {
 window.addFasRawBtn = function() {
     updateFasData();
     let opts = '<option value="">Выберите сырье...</option>';
-    ['Stock_Raw','WeightStock','Stock_DV','Stock_Feed','Stock_Semi'].forEach(cat => {
+    
+    const catNames = {
+        'WeightStock': 'ПОКУПНАЯ ПРОДУКЦИЯ',
+        'Stock_DV': 'ДВ ВЕС'
+    };
+
+    ['WeightStock', 'Stock_DV'].forEach(cat => {
         if(data[cat]) {
-            opts += `<optgroup label="${cat}">`;
             let items = [];
             Object.values(data[cat]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
-            items.sort().forEach(n => { opts += `<option value="${esc(n)}|${cat}">${esc(n)}</option>`; });
-            opts += `</optgroup>`;
+            
+            if(items.length > 0) {
+                opts += `<optgroup label="—— ${catNames[cat]} ——">`;
+                items.sort().forEach(n => { opts += `<option value="${esc(n)}|${cat}">${esc(n)}</option>`; });
+                opts += `</optgroup>`;
+            }
         }
     });
+    
     showSelectModalFas('Добавить сырье', opts, (val) => {
         if(!val) return;
         let [n, c] = val.split('|');
