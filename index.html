@@ -5901,7 +5901,6 @@ window.editWorkshopReport = function(k, id) {
     const dbN = WS_CFG[k].db;
     const v = data[dbN][id];
     if(!v) return;
-    // Создаем копии: оригинал для отката складов и новую для редактирования
     window.curEditWS = { k: k, dbN: dbN, id: id, orig: JSON.parse(JSON.stringify(v)), newV: JSON.parse(JSON.stringify(v)) };
     renderEditWorkshop();
 };
@@ -5914,7 +5913,7 @@ window.updateWSData = function() {
     d.operator = gID('ewsOp').value;
     d.assistant = gID('ewsAs').value;
 
-    if(d.rawBase) d.rawBase.w = parseFloat(gID('ewsRbW').value) || 0;
+    if(d.rawBase && gID('ewsRbW')) d.rawBase.w = parseFloat(gID('ewsRbW').value) || 0;
     
     if(d.rawAdd) {
         d.rawAdd.forEach((x, i) => {
@@ -5958,18 +5957,28 @@ window.renderEditWorkshop = function() {
 
     if(d.rawBase) {
         h += `<div style="background:#f8fafc;padding:5px;border-radius:6px;margin-bottom:5px;">
-            <div style="font-size:12px;font-weight:bold;margin-bottom:2px;color:#1e293b">Основа: ${esc(d.rawBase.n)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                <div style="font-size:12px;font-weight:bold;color:#1e293b;width:70%">${esc(d.rawBase.n)}</div>
+                <button onclick="updateWSData(); window.curEditWS.newV.rawBase = null; renderEditWorkshop();" style="background:#fee2e2;color:red;border:none;border-radius:4px;width:30px;height:30px;font-weight:900">✕</button>
+            </div>
             <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="ewsRbW" value="${d.rawBase.w}" oninput="updateWSData()"> <span style="font-size:10px">кг</span></div>
         </div>`;
+    } else {
+        h += `<button class="btn-main" onclick="addWSRawBase()" style="background:#f8fafc;color:var(--p);border:1px dashed var(--p);margin-bottom:5px;padding:5px;font-size:12px">+ ДОБАВИТЬ ОСНОВУ</button>`;
     }
+
     if(d.rawAdd && d.rawAdd.length) {
         d.rawAdd.forEach((x, i) => {
             h += `<div style="background:#f8fafc;padding:5px;border-radius:6px;margin-bottom:5px;">
-                <div style="font-size:12px;font-weight:bold;margin-bottom:2px;color:#475569">Добавка: ${esc(x.n)}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                    <div style="font-size:12px;font-weight:bold;color:#475569;width:70%">Доб: ${esc(x.n)}</div>
+                    <button onclick="updateWSData(); window.curEditWS.newV.rawAdd.splice(${i},1); renderEditWorkshop();" style="background:#fee2e2;color:red;border:none;border-radius:4px;width:30px;height:30px;font-weight:900">✕</button>
+                </div>
                 <div style="display:flex;align-items:center;gap:5px"><input type="number" class="fas-inp" style="width:100px;margin:0" id="ewsRaW_${i}" value="${x.w}" oninput="updateWSData()"> <span style="font-size:10px">кг</span></div>
             </div>`;
         });
     }
+    h += `<button class="btn-main" onclick="addWSRawAdd()" style="background:#f8fafc;color:var(--p);border:1px dashed var(--p);margin-bottom:5px;padding:5px;font-size:12px">+ ДОБАВИТЬ ДОБАВКУ</button>`;
 
     h += `<div class="z-head" style="margin-top:10px">ВЫПУСК (ДВ / ПФ / ОТХОДЫ)</div>`;
     if(d.items && d.items.length) {
@@ -5979,22 +5988,30 @@ window.renderEditWorkshop = function() {
             let tName = x.type==='DV' ? 'ДВ вес' : (x.type==='Semi' ? 'Полуфабрикат' : 'Отход');
             
             h += `<div style="background:${tColor};padding:5px;border-radius:6px;margin-bottom:5px;border:1px solid #e2e8f0">
-                <div style="font-size:12px;font-weight:bold;margin-bottom:2px">${esc(nm)} <span style="font-weight:normal;color:#64748b;font-size:9px">(${tName})</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                    <div style="font-size:12px;font-weight:bold;width:70%">${esc(nm)} <span style="font-weight:normal;color:#64748b;font-size:9px">(${tName})</span></div>
+                    <button onclick="updateWSData(); window.curEditWS.newV.items.splice(${i},1); renderEditWorkshop();" style="background:#fee2e2;color:red;border:none;border-radius:4px;width:30px;height:30px;font-weight:900">✕</button>
+                </div>
                 <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">`;
             
             if(x.q !== undefined && x.w !== undefined) {
                 h += `<input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItQ_${i}" value="${x.q}" oninput="updateWSData()"> <span style="font-size:10px">м ×</span>
                       <input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItW_${i}" value="${x.w}" oninput="updateWSData()"> <span style="font-size:10px">кг +</span>
-                      <input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItL_${i}" value="${x.l||0}" oninput="updateWSData()"> <span style="font-size:10px">кг (хвост)</span>`;
+                      <input type="number" class="fas-inp" style="width:50px;margin:0;text-align:center" id="ewsItL_${i}" value="${x.l||0}" oninput="updateWSData()"> <span style="font-size:10px">кг (хв)</span>`;
             } else {
                  h += `<input type="number" class="fas-inp" style="width:90px;margin:0" id="ewsItA_${i}" value="${x.amount||0}" oninput="updateWSData()"> <span style="font-size:10px">кг</span>`;
             }
             h += `</div></div>`;
         });
     }
+    h += `<div style="display:flex;gap:5px;margin-top:5px;">
+        <button class="btn-main" onclick="addWSOut('DV')" style="background:#f0fdf4;color:#166534;border:1px dashed #166534;padding:5px;font-size:11px;margin:0;flex:1">+ ДВ</button>
+        <button class="btn-main" onclick="addWSOut('Semi')" style="background:#fffbeb;color:#b45309;border:1px dashed #b45309;padding:5px;font-size:11px;margin:0;flex:1">+ ПФ</button>
+        <button class="btn-main" onclick="addWSOut('Feed')" style="background:#fef2f2;color:#b91c1c;border:1px dashed #b91c1c;padding:5px;font-size:11px;margin:0;flex:1">+ ОТХОД</button>
+    </div>`;
 
     h += `<div style="font-size:10px;color:#64748b;text-align:center;margin-top:10px;line-height:1.2">
-    *В целях защиты складов изменение позиций отключено. Вы можете исправить любые веса и количества. Финансы пересчитаны не будут.</div>
+    *Финансы пересчитаны не будут.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:15px;">
         <button class="btn-main" onclick="gID('mdl').style.display='none'" style="background:#64748b;margin:0;">⬅ ОТМЕНА</button>
         <button class="btn-main" onclick="saveEditWorkshop()" style="background:#10b981;margin:0;">💾 СОХРАНИТЬ</button>
@@ -6003,6 +6020,100 @@ window.renderEditWorkshop = function() {
     gID('mB').innerHTML = h;
     gID('mT').innerText = 'РЕДАКТИРОВАНИЕ ЦЕХА';
     gID('mdl').style.display = 'flex';
+};
+
+window.showWSSelectModal = function(title, optionsHtml, callback) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:15px;';
+    m.innerHTML = `
+    <div style="background:#fff;width:100%;max-width:350px;border-radius:10px;padding:15px;">
+        <h4 style="margin-top:0;font-size:14px;">${title}</h4>
+        <select id="tmpSelWS" class="fas-inp" style="height:40px;font-size:14px;margin-bottom:15px;">${optionsHtml}</select>
+        <div style="display:flex;gap:5px;">
+            <button class="btn-main" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#ccc;color:#333;margin:0;">ОТМЕНА</button>
+            <button class="btn-main" id="tmpBtnWS" style="background:var(--p);margin:0;">ДОБАВИТЬ</button>
+        </div>
+    </div>`;
+    document.body.appendChild(m);
+    document.getElementById('tmpBtnWS').onclick = () => {
+        let v = document.getElementById('tmpSelWS').value;
+        if(v === '--NEW--') {
+            let nv = prompt('Введите новое название:');
+            if(nv) callback(nv + '|NEW');
+        } else {
+            callback(v);
+        }
+        document.body.removeChild(m);
+    };
+};
+
+window.getWSRawOpts = function() {
+    let opts = '<option value="">Выберите сырье...</option>';
+    const catNames = { 'Stock_Raw': 'СЫРЬЕ (Закупка)', 'WeightStock': 'ПОКУПНАЯ ПРОДУКЦИЯ', 'Stock_DV': 'ДВ ВЕС', 'Stock_Semi': 'ПОЛУФАБРИКАТЫ' };
+    ['Stock_Raw', 'WeightStock', 'Stock_DV', 'Stock_Semi'].forEach(cat => {
+        if(data[cat]) {
+            let totals = {};
+            Object.values(data[cat]).forEach(v => {
+                if(v.name) totals[v.name] = (totals[v.name] || 0) + (parseFloat(v.amount) || 0);
+            });
+            let validItems = [];
+            Object.keys(totals).forEach(n => {
+                if(totals[n] > 0.001) validItems.push({ name: n, amount: Math.round(totals[n]*100)/100 });
+            });
+            if(validItems.length > 0) {
+                opts += `<optgroup label="—— ${catNames[cat]||cat} ——">`;
+                validItems.sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+                    opts += `<option value="${esc(item.name)}|${cat}">${esc(item.name)} [${item.amount} кг]</option>`;
+                });
+                opts += `</optgroup>`;
+            }
+        }
+    });
+    return opts;
+};
+
+window.addWSRawBase = function() {
+    updateWSData();
+    showWSSelectModal('Добавить Основу', getWSRawOpts(), (val) => {
+        if(!val) return;
+        let [n, c] = val.split('|');
+        window.curEditWS.newV.rawBase = { n: n, c: c, w: 0 };
+        renderEditWorkshop();
+    });
+};
+
+window.addWSRawAdd = function() {
+    updateWSData();
+    showWSSelectModal('Добавить Добавку', getWSRawOpts(), (val) => {
+        if(!val) return;
+        let [n, c] = val.split('|');
+        if(!window.curEditWS.newV.rawAdd) window.curEditWS.newV.rawAdd = [];
+        window.curEditWS.newV.rawAdd.push({ n: n, c: c, w: 0 });
+        renderEditWorkshop();
+    });
+};
+
+window.addWSOut = function(type) {
+    updateWSData();
+    let cat = type==='DV' ? 'Stock_DV' : (type==='Semi' ? 'Stock_Semi' : 'Stock_Feed');
+    let title = type==='DV' ? 'ДВ Вес' : (type==='Semi' ? 'Полуфабрикат' : 'Отходы');
+    let opts = '<option value="">Выберите...</option>';
+    opts += '<option value="--NEW--">--- ВВЕСТИ НОВОЕ НАЗВАНИЕ ---</option>';
+    if(data[cat]) {
+        let items = [];
+        Object.values(data[cat]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+        items.sort().forEach(n => { opts += `<option value="${esc(n)}">${esc(n)}</option>`; });
+    }
+    showWSSelectModal(`Добавить ${title}`, opts, (val) => {
+        if(!val) return;
+        let n = val.includes('|NEW') ? val.split('|')[0] : val;
+        if(!window.curEditWS.newV.items) window.curEditWS.newV.items = [];
+        let isM = (type === 'DV' || type === 'Semi');
+        let newItem = { n: n, type: type };
+        if(isM) { newItem.q = 0; newItem.w = 0; newItem.l = 0; } else { newItem.amount = 0; }
+        window.curEditWS.newV.items.push(newItem);
+        renderEditWorkshop();
+    });
 };
 
 window.saveEditWorkshop = async function() {
@@ -6018,15 +6129,14 @@ window.saveEditWorkshop = async function() {
         let u = {};
         const tsStr = new Date().toISOString();
 
-        // 1. Сохраняем новые цифры в самом отчете
         u[`/${dbN}/${id}/date`] = newV.date;
         u[`/${dbN}/${id}/timeStart`] = newV.timeStart;
         u[`/${dbN}/${id}/timeEnd`] = newV.timeEnd;
         u[`/${dbN}/${id}/operator`] = newV.operator;
         u[`/${dbN}/${id}/assistant`] = newV.assistant;
-        if(newV.rawBase) u[`/${dbN}/${id}/rawBase`] = newV.rawBase;
-        if(newV.rawAdd) u[`/${dbN}/${id}/rawAdd`] = newV.rawAdd;
-        if(newV.items) u[`/${dbN}/${id}/items`] = newV.items;
+        u[`/${dbN}/${id}/rawBase`] = newV.rawBase || null;
+        u[`/${dbN}/${id}/rawAdd`] = newV.rawAdd || null;
+        u[`/${dbN}/${id}/items`] = newV.items || null;
 
         let stockDiffs = {}; 
         
@@ -6036,17 +6146,12 @@ window.saveEditWorkshop = async function() {
             stockDiffs[k] = (stockDiffs[k]||0) + val;
         };
 
-        // 2. Считаем разницу для СЫРЬЯ (Основа и Добавки)
-        if(orig.rawBase && newV.rawBase) {
-            // Возвращаем старый вес и списываем новый
-            addDiff(orig.rawBase.c || 'Stock_Raw', orig.rawBase.n, orig.rawBase.w);
-            addDiff(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w);
-        }
+        if(orig.rawBase) addDiff(orig.rawBase.c || 'Stock_Raw', orig.rawBase.n, orig.rawBase.w);
+        if(newV.rawBase) addDiff(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w);
         
         if(orig.rawAdd) orig.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, x.w));
         if(newV.rawAdd) newV.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, -x.w));
 
-        // 3. Считаем разницу для ВЫПУСКА (ДВ, ПФ, Отходы)
         const calcW = (it) => {
             if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0);
             return parseFloat(it.amount)||0;
@@ -6060,32 +6165,24 @@ window.saveEditWorkshop = async function() {
         };
 
         if(orig.items) orig.items.forEach(x => {
-            let w = calcW(x);
-            let cat = getOutCat(x.type);
-            addDiff(cat, x.n || x.name, -w); // Откатываем старый приход
+            addDiff(getOutCat(x.type), x.n || x.name, -calcW(x)); 
         });
         
         if(newV.items) newV.items.forEach(x => {
-            let w = calcW(x);
-            let cat = getOutCat(x.type);
-            addDiff(cat, x.n || x.name, w); // Начисляем новый приход
+            addDiff(getOutCat(x.type), x.n || x.name, calcW(x)); 
         });
 
-        // 4. Записываем разницу на склады
         Object.keys(stockDiffs).forEach(k => {
             let val = stockDiffs[k];
-            if(Math.abs(val) > 0.001) { // Если есть хоть какая-то разница
+            if(Math.abs(val) > 0.001) { 
                 let [cat, n] = k.split('|');
-                
                 let act = val > 0 ? "Возврат" : "Списание";
-                // Красивые названия операций для готовой продукции
                 if(cat==='Stock_DV' || cat==='Stock_Semi' || cat==='Stock_Feed') {
                      act = val > 0 ? "Доп. приход" : "Корректировка (уменьшение)";
                 }
-                
                 u[`/${cat}/${db.child(cat).push().key}`] = {
                     name: n,
-                    amount: Math.round(val * 100) / 100, // округляем, чтобы не было хвостов вроде 0.00001
+                    amount: Math.round(val * 100) / 100, 
                     date: newV.date,
                     note: `${act} (ред. отчета от ${newV.date.split('T')[0]})`,
                     fLink: id,
@@ -6098,7 +6195,7 @@ window.saveEditWorkshop = async function() {
         hideLoad();
         alert('Отчет успешно обновлен, остатки на складах скорректированы!');
         gID('mdl').style.display='none';
-        if(typeof loadData === 'function') loadData(); // перезагружаем данные на экране
+        if(typeof loadData === 'function') loadData(); 
     } catch(e) {
         hideLoad();
         alert('Ошибка: ' + e.message);
