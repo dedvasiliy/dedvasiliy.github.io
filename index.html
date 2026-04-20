@@ -6092,7 +6092,6 @@ window.addWSRawAdd = function() {
         renderEditWorkshop();
     });
 };
-
 window.addWSOut = function(type) {
     updateWSData();
     let cat = type==='DV' ? 'Stock_DV' : (type==='Semi' ? 'Stock_Semi' : 'Stock_Feed');
@@ -6108,9 +6107,9 @@ window.addWSOut = function(type) {
         if(!val) return;
         let n = val.includes('|NEW') ? val.split('|')[0] : val;
         if(!window.curEditWS.newV.items) window.curEditWS.newV.items = [];
-        let isM = (type === 'DV' || type === 'Semi');
-        let newItem = { n: n, type: type };
-        if(isM) { newItem.q = 0; newItem.w = 0; newItem.l = 0; } else { newItem.amount = 0; }
+        
+        // Теперь всегда создаем поля: мешки (q), вес мешка (w) и хвост (l) для всех категорий
+        let newItem = { n: n, type: type, q: 0, w: 0, l: 0 };
         window.curEditWS.newV.items.push(newItem);
         renderEditWorkshop();
     });
