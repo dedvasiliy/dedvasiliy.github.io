@@ -6170,6 +6170,29 @@ window.saveEditWorkshop = async function() {
         if(newV.items) newV.items.forEach(x => {
             addDiff(getOutCat(x.type), x.n || x.name, calcW(x)); 
         });
+        if(newV.items) newV.items.forEach(x => {
+            addDiff(getOutCat(x.type), x.n || x.name, calcW(x)); 
+        });
+
+        // --- НАЧАЛО НОВОГО БЛОКА: ОБНОВЛЕНИЕ ДАТЫ ВО ВСЕХ СВЯЗАННЫХ ЗАПИСЯХ ---
+        const catsToUpdate = ['Stock_Raw', 'WeightStock', 'Stock_DV', 'Stock_Semi', 'Stock_Feed'];
+        catsToUpdate.forEach(cat => {
+            if(data[cat]) {
+                Object.keys(data[cat]).forEach(recordKey => {
+                    let record = data[cat][recordKey];
+                    // Ищем все записи истории, привязанные к этому отчету (fLink, link или repId)
+                    if(record.fLink === id || record.link === id || record.repId === id) {
+                        // Если дата отличается от новой — обновляем её
+                        if(record.date !== newV.date) {
+                            u[`/${cat}/${recordKey}/date`] = newV.date;
+                        }
+                    }
+                });
+            }
+        });
+        // --- КОНЕЦ НОВОГО БЛОКА ---
+
+        Object.keys(stockDiffs).forEach(k => {
 
         Object.keys(stockDiffs).forEach(k => {
             let val = stockDiffs[k];
