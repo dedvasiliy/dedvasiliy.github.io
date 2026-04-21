@@ -6129,21 +6129,18 @@ window.saveEditWorkshop = async function() {
             return parseFloat(it.amount)||0;
         };
 
-        // --- УМНЫЙ АВТО-КАЛЬКУЛЯТОР ОСНОВЫ (КАК ПРИ СОЗДАНИИ) ---
+        // --- УМНЫЙ АВТО-КАЛЬКУЛЯТОР ОСНОВЫ ---
         let totalOut = 0;
         if(newV.items) newV.items.forEach(x => { totalOut += calcW(x); });
 
         let totalAdd = 0;
         if(newV.rawAdd) newV.rawAdd.forEach(x => { totalAdd += (parseFloat(x.w)||0); });
 
-        // Формула: (Весь выход + 1%) - Добавки = Основа
         if(newV.rawBase) {
             let calcBaseW = (totalOut * 1.01) - totalAdd;
             if(calcBaseW < 0) calcBaseW = 0;
-            // Округляем до 1 знака после запятой, как у тебя принято
             newV.rawBase.w = Math.round(calcBaseW * 10) / 10; 
         }
-        // ---------------------------------------------------------
 
         let u = {};
         const tsStr = new Date().toISOString();
@@ -6164,6 +6161,22 @@ window.saveEditWorkshop = async function() {
             return 'Stock_DV'; 
         };
 
+        // --- РАДАР: ТОЧНЫЙ ПОИСК СКЛАДА ПО НАЗВАНИЮ ---
+        const findCat = (itemName, defaultCat) => {
+            if(!itemName) return defaultCat;
+            let n = itemName.trim().toLowerCase();
+            let found = defaultCat;
+            ['Stock_Raw', 'Stock_Semi', 'Stock_DV', 'Stock_Feed'].forEach(cat => {
+                if(data[cat]) {
+                    Object.values(data[cat]).forEach(v => {
+                        if((v.name||'').trim().toLowerCase() === n) found = cat;
+                    });
+                }
+            });
+            return found;
+        };
+        // ----------------------------------------------
+
         let targetState = {};
         const addTarget = (cat, name, val, noteStr) => {
             if(!name || Math.abs(val) < 0.001) return;
@@ -6176,6 +6189,7 @@ window.saveEditWorkshop = async function() {
         // 1. Основа
         if(newV.rawBase) {
             let bCat = newV.rawBase.c || (orig.rawBase ? orig.rawBase.c : 'Stock_Raw');
+            bCat = findCat(newV.rawBase.n, bCat);
             let noteStr = dbN === 'Krup_Report' ? 'Крупорушка Основа' : (dbN === 'Vibro_Report' ? 'Вибростол Основа' : 'Основа');
             addTarget(bCat, newV.rawBase.n, -newV.rawBase.w, noteStr);
         }
@@ -6188,7 +6202,7 @@ window.saveEditWorkshop = async function() {
                     let oldItem = orig.rawAdd.find(o => (o.n||'').trim() === (x.n||'').trim());
                     if(oldItem && oldItem.c) c = oldItem.c;
                 }
-                c = c || 'WeightStock';
+                c = findCat(x.n, c || 'WeightStock'); // Ищем правильный склад!
                 let noteStr = dbN === 'Krup_Report' ? 'Крупорушка Добавка' : (dbN === 'Vibro_Report' ? 'Вибростол Добавка' : 'Добавка');
                 addTarget(c, x.n, -x.w, noteStr);
             });
@@ -6202,7 +6216,7 @@ window.saveEditWorkshop = async function() {
                     let oldItem = orig.items.find(o => ((o.n||o.name||'').trim()) === ((x.n||x.name||'').trim()));
                     if(oldItem && oldItem.c) c = oldItem.c;
                 }
-                c = c || getOutCat(x.type);
+                c = findCat(x.n || x.name, c || getOutCat(x.type));
                 addTarget(c, x.n || x.name, calcW(x), dbN === 'Krup_Report' ? 'Крупорушка' : (dbN === 'Vibro_Report' ? 'Вибростол' : 'Производство'));
             });
         }
@@ -6229,6 +6243,7 @@ window.saveEditWorkshop = async function() {
                 });
             }
 
+            // Создаем записи, если радар нашел товар, которого раньше тут не было
             Object.keys(catTargets).forEach(recName => {
                 if(!usedTargets.has(recName)) {
                     u[`/${cat}/${db.child(cat).push().key}`] = {
