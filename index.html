@@ -6124,10 +6124,25 @@ window.saveEditWorkshop = async function() {
     if(!confirm("Сохранить изменения и пересчитать склады?")) return;
     showLoad();
     try {
+        // --- АВТО-КОРРЕКЦИЯ ОСНОВЫ ---
+        // Если изменили вес добавки, но забыли вручную поменять вес основы
+        let origAddW = 0;
+        if(orig.rawAdd) orig.rawAdd.forEach(x => origAddW += (parseFloat(x.w)||0));
+        let newAddW = 0;
+        if(newV.rawAdd) newV.rawAdd.forEach(x => newAddW += (parseFloat(x.w)||0));
+        let diffAdd = newAddW - origAddW;
+
+        if(newV.rawBase && orig.rawBase && newV.rawBase.w === orig.rawBase.w && diffAdd !== 0) {
+            newV.rawBase.w -= diffAdd;
+            if(newV.rawBase.w < 0) newV.rawBase.w = 0;
+            // Округляем до одного знака
+            newV.rawBase.w = Math.round(newV.rawBase.w * 10) / 10;
+        }
+        // -----------------------------
+
         let u = {};
         const tsStr = new Date().toISOString();
 
-        // Обновляем сам документ отчета
         u[`/${dbN}/${id}/date`] = newV.date;
         u[`/${dbN}/${id}/timeStart`] = newV.timeStart;
         u[`/${dbN}/${id}/timeEnd`] = newV.timeEnd;
@@ -6149,20 +6164,48 @@ window.saveEditWorkshop = async function() {
             return 'Stock_DV'; 
         };
 
-        // --- УМНОЕ ОБНОВЛЕНИЕ СКЛАДОВ (БЕЗ "КОРРЕКТИРОВОК") ---
         let targetState = {};
-        const addTarget = (cat, name, val, isRawBase) => {
+        const addTarget = (cat, name, val, noteStr) => {
             if(!name || Math.abs(val) < 0.001) return;
+            let n = name.trim();
             if(!targetState[cat]) targetState[cat] = {};
-            let shopTitle = dbN === 'Krup_Report' ? 'Крупорушка' : (dbN === 'Vibro_Report' ? 'Вибростол' : (dbN === 'ZSHM_Report' ? 'ЗШМ' : 'Цех'));
-            let suffix = isRawBase === 1 ? ' Основа' : (isRawBase === 2 ? ' Добавка' : '');
-            if(!targetState[cat][name]) targetState[cat][name] = { val: 0, note: shopTitle + suffix };
-            targetState[cat][name].val += val;
+            if(!targetState[cat][n]) targetState[cat][n] = { val: 0, note: noteStr };
+            targetState[cat][n].val += val;
         };
 
-        if(newV.rawBase) addTarget(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w, 1);
-        if(newV.rawAdd) newV.rawAdd.forEach(x => addTarget(x.c || 'WeightStock', x.n, -x.w, 2));
-        if(newV.items) newV.items.forEach(x => addTarget(getOutCat(x.type), x.n || x.name, calcW(x), 0));
+        // 1. Основа (сохраняем правильный склад)
+        if(newV.rawBase) {
+            let bCat = newV.rawBase.c || (orig.rawBase ? orig.rawBase.c : 'Stock_Raw');
+            let noteStr = dbN === 'Krup_Report' ? 'Крупорушка Основа' : (dbN === 'Vibro_Report' ? 'Вибростол Основа' : 'Основа');
+            addTarget(bCat, newV.rawBase.n, -newV.rawBase.w, noteStr);
+        }
+
+        // 2. Добавки (сохраняем правильный склад)
+        if(newV.rawAdd) {
+            newV.rawAdd.forEach(x => {
+                let c = x.c;
+                if(!c && orig.rawAdd) {
+                    let oldItem = orig.rawAdd.find(o => (o.n||'').trim() === (x.n||'').trim());
+                    if(oldItem && oldItem.c) c = oldItem.c;
+                }
+                c = c || 'WeightStock';
+                let noteStr = dbN === 'Krup_Report' ? 'Крупорушка Добавка' : (dbN === 'Vibro_Report' ? 'Вибростол Добавка' : 'Добавка');
+                addTarget(c, x.n, -x.w, noteStr);
+            });
+        }
+
+        // 3. Продукция
+        if(newV.items) {
+            newV.items.forEach(x => {
+                let c = x.c;
+                if(!c && orig.items) {
+                    let oldItem = orig.items.find(o => ((o.n||o.name||'').trim()) === ((x.n||x.name||'').trim()));
+                    if(oldItem && oldItem.c) c = oldItem.c;
+                }
+                c = c || getOutCat(x.type);
+                addTarget(c, x.n || x.name, calcW(x), dbN === 'Krup_Report' ? 'Крупорушка' : (dbN === 'Vibro_Report' ? 'Вибростол' : 'Производство'));
+            });
+        }
 
         const catsToUpdate = ['Stock_Raw', 'WeightStock', 'Stock_DV', 'Stock_Semi', 'Stock_Feed'];
         catsToUpdate.forEach(cat => {
@@ -6172,23 +6215,24 @@ window.saveEditWorkshop = async function() {
             if(data[cat]) {
                 Object.keys(data[cat]).forEach(recordKey => {
                     let record = data[cat][recordKey];
-                    // Ищем все записи истории, привязанные к этому отчету
+                    // Ищем старые записи, привязанные к этому отчету
                     if(record.fLink === id || record.link === id || record.repId === id) {
-                        let recName = record.name;
+                        let recName = (record.name || '').trim();
                         if(catTargets[recName] !== undefined && !usedTargets.has(recName)) {
-                            // 1. Нужная запись есть. Обновляем её цифру и дату напрямую!
+                            // Обновляем напрямую
                             u[`/${cat}/${recordKey}/amount`] = Math.round(catTargets[recName].val * 100) / 100;
                             u[`/${cat}/${recordKey}/date`] = newV.date;
+                            u[`/${cat}/${recordKey}/note`] = catTargets[recName].note;
                             usedTargets.add(recName);
                         } else {
-                            // 2. Лишняя запись (товар удалили из отчета или это старый дубликат-корректировка). Удаляем!
+                            // Лишнее/старое — удаляем
                             u[`/${cat}/${recordKey}`] = null;
                         }
                     }
                 });
             }
 
-            // 3. Если в отчете появился новый товар, которого раньше не было - создаем под него запись
+            // Создаем новые записи, которых не было в истории
             Object.keys(catTargets).forEach(recName => {
                 if(!usedTargets.has(recName)) {
                     u[`/${cat}/${db.child(cat).push().key}`] = {
@@ -6202,7 +6246,6 @@ window.saveEditWorkshop = async function() {
                 }
             });
         });
-        // -----------------------------------------------------
 
         await db.update(u);
         hideLoad();
@@ -6214,6 +6257,7 @@ window.saveEditWorkshop = async function() {
         alert('Ошибка: ' + e.message);
     }
 };
+
 </script>
 </body>
 </html>
