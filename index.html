@@ -6124,21 +6124,26 @@ window.saveEditWorkshop = async function() {
     if(!confirm("Сохранить изменения и пересчитать склады?")) return;
     showLoad();
     try {
-        // --- АВТО-КОРРЕКЦИЯ ОСНОВЫ ---
-        // Если изменили вес добавки, но забыли вручную поменять вес основы
-        let origAddW = 0;
-        if(orig.rawAdd) orig.rawAdd.forEach(x => origAddW += (parseFloat(x.w)||0));
-        let newAddW = 0;
-        if(newV.rawAdd) newV.rawAdd.forEach(x => newAddW += (parseFloat(x.w)||0));
-        let diffAdd = newAddW - origAddW;
+        const calcW = (it) => {
+            if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0);
+            return parseFloat(it.amount)||0;
+        };
 
-        if(newV.rawBase && orig.rawBase && newV.rawBase.w === orig.rawBase.w && diffAdd !== 0) {
-            newV.rawBase.w -= diffAdd;
-            if(newV.rawBase.w < 0) newV.rawBase.w = 0;
-            // Округляем до одного знака
-            newV.rawBase.w = Math.round(newV.rawBase.w * 10) / 10;
+        // --- УМНЫЙ АВТО-КАЛЬКУЛЯТОР ОСНОВЫ (КАК ПРИ СОЗДАНИИ) ---
+        let totalOut = 0;
+        if(newV.items) newV.items.forEach(x => { totalOut += calcW(x); });
+
+        let totalAdd = 0;
+        if(newV.rawAdd) newV.rawAdd.forEach(x => { totalAdd += (parseFloat(x.w)||0); });
+
+        // Формула: (Весь выход + 1%) - Добавки = Основа
+        if(newV.rawBase) {
+            let calcBaseW = (totalOut * 1.01) - totalAdd;
+            if(calcBaseW < 0) calcBaseW = 0;
+            // Округляем до 1 знака после запятой, как у тебя принято
+            newV.rawBase.w = Math.round(calcBaseW * 10) / 10; 
         }
-        // -----------------------------
+        // ---------------------------------------------------------
 
         let u = {};
         const tsStr = new Date().toISOString();
@@ -6151,11 +6156,6 @@ window.saveEditWorkshop = async function() {
         u[`/${dbN}/${id}/rawBase`] = newV.rawBase || null;
         u[`/${dbN}/${id}/rawAdd`] = newV.rawAdd || null;
         u[`/${dbN}/${id}/items`] = newV.items || null;
-
-        const calcW = (it) => {
-            if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0);
-            return parseFloat(it.amount)||0;
-        };
 
         const getOutCat = (typ) => {
             if(typ==='DV') return 'Stock_DV';
@@ -6173,14 +6173,14 @@ window.saveEditWorkshop = async function() {
             targetState[cat][n].val += val;
         };
 
-        // 1. Основа (сохраняем правильный склад)
+        // 1. Основа
         if(newV.rawBase) {
             let bCat = newV.rawBase.c || (orig.rawBase ? orig.rawBase.c : 'Stock_Raw');
             let noteStr = dbN === 'Krup_Report' ? 'Крупорушка Основа' : (dbN === 'Vibro_Report' ? 'Вибростол Основа' : 'Основа');
             addTarget(bCat, newV.rawBase.n, -newV.rawBase.w, noteStr);
         }
 
-        // 2. Добавки (сохраняем правильный склад)
+        // 2. Добавки
         if(newV.rawAdd) {
             newV.rawAdd.forEach(x => {
                 let c = x.c;
@@ -6215,24 +6215,20 @@ window.saveEditWorkshop = async function() {
             if(data[cat]) {
                 Object.keys(data[cat]).forEach(recordKey => {
                     let record = data[cat][recordKey];
-                    // Ищем старые записи, привязанные к этому отчету
                     if(record.fLink === id || record.link === id || record.repId === id) {
                         let recName = (record.name || '').trim();
                         if(catTargets[recName] !== undefined && !usedTargets.has(recName)) {
-                            // Обновляем напрямую
                             u[`/${cat}/${recordKey}/amount`] = Math.round(catTargets[recName].val * 100) / 100;
                             u[`/${cat}/${recordKey}/date`] = newV.date;
                             u[`/${cat}/${recordKey}/note`] = catTargets[recName].note;
                             usedTargets.add(recName);
                         } else {
-                            // Лишнее/старое — удаляем
                             u[`/${cat}/${recordKey}`] = null;
                         }
                     }
                 });
             }
 
-            // Создаем новые записи, которых не было в истории
             Object.keys(catTargets).forEach(recName => {
                 if(!usedTargets.has(recName)) {
                     u[`/${cat}/${db.child(cat).push().key}`] = {
@@ -6249,7 +6245,7 @@ window.saveEditWorkshop = async function() {
 
         await db.update(u);
         hideLoad();
-        alert('Отчет успешно обновлен!');
+        alert('Отчет успешно обновлен и сырье пересчитано!');
         gID('mdl').style.display='none';
         if(typeof loadData === 'function') loadData(); 
     } catch(e) {
