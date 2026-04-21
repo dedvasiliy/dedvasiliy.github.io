@@ -6127,6 +6127,7 @@ window.saveEditWorkshop = async function() {
         let u = {};
         const tsStr = new Date().toISOString();
 
+        // Обновляем сам документ отчета
         u[`/${dbN}/${id}/date`] = newV.date;
         u[`/${dbN}/${id}/timeStart`] = newV.timeStart;
         u[`/${dbN}/${id}/timeEnd`] = newV.timeEnd;
@@ -6135,20 +6136,6 @@ window.saveEditWorkshop = async function() {
         u[`/${dbN}/${id}/rawBase`] = newV.rawBase || null;
         u[`/${dbN}/${id}/rawAdd`] = newV.rawAdd || null;
         u[`/${dbN}/${id}/items`] = newV.items || null;
-
-        let stockDiffs = {}; 
-        
-        const addDiff = (cat, name, val) => {
-            if(!name) return;
-            let k = `${cat}|${name}`;
-            stockDiffs[k] = (stockDiffs[k]||0) + val;
-        };
-
-        if(orig.rawBase) addDiff(orig.rawBase.c || 'Stock_Raw', orig.rawBase.n, orig.rawBase.w);
-        if(newV.rawBase) addDiff(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w);
-        
-        if(orig.rawAdd) orig.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, x.w));
-        if(newV.rawAdd) newV.rawAdd.forEach(x => addDiff(x.c || 'WeightStock', x.n, -x.w));
 
         const calcW = (it) => {
             if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0);
@@ -6162,52 +6149,64 @@ window.saveEditWorkshop = async function() {
             return 'Stock_DV'; 
         };
 
-        if(orig.items) orig.items.forEach(x => {
-            addDiff(getOutCat(x.type), x.n || x.name, -calcW(x)); 
-        });
-        
-        if(newV.items) newV.items.forEach(x => {
-            addDiff(getOutCat(x.type), x.n || x.name, calcW(x)); 
-        });
+        // --- УМНОЕ ОБНОВЛЕНИЕ СКЛАДОВ (БЕЗ "КОРРЕКТИРОВОК") ---
+        let targetState = {};
+        const addTarget = (cat, name, val, isRawBase) => {
+            if(!name || Math.abs(val) < 0.001) return;
+            if(!targetState[cat]) targetState[cat] = {};
+            let shopTitle = dbN === 'Krup_Report' ? 'Крупорушка' : (dbN === 'Vibro_Report' ? 'Вибростол' : (dbN === 'ZSHM_Report' ? 'ЗШМ' : 'Цех'));
+            let suffix = isRawBase === 1 ? ' Основа' : (isRawBase === 2 ? ' Добавка' : '');
+            if(!targetState[cat][name]) targetState[cat][name] = { val: 0, note: shopTitle + suffix };
+            targetState[cat][name].val += val;
+        };
 
-        // --- НАЧАЛО НОВОГО БЛОКА: ОБНОВЛЕНИЕ ДАТЫ ВО ВСЕХ СВЯЗАННЫХ ЗАПИСЯХ ---
+        if(newV.rawBase) addTarget(newV.rawBase.c || 'Stock_Raw', newV.rawBase.n, -newV.rawBase.w, 1);
+        if(newV.rawAdd) newV.rawAdd.forEach(x => addTarget(x.c || 'WeightStock', x.n, -x.w, 2));
+        if(newV.items) newV.items.forEach(x => addTarget(getOutCat(x.type), x.n || x.name, calcW(x), 0));
+
         const catsToUpdate = ['Stock_Raw', 'WeightStock', 'Stock_DV', 'Stock_Semi', 'Stock_Feed'];
         catsToUpdate.forEach(cat => {
+            let catTargets = targetState[cat] || {};
+            let usedTargets = new Set();
+
             if(data[cat]) {
                 Object.keys(data[cat]).forEach(recordKey => {
                     let record = data[cat][recordKey];
+                    // Ищем все записи истории, привязанные к этому отчету
                     if(record.fLink === id || record.link === id || record.repId === id) {
-                        if(record.date !== newV.date) {
+                        let recName = record.name;
+                        if(catTargets[recName] !== undefined && !usedTargets.has(recName)) {
+                            // 1. Нужная запись есть. Обновляем её цифру и дату напрямую!
+                            u[`/${cat}/${recordKey}/amount`] = Math.round(catTargets[recName].val * 100) / 100;
                             u[`/${cat}/${recordKey}/date`] = newV.date;
+                            usedTargets.add(recName);
+                        } else {
+                            // 2. Лишняя запись (товар удалили из отчета или это старый дубликат-корректировка). Удаляем!
+                            u[`/${cat}/${recordKey}`] = null;
                         }
                     }
                 });
             }
-        });
-        // --- КОНЕЦ НОВОГО БЛОКА ---
 
-        Object.keys(stockDiffs).forEach(k => {
-            let val = stockDiffs[k];
-            if(Math.abs(val) > 0.001) { 
-                let [cat, n] = k.split('|');
-                let act = val > 0 ? "Возврат" : "Списание";
-                if(cat==='Stock_DV' || cat==='Stock_Semi' || cat==='Stock_Feed') {
-                     act = val > 0 ? "Доп. приход" : "Корректировка (уменьшение)";
+            // 3. Если в отчете появился новый товар, которого раньше не было - создаем под него запись
+            Object.keys(catTargets).forEach(recName => {
+                if(!usedTargets.has(recName)) {
+                    u[`/${cat}/${db.child(cat).push().key}`] = {
+                        name: recName,
+                        amount: Math.round(catTargets[recName].val * 100) / 100,
+                        date: newV.date,
+                        note: catTargets[recName].note,
+                        fLink: id,
+                        ts: tsStr
+                    };
                 }
-                u[`/${cat}/${db.child(cat).push().key}`] = {
-                    name: n,
-                    amount: Math.round(val * 100) / 100, 
-                    date: newV.date,
-                    note: `${act} (ред. отчета от ${newV.date.split('T')[0]})`,
-                    fLink: id,
-                    ts: tsStr
-                };
-            }
+            });
         });
+        // -----------------------------------------------------
 
         await db.update(u);
         hideLoad();
-        alert('Отчет успешно обновлен, остатки на складах скорректированы!');
+        alert('Отчет успешно обновлен!');
         gID('mdl').style.display='none';
         if(typeof loadData === 'function') loadData(); 
     } catch(e) {
@@ -6218,6 +6217,3 @@ window.saveEditWorkshop = async function() {
 </script>
 </body>
 </html>
-
-</script>
-</body></html>
