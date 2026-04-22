@@ -6268,6 +6268,43 @@ window.saveEditWorkshop = async function() {
         alert('Ошибка: ' + e.message);
     }
 };
+// --- АВТОМАТИЧЕСКИЙ СБРОС В 00:00 ---
+(function() {
+    // Запоминаем текущую дату при загрузке (формат день.месяц.год)
+    let today = new Date().toLocaleDateString('ru-RU');
+    localStorage.setItem('app_last_date', today);
+
+    function checkNewDay() {
+        let savedDate = localStorage.getItem('app_last_date');
+        let currentDate = new Date().toLocaleDateString('ru-RU');
+        
+        // Если наступил новый день
+        if (savedDate && savedDate !== currentDate) {
+            // Удаляем все данные сессии
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Если у тебя Firebase, выходим из аккаунта
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut();
+            }
+            
+            // Принудительно перезагружаем страницу
+            window.location.reload(true);
+        }
+    }
+
+    // Проверяем каждый раз, когда вкладка снова становится активной
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'visible') {
+            checkNewDay();
+        }
+    });
+
+    // Проверяем каждую минуту (если ты сидишь на сайте прямо в 00:00)
+    setInterval(checkNewDay, 60000);
+})();
+// ------------------------------------
 
 </script>
 </body>
