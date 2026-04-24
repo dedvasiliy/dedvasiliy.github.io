@@ -3359,7 +3359,7 @@ window.execGoodsPayout = async function(name, monthKey) {
         
         totalSum += sum;
         // Записываем детально: Название — кол-во шт/кг (сумма ₴)
-        itemsList.push(n + ' — ' + qty + ' шт/кг (' + sum + ' ₴)');
+        itemsList.push(n + ' — ' + qty + ' шт/кг по ' + +(sum/qty).toFixed(2) + ' ₴ (' + sum + ' ₴)');
         
         stockUpdates['/' + cat + '/' + db.child(cat).push().key] = {
             name: n,
