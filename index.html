@@ -1991,7 +1991,7 @@ window.previewFas=function(){
 };
 
     window.updWsRawList=function(i,pfx){const src=gID(pfx+'s_'+i).value,sel=gID(pfx+'n_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount;});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
-    Window.calcWsMain=function(){
+    window.calcWsMain=function(){
         let tOut=0;
         ['DV','Semi','Feed'].forEach(t=>{
             for(let r of gID('wsOut'+t).children){
