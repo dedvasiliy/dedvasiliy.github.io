@@ -1991,8 +1991,7 @@ window.previewFas=function(){
 };
 
     window.updWsRawList=function(i,pfx){const src=gID(pfx+'s_'+i).value,sel=gID(pfx+'n_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount;});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
-    
-    window.calcWsMain=function(){
+    Window.calcWsMain=function(){
         let tOut=0;
         ['DV','Semi','Feed'].forEach(t=>{
             for(let r of gID('wsOut'+t).children){
@@ -2009,11 +2008,9 @@ window.previewFas=function(){
             tAdd+=parseFloat(gID('waq_'+i).value)||0;
         }
         
-        // Для Вибростола убираем процент потерь (считаем 1 к 1)
-        const loss = (aId === 'VIBRO') ? 0 : (parseFloat(costSet.lossPercent) || 0);
+        // Считаем строго 1 к 1 для всех цехов (вес мешков минус досыпка)
+        const finalW=Math.max(0,tOut-tAdd);
         
-        const baseW=Math.max(0,tOut-tAdd);
-        const finalW=baseW+(baseW*(loss/100));
         const mRows=gID('wsMainRows').querySelectorAll('.main-raw-q');
         if(mRows.length>0)mRows[0].value=finalW.toFixed(1);
     };
@@ -6138,7 +6135,7 @@ Window.saveEditWorkshop = async function() {
         if(newV.rawAdd) newV.rawAdd.forEach(x => { totalAdd += (parseFloat(x.w)||0); });
 
         if(newV.rawBase) {
-            let calcBaseW = (totalOut * 1.01) - totalAdd;
+            let calcBaseW =totalOut- totalAdd;
             if(calcBaseW < 0) calcBaseW = 0;
             newV.rawBase.w = Math.round(calcBaseW * 10) / 10; 
         }
