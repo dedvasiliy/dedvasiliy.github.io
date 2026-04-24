@@ -3359,7 +3359,10 @@ window.execGoodsPayout = async function(name, monthKey) {
         
         totalSum += sum;
         // Записываем детально: Название — кол-во шт/кг (сумма ₴)
-        itemsList.push(n + ' — ' + qty + ' шт/кг по ' + +(sum/qty).toFixed(2) + ' ₴ (' + sum + ' ₴)');
+        let sel = row.querySelector('.gp-item');
+let optGroup = sel.options[sel.selectedIndex].parentNode;
+let unit = (optGroup && optGroup.label && optGroup.label.toUpperCase().includes('ФАСОВКА')) ? 'шт' : 'кг';
+itemsList.push(n + ' — ' + qty + ' ' + unit + ' по ' + +(sum/qty).toFixed(2) + ' ₴ (' + sum + ' ₴)');
         
         stockUpdates['/' + cat + '/' + db.child(cat).push().key] = {
             name: n,
