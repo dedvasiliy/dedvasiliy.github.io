@@ -3319,8 +3319,8 @@ window.calcGpRow = function(el) {
         let price = 0;
         if(data.PriceList) {
             let pObj = Object.values(data.PriceList).find(x => x.name === n);
-            // Берем строго розничную цену
-            if(pObj) price = parseFloat(pObj.price) || 0; 
+            // Берем правильную колонку розницы: priceRoz
+            if(pObj) price = parseFloat(pObj.priceRoz) || 0; 
         }
         if(price > 0) sumInput.value = Math.round(price * qty);
     }
