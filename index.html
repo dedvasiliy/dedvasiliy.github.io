@@ -3308,7 +3308,7 @@ window.addGpRow = function() {
     </div>`;
     gID('gpRows').insertAdjacentHTML('beforeend', html);
 };
-Window.calcGpRow = function(el) {
+window.calcGpRow = function(el) {
     let row = el.parentElement;
     let itemVal = row.querySelector('.gp-item').value;
     let qty = parseFloat(row.querySelector('.gp-qty').value) || 0;
