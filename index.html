@@ -2382,6 +2382,12 @@ window.delRec=async(c,i)=>{
             }
         });
         if(pItems.length) it='\n📦 Состав:\n'+pItems.join('\n');
+    } else if (c === 'Timesheet') {
+        let tType = r.isPayout ? (r.payoutType || 'Выплата/Аванс') : (r.shift ? `Смена: ${r.shift}` : 'Отработано часов');
+        let tVal = r.payoutAmount ? `${r.payoutAmount} ₴` : (r.hours ? `${r.hours} ч.` : '');
+        let gDet = r.goodsDetails ? `\n🛍 Детали:\n${r.goodsDetails.replace(/<br>/g, '\n')}` : '';
+        it = `\n👷 Рабочий: ${r.name || '?'}\n📝 Запись: ${tType} — ${tVal}${gDet}`;
+
     } else if (r.name && r.amount !== undefined) {
         it = `\n📦 Товар: ${r.name} — ${r.amount}`;
     }
@@ -5887,10 +5893,43 @@ window.saveEditFas = async function() {
                 };
             }
         });
-
         await db.update(u);
+        
+        // --- БЛОК ОТПРАВКИ В ТЕЛЕГРАМ ---
+        try {
+            let usr = document.getElementById('userDisplay') ? document.getElementById('userDisplay').innerText : 'Неизвестный';
+            let dStr = newV.date.split('T')[0].split('-').reverse().join('.');
+            let m = `⚠️ ИЗМЕНЕНИЕ СМЕНЫ!\n👤 Кто: ${usr}\n📅 Дата смены: ${dStr}\n📂 Раздел: Смена (Фасовка)\n`;
+
+            const formatItems = (arr) => arr.map(x => `• ${x.name} — ${x.amount || x.count || 0}`).join('\n');
+            
+            m += `\n📦 СЫРЬЕ (Было):\n${formatItems(orig.items) || 'Нет'}`;
+            m += `\n📦 СЫРЬЕ (Стало):\n${formatItems(newV.items) || 'Нет'}`;
+
+            m += `\n\n🛍 ПРОДУКЦИЯ (Было):\n${formatItems(orig.outputItems) || 'Нет'}`;
+            m += `\n🛍 ПРОДУКЦИЯ (Стало):\n${formatItems(newV.outputItems) || 'Нет'}`;
+
+            let oldVz = getVz(orig.vzial);
+            let newVz = getVz(newV.vzial);
+            if(oldVz !== newVz || (orig.ostatok||0) !== (newV.ostatok||0)) {
+                m += `\n\n🎞 ПЛЕНКА:\nБыло: Взял ${oldVz}, Ост. ${orig.ostatok||0}\nСтало: Взял ${newVz}, Ост. ${newV.ostatok||0}`;
+            }
+
+            if(m.length > 4000) m = m.substring(0, 4000) + '\n...[обрезан]';
+
+            const t = "8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk";
+            const cid = "-5206571034";
+            fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: cid, text: m})
+            }).catch(e => console.log("TG", e));
+        } catch(tgE) { console.log("TG Err", tgE); }
+        // --- КОНЕЦ БЛОКА ТЕЛЕГРАМ ---
+
         hideLoad();
         alert('Отчет успешно обновлен, остатки скорректированы!');
+
         gID('mdl').style.display='none';
         if(typeof loadData === 'function') loadData();
     } catch(e) {
@@ -6258,10 +6297,44 @@ Window.saveEditWorkshop = async function() {
                 }
             });
         });
-
         await db.update(u);
+        
+        // --- БЛОК ОТПРАВКИ В ТЕЛЕГРАМ (ЦЕХА) ---
+        try {
+            let usr = document.getElementById('userDisplay') ? document.getElementById('userDisplay').innerText : 'Неизвестный';
+            let dStr = newV.date.split('T')[0].split('-').reverse().join('.');
+            let repName = dbN === 'Krup_Report' ? 'Смена (Крупорушка)' : (dbN === 'Vibro_Report' ? 'Смена (Вибростол)' : (dbN === 'ZSHM_Report' ? 'Смена (ЗШМ)' : 'Отчет производства'));
+            
+            let m = `⚠️ ИЗМЕНЕНИЕ СМЕНЫ!\n👤 Кто: ${usr}\n📅 Дата смены: ${dStr}\n📂 Раздел: ${repName}\n`;
+
+            m += `\n📦 ОСНОВА (Было):\n${orig.rawBase && orig.rawBase.n ? `• ${orig.rawBase.n} — ${orig.rawBase.w} кг` : 'Нет'}`;
+            m += `\n📦 ОСНОВА (Стало):\n${newV.rawBase && newV.rawBase.n ? `• ${newV.rawBase.n} — ${newV.rawBase.w} кг` : 'Нет'}`;
+
+            const formatAdd = (arr) => arr && arr.length ? arr.map(x => `• ${x.n} — ${x.w} кг`).join('\n') : 'Нет';
+            m += `\n\n🧂 ДОБАВКИ (Было):\n${formatAdd(orig.rawAdd)}`;
+            m += `\n🧂 ДОБАВКИ (Стало):\n${formatAdd(newV.rawAdd)}`;
+
+            const calcW = (it) => { if(it.q!==undefined && it.w!==undefined) return (it.q*it.w) + (it.l||0); return parseFloat(it.amount)||0; };
+            const formatItems = (arr) => arr && arr.length ? arr.map(x => `• ${x.n||x.name||'?'} — ${calcW(x)} кг`).join('\n') : 'Нет';
+            
+            m += `\n\n🛍 ПРОДУКЦИЯ (Было):\n${formatItems(orig.items)}`;
+            m += `\n🛍 ПРОДУКЦИЯ (Стало):\n${formatItems(newV.items)}`;
+
+            if(m.length > 4000) m = m.substring(0, 4000) + '\n...[обрезан]';
+
+            const t = "8458802108:AAGqiAAd_SfVc4dd2iC7I-608HWqkNvP1Fk";
+            const cid = "-5206571034";
+            fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: cid, text: m})
+            }).catch(e => console.log("TG", e));
+        } catch(tgE) { console.log("TG Err", tgE); }
+        // --- КОНЕЦ БЛОКА ТЕЛЕГРАМ ---
+
         hideLoad();
         alert('Отчет успешно обновлен и сырье пересчитано!');
+
         gID('mdl').style.display='none';
         if(typeof loadData === 'function') loadData(); 
     } catch(e) {
