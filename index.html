@@ -964,9 +964,7 @@ window.genBatchReport=function(c,n){
                 if(pDate(v.date)>=dStart) allShifts.push({type:'fas', shop:'ФАСОВКА', v, d:pDate(v.date), origD:v.date});
             });
         }
-        
-        allShifts.sort((a,b) => a.origD.localeCompare(b.origD) || (a.shop === 'ВИБРОСТОЛ' ? -1 : (b.shop === 'ВИБРОСТОЛ' ? 1 : 0)));
-        
+allShifts.sort((a,b)=>a.origD.localeCompare(b.origD));
         let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
         let semiNames = new Set();
