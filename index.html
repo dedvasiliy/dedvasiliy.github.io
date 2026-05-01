@@ -970,24 +970,8 @@ window.genBatchReport=function(c,n){
         let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
         let semiNames = new Set();
-        // --- БЕЗОПАСНЫЙ ПОИСК П/Ф ---
+        
         allShifts.forEach(shift=>{
-            let v = shift.v;
-            let isPrimary = false;
-            if(v.rawBase && (v.rawBase.n||'').toLowerCase() === searchN) isPrimary = true;
-            if(v.rawMix && typeof v.rawMix==='string' && v.rawMix.toLowerCase().includes(searchN)) isPrimary = true;
-            
-            if(isPrimary && v.items) {
-                v.items.forEach(x=>{
-                    let nm=x.n||x.name||'';
-                    if(x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm)) semiNames.add(nm.toLowerCase());
-                });
-            }
-        });
-        // -----------------------------
-
-        allShifts.forEach(shift=>{
-
             let v = shift.v;
             let isStage1 = false;
             let isStage2 = false;
