@@ -971,7 +971,23 @@ window.genBatchReport=function(c,n){
         let sumDV={}, sumOther={}, sumFas={};
         let semiNames = new Set();
         
+        // --- НОВЫЙ БЛОК: ПРЕДВАРИТЕЛЬНЫЙ ПОИСК П/Ф ---
         allShifts.forEach(shift=>{
+            let v = shift.v; let isSt1 = false;
+            if(v.rawBase && (v.rawBase.n||'').toLowerCase() === searchN) isSt1 = true;
+            if(v.rawAdd) v.rawAdd.forEach(x => { if((x.n||'').toLowerCase() === searchN) isSt1 = true; });
+            if(v.rawMix && String(v.rawMix).toLowerCase().includes(searchN)) isSt1 = true;
+            if(isSt1 && v.items) {
+                v.items.forEach(x=>{
+                    let nm=x.n||x.name||'';
+                    if(x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm)) semiNames.add(nm.toLowerCase());
+                });
+            }
+        });
+        // ----------------------------------------------
+
+        allShifts.forEach(shift=>{
+
             let v = shift.v;
             let isStage1 = false;
             let isStage2 = false;
