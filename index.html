@@ -965,7 +965,7 @@ window.genBatchReport=function(c,n){
             });
         }
         
-        allShifts.sort((a,b)=>a.origD.localeCompare(b.origD));
+        allShifts.sort((a,b) => a.origD.localeCompare(b.origD) || (a.shop === 'ВИБРОСТОЛ' ? -1 : (b.shop === 'ВИБРОСТОЛ' ? 1 : 0)));
         
         let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
