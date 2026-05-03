@@ -964,9 +964,8 @@ window.genBatchReport=function(c,n){
                 if(pDate(v.date)>=dStart) allShifts.push({type:'fas', shop:'ФАСОВКА', v, d:pDate(v.date), origD:v.date});
             });
         }
-        
-        allShifts.sort((a,b)=>a.origD.localeCompare(b.origD));
-        
+allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 0 : (a.shop === 'ВИБРОСТОЛ' ? -1 : (b.shop === 'ВИБРОСТОЛ' ? 1 : 0))));
+
         let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
         let semiNames = new Set();
@@ -2078,8 +2077,16 @@ window.previewWorkshop=function(k){
     let batchTag = '';
     if (main.length > 0 && main[0].n) {
         let match = main[0].n.match(/\[.*?\]/);
-        if (match) batchTag = match[0];
+        let rawDate = main[0].n.match(/\d{2}\.\d{2}(\.\d{2,4})?/);
+        let dStr = rawDate ? rawDate[0] : ds;
+        
+        if (match) {
+            batchTag = match[0].replace(']', ' ' + dStr + ']');
+        } else {
+            batchTag = '[' + dStr + ']';
+        }
     }
+
 
     let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};
     const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());
