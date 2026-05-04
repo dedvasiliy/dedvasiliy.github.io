@@ -2350,10 +2350,12 @@ window.calcAvgPrice = function(itemName, category) {
     // Ищем в накладных
     if (data.ArchIncoming) {
         Object.values(data.ArchIncoming).forEach(inv => {
+            // Игнорируем записи со смен производства, чтобы не путать пленку с готовой продукцией
+            if (category === 'Пленка' && inv.supplier === 'Свое производство') return;
+            
             if (inv.items) {
                 inv.items.forEach(it => {
-                    let isFilm = (category === 'Пленка' && it.n.toLowerCase().includes('пленка'));
-                    if ((isFilm || it.n === itemName) && it.a > 0 && it.p > 0) {
+                    if (it.n === itemName && it.a > 0 && it.p > 0) {
                         incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
                     }
                 });
@@ -2365,14 +2367,12 @@ window.calcAvgPrice = function(itemName, category) {
         Object.values(data.ArchPackIn).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    let isFilm = (category === 'Пленка' && it.cat === 'Пленка');
-                    if ((isFilm || it.n === itemName) && it.a > 0 && it.p > 0) {
+                    if (it.n === itemName && it.a > 0 && it.p > 0) {
                         incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
                     }
                 });
             } else {
-                let isFilm = (category === 'Пленка' && inv.category === 'Пленка');
-                if ((isFilm || inv.name === itemName) && inv.amount > 0 && inv.price > 0) {
+                if (inv.name === itemName && inv.amount > 0 && inv.price > 0) {
                     incs.push({ d: inv.date, p: parseFloat(inv.price), a: parseFloat(inv.amount) });
                 }
             }
