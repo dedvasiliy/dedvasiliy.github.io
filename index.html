@@ -1321,7 +1321,97 @@ h+=`</tbody></table><div style="display:flex;justify-content:space-between;margi
 </div></div>`;
 gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';};
 
-    window.reprintInv=function(id){const v=data.ArchInvoices[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0;const isBN=v.priceMode==='bn';const curSet=isBN?invSetBN:invSet;const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';let totalNoVat=0;let tSum=parseFloat(v.totalSum||0);if(v.items&&isBN){v.items.forEach(it=>{const p=it.split('|');const w=parseFloat(p[1])||0;let prc=Math.round((parseFloat(p[4])/1.2)*100)/100;totalNoVat+=prc*w;});}let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};}</style>`;let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items)v.items.forEach((it,idx)=>{const p=it.split('|');const w=parseFloat(p[1])||0;tw+=w;let prc=parseFloat(p[4]),sum=parseFloat(p[5]);if(isBN){prc=Math.round((prc/1.2)*100)/100;sum=prc*w;}h+=`<tr><td>${idx+1}</td><td style="text-align:left">${esc(getPrintName(p[0]))}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;});if(isBN){let vat=tSum-totalNoVat;h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}else{h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;}h+=`</tbody></table>`;h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
+window.reprintInv=function(id){
+    const v=data.ArchInvoices[id];
+    if(!v)return;
+    const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
+    let tw=0;
+    const isBN=v.priceMode==='bn';
+    const curSet=isBN?invSetBN:invSet;
+    const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';
+    const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';
+    const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';
+    let totalNoVat=0;
+    let tSum=parseFloat(v.totalSum||0);
+    
+    // Подготовка массива товаров для QR
+    let qrItems = [];
+
+    if(v.items&&isBN){
+        v.items.forEach(it=>{
+            const p=it.split('|');
+            const w=parseFloat(p[1])||0;
+            let prc=Math.round((parseFloat(p[4])/1.2)*100)/100;
+            totalNoVat+=prc*w;
+        });
+    }
+    
+    let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};
+    
+    let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};} .qr-container {text-align:right; margin-top:15px;}</style>`;
+    
+    let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;
+    h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>без ПДВ</th><th>Сума<br>без ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+    
+    if(v.items) {
+        v.items.forEach((it,idx)=>{
+            const p=it.split('|');
+            const w=parseFloat(p[1])||0;
+            tw+=w;
+            let prc=parseFloat(p[4]),sum=parseFloat(p[5]);
+            let printNm = esc(getPrintName(p[0]));
+            if(isBN){
+                prc=Math.round((prc/1.2)*100)/100;
+                sum=prc*w;
+            }
+            h+=`<tr><td>${idx+1}</td><td style="text-align:left">${printNm}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
+            
+            // Заполняем данные для QR
+            qrItems.push({
+                n: printNm, 
+                q: w, 
+                p: prc.toFixed(2), 
+                s: sum.toFixed(2)
+            });
+        });
+    }
+    
+    if(isBN){
+        let vat=tSum-totalNoVat;
+        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr style="border:none"><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+    }else{
+        h+=`<tr style="border:none"><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
+    }
+    h+=`</tbody></table>`;
+    h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;
+    
+    // --- ГЕНЕРАЦИЯ QR-КОДА ---
+    let qrDataObj = {
+        doc: dData.num,
+        dt: dData.dateStr,
+        sup: dData.sup,
+        cli: dData.cli,
+        items: qrItems
+    };
+    let qrString = encodeURIComponent(JSON.stringify(qrDataObj));
+    // Создаем ссылку на картинку QR-кода (размер 150x150)
+    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrString}`;
+    
+    // Добавляем картинку в конец накладной (с выравниванием по правому краю)
+    h += `<div class="qr-container">
+            <img src="${qrUrl}" alt="QR Code" style="width:120px; height:120px; border: 1px solid #ccc; padding: 2px;">
+            <div style="font-size:8px; color:#666; margin-top:2px;">Скан для авто-ввода</div>
+          </div>`;
+
+    gID('print-view').innerHTML=h;
+    
+    // Даем браузеру долю секунды, чтобы успеть загрузить картинку QR-кода перед вызовом окна печати
+    setTimeout(() => {
+        window.print();
+        setTimeout(()=>gID('print-view').innerHTML='',800);
+    }, 500);
+};
+
     function numToWords(n){const u_m=['','один','два','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const u_f=['','одна','дві','три','чотири','п\'ять','шість','сім','вісім','дев\'ять'];const t1=['десять','одинадцять','дванадцять','тринадцять','чотирнадцять','п\'ятнадцять','шістнадцять','сімнадцять','вісімнадцять','дев\'ятнадцять'];const t2=['','','двадцять','тридцять','сорок','п\'ятдесят','шістдесят','сімдесят','вісімдесят','дев\'яносто'];const h=['','сто','двісті','триста','чотириста','п\'ятдесят','шістсот','сімсот','вісімсот','дев\'ятсот'];let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');if(ip===0)return `Нуль гривень ${fs} копійок`;function gg(n,isFem){let r='',c=Math.floor(n/100),d=Math.floor((n%100)/10),u0=n%10;if(c>0)r+=h[c]+' ';if(d===1)r+=t1[u0]+' ';else{if(d>1)r+=t2[d]+' ';if(u0>0)r+=(isFem&&(u0===1||u0===2)?u_f[u0]:u_m[u0])+' ';}return r;}let w='',m=Math.floor(ip/1000000),th=Math.floor((ip%1000000)/1000),rm=ip%1000;if(m>0){w+=gg(m,0);let l=m%10,l2=m%100;if(l2>=11&&l2<=14)w+='мільйонів ';else if(l===1)w+='мільйон ';else if(l>=2&&l<=4)w+='мільйони ';else w+='мільйонів ';}if(th>0){w+=gg(th,1);let l=th%10,l2=th%100;if(l2>=11&&l2<=14)w+='тисяч ';else if(l===1)w+='тисяча ';else if(l>=2&&l<=4)w+='тисячі ';else w+='тисяч ';}if(rm>0)w+=gg(rm,0);w=w.trim();w=w.charAt(0).toUpperCase()+w.slice(1);let l=ip%10,l2=ip%100,cr='гривень';if(l2>=11&&l2<=14)cr='гривень';else if(l===1)cr='гривня';else if(l>=2&&l<=4)cr='гривні';return `${w} ${cr} ${fs} копійок`;}
     function parseTags(txt, d) {if(!txt) return ''; return txt.replace(/\[НОМЕР\]/g, esc(d.num) || '---').replace(/\[ДАТА\]/g, esc(d.dateStr) || '---').replace(/\[ПОСТАВЩИК\]/g, esc(d.sup) || '-/-').replace(/\[КЛИЕНТ\]/g, esc(d.cli) || '-/-').replace(/\[СДЕЛКА\]/g, esc(d.agr) || '-/-').replace(/\[АДРЕСА\]/g, esc(d.addr) || '-/-').replace(/\[КОЛ_ВО_ПОЗИЦИЙ\]/g, d.cnt || '0').replace(/\[ОБЩАЯ_СУММА\]/g, parseFloat(d.sum||0).toFixed(2)).replace(/\[СУММА_ПДВ_ПРОПИСЬЮ\]/g, numToWords(d.sumVAT||0)).replace(/\[СУММА_ПРОПИСЬЮ\]/g, numToWords(d.sum||0));}
 
