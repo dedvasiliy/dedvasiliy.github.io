@@ -2073,20 +2073,17 @@ window.previewWorkshop=function(k){
         const i=x.id.split('_')[1],s=gID('was_'+i).value,n=gID('wan_'+i).value,q=parseFloat(gID('waq_'+i).value);
         if(n&&q>0){add.push({s,n,q});tAdd+=q;}
     }
-
     let batchTag = '';
     if (main.length > 0 && main[0].n) {
         let match = main[0].n.match(/\[.*?\]/);
         let rawDate = main[0].n.match(/\d{2}\.\d{2}(\.\d{2,4})?/);
         let dStr = rawDate ? rawDate[0] : ds;
-        
         if (match) {
-            batchTag = match[0].replace(']', ' ' + dStr + ']');
+            batchTag = match[0].includes(dStr) ? match[0] : match[0].replace(']', ' ' + dStr + ']');
         } else {
             batchTag = '[' + dStr + ']';
         }
     }
-
 
     let totalBagsForThreads=0;let bagsToDeduct={};let labelsToDeduct={};
     const autoBagsNames=(autoSet.bagsNames||'').split(',').map(s=>s.trim().toLowerCase());
@@ -2100,9 +2097,14 @@ window.previewWorkshop=function(k){
             const b=parseFloat(gID('wob_'+i).value)||0,w=parseFloat(gID('wow_'+i).value)||0,r=parseFloat(gID('wor_'+i).value)||0;
             
             if(n&&(b>0||r>0)){
-                if (type === 'Semi' && batchTag && !n.includes('[')) {
-                    n = n.trim() + ' ' + batchTag;
+                if (type === 'Semi' && batchTag) {
+                    if (n.includes('[')) {
+                        n = n.replace(/\[.*?\]/, batchTag);
+                    } else {
+                        n = n.trim() + ' ' + batchTag;
+                    }
                 }
+
                                 const wght=(b*w)+r;
                 out.push({type,n,b,w,r,wght});
                 if(type==='DV') tDV+=wght;
