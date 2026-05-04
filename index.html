@@ -926,7 +926,6 @@ function showH(c,n){
  }, true);
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').querySelector('.modal-box').style.maxWidth='450px';gID('mdl').style.display='flex';
 }
-
 window.genBatchReport=function(c,n){
     const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     gID('mT').innerText='ЗАГРУЗКА...';
@@ -964,11 +963,12 @@ window.genBatchReport=function(c,n){
                 if(pDate(v.date)>=dStart) allShifts.push({type:'fas', shop:'ФАСОВКА', v, d:pDate(v.date), origD:v.date});
             });
         }
-allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 0 : (a.shop === 'ВИБРОСТОЛ' ? -1 : (b.shop === 'ВИБРОСТОЛ' ? 1 : 0))));
+        allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 0 : (a.shop === 'ВИБРОСТОЛ' ? -1 : (b.shop === 'ВИБРОСТОЛ' ? 1 : 0))));
 
         let rep=[], totalUsedRaw=0, totalUsedSemi=0, totalOtherRaw=0, totalDV=0, totalScaledDV=0;
         let sumDV={}, sumOther={}, sumFas={};
         let semiNames = new Set();
+        let semiBalance = {}; // ВИРТУАЛЬНЫЙ БАЛАНС П/Ф ПАРТИИ
         
         allShifts.forEach(shift=>{
             let v = shift.v;
@@ -983,9 +983,21 @@ allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 
                 const checkRaw = (n, w) => {
                     shiftTotalRaw += w;
                     let lowN = (n||'').toLowerCase();
-                    if(lowN === searchN) { isStage1 = true; usedAmt += w; }
-                    else if(semiNames.has(lowN)) { isStage2 = true; usedSemiAmt += w; }
-                    else { otherRaws.push({n, w}); }
+                    if(lowN === searchN) { 
+                        isStage1 = true; 
+                        usedAmt += w; 
+                    }
+                    else if(semiBalance[lowN] > 0.001) { 
+                        isStage2 = true; 
+                        let consume = Math.min(w, semiBalance[lowN]);
+                        usedSemiAmt += consume;
+                        semiBalance[lowN] -= consume;
+                        let leftover = w - consume;
+                        if(leftover > 0.001) otherRaws.push({n, w: leftover});
+                    }
+                    else { 
+                        otherRaws.push({n, w}); 
+                    }
                 };
 
                 if(v.rawBase) checkRaw(v.rawBase.n, v.rawBase.w);
@@ -1015,11 +1027,12 @@ allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 
                                 let isDV=x.type==='DV';
                                 if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) isDV=true;
                                 
-                                if(isStage1 && (x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm))) {
-                                    semiNames.add(nm.toLowerCase());
-                                }
-
                                 let scaledW = w * ratio;
+                                if(x.type==='Semi' || /(сечк|полуфабрикат)/i.test(nm)) {
+                                    let lowN = nm.toLowerCase();
+                                    semiNames.add(lowN);
+                                    semiBalance[lowN] = (semiBalance[lowN] || 0) + scaledW;
+                                }
 
                                 if(isDV){ shiftDV+=w; scaledShiftDV+=scaledW; sumDV[nm]=(sumDV[nm]||0)+scaledW; }
                                 else { sumOther[nm]=(sumOther[nm]||0)+scaledW; }
@@ -1037,9 +1050,21 @@ allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 
                         let amt=Math.abs(x.amount);
                         shiftTotalRaw += amt;
                         let lowN = (x.name||'').toLowerCase();
-                        if(lowN === searchN) { isStage1 = true; usedAmt += amt; }
-                        else if(semiNames.has(lowN)) { isStage2 = true; usedSemiAmt += amt; }
-                        else { otherRaws.push({n:x.name, w:amt}); }
+                        if(lowN === searchN) { 
+                            isStage1 = true; 
+                            usedAmt += amt; 
+                        }
+                        else if(semiBalance[lowN] > 0.001) { 
+                            isStage2 = true; 
+                            let consume = Math.min(amt, semiBalance[lowN]);
+                            usedSemiAmt += consume;
+                            semiBalance[lowN] -= consume;
+                            let leftover = amt - consume;
+                            if(leftover > 0.001) otherRaws.push({n:x.name, w:leftover});
+                        }
+                        else { 
+                            otherRaws.push({n:x.name, w:amt}); 
+                        }
                     });
                 }
                 if(isStage1 || isStage2) {
@@ -1065,7 +1090,7 @@ allShifts.sort((a, b) => a.origD.localeCompare(b.origD) || (a.shop === b.shop ? 
             }
         });
         
-    rep.sort((a,b)=>(b.dt||'').localeCompare(a.dt||''));
+        rep.sort((a,b)=>(b.dt||'').localeCompare(a.dt||''));
 
         let rows='';
         rep.forEach(r=>{
