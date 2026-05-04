@@ -1371,9 +1371,14 @@ function openModal(t,a,b){history.pushState({cat: cur, modal: true}, '', ''); gI
           loadBulk(cur==='StockRoot'?'Готовая':cur); updShipTotal();
       }, 50);
      }
+
      else if(t==='inventory'){
       h.innerText='ИНВЕНТАРИЗАЦИЯ';
-      m.innerHTML=`<div class="grid-2"><div><span class="lbl-small">ДАТА</span><input type="date" id="invDate" value="${d}"></div><div><span class="lbl-small">СКЛАД</span><select id="invCat" class="fas-inp" onchange="loadInvList()"><option value="">Выберите...</option><option value="Готовая">Фасованная</option><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option><option value="Stock_Feed">Отходы</option><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option></select></div></div><div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-top:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1"><div>ТОВАР</div><div>УЧЕТ</div><div>ФАКТ</div><div>РАЗНИЦА</div></div><div id="invList" style="max-height:50vh;overflow-y:auto;padding-right:5px;margin-top:5px"></div><button class="btn-main" onclick="execInventory()" style="background:#10b981;margin-top:10px">ПРИМЕНИТЬ ФАКТ</button>`;
+      m.innerHTML=`<div class="grid-2"><div><span class="lbl-small">ДАТА</span><input type="date" id="invDate" value="${d}"></div><div><span class="lbl-small">СКЛАД</span><select id="invCat" class="fas-inp" onchange="loadInvList()"><option value="">Выберите...</option><option value="Готовая">Фасованная</option><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option><option value="Stock_Feed">Отходы</option><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option></select></div></div><div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-top:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1"><div>ТОВАР</div><div>УЧЕТ</div><div>ФАКТ</div><div>РАЗНИЦА</div></div><div id="invList" style="max-height:50vh;overflow-y:auto;padding-right:5px;margin-top:5px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px">
+          <button class="btn-main" onclick="execInventory()" style="background:#10b981;margin:0">ПРИМЕНИТЬ ФАКТ</button>
+          <button class="btn-main" onclick="printFullInventoryCheck()" style="background:#0f172a;margin:0">🖨️ БЛАНК (ВСЕ)</button>
+      </div>`;
      }
 
           else if(t==='addRaw'){
@@ -6432,6 +6437,85 @@ window.saveEditWorkshop = async function() {
     setInterval(checkNewDay, 60000);
 })();
 // ------------------------------------
+window.printFullInventoryCheck = function() {
+    const cats = [
+        { id: 'Готовая', n: 'ФАСОВАННАЯ' },
+        { id: 'WeightStock', n: 'ПОКУПНАЯ' },
+        { id: 'Stock_DV', n: 'ДВ ВЕС' },
+        { id: 'Stock_Semi', n: 'ПОЛУФАБРИКАТ' },
+        { id: 'Stock_Raw', n: 'СЫРЬЕ' },
+        { id: 'Stock_Feed', n: 'ОТХОДЫ' },
+        { id: 'Пленка', n: 'ПЛЕНКА' },
+        { id: 'Пакеты', n: 'ПАКЕТЫ' },
+        { id: 'Скотч 360 грамм', n: 'СКОТЧ' },
+        { id: 'Мешки', n: 'МЕШКИ' },
+        { id: 'Нитки', n: 'НИТКИ' },
+        { id: 'Этикетка', n: 'ЭТИКЕТКА' },
+        { id: 'Стрейч пленка', n: 'СТРЕЙЧ' },
+        { id: 'Термо лента', n: 'ТЕРМО' }
+    ];
+    
+    let dt = document.getElementById('invDate').value.split('-').reverse().join('.');
+    
+    let h = `<style>
+        @media print {
+            .inv-col-wrap { column-count: 3; column-gap: 15px; margin-top: 10px; }
+            .inv-cat-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; border: 1px solid #000; padding: 4px; }
+            .inv-cat-title { font-size: 10px; font-weight: bold; text-align: center; border-bottom: 1px solid #000; margin-bottom: 4px; padding-bottom: 2px; text-transform: uppercase; background: #eee; -webkit-print-color-adjust: exact; }
+            .inv-item-row { display: flex; justify-content: space-between; font-size: 8.5px; border-bottom: 1px dotted #ccc; padding: 3px 0; }
+            .inv-item-name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 4px; }
+            .inv-item-sys { width: 35px; text-align: center; border-right: 1px solid #000; border-left: 1px solid #000; font-weight: bold; }
+            .inv-item-fact { width: 45px; text-align: center; }
+            body { color: #000; }
+        }
+    </style>
+    <div style="font-family:sans-serif; color:#000; padding: 10px;">
+        <h3 style="text-align:center; margin-bottom:5px; font-size: 14px; text-transform:uppercase;">БЛАНК ПЕРЕУЧЕТА (ВСЕ СКЛАДЫ)</h3>
+        <h4 style="text-align:center; margin-top:0; font-size: 11px; color:#444;">Дата: ${dt}</h4>
+        
+        <div class="inv-col-wrap">`;
+        
+    cats.forEach(c => {
+        let bals = {};
+        if(data[c.id]) {
+            Object.values(data[c.id]).forEach(v => {
+                if(v.name) bals[v.name] = (bals[v.name] || 0) + v.amount;
+            });
+        }
+        let items = Object.keys(bals).sort().filter(n => Math.abs(bals[n]) >= 0.001);
+        
+        if (items.length > 0) {
+            h += `<div class="inv-cat-block">
+                <div class="inv-cat-title">${c.n}</div>
+                <div style="display: flex; font-size: 7.5px; font-weight: bold; color: #666; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px;">
+                    <div style="flex: 1;">ТОВАР</div>
+                    <div style="width: 35px; text-align: center;">УЧЕТ</div>
+                    <div style="width: 45px; text-align: center;">ФАКТ</div>
+                </div>`;
+            items.forEach(n => {
+                let u = bals[n];
+                let uf = (c.id==='Пленка'||c.id==='Скотч 360 грамм'||c.id==='Стрейч пленка') ? u.toFixed(2) : Math.round(u);
+                h += `<div class="inv-item-row">
+                    <div class="inv-item-name">${esc(n)}</div>
+                    <div class="inv-item-sys">${uf}</div>
+                    <div class="inv-item-fact"></div>
+                </div>`;
+            });
+            h += `</div>`;
+        }
+    });
+            
+    h += `</div>
+    <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
+        <div>Сдал: ________________________</div>
+        <div>Принял (Переучет): ________________________</div>
+    </div>
+    </div>`;
+    
+    document.getElementById('print-view').innerHTML = h;
+    window.print();
+    setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
+};
 
 </script>
 </body>
