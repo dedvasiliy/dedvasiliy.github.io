@@ -1395,7 +1395,7 @@ window.reprintInv=function(id){
     };
     let qrString = encodeURIComponent(JSON.stringify(qrDataObj));
     // Создаем ссылку на картинку QR-кода (размер 150x150)
-    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrString}`;
+    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=1&data=${qrString}`;
     
     // Добавляем картинку в конец накладной (с выравниванием по правому краю)
     h += `<div class="qr-container">
@@ -1771,7 +1771,7 @@ window.printShipInvoice=function(d){
         items: qrItems
     };
     let qrString = encodeURIComponent(JSON.stringify(qrDataObj));
-    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrString}`;
+    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=1&data=${qrString}`;
     
     h += `<div class="qr-container">
             <img src="${qrUrl}" alt="QR Code" style="width:120px; height:120px; border: 1px solid #ccc; padding: 2px;">
