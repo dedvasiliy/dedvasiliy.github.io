@@ -3236,67 +3236,89 @@ window.calcFinances = async function() {
     }
 };
 
-        window.renderTsList = function(c){
-            const d = data.Timesheet || {};
-            const dbW = data.Workers || {};
-            const w = {};
-            
-            const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
-            
-            const dObj = new Date();
-            let year = dObj.getFullYear();
-            let month = dObj.getMonth();
-            if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
+Window.renderTsList = function(c, forceYear, forceMonth){
+    const d = data.Timesheet || {};
+    const dbW = data.Workers || {};
+    const w = {};
+    
+    const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
+    
+    const dObj = new Date();
+    let year = forceYear !== undefined ? forceYear : dObj.getFullYear();
+    let month = forceMonth !== undefined ? forceMonth : dObj.getMonth();
+    
+    if (forceYear === undefined && forceMonth === undefined) {
+        if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
+    }
 
-            const daysToRender = [];
-            if (year === 2026 && month === 2) { 
-                for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
-            } else if (year === 2026 && month === 3) { 
-                for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
-                for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
-            } else {
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+    const daysToRender = [];
+    if (year === 2026 && month === 2) { 
+        for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+    } else if (year === 2026 && month === 3) { 
+        for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+        for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+    } else {
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+    }
+    
+    Object.values(dbW).forEach(bw => {
+        if(bw.name){
+            let b = getBase(bw.name);
+            if(!w[b]) w[b] = {t:0, s:new Set(), mRt: 0}; 
+            let mRt = parseFloat(bw.monthRate)||0;
+            if(mRt > w[b].mRt) w[b].mRt = mRt;
+        }
+    });
+
+    Object.entries(d).forEach(([k,v]) => {
+        if(v.name){
+            let b = getBase(v.name);
+            if(!w[b]) w[b] = {t:0, s:new Set(), mRt:0}; 
+            if(daysToRender.includes(v.date) && !v.isPayout){
+                w[b].t += parseFloat(v.rate) || 0;
+                w[b].s.add(v.date);
             }
-            
-            Object.values(dbW).forEach(bw => {
-                if(bw.name){
-                    let b = getBase(bw.name);
-                    if(!w[b]) w[b] = {t:0, s:new Set(), mRt: 0}; 
-                    let mRt = parseFloat(bw.monthRate)||0;
-                    if(mRt > w[b].mRt) w[b].mRt = mRt;
-                }
-            });
+        }
+    });
 
-            Object.entries(d).forEach(([k,v]) => {
-                if(v.name){
-                    let b = getBase(v.name);
-                    if(!w[b]) w[b] = {t:0, s:new Set(), mRt:0}; 
-                    if(daysToRender.includes(v.date) && !v.isPayout){
-                        w[b].t += parseFloat(v.rate) || 0;
-                        w[b].s.add(v.date);
-                    }
-                }
-            });
-            let h = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
-                <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;font-size:10px;padding:10px 5px">🖨️ ПЕЧАТЬ</button>
-                <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
-                <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
-                <button class="btn-main" onclick="openGoodsReport()" style="background:#d97706;margin:0;font-size:10px;padding:10px 5px">🛒 ТОВАРЫ ПОД З/П</button>
-            </div><div class="dash-grid">`;
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let prevM = month - 1, prevY = year;
+    if (prevM < 0) { prevM = 11; prevY--; }
+    let nextM = month + 1, nextY = year;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    
+    let titleText = `${monthNames[month]} ${year}`;
+    if (year === 2026 && month === 3) titleText = `АПРЕЛЬ 2026 (с 27 Марта)`;
+    else if (year === 2026 && month === 2) titleText = `МАРТ 2026 (до 26 числа)`;
 
-            Object.keys(w).sort().forEach(n=>{
-              if (w[n].s.size === 0) return;
-                let finalZp = parseFloat((w[n].t + w[n].mRt).toFixed(2));
-                h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}')">
-                    <div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div>
-                    <div style="font-size:10px;color:#64748b">Смен (тек. период): <b>${w[n].s.size}</b></div>
-                    <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за период: ${finalZp} ГРН</div>
-                </div>`;
-            });
-            h += '</div>';
-            c.innerHTML = Object.keys(w).length ? h : '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Сотрудников пока нет</div>';
-        };
+    let h = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+        <button class="btn-main" onclick="printTsList()" style="background:#0f172a;margin:0;font-size:10px;padding:10px 5px">🖨️ ПЕЧАТЬ</button>
+        <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
+        <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
+        <button class="btn-main" onclick="openGoodsReport()" style="background:#d97706;margin:0;font-size:10px;padding:10px 5px">🛒 ТОВАРЫ ПОД З/П</button>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(document.getElementById('mB'), ${prevY}, ${prevM})">◀</button>
+        <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(document.getElementById('mB'), ${nextY}, ${nextM})">▶</button>
+    </div>
+    
+    <div class="dash-grid">`;
+
+    Object.keys(w).sort().forEach(n=>{
+        if (w[n].s.size === 0) return;
+        let finalZp = parseFloat((w[n].t + w[n].mRt).toFixed(2));
+        h += `<div class="dash-item" style="padding:15px;border:2px solid var(--p);cursor:pointer;" onclick="openWorkerCalendar('${esc(n)}', ${year}, ${month})">
+            <div style="font-size:14px;font-weight:900;color:var(--p);margin-bottom:5px">${esc(n)}</div>
+            <div style="font-size:10px;color:#64748b">Смен (выбранный период): <b>${w[n].s.size}</b></div>
+            <div style="font-size:11px;font-weight:900;color:#059669;margin-top:2px">ЗП за период: ${finalZp} ГРН</div>
+        </div>`;
+    });
+    h += '</div>';
+    c.innerHTML = Object.keys(w).length && Object.values(w).some(wk => wk.s.size > 0) ? h : h + '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900">Нет смен в этом месяце</div>';
+};
 
         window.openWorkerCalendar = function(name, y, m) {
             const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
@@ -3680,46 +3702,79 @@ itemsList.push(n + ' — ' + qty + ' ' + unit + ' по ' + +(sum/qty).toFixed(2)
                 alert(e.message);
             }
         };
-        window.openGoodsReport = function() {
-            const ts = data.Timesheet || {};
-            let list = [];
+
+Window.openGoodsReport = function(forceYear, forceMonth) {
+    const dObj = new Date();
+    let year = forceYear !== undefined ? forceYear : dObj.getFullYear();
+    let month = forceMonth !== undefined ? forceMonth : dObj.getMonth();
+    
+    if (forceYear === undefined && forceMonth === undefined) {
+        if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
+    }
+
+    const daysToRender = [];
+    if (year === 2026 && month === 2) { 
+        for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
+    } else if (year === 2026 && month === 3) { 
+        for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
+        for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
+    } else {
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+    }
+
+    const ts = data.Timesheet || {};
+    let list = [];
+    
+    Object.values(ts).forEach(v => {
+        if (v.isPayout && v.payoutType && v.payoutType.startsWith('Товар') && daysToRender.includes(v.date)) {
+            list.push(v);
+        }
+    });
+    
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    let prevM = month - 1, prevY = year;
+    if (prevM < 0) { prevM = 11; prevY--; }
+    let nextM = month + 1, nextY = year;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let titleText = `${monthNames[month]} ${year}`;
+    if (year === 2026 && month === 3) titleText = `АПРЕЛЬ 2026 (с 27 Марта)`;
+    else if (year === 2026 && month === 2) titleText = `МАРТ 2026 (до 26 числа)`;
+
+    let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openGoodsReport(${prevY}, ${prevM})">◀</button>
+        <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openGoodsReport(${nextY}, ${nextM})">▶</button>
+    </div>`;
+    
+    if (list.length === 0) {
+        h += '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900;">В этом месяце товары не выдавались</div>';
+    } else {
+        list.forEach(v => {
+            let dArr = v.date.split('-'); 
+            let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
             
-            Object.values(ts).forEach(v => {
-                if (v.isPayout && v.payoutType && v.payoutType.startsWith('Товар')) {
-                    list.push(v);
-                }
-            });
+            let details = v.goodsDetails ? v.goodsDetails : v.payoutType.replace('Товар: ', '');
             
-            // Сортировка: новые записи всегда сверху
-            list.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            let h = '';
-            if (list.length === 0) {
-                h = '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900;">Нет выданных товаров</div>';
-            } else {
-                list.forEach(v => {
-                    let dArr = v.date.split('-'); 
-                    let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
-                    
-                    // Берем скрытые детали или старое название (если запись старая)
-                    let details = v.goodsDetails ? v.goodsDetails : v.payoutType.replace('Товар: ', '');
-                    
-                    h += `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px;margin-bottom:5px;">
-                        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:4px;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;">
-                            <span>${dFormat}</span>
-                            <span style="font-weight:900;color:#0f172a;font-size:12px;">${esc(v.name)}</span>
-                        </div>
-                        <div style="font-size:11px;font-weight:bold;color:#0369a1;margin-bottom:4px;line-height:1.5;">${details}</div>
-                        <div style="text-align:right;font-size:12px;font-weight:900;color:#dc2626;border-top:1px dashed #cbd5e1;padding-top:4px;">Итого удержано: ${v.payoutAmount} ₴</div>
-                    </div>`;
-                });
-            }
-            
-            gID('mT').innerText = 'ВЫДАННЫЕ ТОВАРЫ ПОД З/П';
-            gID('mB').innerHTML = h;
-            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
-            gID('mdl').style.display = 'flex';
-        };
+            h += `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px;margin-bottom:5px;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:4px;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;">
+                    <span>${dFormat}</span>
+                    <span style="font-weight:900;color:#0f172a;font-size:12px;">${esc(v.name)}</span>
+                </div>
+                <div style="font-size:11px;font-weight:bold;color:#0369a1;margin-bottom:4px;line-height:1.5;">${details}</div>
+                <div style="text-align:right;font-size:12px;font-weight:900;color:#dc2626;border-top:1px dashed #cbd5e1;padding-top:4px;">Итого удержано: ${v.payoutAmount} ₴</div>
+            </div>`;
+        });
+    }
+    
+    gID('mT').innerText = 'ВЫДАННЫЕ ТОВАРЫ ПОД З/П';
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+};
 
         window.openWorkersMgmt = function() {
             let h = `<div style="margin-bottom:15px;display:flex;flex-wrap:wrap;gap:5px;">
