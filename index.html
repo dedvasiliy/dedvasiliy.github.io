@@ -3237,6 +3237,7 @@ window.calcFinances = async function() {
 };
 
 window.renderTsList = function(c, forceYear, forceMonth){
+    window.mainContainer = c;
     const d = data.Timesheet || {};
     const dbW = data.Workers || {};
     const w = {};
@@ -3300,9 +3301,9 @@ window.renderTsList = function(c, forceYear, forceMonth){
     </div>
     
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
-        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(document.getElementById('mB'), ${prevY}, ${prevM})">◀</button>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(window.mainContainer, ${prevY}, ${prevM})">◀</button>
         <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
-        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(document.getElementById('mB'), ${nextY}, ${nextM})">▶</button>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(window.mainContainer, ${nextY}, ${nextM})">▶</button>
     </div>
     
     <div class="dash-grid">`;
