@@ -3236,7 +3236,7 @@ window.calcFinances = async function() {
     }
 };
 
-Window.renderTsList = function(c, forceYear, forceMonth){
+window.renderTsList = function(c, forceYear, forceMonth){
     const d = data.Timesheet || {};
     const dbW = data.Workers || {};
     const w = {};
@@ -3703,7 +3703,7 @@ itemsList.push(n + ' — ' + qty + ' ' + unit + ' по ' + +(sum/qty).toFixed(2)
             }
         };
 
-Window.openGoodsReport = function(forceYear, forceMonth) {
+window.openGoodsReport = function(forceYear, forceMonth) {
     const dObj = new Date();
     let year = forceYear !== undefined ? forceYear : dObj.getFullYear();
     let month = forceMonth !== undefined ? forceMonth : dObj.getMonth();
