@@ -2814,12 +2814,19 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         window.printTsList = function() {
             const d = data.Timesheet || {};
             const wDb = data.Workers || {};
-            const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
+
+            let dObj = new Date();
+            let curY = dObj.getFullYear();
+            let curM = dObj.getMonth();
+            if (curY === 2026 && curM === 2 && dObj.getDate() >= 27) curM = 3;
+
+            let defDate = String(curM + 1).padStart(2, '0') + "." + curY;
+            let val = prompt("Укажите месяц и год для печати:", defDate);
+            if (!val) return;
             
-            const dObj = new Date();
-            let year = dObj.getFullYear();
-            let month = dObj.getMonth();
-            if (year === 2026 && month === 2 && dObj.getDate() >= 27) month = 3;
+            let parts = val.split('.');
+            let month = parseInt(parts[0], 10) - 1;
+            let year = parseInt(parts[1], 10);
 
             const daysToRender = [];
             if (year === 2026 && month === 2) { 
