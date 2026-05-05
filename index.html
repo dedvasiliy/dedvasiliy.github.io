@@ -2537,9 +2537,10 @@ window.calcAvgPrice = function(itemName, category) {
     // Ищем в накладных
     if (data.ArchIncoming) {
         Object.values(data.ArchIncoming).forEach(inv => {
-            // Игнорируем записи со смен производства, чтобы не путать пленку с готовой продукцией
-            if (category === 'Пленка' && inv.supplier === 'Свое производство') return;
-            
+
+                        // Игнорируем любые внутренние смены, чтобы брать цену пленки только с реального прихода
+                    if (category === 'Пленка' && (inv.supplier === 'Свое производство' || inv.supplier === 'Фасовка' || inv.type === 'PACK')) return;
+        
             if (inv.items) {
                 inv.items.forEach(it => {
                     if (it.n === itemName && it.a > 0 && it.p > 0) {
