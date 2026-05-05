@@ -2814,6 +2814,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         window.printTsList = function() {
             const d = data.Timesheet || {};
             const wDb = data.Workers || {};
+            const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
 
             let dObj = new Date();
             let curY = dObj.getFullYear();
@@ -2821,24 +2822,40 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             if (curY === 2026 && curM === 2 && dObj.getDate() >= 27) curM = 3;
 
             let defDate = String(curM + 1).padStart(2, '0') + "." + curY;
-            let val = prompt("Укажите месяц и год для печати:", defDate);
+            let val = prompt("За какой месяц печатать табель? (введите месяц цифрой, например 4 или 04.2026)", defDate);
             if (!val) return;
-            
-            let parts = val.split('.');
-            let month = parseInt(parts[0], 10) - 1;
-            let year = parseInt(parts[1], 10);
+
+            val = val.trim();
+            let year = curY;
+            let month = 0;
+
+            if (val.includes('.')) {
+                let parts = val.split('.');
+                month = parseInt(parts[0], 10) - 1;
+                year = parseInt(parts[1], 10);
+                if (year < 2000) year += 2000;
+            } else {
+                month = parseInt(val, 10) - 1;
+            }
+
+            if (isNaN(month) || isNaN(year)) {
+                alert("Ошибка ввода месяца.");
+                return;
+            }
 
             const daysToRender = [];
-            if (year === 2026 && month === 2) { 
+            if (year === 2026 && month === 2) {
                 for(let i=1; i<=26; i++) daysToRender.push(`2026-03-${String(i).padStart(2, '0')}`);
-            } else if (year === 2026 && month === 3) { 
+            } else if (year === 2026 && month === 3) {
                 for(let i=27; i<=31; i++) daysToRender.push(`2026-03-${i}`);
                 for(let i=1; i<=30; i++) daysToRender.push(`2026-04-${String(i).padStart(2, '0')}`);
             } else {
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
             }
-            
+
+            if (daysToRender.length === 0) return;
+
             let minD = daysToRender[0].split('-').reverse().join('.');
             let maxD = daysToRender[daysToRender.length-1].split('-').reverse().join('.');
             let periodStr = `${minD} - ${maxD}`;
@@ -2860,21 +2877,23 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             });
 
             Object.values(d).forEach(v => {
-                if(v.name && daysToRender.includes(v.date)) {
+                if(!v.date) return;
+                let vDate = v.date.split('T')[0]; // Защита от времени в дате
+                if(v.name && daysToRender.includes(vDate)) {
                     let b = getBase(v.name);
                     let isSub = b !== v.name;
                     if(!wData[b]) wData[b] = { mainRate: 0, subRate: 0, mRt: 0, fRt: 0, shiftsByDate: {}, mainSum: 0, mainHrs: 0, subSum: 0, subHrs: 0, fasSum: 0, fasItems: 0, adv: 0, uniqueDays: new Set() };
-                    
+
                     if (v.isPayout) {
                         wData[b].adv += parseFloat(v.payoutAmount) || 0;
                     } else {
                         let pay = parseFloat(v.rate) || 0;
                         let hrs = parseFloat(v.hours) || 0;
-                        let fDate = v.date.split('-').reverse().slice(0,2).join('.');
-                        
+                        let fDate = vDate.split('-').reverse().slice(0,2).join('.');
+
                         if (!wData[b].shiftsByDate[fDate]) wData[b].shiftsByDate[fDate] = [];
-                        wData[b].uniqueDays.add(v.date);
-                        
+                        wData[b].uniqueDays.add(vDate);
+
                         if (isSub) {
                             wData[b].subSum += pay;
                             wData[b].subHrs += hrs;
@@ -2906,10 +2925,11 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             activeWorkers.forEach(w => {
                 let wd = wData[w];
                 let isNikonor = (w.trim().toLowerCase() === 'никонор' || w.trim().toLowerCase() === 'никанор');
-                
+
                 h += `<div style="border: 1px solid #000; padding: 5px; break-inside: avoid; font-size: 10px;">`;
-                h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${esc(w)}</div>`;
-                
+                let safeName = typeof esc === 'function' ? esc(w) : w; // Защита от undefined
+                h += `<div style="font-weight:bold; font-size:12px; text-align:center; border-bottom:1px solid #000; padding-bottom:3px; margin-bottom:5px;">${safeName}</div>`;
+
                 let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
                     let [dA, mA] = a.split('.');
                     let [dB, mB] = b.split('.');
@@ -2918,36 +2938,32 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                 });
 
                 if (isNikonor) {
-                    // --- СТРОГИЙ ШАБЛОН ДЛЯ НИКОНОРА ---
                     let prodShifts = 0;
                     let fasShifts = 0;
                     let totalFasItems = 0;
-                    
-                    let nMainRate = wd.mainRate || 1700; // Обычный тариф
-                    let nFasRate = wd.fRt || 0.28;       // Тариф за фасовку
-                    let nMonthRate = wd.mRt || 13500;    // Ставка за месяц
+
+                    let nMainRate = wd.mainRate || 1700;
+                    let nFasRate = wd.fRt || 0.28;
+                    let nMonthRate = wd.mRt || 13500;
 
                     let linesHtml = "";
 
                     sortedDates.forEach(dateStr => {
                         let dayShifts = wd.shiftsByDate[dateStr];
-                        
+
                         dayShifts.forEach((sh, idx) => {
                             let dLabel = idx === 0 ? dateStr : '<span style="color:transparent">00.00</span>';
                             let p = sh.pay;
-                            
-                            // Жесткое правило определения смены: если сумма не равна дневной ставке - это фасовка
+
                             let isPacking = true;
-                            if (p === nMainRate || p === 1500 || p === 0) {
-                                isPacking = false;
-                            }
-                            
+                            if (p === nMainRate || p === 1500 || p === 0) isPacking = false;
+
                             if (isPacking) {
                                 fasShifts++;
                                 let items = nFasRate > 0 ? Math.round(p / nFasRate) : 0;
                                 totalFasItems += items;
                                 let calcPay = items * nFasRate;
-                                
+
                                 linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
                                         <span style="display:inline-block; width: 35px;">${dLabel}</span>
                                         <span style="flex:1; text-align:left; margin-left: 5px;">${items}шт.</span>
@@ -2955,8 +2971,8 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                                       </div>`;
                             } else {
                                 prodShifts++;
-                                let sTime = (sh.s && sh.e) ? `${sh.s}-${sh.e}` : "07:00-17:00"; 
-                                
+                                let sTime = (sh.s && sh.e) ? `${sh.s}-${sh.e}` : "07:00-17:00";
+
                                 linesHtml += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
                                         <span style="display:inline-block; width: 35px;">${dLabel}</span>
                                         <span style="flex:1; text-align:left; margin-left: 5px;">${sTime}</span>
@@ -2975,7 +2991,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
 
                     h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
                     h += `<div style="display:flex; justify-content:space-between;"><span>Общее количество смен:</span> <span><b>${prodShifts + fasShifts}</b></span></div>`;
-                    
+
                     if (prodShifts > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Производство смен:</span> <span><b>${prodShifts}</b></span></div>`;
                         h += `<div style="display:flex; justify-content:space-between;"><span>Тариф:</span> <span><b>${nMainRate} грн/день</b></span></div>`;
@@ -2986,22 +3002,15 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     }
 
                     h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
-                    if (prodShifts > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${totalProdPay.toFixed(2)} грн</b></span></div>`;
-                    }
-                    if (fasShifts > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${totalFasItems} шт]</span> <span><b>${totalFasPay.toFixed(2)} грн</b></span></div>`;
-                    }
-                    if (nMonthRate > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Ставка:</span> <span><b>${nMonthRate} грн</b></span></div>`;
-                    }
+                    if (prodShifts > 0) h += `<div style="display:flex; justify-content:space-between;"><span>Производство:</span> <span><b>${totalProdPay.toFixed(2)} грн</b></span></div>`;
+                    if (fasShifts > 0) h += `<div style="display:flex; justify-content:space-between;"><span>Фасовка: [${totalFasItems} шт]</span> <span><b>${totalFasPay.toFixed(2)} грн</b></span></div>`;
+                    if (nMonthRate > 0) h += `<div style="display:flex; justify-content:space-between;"><span>Ставка:</span> <span><b>${nMonthRate} грн</b></span></div>`;
 
                     h += `<div style="display:flex; justify-content:space-between; margin-top:3px;"><span>Аванс:</span> <span><b>${wd.adv} грн</b></span></div>`;
                     h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay.toFixed(2)} грн</span></div>`;
                     h += `</div></div>`;
 
                 } else {
-                    // --- СТАНДАРТНЫЙ РАСЧЕТ ДЛЯ ОСТАЛЬНЫХ ---
                     let totalEarned = parseFloat((wd.mainSum + wd.subSum + wd.fasSum + wd.mRt).toFixed(2));
                     let toPay = parseFloat((totalEarned - wd.adv).toFixed(2));
 
@@ -3022,7 +3031,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     sortedDates.forEach(dateStr => {
                         let dayShifts = wd.shiftsByDate[dateStr];
                         dayShifts.sort((s1, s2) => (s1.isSub === s2.isSub) ? 0 : s1.isSub ? 1 : -1);
-                        
+
                         dayShifts.forEach((sh, idx) => {
                             let dLabel = idx === 0 ? dateStr : '<span style="color:transparent">00.00</span>';
                             h += `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
@@ -3034,27 +3043,18 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     });
 
                     h += `<div style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">`;
-                    
-                    if (wd.uniqueDays.size > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Количество смен</span> <span><b>${wd.uniqueDays.size}</b></span></div>`;
-                    }
 
-                    if (wd.mRt > 0) {
-                        h += `<div style="display:flex; justify-content:space-between;"><span>Ставка (мес)</span> <span><b>${wd.mRt} грн</b></span></div>`;
-                    }
+                    if (wd.uniqueDays.size > 0) h += `<div style="display:flex; justify-content:space-between;"><span>Количество смен</span> <span><b>${wd.uniqueDays.size}</b></span></div>`;
+                    if (wd.mRt > 0) h += `<div style="display:flex; justify-content:space-between;"><span>Ставка (мес)</span> <span><b>${wd.mRt} грн</b></span></div>`;
 
                     if (wd.mainHrs > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Общее кол-во часов</span> <span><b>${parseFloat(wd.mainHrs.toFixed(1))}</b></span></div>`;
-                        if (actualMainRate) {
-                            h += `<div style="display:flex; justify-content:space-between;"><span>Тариф</span> <span><b>${actualMainRate}</b></span></div>`;
-                        }
+                        if (actualMainRate) h += `<div style="display:flex; justify-content:space-between;"><span>Тариф</span> <span><b>${actualMainRate}</b></span></div>`;
                     }
-                    
+
                     if (wd.subHrs > 0 || wd.subSum > 0) {
                         h += `<div style="display:flex; justify-content:space-between;"><span>Подработка</span> <span><b>${parseFloat(wd.subHrs.toFixed(1))} часов</b></span></div>`;
-                        if (actualSubRate) {
-                            h += `<div style="display:flex; justify-content:space-between;"><span>Тариф (подработка)</span> <span><b>${actualSubRate}</b></span></div>`;
-                        }
+                        if (actualSubRate) h += `<div style="display:flex; justify-content:space-between;"><span>Тариф (подработка)</span> <span><b>${actualSubRate}</b></span></div>`;
                     }
 
                     if (wd.fasSum > 0) {
@@ -3064,20 +3064,12 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
 
                     h += `<div style="margin-top:6px; font-weight:bold;">Итого:</div>`;
                     h += `<div style="display:flex; justify-content:space-between;"><span>Всего заработано:</span> <span><b>${totalEarned} грн</b></span></div>`;
-                    
-                    if (wd.mainSum > 0 && (wd.subSum > 0 || wd.fasSum > 0 || wd.mRt > 0)) {
-                       h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Осн. часы:</span> <span>${parseFloat(wd.mainSum.toFixed(2))} грн</span></div>`;
-                    }
-                    if (wd.mRt > 0 && (wd.subSum > 0 || wd.fasSum > 0 || wd.mainSum > 0)) {
-                       h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Ставка:</span> <span>${wd.mRt} грн</span></div>`;
-                    }
-                    if (wd.subSum > 0) {
-                        h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Подработка:</span> <span>${parseFloat(wd.subSum.toFixed(2))} грн</span></div>`;
-                    }
-                    if (wd.fasSum > 0) {
-                        h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Фасовка:</span> <span>${parseFloat(wd.fasSum.toFixed(2))} грн</span></div>`;
-                    }
-                    
+
+                    if (wd.mainSum > 0 && (wd.subSum > 0 || wd.fasSum > 0 || wd.mRt > 0)) h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Осн. часы:</span> <span>${parseFloat(wd.mainSum.toFixed(2))} грн</span></div>`;
+                    if (wd.mRt > 0 && (wd.subSum > 0 || wd.fasSum > 0 || wd.mainSum > 0)) h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Ставка:</span> <span>${wd.mRt} грн</span></div>`;
+                    if (wd.subSum > 0) h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Подработка:</span> <span>${parseFloat(wd.subSum.toFixed(2))} грн</span></div>`;
+                    if (wd.fasSum > 0) h += `<div style="display:flex; justify-content:space-between; color:#555; font-size:9px;"><span>- Фасовка:</span> <span>${parseFloat(wd.fasSum.toFixed(2))} грн</span></div>`;
+
                     h += `<div style="display:flex; justify-content:space-between; margin-top:3px;"><span>Аванс:</span> <span><b>${wd.adv} грн</b></span></div>`;
                     h += `<div style="display:flex; justify-content:space-between; font-weight:bold; font-size: 11px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;"><span>Остаток к выплате:</span> <span>${toPay} грн</span></div>`;
                     h += `</div></div>`;
@@ -3085,7 +3077,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             });
 
             h += `</div></div>`;
-            
+
             gID('print-view').innerHTML = h;
             window.print();
             setTimeout(() => { gID('print-view').innerHTML = ''; }, 800);
