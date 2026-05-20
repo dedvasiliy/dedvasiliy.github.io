@@ -540,6 +540,7 @@ function renderHome(){
     <div class="dash-item" onclick="setCat('Analytics')"><span>📈 АНАЛИТИКА</span></div>
           <div class="dash-item" style="border:2px solid #ca8a04;color:#ca8a04" onclick="setCat('Finances')"><span>💰 ФИНАНСЫ</span></div>
       <div class="dash-item" style="border:2px solid #0f172a;color:#0f172a" onclick="setCat('PrintExport')"><span>🖨️ ЭКСПОРТ</span></div>
+      <div class="dash-item" style="border:2px solid red; color:red;" onclick="debugPrice('ЧЕЧЕВИЦА 1/0.4', 'Готовая')"><span>⚠️ ДИАГНОСТИКА</span></div>
 
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
@@ -6756,6 +6757,24 @@ window.printFullInventoryCheck = function() {
     document.getElementById('print-view').innerHTML = h;
     window.print();
     setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
+};
+window.debugPrice = function(itemName, category) {
+    let list = "Приходы для " + itemName + ":\n\n";
+    if (data.ArchIncoming) {
+        Object.values(data.ArchIncoming).forEach((inv, id) => {
+            if (inv.items) inv.items.forEach(it => {
+                if (it.n === itemName) list += `Дата: ${inv.date} | Цена: ${it.p} | Кол-во: ${it.a} | ID: ${id}\n`;
+            });
+        });
+    }
+    if (data.ArchPackIn) {
+        Object.values(data.ArchPackIn).forEach((inv, id) => {
+            if (inv.items) inv.items.forEach(it => {
+                if (it.n === itemName) list += `Дата: ${inv.date} | Цена: ${it.p} | Кол-во: ${it.a} | ID: ${id}\n`;
+            });
+        });
+    }
+    alert(list);
 };
 
 </script>
