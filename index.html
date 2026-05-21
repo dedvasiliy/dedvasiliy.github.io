@@ -547,7 +547,7 @@ function renderHome(){
 </select>
 <button class="btn-main" style="background:#dc2626;" onclick="findError()">ПОИСК ОШИБКИ</button>
 <button class="btn-main" style="background:#ea580c;" onclick="scanWarehouse()">🔍 РЕНТГЕН СКЛАДА</button>
-
+<button class="btn-main" onclick="findSourcePrice()">НАЙТИ ИСТОЧНИК 343.67</button>
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
  updNav();
@@ -6843,6 +6843,58 @@ window.scanWarehouse = function() {
     
     if(!found) report = "Товар не найден на складах.";
     alert(report);
+};
+window.findSourcePrice = function() {
+    let results = [];
+    let target = 'Булгур 1/0.4'; // Можешь поменять на 'Чечевица 1/0.4'
+    let targetPrice = 343.67; 
+    let targetDate = '2026-05-19';
+
+    // 1. Ищем в приходах товаров (ArchIncoming)
+    if (data.ArchIncoming) {
+        Object.entries(data.ArchIncoming).forEach(([id, v]) => {
+            if (v.items && v.date && v.date.startsWith(targetDate)) {
+                v.items.forEach(it => {
+                    if ((it.n || it.name) === target && Math.abs(parseFloat(it.p) - targetPrice) < 0.1) {
+                        results.push(`ArchIncoming (Накладная ${v.num}): ${v.date}`);
+                    }
+                });
+            }
+        });
+    }
+
+    // 2. Ищем в приходах упаковки (ArchPackIn)
+    if (data.ArchPackIn) {
+        Object.entries(data.ArchPackIn).forEach(([id, v]) => {
+            if (v.items && v.date && v.date.startsWith(targetDate)) {
+                v.items.forEach(it => {
+                    if (it.n === target && Math.abs(parseFloat(it.p) - targetPrice) < 0.1) {
+                        results.push(`ArchPackIn (Накладная ${v.num}): ${v.date}`);
+                    }
+                });
+            }
+        });
+    }
+
+    // 3. Ищем в цеховых сменах (откуда цена могла прийти как "Приход с производства")
+    ['Krup_Report', 'ZSHM_Report', 'Vibro_Report'].forEach(cat => {
+        if (data[cat]) {
+            Object.entries(data[cat]).forEach(([id, v]) => {
+                if (v.date && v.date.startsWith(targetDate)) {
+                     // Проверяем стоимость производства за кг (цена пачки/вес)
+                     if (v.costPerKg && Math.abs(parseFloat(v.costPerKg) - targetPrice) < 0.1) {
+                         results.push(`ЦЕХ (${cat}): ${v.date}, Опер: ${v.operator}`);
+                     }
+                }
+            });
+        }
+    });
+
+    if (results.length > 0) {
+        alert("ИСТОЧНИК ЦЕНЫ НАЙДЕН:\n" + results.join('\n'));
+    } else {
+        alert("За 19 число в записях приходов цена 343.67 не найдена. Возможно, это сумма нескольких приходов?");
+    }
 };
 
 </script>
