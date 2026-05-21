@@ -546,6 +546,7 @@ function renderHome(){
     <option value="Булгур 1/0.4">Булгур 1/0.4</option>
 </select>
 <button class="btn-main" style="background:#dc2626;" onclick="findError()">ПОИСК ОШИБКИ</button>
+<button class="btn-main" style="background:#ea580c;" onclick="scanWarehouse()">🔍 РЕНТГЕН СКЛАДА</button>
 
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
@@ -6820,6 +6821,28 @@ window.findError = function() {
 
     if (results.length > 0) alert("ОШИБКИ НАЙДЕНЫ:\n" + results.join('\n'));
     else alert("В основных архивах ошибок с ценой не видно.");
+};
+window.scanWarehouse = function() {
+    let target = prompt("Введите название товара (как в прайсе):", "Булгур 1/0.4");
+    if(!target) return;
+    
+    let report = "--- АНАЛИЗ ПАРТИЙ " + target + " ---\n";
+    let found = false;
+    
+    // Проверяем все основные склады
+    ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Raw', 'Stock_Semi'].forEach(cat => {
+        if(data[cat]) {
+            Object.entries(data[cat]).forEach(([id, v]) => {
+                if(v.name === target) {
+                    report += `Склад: ${cat} | Кол-во: ${v.amount} | Дата: ${v.date.split('T')[0]} | Note: ${v.note}\n`;
+                    found = true;
+                }
+            });
+        }
+    });
+    
+    if(!found) report = "Товар не найден на складах.";
+    alert(report);
 };
 
 </script>
