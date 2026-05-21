@@ -545,6 +545,7 @@ function renderHome(){
     <option value="Чечевица 1/0.4">Чечевица 1/0.4</option>
     <option value="Булгур 1/0.4">Булгур 1/0.4</option>
 </select>
+<button class="btn-main" style="background:#dc2626;" onclick="findError()">ПОИСК ОШИБКИ</button>
 
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
@@ -6792,6 +6793,33 @@ window.debugPrice = function(itemName, category) {
     
     // Используем setTimeout, чтобы окно не "схлопывалось"
     setTimeout(() => { alert(list); }, 100);
+};
+window.findError = function() {
+    let target = ['Булгур 1/0.4', 'Чечевица 1/0.4'];
+    let results = [];
+    
+    // Ищем в приходах (ArchIncoming)
+    if (data.ArchIncoming) {
+        Object.entries(data.ArchIncoming).forEach(([id, v]) => {
+            if (v.items) v.items.forEach(it => {
+                if (target.includes(it.n) && parseFloat(it.p) > 100) {
+                    results.push(`ПРИХОД: ${v.num} от ${v.date.split('T')[0]}, Товар: ${it.n}, Цена: ${it.p}`);
+                }
+            });
+        });
+    }
+    
+    // Если ничего не нашли в ArchIncoming, ищем в самой Фасовке (может цена зашита там)
+    if (data.Фасовка) {
+        Object.entries(data.Фасовка).forEach(([id, v]) => {
+            if (target.includes(v.filmName) && v.costPerPack > 100) {
+                 results.push(`ФАСОВКА: ${v.date.split('T')[0]}, Цена: ${v.costPerPack}`);
+            }
+        });
+    }
+
+    if (results.length > 0) alert("ОШИБКИ НАЙДЕНЫ:\n" + results.join('\n'));
+    else alert("В основных архивах ошибок с ценой не видно.");
 };
 
 </script>
