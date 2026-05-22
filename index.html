@@ -540,6 +540,7 @@ function renderHome(){
     <div class="dash-item" onclick="setCat('Analytics')"><span>📈 АНАЛИТИКА</span></div>
           <div class="dash-item" style="border:2px solid #ca8a04;color:#ca8a04" onclick="setCat('Finances')"><span>💰 ФИНАНСЫ</span></div>
       <div class="dash-item" style="border:2px solid #0f172a;color:#0f172a" onclick="setCat('PrintExport')"><span>🖨️ ЭКСПОРТ</span></div>
+<button onclick="scanGhosts()" style="position:fixed; top:60px; right:10px; z-index:9999; background:red; color:white; padding:15px; border-radius:8px; font-weight:bold;">ПОИСК ПРИЗРАКОВ</button>
 
   ${isAdmin ? `<div class="dash-item" onclick="setCat('PrintSettings')"><span>⚙️ НАСТРОЙКИ</span></div>` : ''}
  </div>`;
@@ -6761,6 +6762,26 @@ window.printFullInventoryCheck = function() {
     document.getElementById('print-view').innerHTML = h;
     window.print();
     setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
+};
+window.scanGhosts = function() {
+    let msg = "Смены Крупорушки за 12.05.2026:\n\n";
+    let count = 0;
+    
+    if (data.Krup_Report) {
+        Object.entries(data.Krup_Report).forEach(([id, v]) => {
+            if (v.date && v.date.includes("2026-05-12")) {
+                count++;
+                msg += `ID: ${id}\n`;
+                if (v.rawMix) msg += `Ушло П/Ф: ${v.rawMix}\n`;
+                if (v.rawBase) msg += `Основа: ${v.rawBase.w} кг\n`;
+                if (v.rawAdd && v.rawAdd.length) msg += `Добавка: ${v.rawAdd.map(a => a.w).join(', ')} кг\n`;
+                msg += "--------------------\n";
+            }
+        });
+    }
+    
+    if (count === 0) msg += "Записей не найдено.";
+    alert(msg);
 };
 
 </script>
