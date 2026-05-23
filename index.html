@@ -2436,6 +2436,8 @@ window.previewWorkshop=function(k){
     let asFound = false;
     let opHours = 0;
     let asHours = 0;
+    let opSal = 0;
+    let asSal = 0;
 
     if (data.Timesheet) {
         let opClean = String(op || '').trim();
@@ -2452,7 +2454,7 @@ window.previewWorkshop=function(k){
                     opHours = Math.max(0, overlapEnd - overlapStart);
                     
                     let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += opHours * hRate;
+                    opSal = opHours * hRate;
                     opFound = true;
                 }
                 if (!asFound && asClean !== '-' && tNameClean === asClean) {
@@ -2464,14 +2466,17 @@ window.previewWorkshop=function(k){
                     asHours = Math.max(0, overlapEnd - overlapStart);
                     
                     let hRate = parseFloat(t.hourlyRate) || (parseFloat(t.rate||0) / (parseFloat(t.hours)||8));
-                    salCost += asHours * hRate;
+                    asSal = asHours * hRate;
                     asFound = true;
                 }
             }
         });
     }
+    
+    salCost = opSal + asSal;
 
     let salHtmlStr = `Зарплата (Оп:${opHours.toFixed(1)}ч`;
+
     if (asFound) salHtmlStr += ` + Пом:${asHours.toFixed(1)}ч`;
     salHtmlStr += `):`;
 
