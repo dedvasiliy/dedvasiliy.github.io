@@ -2442,10 +2442,20 @@ window.previewWorkshop=function(k){
     if (data.Timesheet) {
         let opClean = String(op || '').trim();
         let asClean = String(as || '').trim();
+        
+        let baseAs = asClean.replace(/\s*2$/, '');
+        let targetAsCount = asClean.match(/2$/) ? 2 : 1;
+        
+        let timesheetMatches = {};
+
         Object.values(data.Timesheet).forEach(t => {
             let tNameClean = String(t.name || '').trim();
+            
             if (t.date === d) {
-                if (!opFound && tNameClean === opClean) {
+                timesheetMatches[tNameClean] = (timesheetMatches[tNameClean] || 0) + 1;
+                let currentCount = timesheetMatches[tNameClean];
+
+                if (!opFound && tNameClean === opClean && currentCount === 1) {
                     let wS = getDec(t.start);
                     let wE = getDec(t.end);
                     if (wE < wS) wE += 24;
@@ -2457,7 +2467,8 @@ window.previewWorkshop=function(k){
                     opSal = opHours * hRate;
                     opFound = true;
                 }
-                if (!asFound && asClean !== '-' && tNameClean === asClean) {
+                
+                if (!asFound && asClean !== '-' && asClean !== '' && tNameClean === baseAs && currentCount === targetAsCount) {
                     let wS = getDec(t.start);
                     let wE = getDec(t.end);
                     if (wE < wS) wE += 24;
