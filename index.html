@@ -2430,7 +2430,7 @@ window.previewWorkshop=function(k){
     else if(k==='ZSHM') pwrUsage = parseFloat(costSet.powerZshm)||0;
     else if(k==='VIBRO') pwrUsage = parseFloat(costSet.powerVibro)||0;
     const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
-    
+    // === УЧЕТ ЗАРПЛАТЫ В СЕБЕСТОИМОСТЬ ТОВАРА (КРУПОРУШКА, ЗШМ, ВИБРОСТОЛ) ===
     let salCost = 0;
     let opFound = false;
     let asFound = false;
@@ -2439,10 +2439,10 @@ window.previewWorkshop=function(k){
     let opSal = 0;
     let asSal = 0;
 
+    let opClean = String(op || '').trim();
+    let asClean = String(as || '').trim();
+
     if (data.Timesheet) {
-        let opClean = String(op || '').trim();
-        let asClean = String(as || '').trim();
-        
         let baseAs = asClean.replace(/\s*2$/, '');
         let targetAsCount = asClean.match(/2$/) ? 2 : 1;
         
@@ -2482,6 +2482,29 @@ window.previewWorkshop=function(k){
                 }
             }
         });
+    }
+    
+    if (data.Workers) {
+        if (!opFound && opClean && opClean !== '-') {
+            let worker = Object.values(data.Workers).find(w => String(w.name || '').trim() === opClean);
+            if (worker) {
+                opHours = hours; 
+                let hRate = parseFloat(worker.defRate) || 0;
+                opSal = opHours * hRate;
+                opFound = true;
+            }
+        }
+        
+        if (!asFound && asClean && asClean !== '-') {
+            let compactAs = asClean.replace(/\s+/g, '');
+            let worker = Object.values(data.Workers).find(w => String(w.name || '').replace(/\s+/g, '') === compactAs);
+            if (worker) {
+                asHours = hours; 
+                let hRate = parseFloat(worker.defRate) || 0;
+                asSal = asHours * hRate;
+                asFound = true;
+            }
+        }
     }
     
     salCost = opSal + asSal;
