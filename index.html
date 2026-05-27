@@ -2430,6 +2430,7 @@ window.previewWorkshop=function(k){
     else if(k==='ZSHM') pwrUsage = parseFloat(costSet.powerZshm)||0;
     else if(k==='VIBRO') pwrUsage = parseFloat(costSet.powerVibro)||0;
     const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
+
     // === УЧЕТ ЗАРПЛАТЫ В СЕБЕСТОИМОСТЬ ТОВАРА (КРУПОРУШКА, ЗШМ, ВИБРОСТОЛ) ===
     let salCost = 0;
     let opFound = false;
@@ -2488,7 +2489,7 @@ window.previewWorkshop=function(k){
         if (!opFound && opClean && opClean !== '-') {
             let worker = Object.values(data.Workers).find(w => String(w.name || '').trim() === opClean);
             if (worker) {
-                opHours = hours; 
+                opHours = hours; // Оператору ставим полные часы смены
                 let hRate = parseFloat(worker.defRate) || 0;
                 opSal = opHours * hRate;
                 opFound = true;
@@ -2499,7 +2500,10 @@ window.previewWorkshop=function(k){
             let compactAs = asClean.replace(/\s+/g, '');
             let worker = Object.values(data.Workers).find(w => String(w.name || '').replace(/\s+/g, '') === compactAs);
             if (worker) {
-                asHours = hours; 
+                // Выводим окно с вопросом только для помощника, если нет табеля
+                let manualAsHours = prompt(`Сколько часов отработал помощник (${asClean})?`, "0");
+                asHours = parseFloat(String(manualAsHours).replace(',', '.')) || 0;
+                
                 let hRate = parseFloat(worker.defRate) || 0;
                 asSal = asHours * hRate;
                 asFound = true;
