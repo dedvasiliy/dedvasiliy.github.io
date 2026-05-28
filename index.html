@@ -2823,10 +2823,6 @@ window.calcAvgPrice = function(itemName, category) {
     return incs[0].p;
 };
 
-    // ПОСЛЕДНЯЯ ЦЕНА (для сырья, упаковки и покупной продукции)
-    return incs[0].p;
-};
-
         function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
 window.delRec=async(c,i)=>{
     if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;
