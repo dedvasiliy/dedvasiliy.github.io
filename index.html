@@ -2774,15 +2774,23 @@ window.calcAvgPrice = function(itemName, category) {
 
     // ПОИСК СТРОГО ДЛЯ УПАКОВКИ (игнорируем архив обычных товаров)
     if (isPack && data.ArchPackIn) {
+        // Для категории Пленка собираем список всех существующих названий пленок
+        let filmNames = [];
+        if (category === 'Пленка' && data['Пленка']) {
+            filmNames = Array.from(new Set(Object.values(data['Пленка']).map(p => p.name).filter(Boolean)));
+        }
+
         Object.values(data.ArchPackIn).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    if (it.n === itemName && it.a > 0 && it.p > 0) {
+                    let isMatch = (category === 'Пленка') ? filmNames.includes(it.n) : (it.n === itemName);
+                    if (isMatch && it.a > 0 && it.p > 0) {
                         incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
                     }
                 });
             } else {
-                if (inv.name === itemName && inv.amount > 0 && inv.price > 0) {
+                let isMatch = (category === 'Пленка') ? filmNames.includes(inv.name) : (inv.name === itemName);
+                if (isMatch && inv.amount > 0 && inv.price > 0) {
                     incs.push({ d: inv.date, p: parseFloat(inv.price), a: parseFloat(inv.amount) });
                 }
             }
@@ -2810,6 +2818,10 @@ window.calcAvgPrice = function(itemName, category) {
         
         return countedStock > 0 ? (totalValue / countedStock) : incs[0].p;
     }
+
+    // ПОСЛЕДНЯЯ ЦЕНА (для сырья, упаковки и покупной продукции)
+    return incs[0].p;
+};
 
     // ПОСЛЕДНЯЯ ЦЕНА (для сырья, упаковки и покупной продукции)
     return incs[0].p;
