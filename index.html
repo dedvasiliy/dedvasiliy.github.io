@@ -1274,8 +1274,39 @@ function rWorkshopList(c,k){
         let percentSemi=totalRaw>0&&totalSemi>0?((totalSemi/totalRaw)*100).toFixed(1):0;
         let costHtml='';
         if(v.costPerKg!==undefined){
-            costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px"><div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px"><span>Общие затраты:</span><span>${(v.totalCost||0).toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px"><span>СЕБЕСТОИМОСТЬ 1 КГ:</span><span>${v.costPerKg.toFixed(2)} грн</span></div></div>`;
+            costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px">
+                <details>
+                    <summary style="list-style:none; outline:none; cursor:pointer;">
+                        <div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px">
+                            <span>Общие затраты:</span>
+                            <span>${parseFloat(v.totalCost||0).toFixed(2)} грн ▾</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px">
+                            <span>СЕБЕСТОИМОСТЬ 1 КГ:</span>
+                            <span>${parseFloat(v.costPerKg||0).toFixed(2)} грн</span>
+                        </div>
+                    </summary>
+                    <div style="margin-top:6px; border-top:1px dotted #ccc; padding-top:6px; font-size:11px; color:#444;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Сырье:</span><span>${parseFloat(v.rawCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Упаковка:</span><span>${parseFloat(v.packCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Свет:</span><span>${parseFloat(v.lightCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Зарплата:</span><span>${parseFloat(v.salCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; color: #16a34a;">
+                            <span>Доход с отходов:</span><span>- ${parseFloat(v.wasteRev||0).toFixed(2)} грн</span>
+                        </div>
+                    </div>
+                </details>
+            </div>`;
         }
+
         return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${outBlock}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой (ДВ):</span><span>${percent}%</span></div>${percentSemi>0?`<div style="font-weight:900;display:flex;justify-content:space-between;color:#64748b;margin-top:2px"><span>Выход П/Ф:</span><span>${percentSemi}%</span></div>`:''}${costHtml}${isAdmin?`<div style="display:flex;gap:5px;margin-top:10px;"><button onclick="editWorkshopReport('${k}', '${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button><button onclick="delRec('${dbN}','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button></div>`:''}</div>`;
     });
 }
