@@ -1273,6 +1273,7 @@ function rWorkshopList(c,k){
         let percent=totalRaw>0&&totalDV>0?((totalDV/totalRaw)*100).toFixed(1):0;
         let percentSemi=totalRaw>0&&totalSemi>0?((totalSemi/totalRaw)*100).toFixed(1):0;
         let costHtml='';
+
         if(v.costPerKg!==undefined){
             costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px">
                 <details>
@@ -1287,14 +1288,23 @@ function rWorkshopList(c,k){
                         </div>
                     </summary>
                     <div style="margin-top:6px; border-top:1px dotted #ccc; padding-top:6px; font-size:11px; color:#444;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                            <span>Сырье:</span><span>${parseFloat(v.rawCost||0).toFixed(2)} грн</span>
+                        <div style="margin-bottom:3px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Сырье:</span><span>${parseFloat(v.rawCost||0).toFixed(2)} грн</span>
+                            </div>
+                            ${v.rawDet || ''}
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                            <span>Упаковка:</span><span>${parseFloat(v.packCost||0).toFixed(2)} грн</span>
+                        <div style="margin-bottom:3px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Упаковка:</span><span>${parseFloat(v.packCost||0).toFixed(2)} грн</span>
+                            </div>
+                            ${v.packDet || ''}
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                            <span>Свет:</span><span>${parseFloat(v.lightCost||0).toFixed(2)} грн</span>
+                        <div style="margin-bottom:3px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>Свет:</span><span>${parseFloat(v.lightCost||0).toFixed(2)} грн</span>
+                            </div>
+                            ${v.lightDet || ''}
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
                             <span>Зарплата:</span><span>${parseFloat(v.salCost||0).toFixed(2)} грн</span>
@@ -2391,15 +2401,20 @@ window.previewWorkshop=function(k){
     
     let hRaw='';
     let rawCost = 0;
+    let rawDet = ''; 
     main.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
-        rawCost += x.q * p;
+        let cost = x.q * p;
+        rawCost += cost;
         hRaw+=`<div>Основа: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></div>`;
+        rawDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- ${esc(x.n)}:</span><span>${x.q}кг × ${p.toFixed(2)} = ${cost.toFixed(2)}</span></div>`;
     });
     add.forEach(x=>{
         let p = window.calcAvgPrice(x.n, x.s);
-        rawCost += x.q * p;
+        let cost = x.q * p;
+        rawCost += cost;
         hRaw+=`<div>Добавка: ${esc(x.n)} <span style="color:#64748b;font-size:10px">(${lS[x.s]})</span> ${x.q}кг <span style="font-size:9px;color:#059669">[~${p.toFixed(2)} грн/кг]</span></div>`;
+        rawDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- ${esc(x.n)}:</span><span>${x.q}кг × ${p.toFixed(2)} = ${cost.toFixed(2)}</span></div>`;
     });
     
     let hDV='',hSemi='',hFeed='';
@@ -2424,11 +2439,17 @@ window.previewWorkshop=function(k){
     let totalBagsHTML=bagsToDeduct['Мешок 25кг']||0;
 
     let packCost = 0;
-    let cBags = totalBagsHTML > 0 ? totalBagsHTML * window.calcAvgPrice('Мешок 25кг', 'Мешки') : 0;
+    let packDet = ''; 
+    
+    let pBags = window.calcAvgPrice('Мешок 25кг', 'Мешки');
+    let cBags = totalBagsHTML > 0 ? totalBagsHTML * pBags : 0;
     packCost += cBags;
+    if(cBags > 0) packDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- Мешки:</span><span>${totalBagsHTML}шт × ${pBags.toFixed(2)} = ${cBags.toFixed(2)}</span></div>`;
 
-    let cThreads = threadsToDeduct > 0 ? threadsToDeduct * window.calcAvgPrice('Нитки', 'Нитки') : 0;
+    let pThreads = window.calcAvgPrice('Нитки', 'Нитки');
+    let cThreads = threadsToDeduct > 0 ? threadsToDeduct * pThreads : 0;
     packCost += cThreads;
+    if(cThreads > 0) packDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- Нитки:</span><span>${threadsToDeduct}шт × ${pThreads.toFixed(2)} = ${cThreads.toFixed(2)}</span></div>`;
 
     let cLabels = 0;
     let labelsHTML='';
@@ -2438,6 +2459,7 @@ window.previewWorkshop=function(k){
         let cost = count * pL;
         cLabels += cost;
         labelsHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px"><span>${esc(lN)}:</span><span>${count}шт <span style="font-size:9px;color:#059669">[~${cost.toFixed(2)} грн]</span></span></div>`;
+        if(cost > 0) packDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- ${esc(lN)}:</span><span>${count}шт × ${pL.toFixed(2)} = ${cost.toFixed(2)}</span></div>`;
     });
     packCost += cLabels;
 
@@ -2446,8 +2468,10 @@ window.previewWorkshop=function(k){
     let sNorm = parseFloat(costSet.stretchNorm) || 0;
     if(sNorm > 0 && tDV > 0){
         stretchRolls = parseFloat((tDV / sNorm).toFixed(3));
-        cStretch = stretchRolls * window.calcAvgPrice('Стрейч пленка', 'Стрейч пленка');
+        let pStretch = window.calcAvgPrice('Стрейч пленка', 'Стрейч пленка');
+        cStretch = stretchRolls * pStretch;
         packCost += cStretch;
+        if(cStretch > 0) packDet += `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- Стрейч:</span><span>${stretchRolls}шт × ${pStretch.toFixed(2)} = ${cStretch.toFixed(2)}</span></div>`;
     }
 
     const getDec = (tStr) => { const [h,m]=String(tStr||'00:00').split(':').map(Number); return h+(m/60); };
@@ -2460,7 +2484,11 @@ window.previewWorkshop=function(k){
     if(k==='KRUP') pwrUsage = parseFloat(costSet.powerKrup)||0;
     else if(k==='ZSHM') pwrUsage = parseFloat(costSet.powerZshm)||0;
     else if(k==='VIBRO') pwrUsage = parseFloat(costSet.powerVibro)||0;
-    const energyCost = hours * pwrUsage * (parseFloat(costSet.powerPrice)||0);
+    
+    let pPrice = parseFloat(costSet.powerPrice)||0;
+    let totalKw = hours * pwrUsage;
+    const energyCost = totalKw * pPrice;
+    let lightDet = `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;padding-left:8px"><span>- ⚡ ${totalKw.toFixed(1)} кВт:</span><span>${totalKw.toFixed(1)} × ${pPrice.toFixed(2)} = ${energyCost.toFixed(2)}</span></div>`;
 
     // === УЧЕТ ЗАРПЛАТЫ В СЕБЕСТОИМОСТЬ ТОВАРА (КРУПОРУШКА, ЗШМ, ВИБРОСТОЛ) ===
     let salCost = 0;
@@ -2592,16 +2620,17 @@ window.previewWorkshop=function(k){
             const rawBase=main[0]?{n:main[0].n,w:main[0].q,s:main[0].s}:null;
             const rawAdd=add.map(x=>({n:x.n,w:x.q,s:x.s}));
 
-                u['/'+c.db+'/'+id]={
+            u['/'+c.db+'/'+id]={
                 date:d+"T12:00:00Z", timeStart:ts, timeEnd:te, operator:op, assistant:as,
                 items:itemsDb, rawBase:rawBase, rawAdd:rawAdd, 
                 costPerKg: parseFloat(costPerKg)||0, 
                 totalCost: parseFloat(netCost)||0,
                 rawCost: parseFloat(rawCost)||0, packCost: parseFloat(packCost)||0,
                 lightCost: parseFloat(energyCost)||0, salCost: parseFloat(salCost)||0,
-                wasteRev: parseFloat(wasteRev)||0
+                wasteRev: parseFloat(wasteRev)||0,
+                rawDet: rawDet, packDet: packDet, lightDet: lightDet
             };
-        
+
             main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Основа',fLink:id,ts:tsStr}});
             add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Добавка',fLink:id,ts:tsStr}});
             
