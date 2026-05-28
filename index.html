@@ -1229,6 +1229,7 @@ window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<s
 
     window.printWorkshop=function(k){const c=WS_CFG[k];const defM=new Date().toISOString().substring(0,7);const m=prompt('За какой месяц печатать? (ГГГГ-ММ)\nОставьте пустым для печати за все время:',defM);if(m===null)return;const dbN=c.db,d=data[dbN]||{},r=[];Object.entries(d).forEach(([id,v])=>{const dt=(v.date||'2000-01-01').split('T')[0];if(!m||dt.startsWith(m))r.push({...v,id,_date:dt});});r.sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let h=`<h3 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">ИСТОРИЯ ЦЕХА: ${c.title} ${m?'за '+m:''}</h3><div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; font-family:sans-serif; font-size:9px;">`;r.forEach(v=>{const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');const ts=v.timeStart||'08:00',te=v.timeEnd||'17:00';let hRaw='';let tR=0;if(v.rawBase){hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Осн: ${esc(v.rawBase.n)}</span><b>${v.rawBase.w}кг</b></div>`;tR+=v.rawBase.w;}else if(v.rawMix){hRaw+=`<div style="border-bottom:1px dotted #ccc">Смесь: ${esc(v.rawMix)}</div>`;let matches=String(v.rawMix).match(/\d+(?:\.\d+)?/g);if(matches)matches.forEach(num=>tR+=parseFloat(num));}if(v.rawAdd){v.rawAdd.forEach(x=>{hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Доб: ${esc(x.n)}</span><b>${x.w}кг</b></div>`;tR+=x.w;});}let hOut='';let tD=0;if(v.items){v.items.forEach(x=>{let wght=((x.q||0)*(x.w||0))+(x.l||0);if(!wght&&x.amount)wght=parseFloat(x.amount)||0;let isDV=x.type==='DV'||(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(x.n||x.name||''));hOut+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>${esc(x.n||x.name||'')}</span><b>${wght}кг</b></div>`;if(isDV)tD+=wght;});}let pct=tR>0&&tD>0?((tD/tR)*100).toFixed(1):0;h+=`<div style="border:1px solid #000; border-radius:6px; padding:4px; page-break-inside:avoid; box-sizing:border-box;"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;margin-bottom:2px;padding-bottom:2px;"><b>${dt} (${ts}-${te})</b><b>Выход: ${pct}%</b></div><div style="text-align:center;font-style:italic;margin-bottom:2px;font-size:8px;">${esc(v.operator||'-')} | ${esc(v.assistant||'-')}</div><div style="color:#444"><i>Сырье (всего ${tR}кг):</i></div>${hRaw}<div style="color:#444;margin-top:2px;"><i>Выход:</i></div>${hOut}</div>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
 
+// === ФУНКЦИЯ: ОТРИСОВКА КАРТОЧЕК В ИСТОРИИ ЦЕХОВ (КРУПОРУШКА, ЗШМ, ВИБРОСТОЛ) ===
 function rWorkshopList(c,k){
     const dbN=WS_CFG[k].db,d=data[dbN]||{};
     const l=Object.entries(d).map(([id,v])=>({...v,id,_date:(v.date||'2000-01-01').split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});
@@ -1253,7 +1254,6 @@ function rWorkshopList(c,k){
                 let nm=x.n||x.name||'';let isDV=typ==='DV';
                 if(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm))isDV=!1;
                 
-                // Считаем % выхода конкретной позиции от всего сырья
                 let itmPct = totalRaw > 0 ? ((wght / totalRaw) * 100).toFixed(1) + '%' : '0%';
                 let pctHtml = `<span style="color:#64748b;font-size:11px;font-weight:bold;margin-left:4px">(${itmPct})</span>`;
                 
@@ -1274,7 +1274,39 @@ function rWorkshopList(c,k){
         let percentSemi=totalRaw>0&&totalSemi>0?((totalSemi/totalRaw)*100).toFixed(1):0;
         let costHtml='';
         if(v.costPerKg!==undefined){
-            costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px"><div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px"><span>Общие затраты:</span><span>${(v.totalCost||0).toFixed(2)} грн</span></div><div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px"><span>СЕБЕСТОИМОСТЬ 1 КГ:</span><span>${v.costPerKg.toFixed(2)} грн</span></div></div>`;
+            
+            // === ВЫПАДАЮЩИЙ СПИСОК С ДЕТАЛЬНОЙ СЕБЕСТОИМОСТЬЮ ===
+            costHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #cbd5e1;background:#fefce8;padding:5px;border-radius:6px">
+                <details>
+                    <summary style="list-style:none; outline:none; cursor:pointer;">
+                        <div style="display:flex;justify-content:space-between;color:#a16207;font-size:11px">
+                            <span>Общие затраты:</span>
+                            <span>${(v.totalCost||0).toFixed(2)} грн ▾</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-weight:900;color:#dc2626;font-size:12px;margin-top:2px">
+                            <span>СЕБЕСТОИМОСТЬ 1 КГ:</span>
+                            <span>${(v.costPerKg||0).toFixed(2)} грн</span>
+                        </div>
+                    </summary>
+                    <div style="margin-top:6px; border-top:1px dotted #ccc; padding-top:6px; font-size:11px; color:#444;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Сырье:</span><span>${(v.rawCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Упаковка:</span><span>${(v.packCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Свет:</span><span>${(v.lightCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                            <span>Зарплата:</span><span>${(v.salCost||0).toFixed(2)} грн</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; color: #16a34a;">
+                            <span>Доход с отходов:</span><span>- ${(v.wasteRev||0).toFixed(2)} грн</span>
+                        </div>
+                    </div>
+                </details>
+            </div>`;
         }
         return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${WS_CFG[k].title}</div><div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${dt}</span><span>${tStart}-${tEnd}</span></div><div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${hRaw}${outBlock}<div class="conf-sec" style="font-weight:900;display:flex;justify-content:space-between"><span>Переработано за смену:</span><span>${totalRaw}кг</span></div><div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой (ДВ):</span><span>${percent}%</span></div>${percentSemi>0?`<div style="font-weight:900;display:flex;justify-content:space-between;color:#64748b;margin-top:2px"><span>Выход П/Ф:</span><span>${percentSemi}%</span></div>`:''}${costHtml}${isAdmin?`<div style="display:flex;gap:5px;margin-top:10px;"><button onclick="editWorkshopReport('${k}', '${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button><button onclick="delRec('${dbN}','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button></div>`:''}</div>`;
     });
@@ -1963,7 +1995,7 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
     window.updPackRowList = function(i) {
         const c = gID('pc_'+i).value;
         let l=[];
-        if(c==='Пленка')l=[];
+        if(c==='Пленка')l=["Пленка 300х400","Пленка 370х500","Пленка 400х500","Пленка 420х550"];
         else if(c==='Пакеты')l=["300x400","370x500","400x500","420x550"];
         else if(c==='Мешки')l=["Мешок 25кг","Мешок 50кг","Мешок белый"];
         else if(c==='Нитки')l=["Нитки"];
