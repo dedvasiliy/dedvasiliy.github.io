@@ -2592,7 +2592,7 @@ window.previewWorkshop=function(k){
             const itemsDb=out.map(x=>({type:x.type,n:x.n,q:x.b,w:x.w,l:x.r}));
             const rawBase=main[0]?{n:main[0].n,w:main[0].q,s:main[0].s}:null;
             const rawAdd=add.map(x=>({n:x.n,w:x.q,s:x.s}));
-            u['/'+c.db+'/'+id]={date:d+"T12:00:00Z",timeStart:ts,timeEnd:te,operator:op,assistant:as,items:itemsDb,rawBase:rawBase,rawAdd:rawAdd, costPerKg: parseFloat(costPerKg)||0, totalCost: netCost};
+                        // === СОХРАНЕНИЕ ДЕТАЛЬНОЙ СЕБЕСТОИМОСТИ ===             u['/'+c.db+'/'+id]={                 date:d+"T12:00:00Z",                 timeStart:ts,                 timeEnd:te,                 operator:op,                 assistant:as,                 items:itemsDb,                 rawBase:rawBase,                 rawAdd:rawAdd,                  costPerKg: parseFloat(costPerKg)||0,                  totalCost: netCost,                 rawCost: rawCost,                 packCost: packCost,                 lightCost: energyCost,                 salCost: salCost,                 wasteRev: wasteRev             };
             
             main.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Основа',fLink:id,ts:tsStr}});
             add.forEach(x=>{u[`/${x.s}/${db.child(x.s).push().key}`]={name:x.n,amount:-x.q,date:d+"T12:00:00Z",note:c.note+' Добавка',fLink:id,ts:tsStr}});
