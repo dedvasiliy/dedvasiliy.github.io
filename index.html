@@ -1220,7 +1220,27 @@ window.genBatchReport=function(c,n){
 
 window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<style>body{color:#000;font-family:sans-serif;font-size:10px}.btn-main{display:none!important;}#batchRows{display:grid!important;grid-template-columns:repeat(3, 1fr)!important;gap:4px!important}.rep-card{box-shadow:none!important;border:1px solid #000!important;margin-bottom:0!important;padding:4px!important;page-break-inside:avoid;font-size:9px!important} .rep-card div, .rep-card span {line-height:1.1!important;margin-bottom:1px!important;}</style>`;gID('print-view').innerHTML=style+h;window.print();setTimeout(()=>gID('print-view').innerHTML='',800);};
 
-function rWH(c){const t={};gP('Готовая').forEach(p=>t[p]=0);if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);let h=`<div class="item-grid ${corrMode?'show-corr':''}">`;Object.keys(t).sort().forEach(n=>{let v=t[n];if(Math.abs(v)<0.001)v=0; if(v===0 && !corrMode) return; let cp=window.calcAvgPrice(n,'Готовая');let cpHtml=cp>0?`<div style="font-size:9px;color:#059669;font-weight:900;line-height:1;margin-bottom:2px">~${cp.toFixed(2)} ₴</div>`:'';h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${esc(n)}</div>${cpHtml}<div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`});c.innerHTML=h+'</div>'}
+function rWH(c){
+    const t={}; gP('Готовая').forEach(p=>t[p]=0);
+    if(data.Готовая)Object.values(data.Готовая).forEach(v=>t[v.name]=(t[v.name]||0)+v.amount);
+    let keys = Object.keys(t).sort().filter(n => { let v=t[n]; if(Math.abs(v)<0.001) v=0; return !(v===0 && !corrMode); });
+    const renderGrp = (arr) => {
+        if(!arr.length) return ''; let h = `<div class="item-grid ${corrMode?'show-corr':''}">`;
+        arr.forEach(n => {
+            let v = t[n]; if(Math.abs(v)<0.001) v=0; let cp=window.calcAvgPrice(n,'Готовая');
+            let cpHtml=cp>0?`<div style="font-size:9px;color:#059669;font-weight:900;line-height:1;margin-bottom:2px">~${cp.toFixed(2)} ₴</div>`:'';
+            h+=`<div class="item-card" onclick="if(!corrMode)showH('Готовая','${esc(n)}')"><div class="item-title">${esc(n)}</div>${cpHtml}<div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Готовая','${esc(n)}')">±</button></div>`;
+        }); return h + '</div>';
+    };
+    const k25 = keys.filter(k => k.toUpperCase().includes('[25КГ]')); 
+    const k40 = keys.filter(k => k.toUpperCase().includes('[40КГ]')); 
+    const other = keys.filter(k => !k.toUpperCase().includes('[25КГ]') && !k.toUpperCase().includes('[40КГ]'));
+    let html = '';
+    if(k25.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 25 КГ</div>` + renderGrp(k25);
+    if(k40.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 40 КГ</div>` + renderGrp(k40);
+    if(other.length) html += (k25.length||k40.length ? `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">ПРОЧЕЕ</div>` : '') + renderGrp(other);
+    c.innerHTML = html || renderGrp(keys);
+}
 
 function rWgh(c){
     const t={}; gP('WeightStock').forEach(p=>t[p]=0);
@@ -1234,9 +1254,9 @@ function rWgh(c){
             h+=`<div class="item-card" onclick="if(!corrMode)showH('WeightStock','${esc(n)}')"><div class="item-title">${esc(n)}</div>${cpHtml}<div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','WeightStock','${esc(n)}')">±</button></div>`;
         }); return h + '</div>';
     };
-    const k25 = keys.filter(k => k.includes('[25КГ]')); 
-    const k40 = keys.filter(k => k.includes('[40КГ]')); 
-    const other = keys.filter(k => !k.includes('[25КГ]') && !k.includes('[40КГ]'));
+    const k25 = keys.filter(k => k.toUpperCase().includes('[25КГ]')); 
+    const k40 = keys.filter(k => k.toUpperCase().includes('[40КГ]')); 
+    const other = keys.filter(k => !k.toUpperCase().includes('[25КГ]') && !k.toUpperCase().includes('[40КГ]'));
     let html = '';
     if(k25.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 25 КГ</div>` + renderGrp(k25);
     if(k40.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 40 КГ</div>` + renderGrp(k40);
@@ -1255,9 +1275,9 @@ function rRawWH(c){
             h+=`<div class="item-card" onclick="if(!corrMode)showH('Stock_Raw','${esc(n)}')"><div class="item-title">${esc(n)}</div>${cpHtml}<div class="item-qty ${v>=0?'val-pos':'val-neg'}">${Math.round(v)}</div><button class="corr-btn" onclick="event.stopPropagation();openModal('corr','Stock_Raw','${esc(n)}')">±</button></div>`;
         }); return h + '</div>';
     };
-    const k25 = keys.filter(k => k.includes('[25КГ]')); 
-    const k40 = keys.filter(k => k.includes('[40КГ]')); 
-    const other = keys.filter(k => !k.includes('[25КГ]') && !k.includes('[40КГ]'));
+    const k25 = keys.filter(k => k.toUpperCase().includes('[25КГ]')); 
+    const k40 = keys.filter(k => k.toUpperCase().includes('[40КГ]')); 
+    const other = keys.filter(k => !k.toUpperCase().includes('[25КГ]') && !k.toUpperCase().includes('[40КГ]'));
     let html = '';
     if(k25.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 25 КГ</div>` + renderGrp(k25);
     if(k40.length) html += `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">МЕШКИ 40 КГ</div>` + renderGrp(k40);
@@ -1307,9 +1327,9 @@ function rGen(c){
         if(other.length) html += (muchka.length||otrubi.length ? `<div style="width:100%;text-align:center;font-weight:900;color:#475569;font-size:12px;margin:10px 0 5px;background:#f1f5f9;border-radius:4px;padding:3px;">ПРОЧЕЕ</div>` : '') + renderGrp(other);
         c.innerHTML = html || renderGrp(keys);
     } else {
-        const k25 = keys.filter(k => k.includes('[25КГ]'));
-        const k40 = keys.filter(k => k.includes('[40КГ]'));
-        const other = keys.filter(k => !k.includes('[25КГ]') && !k.includes('[40КГ]'));
+        const k25 = keys.filter(k => k.toUpperCase().includes('[25КГ]'));
+        const k40 = keys.filter(k => k.toUpperCase().includes('[40КГ]'));
+        const other = keys.filter(k => !k.toUpperCase().includes('[25КГ]') && !k.toUpperCase().includes('[40КГ]'));
 
         if(k25.length > 0 || k40.length > 0) {
             let html = '';
