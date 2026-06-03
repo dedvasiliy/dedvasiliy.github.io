@@ -3082,38 +3082,34 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         const wDb = data.Workers || {};
         let fasCount = 0;
         
-        // 1. Считаем общее количество пачек на фасовке за эту дату
         if (data['Фасовка']) Object.values(data['Фасовка']).forEach(f => {
             if (f.date && f.date.startsWith(d) && f.outputItems) {
                 f.outputItems.forEach(out => fasCount += (parseFloat(out.count) || 0));
             }
         });
 
-        // 2. Собираем погрузки и выработки из архивов за эту дату для всех людей
-        const loadKgByPerson = {}; // Сколько кг перетаскал каждый
-        const krupKgByPerson = {}; // Сколько кг сырья переработал каждый на крупорушке
+        const loadKgByPerson = {}; 
+        const krupKgByPerson = {}; 
         
-        // Отгрузки (Архив)
         if (data.ArchInvoices) Object.values(data.ArchInvoices).forEach(inv => {
             if (inv.date && inv.date.startsWith(d) && inv.loaderName) {
                 loadKgByPerson[inv.loaderName] = (loadKgByPerson[inv.loaderName] || 0) + (parseFloat(inv.loadWeight) || 0);
             }
         });
         
-        // Приходы (Архив)
         if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
             if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
                 loadKgByPerson[inc.loaderName] = (loadKgByPerson[inc.loaderName] || 0) + (parseFloat(inc.loadWeight) || 0);
             }
         });
 
-        // Крупорушка (Отчеты)
         if (data.Krup_Report) Object.values(data.Krup_Report).forEach(kr => {
             if (kr.date && kr.date.startsWith(d)) {
-                // Считаем вес засыпанного сырья
                 let rawWeight = 0;
-                if (kr.mainRaw) kr.mainRaw.forEach(m => rawWeight += (parseFloat(m.amount) || 0));
-                if (kr.addRaw) kr.addRaw.forEach(a => rawWeight += (parseFloat(a.amount) || 0));
+                // Ищем основное сырье
+                if (kr.rawBase && kr.rawBase.w) rawWeight += (parseFloat(kr.rawBase.w) || 0);
+                // Ищем добавки
+                if (kr.rawAdd) kr.rawAdd.forEach(a => rawWeight += (parseFloat(a.w) || 0));
                 
                 if (kr.operator) krupKgByPerson[kr.operator] = (krupKgByPerson[kr.operator] || 0) + rawWeight;
                 if (kr.assistant) krupKgByPerson[kr.assistant] = (krupKgByPerson[kr.assistant] || 0) + rawWeight;
@@ -3135,8 +3131,8 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                         rt = parseFloat(w.defRate)||0; 
                         dRt = parseFloat(w.dayRate)||0; 
                         fRt = parseFloat(w.fasRate)||0; 
-                        loadRt = parseFloat(w.loadRate)||0; // Тариф за погрузку (грн/т)
-                        prodRt = parseFloat(w.prodRate)||0; // Тариф за производство (грн/т)
+                        loadRt = parseFloat(w.loadRate)||0; 
+                        prodRt = parseFloat(w.prodRate)||0; 
                     } 
                 });
 
@@ -3156,7 +3152,6 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     let prodPay = 0;
                     let loadPay = 0;
                     
-                    // Расчет почасовки / фасовки
                     if (fRt > 0 || dRt > 0) {
                         if (fasCount > 0 && fRt > 0) {
                             pay = parseFloat((fasCount * fRt).toFixed(2));
@@ -3170,7 +3165,6 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     }
                     if (calcDet === '' && rt > 0) calcDet = `${hrs.toFixed(1)}ч × ${rt}₴`;
 
-                    // Расчет выработки (Крупорушка)
                     let pKg = krupKgByPerson[n] || 0;
                     if (pKg > 0 && prodRt > 0) {
                         let tons = pKg / 1000;
@@ -3179,7 +3173,6 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                         calcDet += `<br>Пр-во: ${tons.toFixed(2)}т × ${prodRt}₴`;
                     }
 
-                    // Расчет погрузки
                     let lKg = loadKgByPerson[n] || 0;
                     if (lKg > 0 && loadRt > 0) {
                         let tons = lKg / 1000;
@@ -3194,14 +3187,14 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     if (pay > 0 || b > 0) {
                         totalZp += pay;
                         let bHtml = b > 0 ? ` <span style="color:#d97706;font-size:10px;font-weight:bold">(+${b})</span>` : '';
-                        status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <br><span style="font-size:9px;color:#64748b">${calcDet}</span>`;
+                        status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <br><span style="font-size:9px;color:#64748b;line-height:1.2">${calcDet}</span>`;
                     } else {
                         status = '<span style="color:#94a3b8">0 грн (нет тарифа)</span>';
                     }
                 }
                 
                 cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1)});
-                previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${status}</td></tr>`;
+                previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left">${status}</td></tr>`;
             }
         });
         
