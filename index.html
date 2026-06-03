@@ -4126,84 +4126,92 @@ window.openGoodsReport = function(forceYear, forceMonth) {
     gID('mdl').style.display = 'flex';
 };
 
-        window.openWorkersMgmt = function() {
-            let h = `<div style="margin-bottom:15px;display:flex;flex-wrap:wrap;gap:5px;">
-                <input type="text" id="newWorkerName" placeholder="Имя..." class="fas-inp" style="flex:1;min-width:100px;">
-                <input type="number" id="newWorkerRate" placeholder="₴/час" class="fas-inp" style="flex:1;min-width:60px;">
-                <input type="number" id="newWorkerDay" placeholder="₴/день" class="fas-inp" style="flex:1;min-width:60px;">
-                <input type="number" id="newWorkerFas" placeholder="₴/шт(фас)" class="fas-inp" style="flex:1;min-width:60px;">
-                <input type="number" id="newWorkerMonth" placeholder="₴/мес" class="fas-inp" style="flex:1;min-width:60px;">
-                <button class="btn-main" style="width:100%;margin:0;" onclick="addWorker()">ДОБАВИТЬ</button>
+window.openWorkersMgmt = function() {
+    let h = `<div style="margin-bottom:15px;display:flex;flex-wrap:wrap;gap:5px;">
+        <input type="text" id="newWorkerName" placeholder="Имя..." class="fas-inp" style="flex:1;min-width:100px;">
+        <input type="number" id="newWorkerRate" placeholder="₴/час" class="fas-inp" style="flex:1;min-width:60px;">
+        <input type="number" id="newWorkerDay" placeholder="₴/день" class="fas-inp" style="flex:1;min-width:60px;">
+        <input type="number" id="newWorkerFas" placeholder="₴/шт(фас)" class="fas-inp" style="flex:1;min-width:60px;">
+        <input type="number" id="newWorkerMonth" placeholder="₴/мес" class="fas-inp" style="flex:1;min-width:60px;">
+        <input type="number" id="newWorkerProd" placeholder="₴/т(произ)" class="fas-inp" style="flex:1;min-width:60px;">
+        <input type="number" id="newWorkerLoad" placeholder="₴/т(погр)" class="fas-inp" style="flex:1;min-width:60px;">
+        <button class="btn-main" style="width:100%;margin:0;" onclick="addWorker()">ДОБАВИТЬ</button>
+    </div>
+    <div id="workersList"></div>`;
+    gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+    renderWorkersList();
+};
+
+window.renderWorkersList = function() {
+    const wList = gID('workersList');
+    if (!wList) return;
+    const w = data.Workers || {};
+    let h = '';
+    Object.keys(w).sort((a,b) => (w[a].name||'').localeCompare(w[b].name||'')).forEach(k => {
+        const rt = w[k].defRate || 0, dRt = w[k].dayRate || 0, fRt = w[k].fasRate || 0, mRt = w[k].monthRate || 0, pRt = w[k].prodRate || 0, lRt = w[k].loadRate || 0;
+        let inf = [];
+        if(rt) inf.push(`${rt}₴/ч`); if(dRt) inf.push(`${dRt}₴/д`); if(fRt) inf.push(`${fRt}₴/шт`); if(mRt) inf.push(`${mRt}₴/мес`); if(pRt) inf.push(`${pRt}₴/т(пр)`); if(lRt) inf.push(`${lRt}₴/т(погр)`);
+        h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:4px;">
+            <div style="font-weight:900;font-size:14px;">${esc(w[k].name)} <div style="color:#059669;font-size:9px">${inf.join(' | ')}</div></div>
+            <div style="display:flex;gap:5px;">
+                <button style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="editWorkerRates('${k}', '${rt}', '${dRt}', '${fRt}', '${mRt}', '${pRt}', '${lRt}')">ТАРИФЫ</button>
+                <button style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="delWorker('${k}')">УДАЛИТЬ</button>
             </div>
-            <div id="workersList"></div>`;
-            gID('mT').innerText = 'БАЗА СОТРУДНИКОВ';
-            gID('mB').innerHTML = h;
-            gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
-            gID('mdl').style.display = 'flex';
-            renderWorkersList();
-        };
+        </div>`;
+    });
+    wList.innerHTML = h || '<div style="text-align:center;padding:10px;color:#64748b;font-size:12px;">Список пуст</div>';
+};
 
-        window.renderWorkersList = function() {
-            const wList = gID('workersList');
-            if (!wList) return;
-            const w = data.Workers || {};
-            let h = '';
-            Object.keys(w).sort((a,b) => (w[a].name||'').localeCompare(w[b].name||'')).forEach(k => {
-                const rt = w[k].defRate || 0, dRt = w[k].dayRate || 0, fRt = w[k].fasRate || 0, mRt = w[k].monthRate || 0;
-                let inf = [];
-                if(rt) inf.push(`${rt}₴/ч`); if(dRt) inf.push(`${dRt}₴/д`); if(fRt) inf.push(`${fRt}₴/шт`); if(mRt) inf.push(`${mRt}₴/мес`);
-                h += `<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #e2e8f0;margin-bottom:4px;">
-                    <div style="font-weight:900;font-size:14px;">${esc(w[k].name)} <div style="color:#059669;font-size:9px">${inf.join(' | ')}</div></div>
-                    <div style="display:flex;gap:5px;">
-                        <button style="background:#eef2ff;color:var(--p);border:1px solid var(--p);padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="editWorkerRates('${k}', '${rt}', '${dRt}', '${fRt}', '${mRt}')">ТАРИФЫ</button>
-                        <button style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:4px;font-weight:bold;font-size:10px;" onclick="delWorker('${k}')">УДАЛИТЬ</button>
-                    </div>
-                </div>`;
-            });
-            wList.innerHTML = h || '<div style="text-align:center;padding:10px;color:#64748b;font-size:12px;">Список пуст</div>';
-        };
+window.addWorker = async function() {
+    const n = gID('newWorkerName').value.trim();
+    const r = parseFloat(gID('newWorkerRate').value) || 0;
+    const dr = parseFloat(gID('newWorkerDay').value) || 0;
+    const fr = parseFloat(gID('newWorkerFas').value) || 0;
+    const mr = parseFloat(gID('newWorkerMonth').value) || 0;
+    const pr = parseFloat(gID('newWorkerProd').value) || 0;
+    const lr = parseFloat(gID('newWorkerLoad').value) || 0;
+    if(!n) return;
+    showLoad();
+    try {
+        await db.child('Workers').push({ name: n, defRate: r, dayRate: dr, fasRate: fr, monthRate: mr, prodRate: pr, loadRate: lr });
+        openWorkersMgmt(); 
+        hideLoad();
+    } catch(e) { hideLoad(); alert(e); }
+};
 
-        window.addWorker = async function() {
-            const n = gID('newWorkerName').value.trim();
-            const r = parseFloat(gID('newWorkerRate').value) || 0;
-            const dr = parseFloat(gID('newWorkerDay').value) || 0;
-            const fr = parseFloat(gID('newWorkerFas').value) || 0;
-            const mr = parseFloat(gID('newWorkerMonth').value) || 0;
-            if(!n) return;
-            showLoad();
-            try {
-                await db.child('Workers').push({ name: n, defRate: r, dayRate: dr, fasRate: fr, monthRate: mr });
-                openWorkersMgmt(); 
-                hideLoad();
-            } catch(e) { hideLoad(); alert(e); }
-        };
+window.editWorkerRates = async function(id, rt, drt, frt, mrt, prt, lrt) {
+    const nrt = prompt('Часовая ставка (₴/час):', rt) || 0; if(nrt===null) return;
+    const ndrt = prompt('Дневная ставка (₴/день):', drt) || 0; if(ndrt===null) return;
+    const nfrt = prompt('Сдельная за фасовку (₴/шт):', frt) || 0; if(nfrt===null) return;
+    const nmrt = prompt('Фиксированная ставка за месяц (₴/мес):', mrt) || 0; if(nmrt===null) return;
+    const nprt = prompt('Сдельная за производство (₴/т):', prt) || 0; if(nprt===null) return;
+    const nlrt = prompt('Сдельная за погрузку/выгрузку (₴/т):', lrt) || 0; if(nlrt===null) return;
+    showLoad();
+    try {
+        await db.child('Workers/' + id).update({ 
+            defRate: parseFloat(String(nrt).replace(',', '.')) || 0,
+            dayRate: parseFloat(String(ndrt).replace(',', '.')) || 0,
+            fasRate: parseFloat(String(nfrt).replace(',', '.')) || 0,
+            monthRate: parseFloat(String(nmrt).replace(',', '.')) || 0,
+            prodRate: parseFloat(String(nprt).replace(',', '.')) || 0,
+            loadRate: parseFloat(String(nlrt).replace(',', '.')) || 0
+        });
+        hideLoad();
+        renderWorkersList();
+    } catch(e) { hideLoad(); alert(e); }
+};
 
-        window.editWorkerRates = async function(id, rt, drt, frt, mrt) {
-            const nrt = prompt('Часовая ставка (₴/час):', rt) || 0; if(nrt===null) return;
-            const ndrt = prompt('Дневная ставка (₴/день):', drt) || 0; if(ndrt===null) return;
-            const nfrt = prompt('Сдельная за фасовку (₴/шт):', frt) || 0; if(nfrt===null) return;
-            const nmrt = prompt('Фиксированная ставка за месяц (₴/мес):', mrt) || 0; if(nmrt===null) return;
-            showLoad();
-            try {
-                await db.child('Workers/' + id).update({ 
-                    defRate: parseFloat(String(nrt).replace(',', '.')) || 0,
-                    dayRate: parseFloat(String(ndrt).replace(',', '.')) || 0,
-                    fasRate: parseFloat(String(nfrt).replace(',', '.')) || 0,
-                    monthRate: parseFloat(String(nmrt).replace(',', '.')) || 0
-                });
-                hideLoad();
-                renderWorkersList();
-            } catch(e) { hideLoad(); alert(e); }
-        };
-
-        window.delWorker = async function(id) {
-            if(!confirm('Точно удалить сотрудника из базы?')) return;
-            showLoad();
-            try {
-                await db.child('Workers/' + id).remove();
-                hideLoad();
-            } catch(e) { hideLoad(); alert(e); }
-        };
+window.delWorker = async function(id) {
+    if(!confirm('Точно удалить сотрудника из базы?')) return;
+    showLoad();
+    try {
+        await db.child('Workers/' + id).remove();
+        hideLoad();
+    } catch(e) { hideLoad(); alert(e); }
+};
 
         window.openAddPrice=function(){aId=null;gID('mdl').style.display='flex';gID('mT').innerText='ДОБАВИТЬ В ПРАЙС';gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" placeholder="Необязательно"></div><div>ЦЕНА ОПТ <input type="number" id="prO"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR"></div><div>ЦЕНА Б/Н <input type="number" id="prB"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
         window.editPrice=function(id,n,p,o,r,b){aId=id;gID('mdl').style.display='flex';gID('mT').innerText='РЕДАКТИРОВАТЬ';const sN=esc(n),sP=esc(p||'');gID('mB').innerHTML=`<div>ТОВАР <input type="text" id="prN" value="${sN}"></div><div>ДЛЯ ПЕЧАТИ (накладная) <input type="text" id="prP" value="${sP}"></div><div>ЦЕНА ОПТ <input type="number" id="prO" value="${o}"></div><div>ЦЕНА РОЗНИЦА <input type="number" id="prR" value="${r}"></div><div>ЦЕНА Б/Н <input type="number" id="prB" value="${b}"></div><button class="btn-main" onclick="sPrice()">СОХРАНИТЬ</button>`};
