@@ -3117,12 +3117,32 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         const loadKgByPerson = {}; 
         const krupKgByPerson = {}; 
         
+        // Обработка отгрузок
         if (data.ArchInvoices) Object.values(data.ArchInvoices).forEach(inv => {
-            if (inv.date && inv.date.startsWith(d) && inv.loaderName) {
-                loadKgByPerson[inv.loaderName] = (loadKgByPerson[inv.loaderName] || 0) + (parseFloat(inv.loadWeight) || 0);
+            if (inv.date && inv.date.startsWith(d) && inv.loaderName && inv.loadWeight) {
+                let loaders = inv.loaderName.split(',').map(name => name.trim()).filter(name => name.length > 0);
+                if (loaders.length > 0) {
+                    let weightPerPerson = parseFloat(inv.loadWeight) / loaders.length;
+                    loaders.forEach(person => {
+                        loadKgByPerson[person] = (loadKgByPerson[person] || 0) + weightPerPerson;
+                    });
+                }
             }
         });
         
+        // Обработка приходов
+        if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
+            if (inc.date && inc.date.startsWith(d) && inc.loaderName && inc.loadWeight) {
+                let loaders = inc.loaderName.split(',').map(name => name.trim()).filter(name => name.length > 0);
+                if (loaders.length > 0) {
+                    let weightPerPerson = parseFloat(inc.loadWeight) / loaders.length;
+                    loaders.forEach(person => {
+                        loadKgByPerson[person] = (loadKgByPerson[person] || 0) + weightPerPerson;
+                    });
+                }
+            }
+        });
+
         if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
             if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
                 loadKgByPerson[inc.loaderName] = (loadKgByPerson[inc.loaderName] || 0) + (parseFloat(inc.loadWeight) || 0);
