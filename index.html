@@ -3103,17 +3103,17 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             }
         });
 
-        if (data.Krup_Report) Object.values(data.Krup_Report).forEach(kr => {
-            if (kr.date && kr.date.startsWith(d)) {
-                let rawWeight = 0;
-                // Ищем основное сырье
-                if (kr.rawBase && kr.rawBase.w) rawWeight += (parseFloat(kr.rawBase.w) || 0);
-                // Ищем добавки
-                if (kr.rawAdd) kr.rawAdd.forEach(a => rawWeight += (parseFloat(a.w) || 0));
-                
-                if (kr.operator) krupKgByPerson[kr.operator] = (krupKgByPerson[kr.operator] || 0) + rawWeight;
-                if (kr.assistant) krupKgByPerson[kr.assistant] = (krupKgByPerson[kr.assistant] || 0) + rawWeight;
-            }
+        ['Krup_Report', 'ZSHM_Report', 'Vibro_Report'].forEach(dbName => {
+            if (data[dbName]) Object.values(data[dbName]).forEach(kr => {
+                if (kr.date && kr.date.startsWith(d)) {
+                    let rawWeight = 0;
+                    if (kr.rawBase && kr.rawBase.w) rawWeight += (parseFloat(kr.rawBase.w) || 0);
+                    if (kr.rawAdd) kr.rawAdd.forEach(a => rawWeight += (parseFloat(a.w) || 0));
+                    
+                    if (kr.operator) krupKgByPerson[kr.operator] = (krupKgByPerson[kr.operator] || 0) + rawWeight;
+                    if (kr.assistant) krupKgByPerson[kr.assistant] = (krupKgByPerson[kr.assistant] || 0) + rawWeight;
+                }
+            });
         });
 
         D.querySelectorAll('#tsRows .ts-row').forEach(r => {
@@ -3147,7 +3147,8 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     const [eH, eM] = e.split(':').map(Number);
                     hrs = (eH + eM/60) - (sH + sM/60);
                     if(hrs < 0) hrs += 24;
-                    
+                    if (hrs > 5) hrs -= 0.5;
+
                     let calcDet = '';
                     let prodPay = 0;
                     let loadPay = 0;
