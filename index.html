@@ -3143,12 +3143,6 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
             }
         });
 
-        if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
-            if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
-                loadKgByPerson[inc.loaderName] = (loadKgByPerson[inc.loaderName] || 0) + (parseFloat(inc.loadWeight) || 0);
-            }
-        });
-
         ['Krup_Report', 'ZSHM_Report', 'Vibro_Report'].forEach(dbName => {
             if (data[dbName]) Object.values(data[dbName]).forEach(kr => {
                 if (kr.date && kr.date.startsWith(d)) {
