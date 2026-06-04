@@ -2002,7 +2002,8 @@ window.loadBulk=function(c){D.querySelectorAll('.bulk-q').forEach(i=>{const n=i.
     function toggleStr(b){useStretch=!useStretch;b.className='btn-sel '+(useStretch?'active':'');b.innerText=useStretch?'СТРЕЙЧ: ДА':'СТРЕЙЧ: НЕТ'}
 
 async function sShip(){
-    const d=gID('hD').value,nm=gID('hNum').value,ag=gID('hAg').value,addr=gID('hAddr').value,dv=d+"T12:00:00Z",c=getSmartVal('hC'),mf=getSmartVal('hMyFop'),pm=priceMode,loaderName=getSmartVal('hLoader');
+const d=gID('hD').value,nm=gID('hNum').value,ag=gID('hAg').value,addr=gID('hAddr').value,dv=d+"T12:00:00Z",c=getSmartVal('hC'),mf=getSmartVal('hMyFop'),pm=priceMode,loaderName=Array.from(document.querySelectorAll('.hLoader-chk:checked')).map(x=>x.value).join(',');
+
     if(!c)return alert('Получатель?');
     saveShipDraft();
     const it=[];let tw=0,tm=0,pdb={};let totalLoadWeightKG=0;
