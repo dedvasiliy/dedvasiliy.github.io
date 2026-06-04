@@ -7224,10 +7224,20 @@ window.printFullInventoryCheck = function() {
     window.print();
     setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
 };
+
 function toggleDropdown(id) {
     let drop = document.getElementById(id + 'Drop');
     if (drop) {
-        drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+        if (drop.style.display === 'none' || drop.style.display === '') {
+            drop.style.display = 'block';
+            drop.style.position = 'fixed';
+            drop.style.top = '25%';
+            drop.style.maxHeight = '50vh';
+            drop.style.overflowY = 'auto';
+            drop.style.webkitOverflowScrolling = 'touch'; 
+        } else {
+            drop.style.display = 'none';
+        }
     }
 }
 
