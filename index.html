@@ -3120,26 +3120,30 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         
         // Обработка отгрузок
         if (data.ArchInvoices) Object.values(data.ArchInvoices).forEach(inv => {
-            if (inv.date && inv.date.startsWith(d) && inv.loaderName && inv.loadWeight) {
-                let loaders = inv.loaderName.split(',').map(name => name.trim()).filter(name => name.length > 0);
+            if (inv.date && inv.date.startsWith(d) && inv.loaderName) {
+                let loaders = String(inv.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
                 if (loaders.length > 0) {
-                    let weightPerPerson = parseFloat(inv.loadWeight) / loaders.length;
-                    loaders.forEach(person => {
-                        loadKgByPerson[person] = (loadKgByPerson[person] || 0) + weightPerPerson;
-                    });
+                    let tw = parseFloat(inv.loadWeight) || 0;
+                    if (tw === 0 && inv.items) inv.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
+                    if (tw > 0) {
+                        let wpp = tw / loaders.length;
+                        loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
+                    }
                 }
             }
         });
         
         // Обработка приходов
         if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
-            if (inc.date && inc.date.startsWith(d) && inc.loaderName && inc.loadWeight) {
-                let loaders = inc.loaderName.split(',').map(name => name.trim()).filter(name => name.length > 0);
+            if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
+                let loaders = String(inc.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
                 if (loaders.length > 0) {
-                    let weightPerPerson = parseFloat(inc.loadWeight) / loaders.length;
-                    loaders.forEach(person => {
-                        loadKgByPerson[person] = (loadKgByPerson[person] || 0) + weightPerPerson;
-                    });
+                    let tw = parseFloat(inc.loadWeight) || 0;
+                    if (tw === 0 && inc.items) inc.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
+                    if (tw > 0) {
+                        let wpp = tw / loaders.length;
+                        loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
+                    }
                 }
             }
         });
