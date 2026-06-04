@@ -7224,6 +7224,32 @@ window.printFullInventoryCheck = function() {
     window.print();
     setTimeout(() => document.getElementById('print-view').innerHTML = '', 800);
 };
+function toggleDropdown(id) {
+    let drop = document.getElementById(id + 'Drop');
+    if (drop) {
+        drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function updateCount(id) {
+    let chks = document.querySelectorAll('.' + id + '-chk:checked');
+    let btn = document.getElementById(id + 'Btn');
+    if (btn) {
+        btn.innerText = chks.length > 0 ? 'Выбрано: ' + chks.length : 'Выберите...';
+    }
+    if (id === 'hLoader' && typeof saveShipDraft === 'function') saveShipDraft();
+    if (id === 'iLoader' && typeof saveIncDraft === 'function') saveIncDraft();
+}
+
+document.addEventListener('click', function(e) {
+    ['hLoader', 'iLoader'].forEach(id => {
+        let btn = document.getElementById(id + 'Btn');
+        let drop = document.getElementById(id + 'Drop');
+        if (btn && drop && !btn.contains(e.target) && !drop.contains(e.target)) {
+            drop.style.display = 'none';
+        }
+    });
+});
 </script>
 </body>
 </html>
