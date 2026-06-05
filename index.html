@@ -1569,13 +1569,59 @@ h+=`</tbody></table><div style="display:flex;justify-content:space-between;margi
 </div></div>`;
 gID('mB').innerHTML=h;gID('mT').innerText='НАКЛАДНА (АРХІВ)';gID('mdl').style.display='flex';};
 
-    window.viewIncomingInvoice=function(id){const v=data.ArchIncoming[id];if(!v)return;const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();let tw=0,ts=0;let defU=v.supplier==='Фасовка'?'шт':'кг';const isBN=v.payType==='bn';let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Прибуткова накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplier)||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>(без ПДВ)</th><th>Сума<br>(без ПДВ)</th><th>Ціна<br>з ПДВ</th><th>Сума<br>з ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;if(v.items){v.items.forEach((it,idx)=>{let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);tw+=w;ts+=sum;if(isBN){let pVat=it.pVat||(prc*1.2);let sVat=it.sVat||(sum*1.2);h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td><td style="text-align:center">${pVat>0?pVat.toFixed(2):'-'}</td><td style="text-align:center">${sVat>0?sVat.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td></tr>`;}});}else if(v.name){let w=parseFloat(v.amount)||0;tw+=w;h+=`<tr><td style="text-align:center">1</td><td>${esc(v.name)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td colspan="${isBN?'4':'2'}" style="text-align:center">-</td></tr>`;}let totalSum=parseFloat(v.totalSum||ts||0);if(isBN){let noVat=parseFloat(v.totalNoVat||ts||0);let vat=parseFloat(v.vatSum||(noVat*0.2)||0);h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}else{h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;}
-h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div>
-<div style="display:flex;gap:5px;margin-top:15px;flex-wrap:wrap;">
-    <button class="btn-main" onclick="editIncoming('${id}')" style="margin:0;background:#ca8a04;flex:1">✏️ ИЗМЕНИТЬ</button>
-    <button class="btn-main" onclick="downloadAsFile('Приход_${id}')" style="margin:0;background:#2563eb;flex:1">💾 СКАЧАТЬ</button>
-</div></div>`;
-gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';};
+window.viewIncomingInvoice=function(id){
+    const v=data.ArchIncoming[id];
+    if(!v)return;
+    const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
+    let tw=0,ts=0;
+    let defU=v.supplier==='Фасовка'?'шт':'кг';
+    const isBN=v.payType==='bn';
+    
+    let h=`<div id="shipPrev"><div style="text-align:center;font-weight:900">Прибуткова накладна № ${esc(v.num)||'---'} від ${dStr} р. ${isBN?'(Б/Н)':''}</div><div style="font-size:12px;margin-top:5px;line-height:1.4"><span class="pr-lbl">Від:</span> <span class="pr-val">${esc(v.supplier)||'-'}</span></div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px" border="1"><thead><tr style="background:#eee"><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th>${isBN?'<th>Ціна<br>(без ПДВ)</th><th>Сума<br>(без ПДВ)</th><th>Ціна<br>з ПДВ</th><th>Сума<br>з ПДВ</th>':'<th>Ціна</th><th>Сума</th>'}</tr></thead><tbody>`;
+    
+    if(v.items){
+        v.items.forEach((it,idx)=>{
+            let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);
+            tw+=w;ts+=sum;
+            if(isBN){
+                let pVat=it.pVat||(prc*1.2);
+                let sVat=it.sVat||(sum*1.2);
+                h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td><td style="text-align:center">${pVat>0?pVat.toFixed(2):'-'}</td><td style="text-align:center">${sVat>0?sVat.toFixed(2):'-'}</td></tr>`;
+            }else{
+                h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(it.n)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td style="text-align:center">${prc>0?prc.toFixed(2):'-'}</td><td style="text-align:center">${sum>0?sum.toFixed(2):'-'}</td></tr>`;
+            }
+        });
+    }else if(v.name){
+        let w=parseFloat(v.amount)||0;tw+=w;
+        h+=`<tr><td style="text-align:center">1</td><td>${esc(v.name)}</td><td style="text-align:center">${w}</td><td style="text-align:center">${defU}</td><td colspan="${isBN?'4':'2'}" style="text-align:center">-</td></tr>`;
+    }
+    
+    let totalSum=parseFloat(v.totalSum||ts||0);
+    if(isBN){
+        let noVat=parseFloat(v.totalNoVat||ts||0);
+        let vat=parseFloat(v.vatSum||(noVat*0.2)||0);
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
+    }else{
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
+    }
+    
+    h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div></div>
+    <div style="display:flex;gap:5px;margin-top:15px;flex-wrap:wrap;">
+        <button class="btn-main" onclick="editIncoming('${id}')" style="margin:0;background:#ca8a04;flex:1">✏️ ИЗМЕНИТЬ</button>
+        <button class="btn-main" onclick="downloadAsFile('Приход_${id}')" style="margin:0;background:#2563eb;flex:1">💾 СКАЧАТЬ</button>
+        <button class="btn-main" onclick="reprintIncInv()" style="margin:0;background:#0f172a;flex:1">🖨 ДРУК</button>
+    </div>`;
+    
+    gID('mB').innerHTML=h;gID('mT').innerText='ПРИХІДНА НАКЛАДНА';gID('mdl').style.display='flex';
+};
+
+window.reprintIncInv = function() {
+    const h = gID('shipPrev').innerHTML;
+    gID('print-view').innerHTML = h;
+    setTimeout(() => {
+        window.print();
+    }, 100);
+};
 
 window.reprintInv=function(id){
     const v=data.ArchInvoices[id];
