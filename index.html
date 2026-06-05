@@ -3397,7 +3397,6 @@ window.printTsList = function() {
         }
     });
 
-    // Функция, которая находит математику и дописывает результат (= 1692.45)
     const addEqual = (str) => {
         if (!str || str === '—') return str;
         let clean = str.split(':').pop().trim();
@@ -3422,7 +3421,6 @@ window.printTsList = function() {
                 let pay = parseFloat(v.rate) || 0;
                 let hrs = parseFloat(v.hours) || 0;
                 
-                // Дата в формате ДД.ММ.ГГ
                 let parts = vDate.split('-');
                 let fDate = `${parts[2]}.${parts[1]}.${parts[0].slice(-2)}`; 
 
@@ -3472,7 +3470,6 @@ window.printTsList = function() {
         h += `<div style="break-inside: avoid; margin-bottom: 15px;">`;
         h += `<div style="font-weight:bold; font-size:12px; margin-bottom:3px; text-transform: uppercase;">${w}</div>`;
         
-        // white-space: nowrap запрещает переносы строк
         h += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 3px; text-align: left; font-size: 10px; white-space: nowrap;">
                 <thead>
                     <tr>
@@ -3486,13 +3483,13 @@ window.printTsList = function() {
                 </thead>
                 <tbody>`;
 
-        // Сортировка: новые даты сверху
+        // Сортировка: от 1 числа к 31 числу (по возрастанию)
         let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
             let [dA, mA, yA] = a.split('.');
             let [dB, mB, yB] = b.split('.');
-            if (yA !== yB) return yB - yA; 
-            if (mA !== mB) return mB - mA; 
-            return dB - dA; 
+            if (yA !== yB) return yA - yB; 
+            if (mA !== mB) return mA - mB; 
+            return dA - dB; 
         });
 
         let sumHrs = 0, sumPay = 0;
