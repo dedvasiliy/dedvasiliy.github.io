@@ -3241,7 +3241,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     }
                 }
                 
-                cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1)});
+                cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1), details: calcDet});
                 previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left">${status}</td></tr>`;
             }
         });
@@ -3279,8 +3279,10 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
                     bonus: x.bonus,
                     hourlyRate: x.rate,
                     hours: x.hrs,
+                    details: x.details || '',
                     ts: tsStr
                 };
+
             }
         });
         
