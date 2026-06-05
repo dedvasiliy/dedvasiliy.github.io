@@ -3101,163 +3101,202 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
     </div>`);
 }
 
-    window.saveTimesheetBatch = function() {
-        const d = gID('gTD').value;
-        const ds = d.split('-').reverse().join('.');
-        const cr = [];
-        let totalZp = 0;
-        let previewHtml = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:10px">СМЕНА ЗА ${ds}</div><table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:15px"><tr style="background:#f1f5f9;font-weight:bold;text-align:center"><td>ФИО</td><td>ВРЕМЯ</td><td>СТАТУС / ЗП</td></tr>`;
-        
-        const wDb = data.Workers || {};
-        let fasCount = 0;
-        
-        if (data['Фасовка']) Object.values(data['Фасовка']).forEach(f => {
-            if (f.date && f.date.startsWith(d) && f.outputItems) {
-                f.outputItems.forEach(out => fasCount += (parseFloat(out.count) || 0));
-            }
-        });
+window.saveTimesheetBatch = function() {
+    const d = gID('gTD').value;
+    const ds = d.split('-').reverse().join('.');
+    const cr = [];
+    let totalZp = 0;
+    let previewHtml = `<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:10px">СМЕНА ЗА ${ds}</div><table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:15px"><tr style="background:#f1f5f9;font-weight:bold;text-align:center"><td>ФИО</td><td>ВРЕМЯ</td><td>СТАТУС / ЗП</td></tr>`;
+    
+    const wDb = data.Workers || {};
+    let fasCount = 0;
+    
+    if (data['Фасовка']) Object.values(data['Фасовка']).forEach(f => {
+        if (f.date && f.date.startsWith(d) && f.outputItems) {
+            f.outputItems.forEach(out => fasCount += (parseFloat(out.count) || 0));
+        }
+    });
 
-        const loadKgByPerson = {}; 
-        const krupKgByPerson = {}; 
-        
-        // Обработка отгрузок
-        if (data.ArchInvoices) Object.values(data.ArchInvoices).forEach(inv => {
-            if (inv.date && inv.date.startsWith(d) && inv.loaderName) {
-                let loaders = String(inv.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
-                if (loaders.length > 0) {
-                    let tw = parseFloat(inv.loadWeight) || 0;
-                    if (tw === 0 && inv.items) inv.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
-                    if (tw > 0) {
-                        let wpp = tw / loaders.length;
-                        loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
-                    }
+    const loadKgByPerson = {}; 
+    const krupKgByPerson = {}; 
+    
+    // Обработка отгрузок
+    if (data.ArchInvoices) Object.values(data.ArchInvoices).forEach(inv => {
+        if (inv.date && inv.date.startsWith(d) && inv.loaderName) {
+            let loaders = String(inv.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
+            if (loaders.length > 0) {
+                let tw = parseFloat(inv.loadWeight) || 0;
+                if (tw === 0 && inv.items) inv.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
+                if (tw > 0) {
+                    let wpp = tw / loaders.length;
+                    loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
                 }
             }
-        });
-        
-        // Обработка приходов
-        if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
-            if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
-                let loaders = String(inc.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
-                if (loaders.length > 0) {
-                    let tw = parseFloat(inc.loadWeight) || 0;
-                    if (tw === 0 && inc.items) inc.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
-                    if (tw > 0) {
-                        let wpp = tw / loaders.length;
-                        loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
-                    }
+        }
+    });
+    
+    // Обработка приходов
+    if (data.ArchIncoming) Object.values(data.ArchIncoming).forEach(inc => {
+        if (inc.date && inc.date.startsWith(d) && inc.loaderName) {
+            let loaders = String(inc.loaderName).split(',').map(name => name.trim()).filter(name => name.length > 0);
+            if (loaders.length > 0) {
+                let tw = parseFloat(inc.loadWeight) || 0;
+                if (tw === 0 && inc.items) inc.items.forEach(i => tw += Math.abs(parseFloat(i.amount||i.qty||i.w||0)));
+                if (tw > 0) {
+                    let wpp = tw / loaders.length;
+                    loaders.forEach(person => loadKgByPerson[person] = (loadKgByPerson[person] || 0) + wpp);
                 }
             }
-        });
+        }
+    });
 
-        ['Krup_Report', 'ZSHM_Report', 'Vibro_Report'].forEach(dbName => {
-            if (data[dbName]) Object.values(data[dbName]).forEach(kr => {
-                if (kr.date && kr.date.startsWith(d)) {
-                    let rawWeight = 0;
-                    if (kr.rawBase && kr.rawBase.w) rawWeight += (parseFloat(kr.rawBase.w) || 0);
-                    if (kr.rawAdd) kr.rawAdd.forEach(a => rawWeight += (parseFloat(a.w) || 0));
-                    
-                    if (kr.operator) krupKgByPerson[kr.operator] = (krupKgByPerson[kr.operator] || 0) + rawWeight;
-                    if (kr.assistant) krupKgByPerson[kr.assistant] = (krupKgByPerson[kr.assistant] || 0) + rawWeight;
-                }
+    ['Krup_Report', 'ZSHM_Report', 'Vibro_Report'].forEach(dbName => {
+        if (data[dbName]) Object.values(data[dbName]).forEach(kr => {
+            if (kr.date && kr.date.startsWith(d)) {
+                let rawWeight = 0;
+                if (kr.rawBase && kr.rawBase.w) rawWeight += (parseFloat(kr.rawBase.w) || 0);
+                if (kr.rawAdd) kr.rawAdd.forEach(a => rawWeight += (parseFloat(a.w) || 0));
+                
+                if (kr.operator) krupKgByPerson[kr.operator] = (krupKgByPerson[kr.operator] || 0) + rawWeight;
+                if (kr.assistant) krupKgByPerson[kr.assistant] = (krupKgByPerson[kr.assistant] || 0) + rawWeight;
+            }
+        });
+    });
+
+    D.querySelectorAll('#tsRows .ts-row').forEach(r => {
+        const k = r.id.split('_')[1];
+        const n = gID('tn_'+k).value;
+        const s = gID('ts_'+k).value;
+        const e = gID('te_'+k).value;
+        const b = parseFloat(gID('tbonus_'+k).value) || 0;
+        const isAbs = gID('abs_'+k).checked;
+        
+        if (n) {
+            let rt = 0, dRt = 0, fRt = 0, loadRt = 0, prodRt = 0;
+            Object.values(wDb).forEach(w => { 
+                if(w.name === n) { 
+                    rt = parseFloat(w.defRate)||0; 
+                    dRt = parseFloat(w.dayRate)||0; 
+                    fRt = parseFloat(w.fasRate)||0; 
+                    loadRt = parseFloat(w.loadRate)||0; 
+                    prodRt = parseFloat(w.prodRate)||0; 
+                } 
             });
-        });
 
-        D.querySelectorAll('#tsRows .ts-row').forEach(r => {
-            const k = r.id.split('_')[1];
-            const n = gID('tn_'+k).value;
-            const s = gID('ts_'+k).value;
-            const e = gID('te_'+k).value;
-            const b = parseFloat(gID('tbonus_'+k).value) || 0;
-            const isAbs = gID('abs_'+k).checked;
+            let status = '';
+            let hrs = 0;
+            let pay = 0;
+            let calcDet = ''; // Обязательно объявляем эту переменную здесь
             
-            if (n) {
-                let rt = 0, dRt = 0, fRt = 0, loadRt = 0, prodRt = 0;
-                Object.values(wDb).forEach(w => { 
-                    if(w.name === n) { 
-                        rt = parseFloat(w.defRate)||0; 
-                        dRt = parseFloat(w.dayRate)||0; 
-                        fRt = parseFloat(w.fasRate)||0; 
-                        loadRt = parseFloat(w.loadRate)||0; 
-                        prodRt = parseFloat(w.prodRate)||0; 
-                    } 
-                });
+            if (isAbs) {
+                status = '<span style="color:#dc2626;font-weight:bold">Н/Я (Пропуск)</span>';
+            } else {
+                const [sH, sM] = s.split(':').map(Number);
+                const [eH, eM] = e.split(':').map(Number);
+                hrs = (eH + eM/60) - (sH + sM/60);
+                if(hrs < 0) hrs += 24;
+                if (hrs > 5) hrs -= 0.5;
 
-                let status = '';
-                let hrs = 0;
-                let pay = 0;
+                let prodPay = 0;
+                let loadPay = 0;
                 
-                if (isAbs) {
-                    status = '<span style="color:#dc2626;font-weight:bold">Н/Я (Пропуск)</span>';
-                } else {
-                    const [sH, sM] = s.split(':').map(Number);
-                    const [eH, eM] = e.split(':').map(Number);
-                    hrs = (eH + eM/60) - (sH + sM/60);
-                    if(hrs < 0) hrs += 24;
-                    if (hrs > 5) hrs -= 0.5;
+                if (fRt > 0 || dRt > 0) {
+                    if (fasCount > 0 && fRt > 0) {
+                        pay = parseFloat((fasCount * fRt).toFixed(2));
+                        calcDet = `Фас: ${fasCount}шт × ${fRt}₴`;
+                    } else if (dRt > 0) {
+                        pay = dRt;
+                        calcDet = `Ставка: ${dRt}₴/день`;
+                    } else { pay = Math.round(hrs * rt); }
+                } else if (rt > 0) {
+                    pay = Math.round(hrs * rt);
+                }
+                if (calcDet === '' && rt > 0) calcDet = `${hrs.toFixed(1)}ч × ${rt}₴`;
 
-                    let calcDet = '';
-                    let prodPay = 0;
-                    let loadPay = 0;
-                    
-                    if (fRt > 0 || dRt > 0) {
-                        if (fasCount > 0 && fRt > 0) {
-                            pay = parseFloat((fasCount * fRt).toFixed(2));
-                            calcDet = `Фас: ${fasCount}шт × ${fRt}₴`;
-                        } else if (dRt > 0) {
-                            pay = dRt;
-                            calcDet = `Ставка: ${dRt}₴/день`;
-                        } else { pay = Math.round(hrs * rt); }
-                    } else if (rt > 0) {
-                        pay = Math.round(hrs * rt);
-                    }
-                    if (calcDet === '' && rt > 0) calcDet = `${hrs.toFixed(1)}ч × ${rt}₴`;
+                let pKg = krupKgByPerson[n] || 0;
+                if (pKg > 0 && prodRt > 0) {
+                    let tons = pKg / 1000;
+                    prodPay = parseFloat((tons * prodRt).toFixed(2));
+                    pay += prodPay;
+                    calcDet += `<br>Пр-во: ${tons.toFixed(2)}т × ${prodRt}₴`;
+                }
 
-                    let pKg = krupKgByPerson[n] || 0;
-                    if (pKg > 0 && prodRt > 0) {
-                        let tons = pKg / 1000;
-                        prodPay = parseFloat((tons * prodRt).toFixed(2));
-                        pay += prodPay;
-                        calcDet += `<br>Пр-во: ${tons.toFixed(2)}т × ${prodRt}₴`;
-                    }
-
-                    let lKg = loadKgByPerson[n] || 0;
-                    if (lKg > 0 && loadRt > 0) {
-                        let tons = lKg / 1000;
-                        loadPay = parseFloat((tons * loadRt).toFixed(2));
-                        pay += loadPay;
-                        calcDet += `<br>Погр: ${tons.toFixed(2)}т × ${loadRt}₴`;
-                    }
-                    
-                    pay += b;
-                    pay = Math.round(pay * 100) / 100;
-                    
-                    if (pay > 0 || b > 0) {
-                        totalZp += pay;
-                        let bHtml = b > 0 ? ` <span style="color:#d97706;font-size:10px;font-weight:bold">(+${b})</span>` : '';
-                        status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <br><span style="font-size:9px;color:#64748b;line-height:1.2">${calcDet}</span>`;
-                    } else {
-                        status = '<span style="color:#94a3b8">0 грн (нет тарифа)</span>';
-                    }
+                let lKg = loadKgByPerson[n] || 0;
+                if (lKg > 0 && loadRt > 0) {
+                    let tons = lKg / 1000;
+                    loadPay = parseFloat((tons * loadRt).toFixed(2));
+                    pay += loadPay;
+                    calcDet += `<br>Погр: ${tons.toFixed(2)}т × ${loadRt}₴`;
                 }
                 
-                cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1), details: calcDet});
-                previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left">${status}</td></tr>`;
+                pay += b;
+                pay = Math.round(pay * 100) / 100;
+                
+                if (pay > 0 || b > 0) {
+                    totalZp += pay;
+                    let bHtml = b > 0 ? ` <span style="color:#d97706;font-size:10px;font-weight:bold">(+${b})</span>` : '';
+                    status = `<span style="color:#059669;font-weight:bold">${pay} грн</span>${bHtml} <br><span style="font-size:9px;color:#64748b;line-height:1.2">${calcDet}</span>`;
+                } else {
+                    status = '<span style="color:#94a3b8">0 грн (нет тарифа)</span>';
+                }
             }
-        });
-        
-        if(!cr.length) return alert('Заполните хотя бы одного сотрудника!');
-        
-        previewHtml += `</table><div style="font-size:14px;font-weight:900;text-align:center;margin-bottom:15px">ОБЩАЯ ЗП ЗА ДЕНЬ: <span style="color:#dc2626">${Math.round(totalZp*100)/100} грн</span></div>`;
-        previewHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeModal()" style="background:#e2e8f0;color:#475569;margin:0">ОТМЕНА</button><button class="btn-main" onclick="execTimesheetBatch()" style="background:#10b981;margin:0">ВСЁ ВЕРНО</button></div>`;
-        
-        window.tempTsData = { d, cr, totalZp };
-        
-        gID('mT').innerText = 'ПРОВЕРКА ТАБЕЛЯ';
-        gID('mB').innerHTML = previewHtml;
-        gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
-        gID('mdl').style.display = 'flex';
-    };
+            
+            // Здесь добавлены детали: details: calcDet
+            cr.push({name:n, rate:rt, start:s, end:e, bonus:b, isAbs, pay, hrs: hrs.toFixed(1), details: calcDet});
+            previewHtml += `<tr><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">${esc(n)}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:center">${isAbs ? '-' : s+'-'+e}</td><td style="border-bottom:1px solid #e2e8f0;padding:6px 4px;text-align:left">${status}</td></tr>`;
+        }
+    });
+    
+    if(!cr.length) return alert('Заполните хотя бы одного сотрудника!');
+    
+    previewHtml += `</table><div style="font-size:14px;font-weight:900;text-align:center;margin-bottom:15px">ОБЩАЯ ЗП ЗА ДЕНЬ: <span style="color:#dc2626">${Math.round(totalZp*100)/100} грн</span></div>`;
+    previewHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn-main" onclick="closeModal()" style="background:#e2e8f0;color:#475569;margin:0">ОТМЕНА</button><button class="btn-main" onclick="execTimesheetBatch()" style="background:#10b981;margin:0">ВСЁ ВЕРНО</button></div>`;
+    
+    window.tempTsData = { d, cr, totalZp };
+    
+    gID('mT').innerText = 'ПРОВЕРКА ТАБЕЛЯ';
+    gID('mB').innerHTML = previewHtml;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+};
+
+window.execTimesheetBatch = async function() {
+    showLoad();
+    const data = window.tempTsData;
+    if(!data) { hideLoad(); return; }
+    const u = {};
+    const tsStr = new Date().toISOString();
+    const activeCrew = [];
+    
+    data.cr.forEach(x => {
+        activeCrew.push({name: x.name, rate: x.rate, start: x.start, end: x.end, bonus: x.bonus});
+        if(!x.isAbs && x.pay > 0) {
+            u['/Timesheet/'+db.child('Timesheet').push().key] = {
+                date: data.d,
+                name: x.name,
+                start: x.start,
+                end: x.end,
+                rate: x.pay,
+                bonus: x.bonus,
+                hourlyRate: x.rate,
+                hours: x.hrs,
+                details: x.details || '', // И здесь добавлены детали
+                ts: tsStr
+            };
+        }
+    });
+    
+    try {
+        if(Object.keys(u).length > 0) await db.update(u);
+        localStorage.setItem('activeCrew', JSON.stringify(activeCrew));
+        hideLoad();
+        closeModal();
+        alert('Смена сохранена! Общая ЗП: ' + data.totalZp + ' грн');
+    } catch(err) {
+        hideLoad();
+        alert(err.message);
+    }
+};
 
     window.execTimesheetBatch = async function() {
         showLoad();
