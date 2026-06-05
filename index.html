@@ -3296,7 +3296,7 @@ function addTimeRow(n='',r='',ts='',te='',b=''){
         }
     };
 
-Window.printTsList = function() {
+window.printTsList = function() {
     const d = data.Timesheet || {};
     const wDb = data.Workers || {};
     const getBase = n => n ? n.replace(/\s*\d+$/, '').trim() : '';
