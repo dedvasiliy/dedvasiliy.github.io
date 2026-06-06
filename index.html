@@ -3493,14 +3493,11 @@ window.printTsList = function() {
             if(!wData[b]) wData[b] = { mRt: 0, shiftsByDate: {}, adv: 0, tov: 0 };
 
             if (v.isPayout) {
-                let note = (v.payoutNote || '').toLowerCase();
                 let amount = parseFloat(v.payoutAmount) || 0;
-                
-                // Если в примечании есть слова, намекающие на товар - кидаем в товары
-                if (note.includes('товар') || note.includes('з/п') || note.includes('зп') || note.includes('в счет')) {
+                if (v.payoutType === 'Товар под З/П') {
                     wData[b].tov += amount;
                 } else {
-                    wData[b].adv += amount; // Иначе - обычный аванс деньгами
+                    wData[b].adv += amount;
                 }
             } else {
                 let pay = parseFloat(v.rate) || 0;
