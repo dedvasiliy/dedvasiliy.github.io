@@ -1345,6 +1345,7 @@ function rGen(c){
 }
 
     window.printFas=function(){const defM=new Date().toISOString().substring(0,7);const m=prompt('За какой месяц печатать? (ГГГГ-ММ)\nОставьте пустым для печати за все время:',defM);if(m===null)return;const d=data['Фасовка']||{},r=[];Object.entries(d).forEach(([id,v])=>{const dt=v.date.split('T')[0];if(!m||dt.startsWith(m))r.push({...v,id,_date:dt});});r.sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let h=`<h3 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">ИСТОРИЯ ФАСОВКИ ${m?'за '+m:''}</h3><div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; font-family:sans-serif; font-size:9px;">`;r.forEach(v=>{const dt=v.date.split('T')[0].split('-').reverse().join('.');const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');let rRaw='';if(v.items)v.items.forEach(x=>rRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>${esc(x.name)}</span><b>${x.amount}кг</b></div>`);let rOut='';let pk=0;if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>${esc(x.name)}</span><b>${x.count}шт</b></div>`;pk+=x.count;});const vt=v.vzial?String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0):0;let fU=Math.abs(vt-(v.ostatok||0));h+=`<div style="border:1px solid #000; border-radius:6px; padding:4px; page-break-inside:avoid; box-sizing:border-box;"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;margin-bottom:2px;padding-bottom:2px;"><b>${dt}</b><b style="color:#000">${esc(mName)}</b></div><div style="color:#444;margin-top:2px;"><i>Сырье:</i></div>${rRaw}<div style="color:#444;margin-top:2px;"><i>Готовая продукция:</i></div>${rOut}<div style="color:#444;margin-top:2px;"><i>Расход упаковки:</i></div><div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Пленка:</span><b>${fU.toFixed(2)}кг</b></div><div style="display:flex;justify-content:space-between"><span>Пакеты:</span><b>~${Math.round(pk/parseFloat(autoSet.packK1))}шт</b></div></div>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',5000);};
+
 function rFas(c){
     const d=data['Фасовка']||{},l=Object.entries(d).map(([id,v])=>({...v,id,_date:v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});
     let h=`<button class="btn-main" onclick="printFas()" style="background:var(--s);margin-bottom:10px">🖨️ ПЕЧАТЬ ФАСОВКИ</button>`;
@@ -1402,9 +1403,40 @@ function rFas(c){
             </div>`;
         }
         
-        return `<div class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${esc(mName)}</span></div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${rRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${rOut}<div class="conf-sec"><b>расход упаковки:</b></div><div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz||'-'}</span><span>${packs}шт</span></div><div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mName)}</span><span>${filmUsed.toFixed(2)}кг</span></div>${costHtml}${isAdmin?`<div style="display:flex;gap:5px;margin-top:10px;"><button onclick="editFasReport('${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button><button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;width:100%;font-weight:900;cursor:pointer">УДАЛИТЬ</button></div>`:''}</div>`;
+        let actionBtns = `<div class="card-actions" style="display:flex;gap:5px;margin-top:10px;">`;
+        if (isAdmin) actionBtns += `<button onclick="editFasReport('${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button>`;
+        
+        actionBtns += `<button onclick="printFasCard('${v.id}')" style="color:#0f172a;border:1px solid #cbd5e1;background:#f1f5f9;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">🖨 ДРУК</button>`;
+        
+        if (isAdmin) actionBtns += `<button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">УДАЛИТЬ</button>`;
+        actionBtns += `</div>`;
+        
+        return `<div id="fas_card_${v.id}" class="conf-report" style="margin-bottom:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05)"><div style="display:flex;justify-content:space-between;font-weight:900;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span>${dt}</span><span style="color:var(--p)">${esc(mName)}</span></div><div class="conf-sec" style="margin-top:0;border:none"><b>сырье:</b></div>${rRaw}<div class="conf-sec"><b>готовая продукция:</b></div>${rOut}<div class="conf-sec"><b>расход упаковки:</b></div><div style="display:flex;justify-content:space-between"><span>Пакеты: ${sz||'-'}</span><span>${packs}шт</span></div><div style="display:flex;justify-content:space-between"><span>Пленка: ${esc(mName)}</span><span>${filmUsed.toFixed(2)}кг</span></div>${costHtml}${actionBtns}</div>`;
     });
 }
+
+window.printFasCard = function(id) {
+    const card = document.getElementById('fas_card_' + id);
+    if (!card) return;
+    
+    const clone = card.cloneNode(true);
+    
+    const actions = clone.querySelector('.card-actions');
+    if (actions) actions.remove();
+    
+    const details = clone.querySelector('details');
+    if (details) details.setAttribute('open', 'open');
+    
+    const summarySpan = clone.querySelector('summary div span:last-child');
+    if (summarySpan && summarySpan.innerText.includes('▾')) {
+        summarySpan.innerText = summarySpan.innerText.replace('▾', '');
+    }
+
+    const h = `<div style="font-family:sans-serif; color:#000; font-size:12px; width:100%; max-width:400px; margin:0 auto; padding:10px;">${clone.innerHTML}</div>`;
+    
+    document.getElementById('print-view').innerHTML = h;
+    setTimeout(() => { window.print(); }, 100);
+};
 
     window.printWorkshop=function(k){const c=WS_CFG[k];const defM=new Date().toISOString().substring(0,7);const m=prompt('За какой месяц печатать? (ГГГГ-ММ)\nОставьте пустым для печати за все время:',defM);if(m===null)return;const dbN=c.db,d=data[dbN]||{},r=[];Object.entries(d).forEach(([id,v])=>{const dt=(v.date||'2000-01-01').split('T')[0];if(!m||dt.startsWith(m))r.push({...v,id,_date:dt});});r.sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});let h=`<h3 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">ИСТОРИЯ ЦЕХА: ${c.title} ${m?'за '+m:''}</h3><div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; font-family:sans-serif; font-size:9px;">`;r.forEach(v=>{const dt=(v.date||'').split('T')[0].split('-').reverse().join('.');const ts=v.timeStart||'08:00',te=v.timeEnd||'17:00';let hRaw='';let tR=0;if(v.rawBase){hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Осн: ${esc(v.rawBase.n)}</span><b>${v.rawBase.w}кг</b></div>`;tR+=v.rawBase.w;}else if(v.rawMix){hRaw+=`<div style="border-bottom:1px dotted #ccc">Смесь: ${esc(v.rawMix)}</div>`;let matches=String(v.rawMix).match(/\d+(?:\.\d+)?/g);if(matches)matches.forEach(num=>tR+=parseFloat(num));}if(v.rawAdd){v.rawAdd.forEach(x=>{hRaw+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>Доб: ${esc(x.n)}</span><b>${x.w}кг</b></div>`;tR+=x.w;});}let hOut='';let tD=0;if(v.items){v.items.forEach(x=>{let wght=((x.q||0)*(x.w||0))+(x.l||0);if(!wght&&x.amount)wght=parseFloat(x.amount)||0;let isDV=x.type==='DV'||(!x.type&&!/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(x.n||x.name||''));hOut+=`<div style="display:flex;justify-content:space-between;border-bottom:1px dotted #ccc"><span>${esc(x.n||x.name||'')}</span><b>${wght}кг</b></div>`;if(isDV)tD+=wght;});}let pct=tR>0&&tD>0?((tD/tR)*100).toFixed(1):0;h+=`<div style="border:1px solid #000; border-radius:6px; padding:4px; page-break-inside:avoid; box-sizing:border-box;"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;margin-bottom:2px;padding-bottom:2px;"><b>${dt} (${ts}-${te})</b><b>Выход: ${pct}%</b></div><div style="text-align:center;font-style:italic;margin-bottom:2px;font-size:8px;">${esc(v.operator||'-')} | ${esc(v.assistant||'-')}</div><div style="color:#444"><i>Сырье (всего ${tR}кг):</i></div>${hRaw}<div style="color:#444;margin-top:2px;"><i>Выход:</i></div>${hOut}</div>`;});h+=`</div>`;gID('print-view').innerHTML=h;window.print();setTimeout(()=>gID('print-view').innerHTML='',5000);};
 
