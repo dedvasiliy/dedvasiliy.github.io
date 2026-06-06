@@ -5624,10 +5624,6 @@ window.printRegOut = function() {
     if (!h) return;
     gID('print-view').innerHTML = h;
     window.print();
-    setTimeout(() => {
-        gID('print-view').innerHTML = '';
-        closeModal();
-    }, 800);
 };
 
 window.viewRegOut = function() {
