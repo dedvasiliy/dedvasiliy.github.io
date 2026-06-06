@@ -3467,7 +3467,7 @@ window.printTsList = function() {
     Object.values(wDb).forEach(bw => {
         if(bw.name) {
             let b = getBase(bw.name);
-            if(!wData[b]) wData[b] = { mRt: 0, shiftsByDate: {}, adv: 0 };
+            if(!wData[b]) wData[b] = { mRt: 0, shiftsByDate: {}, adv: 0, tov: 0 };
             if(bw.name === b && parseFloat(bw.monthRate) > wData[b].mRt) {
                 wData[b].mRt = parseFloat(bw.monthRate);
             }
@@ -3490,10 +3490,18 @@ window.printTsList = function() {
         
         if(v.name && daysToRender.includes(vDate)) {
             let b = getBase(v.name);
-            if(!wData[b]) wData[b] = { mRt: 0, shiftsByDate: {}, adv: 0 };
+            if(!wData[b]) wData[b] = { mRt: 0, shiftsByDate: {}, adv: 0, tov: 0 };
 
             if (v.isPayout) {
-                wData[b].adv += parseFloat(v.payoutAmount) || 0;
+                let note = (v.payoutNote || '').toLowerCase();
+                let amount = parseFloat(v.payoutAmount) || 0;
+                
+                // Если в примечании есть слова, намекающие на товар - кидаем в товары
+                if (note.includes('товар') || note.includes('з/п') || note.includes('зп') || note.includes('в счет')) {
+                    wData[b].tov += amount;
+                } else {
+                    wData[b].adv += amount; // Иначе - обычный аванс деньгами
+                }
             } else {
                 let pay = parseFloat(v.rate) || 0;
                 let hrs = parseFloat(v.hours) || 0;
@@ -3529,7 +3537,7 @@ window.printTsList = function() {
         }
     });
 
-    let activeWorkers = Object.keys(wData).filter(n => Object.keys(wData[n].shiftsByDate).length > 0 || wData[n].mRt > 0 || wData[n].adv > 0).sort();
+    let activeWorkers = Object.keys(wData).filter(n => Object.keys(wData[n].shiftsByDate).length > 0 || wData[n].mRt > 0 || wData[n].adv > 0 || wData[n].tov > 0).sort();
 
     let h = `<div style="font-family: sans-serif; font-size: 11px; color: #000; background: #fff; line-height: 1.2; padding: 0; width: 100%;">`;
     h += `<h3 style="text-align:center; font-size: 14px; margin-bottom: 10px;">Табель начисления ${periodStr}</h3>`;
@@ -3560,7 +3568,6 @@ window.printTsList = function() {
                 </thead>
                 <tbody>`;
 
-        // Сортировка: от 1 числа к 31 числу (по возрастанию)
         let sortedDates = Object.keys(wd.shiftsByDate).sort((a,b) => {
             let [dA, mA, yA] = a.split('.');
             let [dB, mB, yB] = b.split('.');
@@ -3600,12 +3607,13 @@ window.printTsList = function() {
         h += `</tbody></table>`;
 
         let totalEarned = parseFloat((sumPay + wd.mRt).toFixed(2));
-        let toPay = parseFloat((totalEarned - wd.adv).toFixed(2));
+        let toPay = parseFloat((totalEarned - wd.adv - wd.tov).toFixed(2));
 
-        h += `<div style="font-size: 11px; padding-left: 3px; display: flex; justify-content: space-between; width: 75%;">`;
+        h += `<div style="font-size: 11px; padding-left: 3px; display: flex; justify-content: space-between; width: 90%;">`;
         if (wd.mRt > 0) h += `<span><b>Фикс:</b> ${wd.mRt}</span>`;
         h += `<span><b>Всего:</b> ${totalEarned}</span>`;
-        h += `<span><b>Аванс:</b> ${wd.adv}</span>`;
+        if (wd.adv > 0) h += `<span><b>Аванс:</b> ${wd.adv}</span>`;
+        if (wd.tov > 0) h += `<span><b>Товар под з/п:</b> ${wd.tov}</span>`;
         h += `<span><b>К выплате:</b> <b>${toPay}</b></span>`;
         h += `</div>`;
         
@@ -5618,7 +5626,6 @@ window.getRegOutHTML = function(isPrint) {
     h += `</div>`;
     return h;
 };
-
 window.printRegOut = function() {
     const h = getRegOutHTML(true);
     if (!h) return;
