@@ -1559,7 +1559,10 @@ window.printWorkshopCard = function(id) {
     const h = `<div style="font-family:sans-serif; color:#000; font-size:12px; width:100%; max-width:400px; margin:0 auto; padding:10px;">${clone.innerHTML}</div>`;
     
     document.getElementById('print-view').innerHTML = h;
-    setTimeout(() => { window.print(); }, 100);
+        document.getElementById('print-view').innerHTML = h;
+    window.print();
+};
+
 };
 
     function rArchPack(c){
