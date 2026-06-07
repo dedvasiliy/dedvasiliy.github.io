@@ -1219,7 +1219,7 @@ window.genBatchReport=function(c,n){
     }, 500);
 };
 
-window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<style>body{color:#000;font-family:sans-serif;font-size:10px}.btn-main{display:none!important;}#batchRows{display:grid!important;grid-template-columns:repeat(3, 1fr)!important;gap:4px!important}.rep-card{box-shadow:none!important;border:1px solid #000!important;margin-bottom:0!important;padding:4px!important;page-break-inside:avoid;font-size:9px!important} .rep-card div, .rep-card span {line-height:1.1!important;margin-bottom:1px!important;}</style>`;gID('print-view').innerHTML=style+h;window.print();};
+window.printBatchReport=function(){const h=window.tempBatchPrint;const style=`<style>body{color:#000;font-family:sans-serif;font-size:10px}.btn-main{display:none!important;}#batchRows{display:grid!important;grid-template-columns:repeat(3, 1fr)!important;gap:4px!important}.rep-card{box-shadow:none!important;border:1px solid #000!important;margin-bottom:0!important;padding:4px!important;page-break-inside:avoid;font-size:9px!important} .rep-card div, .rep-card span {line-height:1.1!important;margin-bottom:1px!important;}</style>`;gID('print-view').innerHTML=style+h;window.print();setTimeout(()=>gID('print-view').innerHTML='',10000);};
 
 function rWH(c){
     const t={}; gP('Готовая').forEach(p=>t[p]=0);
