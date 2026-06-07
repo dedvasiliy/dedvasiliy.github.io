@@ -1757,8 +1757,6 @@ function numToWords(n, cur){
     const h=['','сто','двісті','триста','чотириста','п\'ятсот','шістсот','сімсот','вісімсот','дев\'ятсот'];
     
     let ip=Math.floor(n),fp=Math.round((n-ip)*100),fs=fp.toString().padStart(2,'0');
-    let isUSD = (cur === '$' || cur === 'USD');
-    
     if(ip===0) return `Нуль ${isUSD ? 'доларів' : 'гривень'} ${fs} ${isUSD ? 'центів' : 'копійок'}`;
     
     function gg(n,isFem){
