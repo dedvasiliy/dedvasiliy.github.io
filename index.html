@@ -2214,26 +2214,8 @@ window.printShipInvoice=function(d){
     }
     h+=`</tbody></table>`;
     h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;
-    
-    let qrDataObj = {
-        doc: dData.num,
-        dt: dData.dateStr,
-        sup: dData.sup,
-        cli: dData.cli,
-        items: qrItems
-    };
-    let qrString = encodeURIComponent(JSON.stringify(qrDataObj));
-    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=1&data=${qrString}`;
-    
-    h += `<div class="qr-container">
-            <img src="${qrUrl}" alt="QR Code" style="width:120px; height:120px; border: 1px solid #ccc; padding: 2px;">
-            <div style="font-size:8px; color:#666; margin-top:2px;">Скан для авто-ввода</div>
-          </div>`;
-
     gID('print-view').innerHTML=h;
-    setTimeout(() => {
-        window.print();
-    }, 500);
+    window.print();
 };
 
     window.printAndConfirm=function(){printShipInvoice(window.tempShipData);setTimeout(()=>{if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()},5000)};
