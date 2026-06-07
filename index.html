@@ -1562,9 +1562,6 @@ window.printWorkshopCard = function(id) {
         document.getElementById('print-view').innerHTML = h;
     window.print();
 };
-
-};
-
     function rArchPack(c){
         const d=data.ArchPackIn||{};
         const l=Object.entries(d).map(([id,v])=>({...v,id,_date:v.date.split('T')[0]})).sort((a,b)=>{if(a._date!==b._date)return new Date(b._date).getTime() - new Date(a._date).getTime();return b.id.localeCompare(a.id);});
