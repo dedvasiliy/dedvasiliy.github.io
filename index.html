@@ -1710,7 +1710,7 @@ window.reprintInv=function(id){
         });
     }
     
-    let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2))};
+    let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:tSum-(isBN?totalNoVat:(tSum/1.2)),currency:v.currency||'UAH'};
     
     let styleBlock=`<style>.pr-table {width:100%; border-collapse:collapse; font-size:${fS} !important; border:${bT}; table-layout:fixed; margin-top:5px; margin-bottom:5px;} .pr-table th, .pr-table td {border-top:${bH}; border-bottom:${bH}; border-left:${bV}; border-right:${bV}; text-align:center; height:${rowH}; overflow:hidden;} .pr-table th {border-top:${bT}; border-bottom:${bI};} .pr-table th:first-child, .pr-table td:first-child {border-left:${bT}; width:${colW[0]||'5%'};} .pr-table th:nth-child(2), .pr-table td:nth-child(2) {width:${colW[1]||'55%'}; text-align:left; padding-left:2px;} .pr-table th:nth-child(3), .pr-table td:nth-child(3) {width:${colW[2]||'10%'};} .pr-table th:nth-child(4), .pr-table td:nth-child(4) {width:${colW[3]||'5%'};} .pr-table th:nth-child(5), .pr-table td:nth-child(5) {width:${colW[4]||'10%'};} .pr-table th:last-child, .pr-table td:last-child {border-right:${bT}; width:${colW[5]||'15%'};} .pr-table tr:last-child td {border-bottom:${bT};}</style>`;
     
