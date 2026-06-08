@@ -7274,6 +7274,7 @@ window.saveEditWorkshop = async function() {
     setInterval(checkNewDay, 60000);
 })();
 // ------------------------------------
+
 window.printFullInventoryCheck = function() {
     const cats = [
         { id: 'Готовая', n: 'ФАСОВАННАЯ' },
@@ -7292,7 +7293,9 @@ window.printFullInventoryCheck = function() {
         { id: 'Термо лента', n: 'ТЕРМО' }
     ];
     
-    let dt = document.getElementById('invDate').value.split('-').reverse().join('.');
+    let dateInput = document.getElementById('invDate');
+    let selDate = dateInput ? dateInput.value : '';
+    let dt = selDate ? selDate.split('-').reverse().join('.') : '';
     
     let h = `<style>
         @media print {
@@ -7316,7 +7319,10 @@ window.printFullInventoryCheck = function() {
         let bals = {};
         if(data[c.id]) {
             Object.values(data[c.id]).forEach(v => {
-                if(v.name) bals[v.name] = (bals[v.name] || 0) + v.amount;
+                let itemDate = v.date ? v.date.substring(0, 10) : '';
+                if(v.name && (!selDate || !itemDate || itemDate <= selDate)) {
+                    bals[v.name] = (bals[v.name] || 0) + v.amount;
+                }
             });
         }
         let items = Object.keys(bals).sort().filter(n => Math.abs(bals[n]) >= 0.001);
