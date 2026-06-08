@@ -1917,7 +1917,7 @@ m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;bo
 
      else if(t==='inventory'){
       h.innerText='ИНВЕНТАРИЗАЦИЯ';
-      m.innerHTML=`<div class="grid-2"><div><span class="lbl-small">ДАТА</span><input type="date" id="invDate" value="${d}"></div><div><span class="lbl-small">СКЛАД</span><select id="invCat" class="fas-inp" onchange="loadInvList()"><option value="">Выберите...</option><option value="Готовая">Фасованная</option><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option><option value="Stock_Feed">Отходы</option><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option></select></div></div><div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-top:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1"><div>ТОВАР</div><div>УЧЕТ</div><div>ФАКТ</div><div>РАЗНИЦА</div></div><div id="invList" style="max-height:50vh;overflow-y:auto;padding-right:5px;margin-top:5px"></div>
+      m.innerHTML=`<div class="grid-2"><div><span class="lbl-small">ДАТА</span><input type="date" id="invDate" value="${d}" onchange="loadInvList()"></div><div><span class="lbl-small">СКЛАД</span><select id="invCat" class="fas-inp" onchange="loadInvList()"><option value="">Выберите...</option><option value="Готовая">Фасованная</option><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option><option value="Stock_Feed">Отходы</option><option value="Stock_Raw">Сырье</option><option value="Stock_Semi">П/Ф</option><option value="Пленка">Пленка</option><option value="Пакеты">Пакеты</option></select></div></div><div style="display:grid;grid-template-columns:2fr 60px 60px 60px;gap:4px;font-size:9px;font-weight:900;color:#64748b;text-align:center;margin-top:10px;padding-bottom:5px;border-bottom:1px solid #cbd5e1"><div>ТОВАР</div><div>УЧЕТ</div><div>ФАКТ</div><div>РАЗНИЦА</div></div><div id="invList" style="max-height:50vh;overflow-y:auto;padding-right:5px;margin-top:5px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px">
           <button class="btn-main" onclick="execInventory()" style="background:#10b981;margin:0">ПРИМЕНИТЬ ФАКТ</button>
           <button class="btn-main" onclick="printFullInventoryCheck()" style="background:#0f172a;margin:0">🖨️ БЛАНК (ВСЕ)</button>
@@ -2020,16 +2020,26 @@ else if(t==='regOut'){
       setTimeout(updatePreview, 100);
      }
     }
+
 window.loadInvList = function() {
     const cat = gID('invCat').value;
+    const dateInput = gID('invDate');
+    const selDate = dateInput ? dateInput.value : '';
     const cont = gID('invList');
     if(!cat) { cont.innerHTML = ''; return; }
+    
     const bals = {};
     if(data[cat]) {
         Object.values(data[cat]).forEach(v => {
-            if(v.name) bals[v.name] = (bals[v.name] || 0) + v.amount;
+            // Отрезаем время, оставляем только дату записи (YYYY-MM-DD)
+            let itemDate = v.date ? v.date.substring(0, 10) : '';
+            // Считаем товар только если дата записи меньше или равна выбранной в календаре
+            if(v.name && (!selDate || !itemDate || itemDate <= selDate)) {
+                bals[v.name] = (bals[v.name] || 0) + v.amount;
+            }
         });
     }
+    
     let h = '';
     Object.keys(bals).sort().forEach(n => {
         let u = bals[n];
