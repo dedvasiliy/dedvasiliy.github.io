@@ -1683,6 +1683,7 @@ window.viewIncomingInvoice=function(id){
     if(!v)return;
     const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
     let tw=0,ts=0;
+    let totalLoadWeightKG=0;
     let defU=v.supplier==='Фасовка'?'шт':'кг';
     const isBN=v.payType==='bn';
     
@@ -1692,6 +1693,14 @@ window.viewIncomingInvoice=function(id){
         v.items.forEach((it,idx)=>{
             let w=parseFloat(it.a)||0,prc=parseFloat(it.p)||0,sum=it.s!==undefined?parseFloat(it.s):(w*prc);
             tw+=w;ts+=sum;
+            
+            let itemFactWeight=w;
+            if(v.supplier==='Фасовка'){
+                let m=it.n.match(/\/([0-9.]+)/);
+                if(m&&m[1]) itemFactWeight=w*parseFloat(m[1]);
+            }
+            totalLoadWeightKG+=itemFactWeight;
+
             if(isBN){
                 let pVat=it.pVat||(prc*1.2);
                 let sVat=it.sVat||(sum*1.2);
@@ -1709,9 +1718,9 @@ window.viewIncomingInvoice=function(id){
     if(isBN){
         let noVat=parseFloat(v.totalNoVat||ts||0);
         let vat=parseFloat(v.vatSum||(noVat*0.2)||0);
-        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
     }else{
-        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
+        h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
     }
     
     h+=`</tbody></table><div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px"><div>Відвантажив: _____________</div><div>Прийняв: _____________</div></div></div>
