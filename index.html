@@ -1352,11 +1352,32 @@ function rFas(c){
     c.innerHTML=h+rMonthGroup(l,v=>{
         const dt=v.date.split('T')[0].split('-').reverse().join('.');
         const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');
+        
         let rRaw='';
-        if(v.items)v.items.forEach(x=>{rRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`});
+        let totalRaw=0; // Переменная для подсчета общего веса сырья
+        if(v.items)v.items.forEach(x=>{
+            totalRaw+=parseFloat(x.amount)||0; // Считаем сырье
+            rRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`
+        });
+        
         let rOut='';
         let pk=0,sz='';
-        if(v.outputItems)v.outputItems.forEach(x=>{rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.count}шт</span></div>`;pk+=x.count;if(!sz)sz=x.size;});
+        if(v.outputItems)v.outputItems.forEach(x=>{
+            let diffStr=''; 
+            let match=x.name.match(/\/(\d+(\.\d+)?)/); // Ищем вес после слэша
+            if(match && totalRaw>0){
+                let w=parseFloat(match[1]);
+                let norm=Math.round(totalRaw/w);
+                let diff=x.count-norm;
+                let sign=diff>0?'+':'';
+                let color=diff>=0?'#16a34a':'#dc2626'; // Зеленый для плюса, красный для минуса
+                diffStr=`<span style="color:${color};margin-right:10px;font-weight:bold">(${sign}${diff})</span>`;
+            }
+            
+            rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${diffStr}${x.count}шт</span></div>`;
+            pk+=x.count;if(!sz)sz=x.size;
+        });
+        
         let packs=0;
         if(v.outputItems&&v.outputItems.length>0){const k=v.outputItems[0].name===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);packs=Math.round(pk/k);}
         const vt=v.vzial?String(v.vzial).split('+').reduce((a,b)=>a+parseFloat(b)||0,0):0;
