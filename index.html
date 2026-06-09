@@ -1354,29 +1354,54 @@ function rFas(c){
         const mName=v.filmName||(v.outputItems&&v.outputItems[0]?v.outputItems[0].name:'-');
         
         let rRaw='';
-        let totalRaw=0; // Переменная для подсчета общего веса сырья
+        let totalRaw=0;
         if(v.items)v.items.forEach(x=>{
-            totalRaw+=parseFloat(x.amount)||0; // Считаем сырье
+            totalRaw+=parseFloat(x.amount)||0;
             rRaw+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${x.amount}кг <span style="color:#94a3b8;font-size:9px">(${x.source==='WeightStock'?'пок.пр':'ДВ вес'})</span></span></div>`
         });
         
         let rOut='';
         let pk=0,sz='';
-        if(v.outputItems)v.outputItems.forEach(x=>{
-            let diffStr=''; 
-            let match=x.name.match(/\/(\d+(\.\d+)?)/); // Ищем вес после слэша
-            if(match && totalRaw>0){
-                let w=parseFloat(match[1]);
-                let norm=Math.round(totalRaw/w);
-                let diff=x.count-norm;
-                let sign=diff>0?'+':'';
-                let color=diff>=0?'#16a34a':'#dc2626'; // Зеленый для плюса, красный для минуса
-                diffStr=`<span style="color:${color};margin-right:10px;font-weight:bold">(${sign}${diff})</span>`;
-            }
-            
-            rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${diffStr}${x.count}шт</span></div>`;
-            pk+=x.count;if(!sz)sz=x.size;
-        });
+        
+        // Подсчет общих данных для всей партии
+        let totalOutCount = 0;
+        let batchWeight = 0;
+        let mainItemIdx = -1;
+        let maxCount = -1;
+        
+        if(v.outputItems) {
+            v.outputItems.forEach((x, idx) => {
+                totalOutCount += x.count;
+                if(!batchWeight) {
+                    let match=x.name.match(/\/(\d+(\.\d+)?)/);
+                    if(match) batchWeight = parseFloat(match[1]);
+                }
+                if(x.count > maxCount) {
+                    maxCount = x.count;
+                    mainItemIdx = idx;
+                }
+            });
+        }
+
+        // Вычисление общего отклонения
+        let batchDiffStr = '';
+        if(totalRaw > 0 && batchWeight > 0) {
+            let norm = Math.round(totalRaw / batchWeight);
+            let diff = totalOutCount - norm;
+            let sign = diff > 0 ? '+' : '';
+            let color = diff >= 0 ? '#16a34a' : '#dc2626';
+            batchDiffStr = `<span style="color:${color};margin-right:10px;font-weight:bold">(${sign}${diff})</span>`;
+        }
+
+        // Вывод с добавлением индикатора только к основной позиции
+        if(v.outputItems) {
+            v.outputItems.forEach((x, idx) => {
+                let dStr = (idx === mainItemIdx) ? batchDiffStr : '';
+                rOut+=`<div style="display:flex;justify-content:space-between"><span>${esc(x.name)}</span><span>${dStr}${x.count}шт</span></div>`;
+                pk+=x.count;
+                if(!sz) sz=x.size;
+            });
+        }
         
         let packs=0;
         if(v.outputItems&&v.outputItems.length>0){const k=v.outputItems[0].name===autoSet.packK2Name?parseFloat(autoSet.packK2):parseFloat(autoSet.packK1);packs=Math.round(pk/k);}
@@ -1426,9 +1451,7 @@ function rFas(c){
         
         let actionBtns = `<div class="card-actions" style="display:flex;gap:5px;margin-top:10px;">`;
         if (isAdmin) actionBtns += `<button onclick="editFasReport('${v.id}')" style="color:#ca8a04;border:1px solid #fef08a;background:#fef9c3;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">✏️ ИЗМЕНИТЬ</button>`;
-        
         actionBtns += `<button onclick="printFasCard('${v.id}')" style="color:#0f172a;border:1px solid #cbd5e1;background:#f1f5f9;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">🖨 ДРУК</button>`;
-        
         if (isAdmin) actionBtns += `<button onclick="delRec('Фасовка','${v.id}')" style="color:red;border:1px solid #fca5a5;background:#fee2e2;padding:6px;border-radius:8px;flex:1;font-weight:900;cursor:pointer">УДАЛИТЬ</button>`;
         actionBtns += `</div>`;
         
