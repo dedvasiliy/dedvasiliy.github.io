@@ -2282,7 +2282,7 @@ window.printShipInvoice=function(d){
     window.print();
 };
 
-window.printAndConfirm=function(){printShipInvoice(window.tempShipData);if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()};
+window.printAndConfirm=function(){window.onafterprint=function(){window.onafterprint=null;if(confirm("Накладная отправлена на печать. Списать товар со склада?"))execShip()};printShipInvoice(window.tempShipData);};
 
 async function execShip(){showLoad();const d=window.tempShipData;if(!d)return;try{const lk=db.child('ArchInvoices').push().key,u={},is=d.it.map(x=>`${x.n}|${x.w}|${x.c==='Готовая'?'шт':'кг'}|${x.c}|${x.p}|${x.s}`);u['/ArchInvoices/'+lk]={date:d.dv,client:d.c,num:d.nm,agreement:d.ag,address:d.addr,items:is,supplierName:d.mf,ts:new Date().toISOString(),totalSum:d.tm,priceMode:d.mode,loaderName:d.loader||'',loadWeight:d.loadWeight||0,currency:d.currency||'UAH'};d.it.forEach(i=>{u[`/${i.c}/${db.child(i.c).push().key}`]={name:i.n,amount:-i.w,date:d.dv,note:`Отгр: ${d.c}`,fLink:lk,ts:new Date().toISOString()}});if(useStretch){const q=parseFloat((d.tw/(parseFloat(autoSet.stretchRate)||5000)).toFixed(2));if(q>0)u['/Стрейч пленка/'+db.child('Стрейч пленка').push().key]={name:'Стрейч пленка',amount:-q,date:d.dv,note:'Авто',fLink:lk,ts:new Date().toISOString()}}if(d.mf&&d.mf!=='ПОСТАВЩИК'){let fe=!1;if(data.Suppliers)Object.values(data.Suppliers).forEach(v=>{if(v.name===d.mf)fe=!0});if(!fe)u['/Suppliers/'+db.child('Suppliers').push().key]={name:d.mf}}await db.update(u);hideLoad();closeModal();alert('Списано со склада');D.querySelectorAll('.bulk-q').forEach(i=>i.value='');window.shipBasket={};localStorage.removeItem('shipDraft');gID('mQty').style.display='none';}catch(e){hideLoad();alert(e)}}
 
