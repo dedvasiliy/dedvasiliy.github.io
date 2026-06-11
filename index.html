@@ -508,7 +508,7 @@ function renderHome(){
   <span style="font-size:8px; color:#94a3b8; font-weight:bold;">${document.lastModified}</span>
  </div>`;
          const dObj = new Date();
-         let tgt = 15;
+         let tgt = 12;
          let chk = new Date(dObj.getFullYear(), dObj.getMonth(), tgt);
          if (chk.getDay() === 6) tgt = 14;
          if (chk.getDay() === 0) tgt = 13;
