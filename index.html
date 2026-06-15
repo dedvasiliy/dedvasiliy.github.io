@@ -508,7 +508,7 @@ function renderHome(){
   <span style="font-size:8px; color:#94a3b8; font-weight:bold;">${document.lastModified}</span>
  </div>`;
          const dObj = new Date();
-         let tgt = 12;
+         let tgt = 15;
          let chk = new Date(dObj.getFullYear(), dObj.getMonth(), tgt);
          if (chk.getDay() === 6) tgt = 14;
          if (chk.getDay() === 0) tgt = 13;
@@ -3191,6 +3191,7 @@ window.calcAvgPrice = function(itemName, category) {
 };
 
         function getHistoryDeep(f){const s=new Set();['Vibro_Report','Krup_Report','ZSHM_Report'].forEach(d=>{if(data[d])Object.values(data[d]).forEach(v=>{if(v[f])s.add(v[f])})});return Array.from(s).sort()}
+
 window.delRec=async(c,i)=>{
     if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;
     let r=data[c]&&data[c][i]?data[c][i]:{};
@@ -3242,7 +3243,18 @@ window.delRec=async(c,i)=>{
     
     const u={};
     u[`/${c}/${i}`]=null;
-    stockCatsAll.forEach(cat=>{if(data[cat]){Object.entries(data[cat]).forEach(([key,val])=>{if(val.fLink===i)u[`/${cat}/${key}`]=null})}});
+    
+    // Поиск и удаление связанных записей (в т.ч. товаров выданных в счет ЗП)
+    stockCatsAll.forEach(cat=>{
+        if(data[cat]){
+            Object.entries(data[cat]).forEach(([key,val])=>{
+                if(val.fLink===i || (r.ts && val.ts===r.ts && val.note && val.note.includes('В счет ЗП:'))){
+                    u[`/${cat}/${key}`]=null;
+                }
+            });
+        }
+    });
+    
     if(data['ArchIncoming']){ Object.entries(data['ArchIncoming']).forEach(([key,val])=>{ if(val.fLink===i) u[`/ArchIncoming/${key}`]=null; }); }
 
     try{
