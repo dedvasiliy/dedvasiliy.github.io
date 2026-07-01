@@ -5700,7 +5700,7 @@ window.getRegInHTML = function(isPrint) {
             
             let invMatchItem = false;
             let tempItems = [];
-                        if (v.items) {
+            if (v.items) {
                 let itemsList = Array.isArray(v.items) 
                     ? v.items.map(it => ({ key: null, val: it })) 
                     : Object.entries(v.items).map(([k, val]) => ({ key: k, val: val }));
@@ -5718,11 +5718,21 @@ window.getRegInHTML = function(isPrint) {
                         iName = k || 'Неизвестно'; qty = it;
                     } else if (typeof it === 'object' && it !== null) {
                         iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
-                        qty = parseFloat(it.qty || it.q || it.kol || it.count) || 0;
-                        unit = it.unit || it.u || '';
                         price = parseFloat(it.price || it.p) || 0;
-                        sum = parseFloat(it.sum || it.s) || (qty * price) || 0;
+                        sum = parseFloat(it.sum || it.s) || 0;
+                        
+                        // Считаем по формуле из твоего приложения
+                        let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
+                        qty = calcQty > 0 ? calcQty : parseFloat(it.qty || it.kol || it.count || it.weight || it.amount || it.q || it.w) || 0;
+                        
+                        // Если количество 0, но есть сумма и цена - высчитываем
+                        if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
+                        if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
+                        
+                        unit = it.unit || it.u || 'кг';
                     }
+
+                    qty = Math.round(qty * 1000) / 1000; // Округляем, чтобы убрать лишние нули
 
                     const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
                     if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
@@ -5735,6 +5745,7 @@ window.getRegInHTML = function(isPrint) {
                     });
                 });
             }
+
 
             if (fItem === 'ALL' || invMatchItem) {
                 invoices.push(v);
