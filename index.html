@@ -5700,51 +5700,42 @@ window.getRegInHTML = function(isPrint) {
             
             let invMatchItem = false;
             let tempItems = [];
-            
                         if (v.items) {
-                // Если items это объект, преобразуем в массив
-                const itemsArray = Array.isArray(v.items) ? v.items : Object.values(v.items);
+                let itemsList = Array.isArray(v.items) 
+                    ? v.items.map(it => ({ key: null, val: it })) 
+                    : Object.entries(v.items).map(([k, val]) => ({ key: k, val: val }));
                 
-                itemsArray.forEach(it => {
-                    let iName, qty, unit, price, sum;
+                itemsList.forEach(entry => {
+                    let it = entry.val;
+                    let k = entry.key;
+                    let iName = 'Неизвестно', qty = 0, unit = '', price = 0, sum = 0;
                     
-                    // Проверка: строка ли это (как в отгрузках) или объект (как в приходах)
                     if (typeof it === 'string') {
                         const p = it.split('|');
-                        iName = p[0];
-                        qty = parseFloat(p[1]) || 0;
-                        unit = p[2] || 'шт';
-                        price = parseFloat(p[4]) || 0;
-                        sum = parseFloat(p[5]) || 0;
-                    } else {
-                        // Это объект
-                        iName = it.name || it.item || 'Неизвестно';
-                        qty = parseFloat(it.qty) || 0;
-                        unit = it.unit || 'шт';
-                        price = parseFloat(it.price) || 0;
-                        sum = parseFloat(it.sum) || (qty * price) || 0;
+                        iName = p[0]; qty = parseFloat(p[1]) || 0; unit = p[2] || ''; 
+                        price = parseFloat(p[4]) || 0; sum = parseFloat(p[5]) || 0;
+                    } else if (typeof it === 'number') {
+                        iName = k || 'Неизвестно'; qty = it;
+                    } else if (typeof it === 'object' && it !== null) {
+                        iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
+                        qty = parseFloat(it.qty || it.q || it.kol || it.count) || 0;
+                        unit = it.unit || it.u || '';
+                        price = parseFloat(it.price || it.p) || 0;
+                        sum = parseFloat(it.sum || it.s) || (qty * price) || 0;
                     }
 
                     const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
-                    
                     if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
                     
                     invMatchItem = true;
                     tempItems.push({
-                        date: dt,
-                        dateStr: dStr,
-                        invNum: v.num || '-',
+                        date: dt, dateStr: dStr, invNum: v.num || '-',
                         client: supplierName || 'Неизвестно', 
-                        name: printName,
-                        qty: qty,
-                        unit: unit,
-                        price: price,
-                        sum: sum
+                        name: printName, qty: qty, unit: unit, price: price, sum: sum
                     });
                 });
             }
 
-            
             if (fItem === 'ALL' || invMatchItem) {
                 invoices.push(v);
                 allItems.push(...tempItems);
