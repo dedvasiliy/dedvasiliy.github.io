@@ -5701,11 +5701,31 @@ window.getRegInHTML = function(isPrint) {
             let invMatchItem = false;
             let tempItems = [];
             
-            if (v.items) {
-                v.items.forEach(it => {
-                    const p = it.split('|');
-                    const iName = p[0];
-                    const printName = getPrintName(iName) || iName;
+                        if (v.items) {
+                // Если items это объект, преобразуем в массив
+                const itemsArray = Array.isArray(v.items) ? v.items : Object.values(v.items);
+                
+                itemsArray.forEach(it => {
+                    let iName, qty, unit, price, sum;
+                    
+                    // Проверка: строка ли это (как в отгрузках) или объект (как в приходах)
+                    if (typeof it === 'string') {
+                        const p = it.split('|');
+                        iName = p[0];
+                        qty = parseFloat(p[1]) || 0;
+                        unit = p[2] || 'шт';
+                        price = parseFloat(p[4]) || 0;
+                        sum = parseFloat(p[5]) || 0;
+                    } else {
+                        // Это объект
+                        iName = it.name || it.item || 'Неизвестно';
+                        qty = parseFloat(it.qty) || 0;
+                        unit = it.unit || 'шт';
+                        price = parseFloat(it.price) || 0;
+                        sum = parseFloat(it.sum) || (qty * price) || 0;
+                    }
+
+                    const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
                     
                     if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
                     
@@ -5716,13 +5736,14 @@ window.getRegInHTML = function(isPrint) {
                         invNum: v.num || '-',
                         client: supplierName || 'Неизвестно', 
                         name: printName,
-                        qty: parseFloat(p[1]) || 0,
-                        unit: p[2] || 'шт',
-                        price: parseFloat(p[4]) || 0,
-                        sum: parseFloat(p[5]) || 0
+                        qty: qty,
+                        unit: unit,
+                        price: price,
+                        sum: sum
                     });
                 });
             }
+
             
             if (fItem === 'ALL' || invMatchItem) {
                 invoices.push(v);
