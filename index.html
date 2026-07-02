@@ -5698,84 +5698,93 @@ document.getElementById('btnInstallConfirm').addEventListener('click', async () 
 document.getElementById('btnInstallCancel').addEventListener('click', () => {
     installPopup.style.display = 'none'; // просто прячем окно и не мешаем работать
 });
+
 window.getRegInHTML = function(isPrint) {
-    const dFrom = gID('regFrom').value;
-    const dTo = gID('regTo').value;
-    const type = gID('regType').value;
-    const fClient = gID('regClient').value;
-    const fItem = gID('regItem').value;
+    const dFrom = gID('regIn_From') ? gID('regIn_From').value : '';
+    const dTo = gID('regIn_To') ? gID('regIn_To').value : '';
+    const type = gID('regIn_Type') ? gID('regIn_Type').value : 'standard';
+    const fSupplier = gID('regIn_Supplier') ? gID('regIn_Supplier').value : 'ALL';
+    const fItem = gID('regIn_Item') ? gID('regIn_Item').value : 'ALL';
+    const fSource = gID('regIn_Source') ? gID('regIn_Source').value : 'ALL';
+
     if (!dFrom || !dTo) { alert('Выберите обе даты'); return null; }
 
-    // ВАЖНО: Предполагается, что архив приходов хранится в data.ArchReceipts. 
-    // Если переменная называется иначе, нужно будет изменить это название.
-    const d = data.ArchIncoming || {};
     let invoices = [];
     let allItems = [];
-    
-    Object.values(d).forEach(v => {
-        const dt = (v.date || '').split('T')[0];
-        if (dt >= dFrom && dt <= dTo) {
-            const supplierName = v.supplier || v.client; 
-            if (fClient !== 'ALL' && supplierName !== fClient) return;
-            
-            const dtObj = new Date(v.date);
-            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
-            
-            let invMatchItem = false;
-            let tempItems = [];
-            if (v.items) {
-                let itemsList = Array.isArray(v.items) 
-                    ? v.items.map(it => ({ key: null, val: it })) 
-                    : Object.entries(v.items).map(([k, val]) => ({ key: k, val: val }));
+
+    // Функция обработки каждого отдельного архива
+    const processArchive = (arch, sourceName) => {
+        if (!arch) return;
+        Object.values(arch).forEach(v => {
+            const dt = (v.date || '').split('T')[0];
+            if (dt >= dFrom && dt <= dTo) {
+                // Если это внутренний приход, принудительно задаем имя "Свое производство"
+                const supplierName = sourceName === 'Внутренние' ? 'Свое производство' : (v.supplier || v.client || 'Неизвестно');
                 
-                itemsList.forEach(entry => {
-                    let it = entry.val;
-                    let k = entry.key;
-                    let iName = 'Неизвестно', qty = 0, unit = '', price = 0, sum = 0;
+                if (fSupplier !== 'ALL' && supplierName !== fSupplier) return;
+                
+                const dtObj = new Date(v.date);
+                const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+                
+                let invMatchItem = false;
+                let tempItems = [];
+                if (v.items) {
+                    let itemsList = Array.isArray(v.items) 
+                        ? v.items.map(it => ({ key: null, val: it })) 
+                        : Object.entries(v.items).map(([k, val]) => ({ key: k, val: val }));
                     
-                    if (typeof it === 'string') {
-                        const p = it.split('|');
-                        iName = p[0]; qty = parseFloat(p[1]) || 0; unit = p[2] || ''; 
-                        price = parseFloat(p[4]) || 0; sum = parseFloat(p[5]) || 0;
-                    } else if (typeof it === 'number') {
-                        iName = k || 'Неизвестно'; qty = it;
-                    } else if (typeof it === 'object' && it !== null) {
-                        iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
-                        price = parseFloat(it.price || it.p) || 0;
-                        sum = parseFloat(it.sum || it.s) || 0;
+                    itemsList.forEach(entry => {
+                        let it = entry.val;
+                        let k = entry.key;
+                        let iName = 'Неизвестно', qty = 0, unit = '', price = 0, sum = 0;
                         
-                        // Считаем по формуле из твоего приложения
-                        let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
-                        qty = calcQty > 0 ? calcQty : parseFloat(it.qty || it.kol || it.count || it.weight || it.amount || it.q || it.w) || 0;
-                        
-                        // Если количество 0, но есть сумма и цена - высчитываем
-                        if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
-                        if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
-                        
-                        unit = it.unit || it.u || 'кг';
-                    }
+                        if (typeof it === 'string') {
+                            const p = it.split('|');
+                            iName = p[0]; qty = parseFloat(p[1]) || 0; unit = p[2] || ''; 
+                            price = parseFloat(p[4]) || 0; sum = parseFloat(p[5]) || 0;
+                        } else if (typeof it === 'number') {
+                            iName = k || 'Неизвестно'; qty = it;
+                        } else if (typeof it === 'object' && it !== null) {
+                            iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
+                            price = parseFloat(it.price || it.p) || 0;
+                            sum = parseFloat(it.sum || it.s) || 0;
+                            
+                            let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
+                            qty = calcQty > 0 ? calcQty : parseFloat(it.qty || it.kol || it.count || it.weight || it.amount || it.q || it.w) || 0;
+                            
+                            if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
+                            if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
+                            
+                            unit = it.unit || it.u || 'кг';
+                        }
 
-                    qty = Math.round(qty * 1000) / 1000; // Округляем, чтобы убрать лишние нули
+                        qty = Math.round(qty * 1000) / 1000;
 
-                    const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
-                    if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
-                    
-                    invMatchItem = true;
-                    tempItems.push({
-                        date: dt, dateStr: dStr, invNum: v.num || '-',
-                        client: supplierName || 'Неизвестно', 
-                        name: printName, qty: qty, unit: unit, price: price, sum: sum
+                        const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
+                        if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
+                        
+                        invMatchItem = true;
+                        tempItems.push({
+                            date: dt, dateStr: dStr, invNum: v.num || '-',
+                            client: supplierName, 
+                            name: printName, qty: qty, unit: unit, price: price, sum: sum
+                        });
                     });
-                });
-            }
+                }
 
-
-            if (fItem === 'ALL' || invMatchItem) {
-                invoices.push(v);
-                allItems.push(...tempItems);
+                if (fItem === 'ALL' || invMatchItem) {
+                    let invCopy = Object.assign({}, v);
+                    invCopy.computedSupplier = supplierName;
+                    invoices.push(invCopy);
+                    allItems.push(...tempItems);
+                }
             }
-        }
-    });
+        });
+    };
+
+    // Запускаем сбор данных в зависимости от фильтра
+    if (fSource === 'ALL' || fSource === 'Внешние') processArchive(data.ArchIncoming, 'Внешние');
+    if (fSource === 'ALL' || fSource === 'Внутренние') processArchive(data.ArchPackIn, 'Внутренние');
 
     if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
 
@@ -5791,7 +5800,7 @@ window.getRegInHTML = function(isPrint) {
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
             const num = esc(v.num) || '---';
             const sum = parseFloat(v.totalSum || 0).toFixed(2);
-            const cli = esc(v.supplier || v.client) || '-';
+            const cli = esc(v.computedSupplier) || '-';
             h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
                     <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
                     <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
@@ -5848,7 +5857,7 @@ window.getRegInHTML = function(isPrint) {
             itemsInGroup.forEach(it => {
                 let iKey = it.dateStr + '|' + it.invNum;
                 if (!invoicesInGroup[iKey]) {
-                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date };
+                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date || '' };
                     invKeysOrder.push(iKey);
                 }
                 invoicesInGroup[iKey].items.push(it);
@@ -5895,7 +5904,7 @@ window.getRegInHTML = function(isPrint) {
                 }
             });
             
-            let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
+            let totalQtyStr = type === 'byItem' ? `${Math.round(grpQty*1000)/1000} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
             
             h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
                     <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'ПОСТАВЩИКУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
@@ -5924,6 +5933,7 @@ window.viewRegIn = function() {
     const h = getRegInHTML(false);
     if (!h) return;
     gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ПРИХОДОВ';
+    // Для возврата в фильтры используем openModal
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regIn')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
 
