@@ -5718,9 +5718,10 @@ window.getRegInHTML = function(isPrint) {
             const dt = (v.date || '').split('T')[0];
             if (dt >= dFrom && dt <= dTo) {
                 let supplierName = sourceName === 'Внутренние' ? 'Свое производство' : (v.supplier || v.client || 'Неизвестно');
+                if (supplierName === 'Фасовка') sourceName = 'Внутренние'; 
                 
-                // Жесткий фильтр: отсекаем внутренние от внешних
-                const isInternal = (supplierName === 'Свое производство' || sourceName === 'Внутренние');
+                const isInternal = (supplierName === 'Свое производство' || supplierName === 'Фасовка' || sourceName === 'Внутренние');
+                
                 if (fSource === 'Внешние' && isInternal) return;
                 if (fSource === 'Внутренние' && !isInternal) return;
 
@@ -5731,6 +5732,7 @@ window.getRegInHTML = function(isPrint) {
                 
                 let invMatchItem = false;
                 let tempItems = [];
+                
                 if (v.items) {
                     let itemsList = Array.isArray(v.items) 
                         ? v.items.map(it => ({ key: null, val: it })) 
@@ -5751,36 +5753,11 @@ window.getRegInHTML = function(isPrint) {
                             iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
                             price = parseFloat(it.price || it.p) || 0;
                             sum = parseFloat(it.sum || it.s) || 0;
-                            unit = it.unit || it.u || 'кг';
+                            unit = it.cat === 'Пленка' ? 'кг' : (it.unit || it.u || (supplierName === 'Фасовка' ? 'шт' : 'кг'));
                             
                             let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
-                            qty = calcQty > 0 ? calcQty : 0;
+                            qty = calcQty > 0 ? calcQty : parseFloat(it.a || it.qty || it.kol || it.count || it.amount || it.q || it.w) || 0;
                             
-                            // Стандартный поиск количества
-                            if (qty === 0) {
-                                let keysToTry = ['qty', 'kol', 'count', 'weight', 'amount', 'q', 'w', 'v', 'val', 'value', 'kg', 'ves'];
-                                for (let key of keysToTry) {
-                                    if (it[key] !== undefined && it[key] !== null && parseFloat(it[key]) > 0) {
-                                        qty = parseFloat(it[key]);
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            // Агрессивный поиск: если количество все еще 0, ищем ЛЮБОЕ скрытое число в товаре
-                            if (qty === 0) {
-                                for (let key in it) {
-                                    let kLower = key.toLowerCase();
-                                    if (!['name','item','n','price','p','sum','s','unit','u','id','key','date'].includes(kLower)) {
-                                        let val = parseFloat(it[key]);
-                                        if (!isNaN(val) && val > 0 && val !== price && val !== sum) {
-                                            qty = val;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
                             if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
                             if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
                         }
@@ -5792,9 +5769,24 @@ window.getRegInHTML = function(isPrint) {
                         invMatchItem = true;
                         tempItems.push({
                             date: dt, dateStr: dStr, invNum: v.num || '-',
-                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum
+                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum, rawDate: v.date || ''
                         });
                     });
+                } else if (v.name || v.amount) {
+                     let iName = v.name || 'Неизвестно';
+                     let qty = parseFloat(v.amount) || 0;
+                     let price = parseFloat(v.price) || 0;
+                     let sum = parseFloat(v.totalSum) || (qty * price) || 0;
+                     let unit = v.category === 'Пленка' ? 'кг' : 'шт';
+                     
+                     const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
+                     if (fItem === 'ALL' || iName === fItem || printName === fItem) {
+                         invMatchItem = true;
+                         tempItems.push({
+                            date: dt, dateStr: dStr, invNum: v.num || '-',
+                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum, rawDate: v.date || ''
+                        });
+                     }
                 }
 
                 if (fItem === 'ALL' || invMatchItem) {
@@ -5807,7 +5799,6 @@ window.getRegInHTML = function(isPrint) {
         });
     };
 
-    // Читаем обе базы всегда, фильтр разберется сам
     processArchive(data.ArchIncoming, 'Внешние');
     processArchive(data.ArchPackIn, 'Внутренние');
 
@@ -5882,7 +5873,7 @@ window.getRegInHTML = function(isPrint) {
             itemsInGroup.forEach(it => {
                 let iKey = it.dateStr + '|' + it.invNum;
                 if (!invoicesInGroup[iKey]) {
-                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date || '' };
+                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.rawDate || '' };
                     invKeysOrder.push(iKey);
                 }
                 invoicesInGroup[iKey].items.push(it);
