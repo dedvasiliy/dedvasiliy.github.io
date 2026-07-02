@@ -5712,15 +5712,18 @@ window.getRegInHTML = function(isPrint) {
     let invoices = [];
     let allItems = [];
 
-    // Функция обработки каждого отдельного архива
     const processArchive = (arch, sourceName) => {
         if (!arch) return;
         Object.values(arch).forEach(v => {
             const dt = (v.date || '').split('T')[0];
             if (dt >= dFrom && dt <= dTo) {
-                // Если это внутренний приход, принудительно задаем имя "Свое производство"
-                const supplierName = sourceName === 'Внутренние' ? 'Свое производство' : (v.supplier || v.client || 'Неизвестно');
+                let supplierName = sourceName === 'Внутренние' ? 'Свое производство' : (v.supplier || v.client || 'Неизвестно');
                 
+                // Жесткий фильтр: отсекаем внутренние от внешних
+                const isInternal = (supplierName === 'Свое производство' || sourceName === 'Внутренние');
+                if (fSource === 'Внешние' && isInternal) return;
+                if (fSource === 'Внутренние' && !isInternal) return;
+
                 if (fSupplier !== 'ALL' && supplierName !== fSupplier) return;
                 
                 const dtObj = new Date(v.date);
@@ -5748,26 +5751,48 @@ window.getRegInHTML = function(isPrint) {
                             iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
                             price = parseFloat(it.price || it.p) || 0;
                             sum = parseFloat(it.sum || it.s) || 0;
+                            unit = it.unit || it.u || 'кг';
                             
                             let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
-                            qty = calcQty > 0 ? calcQty : parseFloat(it.qty || it.kol || it.count || it.weight || it.amount || it.q || it.w) || 0;
+                            qty = calcQty > 0 ? calcQty : 0;
                             
+                            // Стандартный поиск количества
+                            if (qty === 0) {
+                                let keysToTry = ['qty', 'kol', 'count', 'weight', 'amount', 'q', 'w', 'v', 'val', 'value', 'kg', 'ves'];
+                                for (let key of keysToTry) {
+                                    if (it[key] !== undefined && it[key] !== null && parseFloat(it[key]) > 0) {
+                                        qty = parseFloat(it[key]);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Агрессивный поиск: если количество все еще 0, ищем ЛЮБОЕ скрытое число в товаре
+                            if (qty === 0) {
+                                for (let key in it) {
+                                    let kLower = key.toLowerCase();
+                                    if (!['name','item','n','price','p','sum','s','unit','u','id','key','date'].includes(kLower)) {
+                                        let val = parseFloat(it[key]);
+                                        if (!isNaN(val) && val > 0 && val !== price && val !== sum) {
+                                            qty = val;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
                             if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
                             if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
-                            
-                            unit = it.unit || it.u || 'кг';
                         }
 
                         qty = Math.round(qty * 1000) / 1000;
-
                         const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
                         if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
                         
                         invMatchItem = true;
                         tempItems.push({
                             date: dt, dateStr: dStr, invNum: v.num || '-',
-                            client: supplierName, 
-                            name: printName, qty: qty, unit: unit, price: price, sum: sum
+                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum
                         });
                     });
                 }
@@ -5782,9 +5807,9 @@ window.getRegInHTML = function(isPrint) {
         });
     };
 
-    // Запускаем сбор данных в зависимости от фильтра
-    if (fSource === 'ALL' || fSource === 'Внешние') processArchive(data.ArchIncoming, 'Внешние');
-    if (fSource === 'ALL' || fSource === 'Внутренние') processArchive(data.ArchPackIn, 'Внутренние');
+    // Читаем обе базы всегда, фильтр разберется сам
+    processArchive(data.ArchIncoming, 'Внешние');
+    processArchive(data.ArchPackIn, 'Внутренние');
 
     if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
 
