@@ -5952,23 +5952,204 @@ window.viewRegIn = function() {
     // Для возврата в фильтры используем openModal
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regIn')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
+window.getRegOutHTML = function(isPrint) {
+    const dFrom = gID('regFrom').value;
+    const dTo = gID('regTo').value;
+    const type = gID('regType').value;
+    const fClient = gID('regClient').value;
+    const fItem = gID('regItem').value;
+    if (!dFrom || !dTo) { alert('Выберите обе даты'); return null; }
+
+    const d = data.ArchInvoices || {};
+    let invoices = [];
+    let allItems = [];
+    
+    Object.values(d).forEach(v => {
+        const dt = (v.date || '').split('T')[0];
+        if (dt >= dFrom && dt <= dTo) {
+            if (fClient !== 'ALL' && v.client !== fClient) return;
+            
+            const dtObj = new Date(v.date);
+            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+            
+            let invMatchItem = false;
+            let tempItems = [];
+            
+            if (v.items) {
+                v.items.forEach(it => {
+                    const p = it.split('|');
+                    const iName = p[0];
+                    const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
+                    
+                    if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
+                    
+                    invMatchItem = true;
+                    tempItems.push({
+                        date: dt,
+                        dateStr: dStr,
+                        invNum: v.num || '-',
+                        client: v.client || 'Неизвестно',
+                        name: printName,
+                        qty: parseFloat(p[1]) || 0,
+                        unit: p[2] || 'шт',
+                        price: parseFloat(p[4]) || 0,
+                        sum: parseFloat(p[5]) || 0
+                    });
+                });
+            }
+            
+            if (fItem === 'ALL' || invMatchItem) {
+                invoices.push(v);
+                allItems.push(...tempItems);
+            }
+        }
+    });
+
+    if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
+
+    let textColor = isPrint ? '#000' : 'inherit';
+    let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
+    h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
+
+    if (type === 'standard') {
+        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
+        h += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
+        invoices.forEach(v => {
+            const dtObj = new Date(v.date);
+            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+            const num = esc(v.num) || '---';
+            const sum = parseFloat(v.totalSum || 0).toFixed(2);
+            const cli = esc(v.client) || '-';
+            h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+                    <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
+                    <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+                  </div>`;
+        });
+        h += `</div>`;
+    } else {
+        const groups = {};
+        let totalSum = 0;
+
+        allItems.forEach(item => {
+            let key = '';
+            if (type === 'byClient') key = item.client;
+            else if (type === 'byItem') key = item.name;
+            else if (type === 'byDate') key = item.dateStr;
+
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+            totalSum += item.sum;
+        });
+
+        let sortedKeys = Object.keys(groups);
+        if (type === 'byDate') {
+            sortedKeys.sort((a, b) => {
+               let da = a.split('.').reverse().join('');
+               let db = b.split('.').reverse().join('');
+               return db.localeCompare(da); 
+            });
+        } else {
+            sortedKeys.sort(); 
+        }
+
+        h += `<div style="overflow-x: auto;"><table style="width: 100%; min-width: 300px; border-collapse: collapse; font-size: 10px;">`;
+        
+        let borderColor = isPrint ? '#000' : '#cbd5e1';
+        
+        sortedKeys.forEach(key => {
+            const itemsInGroup = groups[key];
+            let grpQty = 0;
+            let grpSum = 0;
+            
+            h += `<tr><td colspan="6" style="background: ${isPrint ? '#e2e8f0' : 'rgba(226,232,240,0.5)'}; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
+            h += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
+                    <td style="padding: 2px; border-left: 1px solid ${borderColor}; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
+                    <td style="padding: 2px; width: 35%;">${type === 'byItem' ? 'Клиент' : 'Наименование'}</td>
+                    <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
+                    <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
+                    <td style="padding: 2px; text-align: right; width: 10%;">Цена</td>
+                    <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; width: 15%;">Сумма</td>
+                  </tr>`;
+
+            let invoicesInGroup = {};
+            let invKeysOrder = [];
+            itemsInGroup.forEach(it => {
+                let iKey = it.dateStr + '|' + it.invNum;
+                if (!invoicesInGroup[iKey]) {
+                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date };
+                    invKeysOrder.push(iKey);
+                }
+                invoicesInGroup[iKey].items.push(it);
+                invoicesInGroup[iKey].sum += it.sum;
+            });
+
+            invKeysOrder.sort((a, b) => invoicesInGroup[b].rawDate.localeCompare(invoicesInGroup[a].rawDate));
+
+            invKeysOrder.forEach(ik => {
+                let invData = invoicesInGroup[ik];
+                let showSeparator = (invData.items.length > 1 && type !== 'byItem');
+                
+                if (showSeparator) {
+                    h += `<tr style="background: ${isPrint ? '#f1f5f9' : 'rgba(241,245,249,0.2)'}; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                            <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: ${isPrint ? '#334155' : 'inherit'}; border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor};">
+                                Накладная № ${esc(invData.inv)} от ${invData.date}
+                            </td>
+                          </tr>`;
+                }
+
+                invData.items.forEach((it, idx) => {
+                    grpQty += it.qty;
+                    grpSum += it.sum;
+                    let col1 = type === 'byDate' ? it.client : it.dateStr;
+                    let col2 = type === 'byItem' ? it.client : it.name;
+                    
+                    let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
+                    
+                    h += `<tr style="border-bottom: ${btmBorder};">
+                            <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
+                            <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
+                            <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
+                            <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
+                            <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
+                            <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; vertical-align: top;">${it.sum.toFixed(2)}</td>
+                          </tr>`;
+                });
+                
+                if (showSeparator) {
+                    h += `<tr>
+                            <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
+                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)}</td>
+                          </tr>`;
+                }
+            });
+            
+            let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
+            
+            h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
+                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
+                    <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
+                    <td style="text-align: right; padding: 2px;"></td>
+                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSum.toFixed(2)}</td>
+                  </tr><tr><td colspan="6" style="height: 10px; border: none;"></td></tr>`;
+        });
+        
+        h += `</table></div>`;
+        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalSum.toFixed(2)} грн</div>`;
+    }
+    
+    h += `</div>`;
+    return h;
+};
+
 window.printRegOut = function() {
-    const h = getRegOutHTML(true);
+    const h = window.getRegOutHTML(true);
     if (!h) return;
     gID('print-view').innerHTML = h;
     window.print();
 };
 
 window.viewRegOut = function() {
-    const h = getRegOutHTML(false);
-    if (!h) return;
-    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ОТГРУЗОК';
-    gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:var(--s);">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
-};
-
-window.viewRegOut = function() {
-    if (typeof getRegOutHTML === 'undefined') { alert('Основная функция getRegOutHTML тоже была случайно удалена. Нужен бэкап.'); return; }
-    const h = getRegOutHTML(false);
+    const h = window.getRegOutHTML(false);
     if (!h) return;
     gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ОТГРУЗОК';
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
