@@ -2033,53 +2033,6 @@ else if(t==='regOut'){
         <button class="btn-main" onclick="printRegOut()" style="margin:0;">ПЕЧАТЬ</button>
     </div>`;
 }
-else if(t==='regIn'){
-    h.innerText='РЕЕСТР ПРИХОДОВ';
-    
-    // Формируем список поставщиков только из баз прихода
-    let sSet = new Set();
-    if(data.ArchIncoming) {
-        Object.values(data.ArchIncoming).forEach(v => {
-            if(v.supplier) sSet.add(v.supplier);
-        });
-    }
-    if(data.ArchPackIn) {
-        sSet.add('Свое производство');
-    }
-    
-    let cOpts='<option value="ALL">Все поставщики</option>';
-    Array.from(sSet).sort().forEach(c=>cOpts+=`<option value="${esc(c)}">${esc(c)}</option>`);
-    
-    let iSet=new Set();
-    if(data.PriceList)Object.values(data.PriceList).forEach(v=>iSet.add(v.name));
-    let iOpts='<option value="ALL">Все товары</option>';
-    Array.from(iSet).sort().forEach(i=>iOpts+=`<option value="${esc(i)}">${esc(i)}</option>`);
-    
-    m.innerHTML=`<div>С ДАТЫ <input type="date" id="regIn_From" value="${d}"></div>
-    <div>ПО ДАТУ <input type="date" id="regIn_To" value="${d}"></div>
-    
-    <div style="margin-top:5px"><span style="font-size:10px; font-weight:900; color:#64748b;">ФИЛЬТР: ПОСТАВЩИК</span><select id="regIn_Supplier" style="width:100%">${cOpts}</select></div>
-    
-    <div style="margin-top:5px"><span style="font-size:10px; font-weight:900; color:#64748b;">ФИЛЬТР: ТИП ПРИХОДА</span><select id="regIn_Source" style="width:100%">
-        <option value="ALL">Все приходы</option>
-        <option value="Внешние">Внешние (Поставщики)</option>
-        <option value="Внутренние">Внутренние (Свое производство)</option>
-    </select></div>
-
-    <div style="margin-top:5px"><span style="font-size:10px; font-weight:900; color:#64748b;">ФИЛЬТР: ТОВАР</span><select id="regIn_Item" style="width:100%">${iOpts}</select></div>
-    
-    <div style="margin-top:5px; margin-bottom:10px;"><span style="font-size:10px; font-weight:900; color:#64748b;">ФОРМАТ ОТЧЕТА</span><select id="regIn_Type" style="width:100%;">
-    <option value="standard">Список накладных (кратко)</option>
-    <option value="byClient">По поставщикам (детально)</option>
-    <option value="byItem">По позициям (детально)</option>
-    <option value="byDate">По дням (детально)</option>
-    </select></div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-        <button class="btn-main" onclick="viewRegIn()" style="background:var(--s);margin:0;">ПРОСМОТР</button>
-        <button class="btn-main" onclick="printRegIn()" style="margin:0;">ПЕЧАТЬ</button>
-    </div>`;
-}
 
      else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
@@ -5698,260 +5651,6 @@ document.getElementById('btnInstallConfirm').addEventListener('click', async () 
 document.getElementById('btnInstallCancel').addEventListener('click', () => {
     installPopup.style.display = 'none'; // просто прячем окно и не мешаем работать
 });
-
-window.getRegInHTML = function(isPrint) {
-    const dFrom = gID('regIn_From') ? gID('regIn_From').value : '';
-    const dTo = gID('regIn_To') ? gID('regIn_To').value : '';
-    const type = gID('regIn_Type') ? gID('regIn_Type').value : 'standard';
-    const fSupplier = gID('regIn_Supplier') ? gID('regIn_Supplier').value : 'ALL';
-    const fItem = gID('regIn_Item') ? gID('regIn_Item').value : 'ALL';
-    const fSource = gID('regIn_Source') ? gID('regIn_Source').value : 'ALL';
-
-    if (!dFrom || !dTo) { alert('Выберите обе даты'); return null; }
-
-    let invoices = [];
-    let allItems = [];
-
-    const processArchive = (arch, sourceName) => {
-        if (!arch) return;
-        Object.values(arch).forEach(v => {
-            const dt = (v.date || '').split('T')[0];
-            if (dt >= dFrom && dt <= dTo) {
-                let supplierName = sourceName === 'Внутренние' ? 'Свое производство' : (v.supplier || v.client || 'Неизвестно');
-                if (supplierName === 'Фасовка') sourceName = 'Внутренние'; 
-                
-                const isInternal = (supplierName === 'Свое производство' || supplierName === 'Фасовка' || sourceName === 'Внутренние');
-                
-                if (fSource === 'Внешние' && isInternal) return;
-                if (fSource === 'Внутренние' && !isInternal) return;
-
-                if (fSupplier !== 'ALL' && supplierName !== fSupplier) return;
-                
-                const dtObj = new Date(v.date);
-                const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
-                
-                let invMatchItem = false;
-                let tempItems = [];
-                
-                if (v.items) {
-                    let itemsList = Array.isArray(v.items) 
-                        ? v.items.map(it => ({ key: null, val: it })) 
-                        : Object.entries(v.items).map(([k, val]) => ({ key: k, val: val }));
-                    
-                    itemsList.forEach(entry => {
-                        let it = entry.val;
-                        let k = entry.key;
-                        let iName = 'Неизвестно', qty = 0, unit = '', price = 0, sum = 0;
-                        
-                        if (typeof it === 'string') {
-                            const p = it.split('|');
-                            iName = p[0]; qty = parseFloat(p[1]) || 0; unit = p[2] || ''; 
-                            price = parseFloat(p[4]) || 0; sum = parseFloat(p[5]) || 0;
-                        } else if (typeof it === 'number') {
-                            iName = k || 'Неизвестно'; qty = it;
-                        } else if (typeof it === 'object' && it !== null) {
-                            iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
-                            price = parseFloat(it.price || it.p) || 0;
-                            sum = parseFloat(it.sum || it.s) || 0;
-                            unit = it.cat === 'Пленка' ? 'кг' : (it.unit || it.u || (supplierName === 'Фасовка' ? 'шт' : 'кг'));
-                            
-                            let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
-                            qty = calcQty > 0 ? calcQty : parseFloat(it.a || it.qty || it.kol || it.count || it.amount || it.q || it.w) || 0;
-                            
-                            if (qty === 0 && price > 0 && sum > 0) qty = sum / price;
-                            if (sum === 0 && qty > 0 && price > 0) sum = qty * price;
-                        }
-
-                        qty = Math.round(qty * 1000) / 1000;
-                        const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
-                        if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
-                        
-                        invMatchItem = true;
-                        tempItems.push({
-                            date: dt, dateStr: dStr, invNum: v.num || '-',
-                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum, rawDate: v.date || ''
-                        });
-                    });
-                } else if (v.name || v.amount) {
-                     let iName = v.name || 'Неизвестно';
-                     let qty = parseFloat(v.amount) || 0;
-                     let price = parseFloat(v.price) || 0;
-                     let sum = parseFloat(v.totalSum) || (qty * price) || 0;
-                     let unit = v.category === 'Пленка' ? 'кг' : 'шт';
-                     
-                     const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
-                     if (fItem === 'ALL' || iName === fItem || printName === fItem) {
-                         invMatchItem = true;
-                         tempItems.push({
-                            date: dt, dateStr: dStr, invNum: v.num || '-',
-                            client: supplierName, name: printName, qty: qty, unit: unit, price: price, sum: sum, rawDate: v.date || ''
-                        });
-                     }
-                }
-
-                if (fItem === 'ALL' || invMatchItem) {
-                    let invCopy = Object.assign({}, v);
-                    invCopy.computedSupplier = supplierName;
-                    invoices.push(invCopy);
-                    allItems.push(...tempItems);
-                }
-            }
-        });
-    };
-
-    processArchive(data.ArchIncoming, 'Внешние');
-    processArchive(data.ArchPackIn, 'Внутренние');
-
-    if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
-
-    let textColor = isPrint ? '#000' : 'inherit';
-    let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
-    h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ПРИХОДОВ (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
-
-    if (type === 'standard') {
-        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
-        h += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
-        invoices.forEach(v => {
-            const dtObj = new Date(v.date);
-            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
-            const num = esc(v.num) || '---';
-            const sum = parseFloat(v.totalSum || 0).toFixed(2);
-            const cli = esc(v.computedSupplier) || '-';
-            h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
-                    <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
-                    <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
-                  </div>`;
-        });
-        h += `</div>`;
-    } else {
-        const groups = {};
-        let totalSum = 0;
-
-        allItems.forEach(item => {
-            let key = '';
-            if (type === 'byClient') key = item.client;
-            else if (type === 'byItem') key = item.name;
-            else if (type === 'byDate') key = item.dateStr;
-
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(item);
-            totalSum += item.sum;
-        });
-
-        let sortedKeys = Object.keys(groups);
-        if (type === 'byDate') {
-            sortedKeys.sort((a, b) => {
-               let da = a.split('.').reverse().join('');
-               let db = b.split('.').reverse().join('');
-               return db.localeCompare(da); 
-            });
-        } else {
-            sortedKeys.sort(); 
-        }
-
-        h += `<div style="overflow-x: auto;"><table style="width: 100%; min-width: 300px; border-collapse: collapse; font-size: 10px;">`;
-        
-        let borderColor = isPrint ? '#000' : '#cbd5e1';
-        
-        sortedKeys.forEach(key => {
-            const itemsInGroup = groups[key];
-            let grpQty = 0;
-            let grpSum = 0;
-            
-            h += `<tr><td colspan="6" style="background: ${isPrint ? '#e2e8f0' : 'rgba(226,232,240,0.5)'}; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
-            h += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
-                    <td style="padding: 2px; border-left: 1px solid ${borderColor}; width: 15%;">${type === 'byDate' ? 'Поставщик' : 'Дата'}</td>
-                    <td style="padding: 2px; width: 35%;">${type === 'byItem' ? 'Поставщик' : 'Наименование'}</td>
-                    <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
-                    <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
-                    <td style="padding: 2px; text-align: right; width: 10%;">Цена</td>
-                    <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; width: 15%;">Сумма</td>
-                  </tr>`;
-
-            let invoicesInGroup = {};
-            let invKeysOrder = [];
-            itemsInGroup.forEach(it => {
-                let iKey = it.dateStr + '|' + it.invNum;
-                if (!invoicesInGroup[iKey]) {
-                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.rawDate || '' };
-                    invKeysOrder.push(iKey);
-                }
-                invoicesInGroup[iKey].items.push(it);
-                invoicesInGroup[iKey].sum += it.sum;
-            });
-
-            invKeysOrder.sort((a, b) => invoicesInGroup[b].rawDate.localeCompare(invoicesInGroup[a].rawDate));
-
-            invKeysOrder.forEach(ik => {
-                let invData = invoicesInGroup[ik];
-                let showSeparator = (invData.items.length > 1 && type !== 'byItem');
-                
-                if (showSeparator) {
-                    h += `<tr style="background: ${isPrint ? '#f1f5f9' : 'rgba(241,245,249,0.2)'}; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
-                            <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: ${isPrint ? '#334155' : 'inherit'}; border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor};">
-                                Накладная № ${esc(invData.inv)} от ${invData.date}
-                            </td>
-                          </tr>`;
-                }
-
-                invData.items.forEach((it, idx) => {
-                    grpQty += it.qty;
-                    grpSum += it.sum;
-                    let col1 = type === 'byDate' ? it.client : it.dateStr;
-                    let col2 = type === 'byItem' ? it.client : it.name;
-                    
-                    let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
-                    
-                    h += `<tr style="border-bottom: ${btmBorder};">
-                            <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
-                            <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
-                            <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
-                            <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
-                            <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; vertical-align: top;">${it.sum.toFixed(2)}</td>
-                          </tr>`;
-                });
-                
-                if (showSeparator) {
-                    h += `<tr>
-                            <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)}</td>
-                          </tr>`;
-                }
-            });
-            
-            let totalQtyStr = type === 'byItem' ? `${Math.round(grpQty*1000)/1000} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
-            
-            h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
-                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'ПОСТАВЩИКУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
-                    <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
-                    <td style="text-align: right; padding: 2px;"></td>
-                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSum.toFixed(2)}</td>
-                  </tr><tr><td colspan="6" style="height: 10px; border: none;"></td></tr>`;
-        });
-        
-        h += `</table></div>`;
-        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalSum.toFixed(2)} грн</div>`;
-    }
-    
-    h += `</div>`;
-    return h;
-};
-
-window.printRegIn = function() {
-    const h = getRegInHTML(true);
-    if (!h) return;
-    gID('print-view').innerHTML = h;
-    window.print();
-};
-
-window.viewRegIn = function() {
-    const h = getRegInHTML(false);
-    if (!h) return;
-    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ПРИХОДОВ';
-    // Для возврата в фильтры используем openModal
-    gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regIn')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
-};
 window.getRegOutHTML = function(isPrint) {
     const dFrom = gID('regFrom').value;
     const dTo = gID('regTo').value;
@@ -5979,7 +5678,7 @@ window.getRegOutHTML = function(isPrint) {
                 v.items.forEach(it => {
                     const p = it.split('|');
                     const iName = p[0];
-                    const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
+                    const printName = getPrintName(iName) || iName;
                     
                     if (fItem !== 'ALL' && iName !== fItem && printName !== fItem) return;
                     
@@ -6140,21 +5839,19 @@ window.getRegOutHTML = function(isPrint) {
     h += `</div>`;
     return h;
 };
-
 window.printRegOut = function() {
-    const h = window.getRegOutHTML(true);
+    const h = getRegOutHTML(true);
     if (!h) return;
     gID('print-view').innerHTML = h;
     window.print();
 };
 
 window.viewRegOut = function() {
-    const h = window.getRegOutHTML(false);
+    const h = getRegOutHTML(false);
     if (!h) return;
-    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ОТГРУЗОК';
+    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА';
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
-
 window.openMassAdvance = function() {
     const dObj = new Date();
     let y = dObj.getFullYear();
@@ -6337,7 +6034,6 @@ window.renderPrintExport = function() {
         { title: 'Сводный отчет (Остатки)', print: "printConsolidated()", csv: "exportCSV('consolidated')", desc: 'Текущие остатки складов' },
         { title: 'Прайс-лист', print: "printPriceList()", csv: "exportCSV('price')", desc: 'Текущие цены' },
         { title: 'Реестр отгрузок', print: "openModal('regOut')", csv: "exportCSV('invoices')", desc: 'Архив продаж' },
-        { title: 'Реестр приходов', print: "openModal('regIn')", csv: "exportCSV('receipts')", desc: 'Архив приходов' },
         { title: 'История: Фасовка (Цех)', print: "printFas()", csv: "exportCSV('fas')", desc: 'Произведено/потрачено' },
         { title: 'История: Крупорушка', print: "printWorkshop('KRUP')", csv: "exportCSV('workshop', 'KRUP')", desc: 'Отчеты цеха' },
         { title: 'История: ЗШМ', print: "printWorkshop('ZSHM')", csv: "exportCSV('workshop', 'ZSHM')", desc: 'Отчеты цеха' },
