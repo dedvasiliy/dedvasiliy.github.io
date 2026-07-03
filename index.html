@@ -5952,6 +5952,27 @@ window.viewRegIn = function() {
     // Для возврата в фильтры используем openModal
     gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regIn')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
 };
+window.printRegOut = function() {
+    const h = getRegOutHTML(true);
+    if (!h) return;
+    gID('print-view').innerHTML = h;
+    window.print();
+};
+
+window.viewRegOut = function() {
+    const h = getRegOutHTML(false);
+    if (!h) return;
+    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ОТГРУЗОК';
+    gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:var(--s);">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
+};
+
+window.viewRegOut = function() {
+    if (typeof getRegOutHTML === 'undefined') { alert('Основная функция getRegOutHTML тоже была случайно удалена. Нужен бэкап.'); return; }
+    const h = getRegOutHTML(false);
+    if (!h) return;
+    gID('mT').innerText = 'ПРОСМОТР РЕЕСТРА ОТГРУЗОК';
+    gID('mB').innerHTML = h + `<button class="btn-main" onclick="openModal('regOut')" style="margin-top:15px;background:#64748b;">⬅ НАЗАД К ФИЛЬТРАМ</button>`;
+};
 
 window.openMassAdvance = function() {
     const dObj = new Date();
