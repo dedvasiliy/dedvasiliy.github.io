@@ -7857,5 +7857,45 @@ document.addEventListener('click', function(e) {
     });
 });
 </script>
+<button onclick="findHiddenItem()" style="position:fixed;bottom:10px;left:10px;z-index:9999;background:red;color:white;padding:15px;border:none;border-radius:5px;font-weight:bold;">ПОИСК В БАЗЕ</button>
+<script>
+async function findHiddenItem() {
+    let search = prompt("Введите часть названия товара (например, ПШЕНО):");
+    if (!search) return;
+    search = search.toLowerCase();
+    try {
+        // Ищем по всем категориям склада
+        let cats = ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Feed', 'Stock_Raw'];
+        let res = [];
+        for (let c of cats) {
+            let snap = await db.child(c).once('value');
+            let all = snap.val() || {};
+            for (let k in all) {
+                if (all[k].name && all[k].name.toLowerCase().includes(search)) {
+                    res.push(all[k]);
+                }
+            }
+        }
+        
+        // Сортируем: новые записи сверху
+        res.sort((a, b) => new Date(b.ts || b.date).getTime() - new Date(a.ts || a.date).getTime());
+        
+        let txt = "РЕЗУЛЬТАТЫ ИЗ БАЗЫ ДАННЫХ:\n\n";
+        res.forEach(r => {
+            let dObj = new Date(r.date);
+            // Формат даты: день.месяц.год
+            let dStr = dObj.getDate().toString().padStart(2, '0') + '.' + (dObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dObj.getFullYear();
+            txt += `${dStr} | Кол-во: ${r.amount} | Инфо: ${r.note || '-'}\n`;
+        });
+        
+        if (res.length === 0) txt += "Записей не найдено.";
+        alert(txt);
+        
+    } catch(e) { 
+        alert("Ошибка доступа к базе: " + e); 
+    }
+}
+</script>
+
 </body>
 </html>
