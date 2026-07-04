@@ -896,6 +896,22 @@ function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
   r.sort((a,b)=>{const dA=a.date||a._date,dB=b.date||b._date; if(dA!==dB)return dB.localeCompare(dA); return b.id.localeCompare(a.id);});
 
+  let currentBalance = 0;
+  for (let i = r.length - 1; i >= 0; i--) {
+      if (r[i].note && (r[i].note.startsWith('Остаток на начало') || r[i].note.startsWith('ПЕРЕУЧЕТ ОСТАТОК'))) {
+          let match = r[i].note.match(/-?\d+(\.\d+)?/);
+          if (match) currentBalance = parseFloat(match[0]);
+          r[i]._balance = currentBalance;
+          break;
+      }
+  }
+  for (let i = r.length - 1; i >= 0; i--) {
+      if(r[i]._balance === undefined) {
+         currentBalance += r[i].amount;
+         r[i]._balance = parseFloat(currentBalance.toFixed(2));
+      }
+  }
+
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${esc(n)}</div>`;
  
  let topBtns = `<button class="btn-main" onclick="printHistory('${c}','${esc(n)}')" style="background:var(--s);font-size:10px;margin:0 0 10px 0;">🖨️ ПЕЧАТЬ ИСТОРИИ</button>`;
@@ -923,10 +939,11 @@ function showH(c,n){
   }
 
   const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';
-  return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button data-name="${esc(n)}" onclick="let btn=this; delRec('${c}','${v.id}'); setTimeout(()=>showH('${c}', btn.dataset.name), 600);" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${esc(v.note)||'-'}</div></div>`
+  return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))} <span style="color:#666; font-size:12px; margin-left:8px;">Ост: ${v._balance !== undefined ? v._balance : '-'}</span></div></div>${(isAdmin||corrMode)?`<button data-name="${esc(n)}" onclick="let btn=this; delRec('${c}','${v.id}'); setTimeout(()=>showH('${c}', btn.dataset.name), 600);" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${esc(v.note)||'-'}</div></div>`
  }, true);
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').querySelector('.modal-box').style.maxWidth='450px';gID('mdl').style.display='flex';
 }
+
 window.genBatchReport=function(c,n){
     const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     gID('mT').innerText='ЗАГРУЗКА...';
