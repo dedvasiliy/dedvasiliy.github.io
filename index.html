@@ -892,24 +892,27 @@ window.execSpoilage = async function(n) {
         alert(e.message);
     }
 };
+
 function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
   r.sort((a,b)=>{const dA=a.date||a._date,dB=b.date||b._date; if(dA!==dB)return dB.localeCompare(dA); return b.id.localeCompare(a.id);});
 
+  // Пересчет остатков с корректным сбросом
   let currentBalance = 0;
   for (let i = r.length - 1; i >= 0; i--) {
-      if (r[i].note && (r[i].note.startsWith('Остаток на начало') || r[i].note.startsWith('ПЕРЕУЧЕТ ОСТАТОК'))) {
+      // Если это первая запись (самая старая) - начинаем с нуля
+      if (i === r.length - 1) {
+          currentBalance = 0;
+      }
+      
+      // Если это маркер остатка, пытаемся взять цифру из примечания
+      if (r[i].note && (r[i].note.startsWith('Остаток на') || r[i].note.startsWith('ПЕРЕУЧЕТ') || r[i].note.startsWith('Коррекция'))) {
           let match = r[i].note.match(/-?\d+(\.\d+)?/);
           if (match) currentBalance = parseFloat(match[0]);
-          r[i]._balance = currentBalance;
-          break;
+      } else {
+          currentBalance += parseFloat(r[i].amount || 0);
       }
-  }
-  for (let i = r.length - 1; i >= 0; i--) {
-      if(r[i]._balance === undefined) {
-         currentBalance += r[i].amount;
-         r[i]._balance = parseFloat(currentBalance.toFixed(2));
-      }
+      r[i]._balance = parseFloat(currentBalance.toFixed(2));
   }
 
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${esc(n)}</div>`;
