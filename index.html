@@ -186,7 +186,16 @@ body.dark-theme .toast-msg {
 <div id="lockScreen">
     <img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo">
     <div class="lock-title">УЧЕТ</div>
-
+        <div id="loginTimerUI" style="color:#dc2626; font-weight:900; font-size:12px; margin-bottom:20px; background:#fee2e2; padding:6px 12px; border-radius:8px; border:1px solid #fca5a5; display:inline-block;"></div>
+    <script>
+      (function(){
+        const [d, m, y] = "20.07.2026".split('.');
+        const days = Math.ceil((new Date(y, m - 1, d) - new Date()) / 86400000);
+        const el = document.getElementById('loginTimerUI');
+        if (days > 0) el.innerText = "⏳ ДОСТУП ЗАКРОЕТСЯ ЧЕРЕЗ: " + days + " ДН.";
+        else el.style.display = 'none';
+      })();
+    </script>
     <div id="loginBaseBlock" style="width:100%; max-width:250px; text-align:center;">
         <input type="email" id="appEmail" class="lock-inp" placeholder="Email">
         <input type="password" id="appPass" class="lock-inp" placeholder="Пароль">
@@ -411,12 +420,12 @@ function tryLogin() {
 
     // --- ПРОВЕРКА БЛОКИРОВКИ ---
     const today = getLocalDateStr();
-    const adminEmail = "ТВОЙ_EMAIL@gmail.com"; // Позже заменишь на свою почту
-    const lockDateStr = "13.07.2026"; // Тестовая дата (вчерашняя)
+    const adminEmail = "nukonor@gmail.com"; // Позже заменишь на свою почту
+    const lockDateStr = "20.07.2026"; // Тестовая дата (вчерашняя)
     const [ld, lm, ly] = lockDateStr.split('.');
     
     if (e.toLowerCase() !== adminEmail.toLowerCase() && today >= `${ly}-${lm}-${ld}`) {
-        return alert("Доступ к сайту закрыт.");
+        return alert("ОГРАНИЧЕННЫЙ ДОСТУП");
     }
     // ---------------------------
 
