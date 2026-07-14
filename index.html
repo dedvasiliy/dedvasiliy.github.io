@@ -387,6 +387,21 @@ auth.onAuthStateChanged(u => {
 });
 function initAppData(){
   renderHome();
+    // --- ФОНОВЫЙ ТАЙМЕР БЛОКИРОВКИ ---
+  setInterval(() => {
+    const today = getLocalDateStr();
+    const adminEmail = "ТВОЙ_EMAIL@gmail.com"; // Поменяешь на свою почту позже
+    const lockDateStr = "13.07.2026"; // Тестовая дата
+    const [ld, lm, ly] = lockDateStr.split('.');
+    
+    let u = firebase.auth().currentUser;
+    if (u && u.email && u.email.toLowerCase() !== adminEmail.toLowerCase() && today >= `${ly}-${lm}-${ld}`) {
+      alert("Доступ к сайту закрыт.");
+      firebase.auth().signOut();
+    }
+  }, 3000); // Проверка каждые 3 секунды
+  // ---------------------------------
+
   stockCatsAll.forEach(p=>{
     db.child(p).on('value',s=>{
       data[p]=s.val()||{};
