@@ -6201,10 +6201,10 @@ window.openMassAdvance = function() {
     let y = dObj.getFullYear();
     let m = dObj.getMonth();
     
-    let targetDate = 15;
+    let targetDate = 20;
     let checkD = new Date(y, m, targetDate);
-    if (checkD.getDay() === 6) targetDate = 14;
-    if (checkD.getDay() === 0) targetDate = 13;
+    if (checkD.getDay() === 6) targetDate = 19;
+    if (checkD.getDay() === 0) targetDate = 18;
     
     const monthStr = String(m + 1).padStart(2, '0');
     const maxDateStr = `${y}-${monthStr}-${String(targetDate).padStart(2, '0')}`;
