@@ -387,21 +387,6 @@ auth.onAuthStateChanged(u => {
 });
 function initAppData(){
   renderHome();
-    // --- ФОНОВЫЙ ТАЙМЕР БЛОКИРОВКИ ---
-  setInterval(() => {
-    const today = getLocalDateStr();
-    const adminEmail = "ТВОЙ_EMAIL@gmail.com"; // Поменяешь на свою почту позже
-    const lockDateStr = "13.07.2026"; // Тестовая дата
-    const [ld, lm, ly] = lockDateStr.split('.');
-    
-    let u = firebase.auth().currentUser;
-    if (u && u.email && u.email.toLowerCase() !== adminEmail.toLowerCase() && today >= `${ly}-${lm}-${ld}`) {
-      alert("Доступ к сайту закрыт.");
-      firebase.auth().signOut();
-    }
-  }, 3000); // Проверка каждые 3 секунды
-  // ---------------------------------
-
   stockCatsAll.forEach(p=>{
     db.child(p).on('value',s=>{
       data[p]=s.val()||{};
@@ -423,6 +408,18 @@ function initAppData(){
 function tryLogin() {
     const e = gID('appEmail').value, p = gID('appPass').value;
     if (!e || !p) return alert('Введите данные');
+
+    // --- ПРОВЕРКА БЛОКИРОВКИ ---
+    const today = getLocalDateStr();
+    const adminEmail = "ТВОЙ_EMAIL@gmail.com"; // Позже заменишь на свою почту
+    const lockDateStr = "13.07.2026"; // Тестовая дата (вчерашняя)
+    const [ld, lm, ly] = lockDateStr.split('.');
+    
+    if (e.toLowerCase() !== adminEmail.toLowerCase() && today >= `${ly}-${lm}-${ld}`) {
+        return alert("Доступ к сайту закрыт.");
+    }
+    // ---------------------------
+
     gID('loginStatus').innerText = 'Проверка...';
     
     auth.signInWithEmailAndPassword(e, p).catch(err => {
@@ -435,6 +432,7 @@ function tryLogin() {
         }
     });
 }
+
 async function sendEnrollSms() {
     const phone = gID('mfaPhone').value.trim();
     if (!phone.startsWith('+380') || phone.length < 13) return alert('Введите номер в формате +380...');
