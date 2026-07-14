@@ -2531,7 +2531,8 @@ async function sCorr(){
     const diff=na-cur;
     if(Math.abs(diff)<0.001)return alert('Не изменилось');
     
-    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.:'Неизвестно';
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+
     const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};
     let cName = catNames[c] || c;
     
