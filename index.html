@@ -187,15 +187,32 @@ body.dark-theme .toast-msg {
     <img src="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png" class="lock-logo">
     <div class="lock-title">УЧЕТ</div>
         <div id="loginTimerUI" style="color:#dc2626; font-weight:900; font-size:12px; margin-bottom:20px; background:#fee2e2; padding:6px 12px; border-radius:8px; border:1px solid #fca5a5; display:inline-block;"></div>
-    <script>
-      (function(){
-        const [d, m, y] = "20.07.2026".split('.');
-        const days = Math.ceil((new Date(y, m - 1, d) - new Date()) / 86400000);
-        const el = document.getElementById('loginTimerUI');
-        if (days > 0) el.innerText = "⏳ ДОСТУП ЗАКРОЕТСЯ ЧЕРЕЗ: " + days + " ДН.";
-        else el.style.display = 'none';
-      })();
-    </script>
+<script>
+  (function(){
+    const [d, m, y] = "20.07.2026".split('.');
+    const targetDate = new Date(y, m - 1, d, 0, 0, 0);
+    const el = document.getElementById('loginTimerUI');
+    
+    function updateTimer() {
+      const diff = targetDate - new Date();
+      if (diff <= 0) {
+        el.style.display = 'none';
+        if (typeof intervalId !== 'undefined') clearInterval(intervalId);
+        return;
+      }
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      
+      el.innerText = `⏳ ДОСТУП ЗАКРОЕТСЯ ЧЕРЕЗ: ${days}дн. ${hours}ч. ${minutes}мин. ${seconds}сек.`;
+    }
+    
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 1000);
+  })();
+</script>
+
     <div id="loginBaseBlock" style="width:100%; max-width:250px; text-align:center;">
         <input type="email" id="appEmail" class="lock-inp" placeholder="Email">
         <input type="password" id="appPass" class="lock-inp" placeholder="Пароль">
