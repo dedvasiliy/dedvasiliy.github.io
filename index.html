@@ -196,7 +196,7 @@ body.dark-theme .toast-msg {
     <div id="mfaEnrollBlock" style="display:none; width:100%; max-width:250px; text-align:center;">
         <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 1: ПОДТВЕРДИТЕ ПОЧТУ</div>
         
-        <button class="btn-main" onclick="firebase.auth().currentUser.sendVerification().then(()=>alert('Письмо отправлено! Проверьте ящик (и папку Спам).')).catch(e=>alert(e.message))" style="background:#16a34a; margin-bottom:15px;">ОТПРАВИТЬ ПИСЬМО НА ПОЧТУ</button>
+        <button class="btn-main" onclick="firebase.auth().currentUser.email.sendVerification().then(()=>alert('Письмо отправлено! Проверьте ящик (и папку Спам).')).catch(e=>alert(e.message))" style="background:#16a34a; margin-bottom:15px;">ОТПРАВИТЬ ПИСЬМО НА ПОЧТУ</button>
         
         <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 2: ПРИВЯЖИТЕ ТЕЛЕФОН</div>
         <input type="tel" id="mfaPhone" class="lock-inp" placeholder="+380...">
@@ -332,10 +332,10 @@ function doConfirm(){if(pendingAction)pendingAction();}
 let recaptchaVerifier = null;
 let mfaResolver = null;
 let mfaVerificationId = null;
-let currentUserForEnrollment = null;
+let currentUser.emailForEnrollment = null;
 let isEnrollmentMode = false;
 function cancelMfa() {
-    if(currentUserForEnrollment && isEnrollmentMode) firebase.auth().signOut();
+    if(currentUser.emailForEnrollment && isEnrollmentMode) firebase.auth().signOut();
     gID('loginBaseBlock').style.display = 'block';
     gID('mfaEnrollBlock').style.display = 'none';
     gID('mfaVerifyBlock').style.display = 'none';
@@ -349,7 +349,7 @@ function cancelMfa() {
 auth.onAuthStateChanged(u => {
     if (u) {
         if (u.multiFactor && u.multiFactor.enrolledFactors.length === 0) {
-            currentUserForEnrollment = u;
+            currentUser.emailForEnrollment = u;
             isEnrollmentMode = true;
             gID('loginBaseBlock').style.display = 'none';
             gID('mfaEnrollBlock').style.display = 'block';
@@ -446,7 +446,7 @@ async function sendEnrollSms() {
         // ВАЖНО: Принудительно рендерим капчу перед вызовом телефона
         await recaptchaVerifier.render();
 
-        const session = await currentUserForEnrollment.multiFactor.getSession();
+        const session = await currentUser.emailForEnrollment.multiFactor.getSession();
         const phoneInfoOptions = { phoneNumber: phone, session: session };
         const phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
         
@@ -495,7 +495,7 @@ async function verifySmsCode() {
         const cred = firebase.auth.PhoneAuthProvider.credential(mfaVerificationId, code);
         const multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
         if (isEnrollmentMode) {
-            await currentUserForEnrollment.multiFactor.enroll(multiFactorAssertion, 'Рабочий телефон');
+            await currentUser.emailForEnrollment.multiFactor.enroll(multiFactorAssertion, 'Рабочий телефон');
             alert('Телефон успешно привязан!');
             window.location.reload(); 
         } else {
@@ -2531,7 +2531,7 @@ async function sCorr(){
     const diff=na-cur;
     if(Math.abs(diff)<0.001)return alert('Не изменилось');
     
-    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser.email)?firebase.auth().currentUser.email.email:'Неизвестно';
 
     const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};
     let cName = catNames[c] || c;
@@ -3296,7 +3296,7 @@ window.calcAvgPrice = function(itemName, category) {
 window.delRec=async(c,i)=>{
     if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;
     let r=data[c]&&data[c][i]?data[c][i]:{};
-    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.:'Неизвестно';
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser.email)?firebase.auth().currentUser.email.:'Неизвестно';
     let dStr='Нет даты';
     if(r.date){let dx=new Date(r.date);if(!isNaN(dx))dStr=String(dx.getDate()).padStart(2,'0')+'.'+String(dx.getMonth()+1).padStart(2,'0')+'.'+dx.getFullYear()}
     let nm=r.num?`\n🏷 Док: ${r.num}`:'';
