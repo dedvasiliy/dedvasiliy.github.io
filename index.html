@@ -188,7 +188,7 @@ body.dark-theme .toast-msg {
     <div class="lock-title">УЧЕТ</div>
 
     <div id="loginBaseBlock" style="width:100%; max-width:250px; text-align:center;">
-        <input type="email" id="appEmail" class="lock-inp" placeholder="Email">
+        <input type="" id="app" class="lock-inp" placeholder="">
         <input type="password" id="appPass" class="lock-inp" placeholder="Пароль">
         <button class="btn-main" onclick="tryLogin()">ВОЙТИ</button>
         <div id="loginStatus" style="margin-top:10px;color:#64748b;font-weight:700"></div>
@@ -196,7 +196,7 @@ body.dark-theme .toast-msg {
     <div id="mfaEnrollBlock" style="display:none; width:100%; max-width:250px; text-align:center;">
         <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 1: ПОДТВЕРДИТЕ ПОЧТУ</div>
         
-        <button class="btn-main" onclick="firebase.auth().currentUser.sendEmailVerification().then(()=>alert('Письмо отправлено! Проверьте ящик (и папку Спам).')).catch(e=>alert(e.message))" style="background:#16a34a; margin-bottom:15px;">ОТПРАВИТЬ ПИСЬМО НА ПОЧТУ</button>
+        <button class="btn-main" onclick="firebase.auth().currentUser.sendVerification().then(()=>alert('Письмо отправлено! Проверьте ящик (и папку Спам).')).catch(e=>alert(e.message))" style="background:#16a34a; margin-bottom:15px;">ОТПРАВИТЬ ПИСЬМО НА ПОЧТУ</button>
         
         <div style="font-size:12px; color:#d97706; font-weight:900; margin-bottom:10px;">ШАГ 2: ПРИВЯЖИТЕ ТЕЛЕФОН</div>
         <input type="tel" id="mfaPhone" class="lock-inp" placeholder="+380...">
@@ -357,6 +357,16 @@ auth.onAuthStateChanged(u => {
         }
 
         const today = getLocalDateStr();
+                // --- ТЕСТ БЛОКИРОВКИ ---
+        const lockDateStr = "13.07.2026"; // Тестовая дата (вчерашняя)
+        const [ld, lm, ly] = lockDateStr.split('.');
+        if (today >= `${ly}-${lm}-${ld}`) {
+            alert("Доступ к сайту закрыт.");
+            firebase.auth().signOut();
+            return;
+        }
+        // ----------------------
+
         const authDate = localStorage.getItem('authDate');
 
         if (authDate && authDate !== today) {
@@ -406,11 +416,11 @@ function initAppData(){
   db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); runAutoBackup();});
 }
 function tryLogin() {
-    const e = gID('appEmail').value, p = gID('appPass').value;
+    const e = gID('app').value, p = gID('appPass').value;
     if (!e || !p) return alert('Введите данные');
     gID('loginStatus').innerText = 'Проверка...';
     
-    auth.signInWithEmailAndPassword(e, p).catch(err => {
+    auth.signInWithAndPassword(e, p).catch(err => {
         if (err.code === 'auth/multi-factor-auth-required') {
             mfaResolver = err.resolver;
             startMfaSignIn(mfaResolver);
@@ -892,9 +902,28 @@ window.execSpoilage = async function(n) {
         alert(e.message);
     }
 };
+
 function showH(c,n){
  const d=data[c]||{},r=[];Object.entries(d).forEach(([k,v])=>{if(v.name===n)r.push({...v,id:k,_date:v.date.split('T')[0]})});
   r.sort((a,b)=>{const dA=a.date||a._date,dB=b.date||b._date; if(dA!==dB)return dB.localeCompare(dA); return b.id.localeCompare(a.id);});
+
+  // Пересчет остатков с корректным сбросом
+  let currentBalance = 0;
+  for (let i = r.length - 1; i >= 0; i--) {
+      // Если это первая запись (самая старая) - начинаем с нуля
+      if (i === r.length - 1) {
+          currentBalance = 0;
+      }
+      
+      // Если это маркер остатка, пытаемся взять цифру из примечания
+      if (r[i].note && (r[i].note.startsWith('Остаток на') || r[i].note.startsWith('ПЕРЕУЧЕТ') || r[i].note.startsWith('Коррекция'))) {
+          let match = r[i].note.match(/-?\d+(\.\d+)?/);
+          if (match) currentBalance = parseFloat(match[0]);
+      } else {
+          currentBalance += parseFloat(r[i].amount || 0);
+      }
+      r[i]._balance = parseFloat(currentBalance.toFixed(2));
+  }
 
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px">${esc(n)}</div>`;
  
@@ -923,10 +952,11 @@ function showH(c,n){
   }
 
   const cl=v.amount>=0?'val-pos':'val-neg',s=v.amount>0?'+':'';
-  return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))}</div></div>${(isAdmin||corrMode)?`<button data-name="${esc(n)}" onclick="let btn=this; delRec('${c}','${v.id}'); setTimeout(()=>showH('${c}', btn.dataset.name), 600);" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${esc(v.note)||'-'}</div></div>`
+  return `<div class="rep-card"><div style="display:flex;justify-content:space-between"><div><div style="font-weight:900;font-size:12px">${v.date.split('T')[0].split('-').reverse().join('.')}</div><div class="${cl}" style="font-weight:900;font-size:14px">${s}${parseFloat(v.amount.toFixed(2))} <span style="color:#666; font-size:12px; margin-left:8px;">Ост: ${v._balance !== undefined ? v._balance : '-'}</span></div></div>${(isAdmin||corrMode)?`<button data-name="${esc(n)}" onclick="let btn=this; delRec('${c}','${v.id}'); setTimeout(()=>showH('${c}', btn.dataset.name), 600);" style="border:none;background:0 0;color:red">🗑️</button>`:''}</div><div style="font-size:11px;color:#666">${esc(v.note)||'-'}</div></div>`
  }, true);
  gID('mT').innerText='ИСТОРИЯ';gID('mB').innerHTML=h;gID('mdl').querySelector('.modal-box').style.maxWidth='450px';gID('mdl').style.display='flex';
 }
+
 window.genBatchReport=function(c,n){
     const rawName=String(n).replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
     gID('mT').innerText='ЗАГРУЗКА...';
@@ -1734,7 +1764,9 @@ window.viewIncomingInvoice=function(id){
 
 window.reprintIncInv = function() {
     const h = gID('shipPrev').innerHTML;
-    gID('print-view').innerHTML = h;
+    // Добавляем стили для жесткого черного цвета рамок и текста при печати
+    const printStyles = '<style>@media print { #print-view * { border-color: #000000 !important; color: #000000 !important; } }</style>';
+    gID('print-view').innerHTML = printStyles + h;
     setTimeout(() => {
         window.print();
     }, 100);
@@ -2499,7 +2531,7 @@ async function sCorr(){
     const diff=na-cur;
     if(Math.abs(diff)<0.001)return alert('Не изменилось');
     
-    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.:'Неизвестно';
     const catNames={'ArchIncoming':'Приходная накладная','ArchInvoices':'Расходная накладная','ArchPackIn':'Приход упаковки','Stock_Raw':'Сырье','WeightStock':'Покупная продукция','Stock_DV':'ДВ вес','Stock_Feed':'Отходы','Stock_Semi':'Полуфабрикат','Готовая':'Фасованная продукция','Пленка':'Пленка','Пакеты':'Пакеты','Скотч 360 грамм':'Скотч','Мешки':'Мешки','Нитки':'Нитки','Этикетка':'Этикетка','Стрейч пленка':'Стрейч пленка','Термо лента':'Термо лента'};
     let cName = catNames[c] || c;
     
@@ -3263,7 +3295,7 @@ window.calcAvgPrice = function(itemName, category) {
 window.delRec=async(c,i)=>{
     if(!confirm('УДАЛИТЬ ЗАПИСЬ И ВЕРНУТЬ ТОВАР НА СКЛАД?'))return;
     let r=data[c]&&data[c][i]?data[c][i]:{};
-    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.email:'Неизвестно';
+    let usr=(typeof firebase!=='undefined'&&firebase.auth().currentUser)?firebase.auth().currentUser.:'Неизвестно';
     let dStr='Нет даты';
     if(r.date){let dx=new Date(r.date);if(!isNaN(dx))dStr=String(dx.getDate()).padStart(2,'0')+'.'+String(dx.getMonth()+1).padStart(2,'0')+'.'+dx.getFullYear()}
     let nm=r.num?`\n🏷 Док: ${r.num}`:'';
@@ -7857,5 +7889,54 @@ document.addEventListener('click', function(e) {
     });
 });
 </script>
+<button onclick="findHiddenItem()" style="position:fixed;bottom:10px;left:10px;z-index:9999;background:red;color:white;padding:15px;border:none;border-radius:5px;font-weight:bold;">ПОИСК В БАЗЕ</button>
+<script>
+async function findHiddenItem() {
+    let search = prompt("Введите часть названия товара (например, ПШЕНО):");
+    if (!search) return;
+    search = search.toLowerCase();
+
+    let outDiv = document.getElementById('debugOut');
+    if (!outDiv) {
+        outDiv = document.createElement('div');
+        outDiv.id = 'debugOut';
+        outDiv.style.cssText = 'position:fixed;top:5%;left:5%;width:90%;height:85%;background:#fff;color:#000;z-index:10000;overflow-y:scroll;padding:15px;border:3px solid #333;border-radius:10px;font-size:14px;';
+        document.body.appendChild(outDiv);
+    }
+    outDiv.innerHTML = '<div style="text-align:center"><button onclick="document.getElementById(\'debugOut\').style.display=\'none\'" style="background:#ef4444;color:white;padding:10px 20px;border:none;border-radius:5px;font-weight:bold;margin-bottom:15px;">ЗАКРЫТЬ ОКНО</button></div><b>Загрузка данных...</b>';
+    outDiv.style.display = 'block';
+
+    try {
+        let cats = ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Feed', 'Stock_Raw'];
+        let res = [];
+        for (let c of cats) {
+            let snap = await db.child(c).once('value');
+            let all = snap.val() || {};
+            for (let k in all) {
+                if (all[k].name && all[k].name.toLowerCase().includes(search)) {
+                    res.push(all[k]);
+                }
+            }
+        }
+        
+        res.sort((a, b) => new Date(b.ts || b.date).getTime() - new Date(a.ts || a.date).getTime());
+        
+        let txt = `<div style="text-align:center; font-size:16px; margin-bottom:10px;"><b>РЕЗУЛЬТАТЫ ПО: ${search.toUpperCase()}</b></div>`;
+        res.forEach(r => {
+            let dObj = new Date(r.date);
+            let dStr = !isNaN(dObj) ? (dObj.getDate().toString().padStart(2, '0') + '.' + (dObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dObj.getFullYear()) : String(r.date);
+            let color = r.amount > 0 ? "green" : "red";
+            txt += `<div style="border-bottom:1px solid #ccc;padding:8px 0;"><b>${dStr}</b> | Кол-во: <b style="color:${color}">${r.amount}</b> | Инфо: ${r.note || '-'}</div>`;
+        });
+        
+        if (res.length === 0) txt += "<b>Записей не найдено.</b>";
+        outDiv.innerHTML = '<div style="text-align:center"><button onclick="document.getElementById(\'debugOut\').style.display=\'none\'" style="background:#ef4444;color:white;padding:10px 20px;border:none;border-radius:5px;font-weight:bold;margin-bottom:15px;">ЗАКРЫТЬ ОКНО</button></div>' + txt;
+        
+    } catch(e) { 
+        outDiv.innerHTML += "<br><b style='color:red'>Ошибка базы: " + e.message + "</b>"; 
+    }
+}
+</script>
+
 </body>
 </html>
