@@ -340,8 +340,8 @@ if(!firebase.apps.length)firebase.initializeApp(cfg);
 const db=firebase.database().ref('production'),auth=firebase.auth();
 let cur='Home',data={},aId=null,archSub='',corrMode=!1,isLogged=!1,isAdmin=!1,corrCtx={},useStretch=!1,shipBasket={},pendingAction=null,priceMode='opt',priceEdit=!1;
 const stockCatsAll=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','PriceList','InvoiceSettings','InvoiceSettingsBN'];
-let invSet = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
-let invSetBN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА]\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
+let  = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
+let BN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА]\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
 let voiceSynonyms = {};
 let stressDictData = '';
 let autoSet = { bagsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', bagsWeight: '25', labelsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', labelsWeight: '25', threadsRate: '600', threadsExclude: '40', tapeRate: '3000', tapeWeight: '360', thermalRate: '34000', thermalWidth: '', packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000' };
@@ -418,8 +418,8 @@ function initAppData(){
   stockCatsAll.forEach(p=>{
     db.child(p).on('value',s=>{
       data[p]=s.val()||{};
-      if(p==='InvoiceSettings' && data[p].xtraTop!==undefined){ invSet=data[p]; }
-      if(p==='InvoiceSettingsBN' && data[p].xtraTop!==undefined){ invSetBN=data[p]; }
+      if(p==='InvoiceSettings' && data[p].xtraTop!==undefined){ =data[p]; }
+      if(p==='InvoiceSettingsBN' && data[p].xtraTop!==undefined){ BN=data[p]; }
       if(cur!=='Home') loadData();
       runAutoBackup();
     })
@@ -627,7 +627,7 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
   if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM','Analytics','Timesheet'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
 
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
-  if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('costSet')">⚙️ СЕБЕСТОИМОСТЬ</div><div class="dash-item" onclick="openModal('voiceSet')">🎤 СЛОВАРЬ ГОЛОСА</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
+  if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('BN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('costSet')">⚙️ СЕБЕСТОИМОСТЬ</div><div class="dash-item" onclick="openModal('voiceSet')">🎤 СЛОВАРЬ ГОЛОСА</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
 <div style="margin-top:20px; text-align:center;"><input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreDB(event)"><button class="btn-main" style="background:var(--d);" onclick="document.getElementById('restoreFile').click()">⚠️ ВОССТАНОВИТЬ БАЗУ</button></div>`;}
 
  else if(c==='Contractors'){ct.innerHTML='<div class="z-head">👥 КОНТРАГЕНТЫ</div><div id="contractorsList">Загрузка...</div>'; ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Suppliers']);}
@@ -1785,7 +1785,7 @@ window.reprintInv=function(id){
     const dt=new Date(v.date),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
     let tw=0;
     const isBN=v.priceMode==='bn';
-    const curSet=isBN?invSetBN:invSet;
+    const curSet=isBN?BN:;
     const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';
     const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';
     const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';
@@ -1831,12 +1831,9 @@ window.reprintInv=function(id){
     }
     h+=`</tbody></table>`;
     h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;
-    
+    h+=`<style>#print-view .pr-table { border: none !important; } #print-view .pr-table tr:last-child td { border-bottom: none !important; } #print-view * { -webkit-print-color-adjust: exact !important; color: #000 !important; }</style>`;
     gID('print-view').innerHTML=h;
-    
-    setTimeout(() => {
-        window.print();
-    }, 100);
+    window.print();
 };
 
 function numToWords(n, cur){
@@ -1979,6 +1976,7 @@ function openModal(t,a,b){history.pushState({cat: cur, modal: true}, '', ''); gI
      }
 
      else if(t==='ship'){
+       h.innerText = 'ОТГРУЗКА';
       let dD=d, dNum='', dAg='', dMf='', dC='', dAddr=''; let dr = localStorage.getItem('shipDraft');
       if(dr) { try { let p = JSON.parse(dr); shipBasket = p.basket || {}; priceMode = p.pm || 'opt'; useStretch = p.str || false; if(p.d) dD = p.d; if(p.num) dNum = p.num; if(p.ag) dAg = p.ag; if(p.mf) dMf = p.mf; if(p.c) dC = p.c; if(p.addr) dAddr = p.addr; } catch(e) { shipBasket = {}; } } else { shipBasket = {}; priceMode = 'opt'; useStretch = false; }
 m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;border:1px solid #e2e8f0;border-radius:10px"><div id="shipHead" class="head-wrap"><div class="grid-3" style="display:grid;grid-template-columns:1fr 1fr 1fr 60px;gap:5px;"><div><span class="lbl-small">ДАТА</span><input type="date" id="hD" value="${dD}" onchange="saveShipDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="hNum" value="${dNum}" oninput="saveShipDraft()"></div><div><span class="lbl-small">СДЕЛКА</span><input type="text" id="hAg" value="${dAg}" oninput="saveShipDraft()"></div><div><span class="lbl-small">ВАЛЮТА</span><select id="hCur" onchange="saveShipDraft()" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:5px;background:#fff;font-size:14px"><option value="UAH">Грн</option><option value="USD">$</option></select></div></div><div class="grid-2"><div><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('hMyFop',data.Suppliers?Object.values(data.Suppliers).map(x=>x.name):[],'ПОСТАВЩИК')}</div><div><span class="lbl-small">ПОЛУЧАТЕЛЬ</span>${makeSmart('hC',gCl(),'Клиент...')}</div><div style="position:relative;">
@@ -2151,10 +2149,10 @@ else if(t==='regIn'){
       h.innerText='НАСТРОЙКИ ОКНА ОТГРУЗКИ (ДЛЯ ПК)';
       m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ВЕРХНИЙ БЛОК (ШАПКА)</div><div><span class="inv-set-lbl">Ширина (px) [По-умолчанию 450]</span><input type="number" id="ssHW" value="${shipSet.headW}"></div><div class="z-head" style="margin-top:10px">НИЖНИЙ БЛОК (ТОВАРЫ)</div><div><span class="inv-set-lbl">Ширина (px или 100 для 100%)</span><input type="text" id="ssLW" value="${shipSet.listW}"></div><div><span class="inv-set-lbl">Высота области (vh) [По-умолчанию 60]</span><input type="number" id="ssLH" value="${shipSet.listH}"></div><div class="z-head" style="margin-top:10px">ПЛИТКИ ТОВАРОВ</div><div><span class="inv-set-lbl">Мин. ширина плитки (px) [По-умолчанию 75]</span><input type="number" id="ssTS" value="${shipSet.tileS}"></div><div style="font-size:10px;color:#64748b;margin-top:5px;line-height:1.2">Изменения применяются только для экранов шире 800px (ноутбуки/ПК) и сохраняются в память этого браузера.</div></div><button class="btn-main" onclick="saveShipSet()">СОХРАНИТЬ И ПРИМЕНИТЬ</button>`;
      }
-     else if(t==='invSet' || t==='invSetBN'){
-      const isBN = t==='invSetBN'; window.curEditingSet = t; const curS = isBN ? invSetBN : invSet;
+     else if(t==='' || t==='BN'){
+      const isBN = t==='BN'; window.curEditingSet = t; const curS = isBN ? BN : ;
       h.innerText = isBN ? 'НАСТРОЙКИ ПЕЧАТИ Б/Н' : 'НАСТРОЙКИ ПЕЧАТИ НАЛ.';
-      m.innerHTML=`<div class="inv-set-card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><label class="checkbox-wrap"><input type="checkbox" id="isBrd" ${curS.tblBrd?'checked':''} onchange="updatePreview()"> Внешняя рамка</label><label class="checkbox-wrap"><input type="checkbox" id="isV" ${curS.vLin?'checked':''} onchange="updatePreview()"> Верт. линии</label><label class="checkbox-wrap"><input type="checkbox" id="isH" ${curS.hLin?'checked':''} onchange="updatePreview()"> Гориз. линии</label><div><span class="inv-set-lbl">Шрифт</span><select id="isF" class="smart-sel" onchange="updatePreview()"><option value="9px" ${curS.fSize==='9px'?'selected':''}>9px</option><option value="11px" ${curS.fSize==='11px'?'selected':''}>11px</option><option value="14px" ${curS.fSize==='14px'?'selected':''}>14px</option></select></div></div><div class="grid-2" style="margin-bottom:10px"><div><span class="inv-set-lbl">Ширина колонок (%)</span><input type="text" id="isColW" value="${curS.colW}" placeholder="5,55,10,5,10,15" oninput="updatePreview()" style="font-size:11px"></div><div><span class="inv-set-lbl">Высота строк</span><input type="text" id="isRowH" value="${curS.rowH}" placeholder="14px" oninput="updatePreview()" style="font-size:11px"></div></div><div style="margin-bottom:5px"><span class="inv-set-lbl">ШАПКА (ВЕРХНИЙ ТЕКСТ)</span><textarea id="isTop" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraTop||''}</textarea></div><div><span class="inv-set-lbl">ПОДВАЛ (НИЖНИЙ ТЕКСТ)</span><textarea id="isBot" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraBot||''}</textarea></div><div style="margin-top:5px;font-size:10px;color:#0369a1;font-weight:700">Умные теги: [НОМЕР], [ДАТА], [ПОСТАВЩИК], [КЛИЕНТ], [СДЕЛКА], [АДРЕСА], [КОЛ_ВО_ПОЗИЦИЙ], [ОБЩАЯ_СУММА], [СУММА_ПДВ_ПРОПИСЬЮ], [СУММА_ПРОПИСЬЮ].</div></div><div style="text-align:center;font-weight:900;color:var(--p);margin-top:10px">ЖИВОЙ ПРЕДПРОСМОТР:</div><div id="invPreview" class="inv-preview-box"></div><button class="btn-main" onclick="saveInvSet()">СОХРАНИТЬ ШАБЛОН</button>`;
+      m.innerHTML=`<div class="inv-set-card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><label class="checkbox-wrap"><input type="checkbox" id="isBrd" ${curS.tblBrd?'checked':''} onchange="updatePreview()"> Внешняя рамка</label><label class="checkbox-wrap"><input type="checkbox" id="isV" ${curS.vLin?'checked':''} onchange="updatePreview()"> Верт. линии</label><label class="checkbox-wrap"><input type="checkbox" id="isH" ${curS.hLin?'checked':''} onchange="updatePreview()"> Гориз. линии</label><div><span class="inv-set-lbl">Шрифт</span><select id="isF" class="smart-sel" onchange="updatePreview()"><option value="9px" ${curS.fSize==='9px'?'selected':''}>9px</option><option value="11px" ${curS.fSize==='11px'?'selected':''}>11px</option><option value="14px" ${curS.fSize==='14px'?'selected':''}>14px</option></select></div></div><div class="grid-2" style="margin-bottom:10px"><div><span class="inv-set-lbl">Ширина колонок (%)</span><input type="text" id="isColW" value="${curS.colW}" placeholder="5,55,10,5,10,15" oninput="updatePreview()" style="font-size:11px"></div><div><span class="inv-set-lbl">Высота строк</span><input type="text" id="isRowH" value="${curS.rowH}" placeholder="14px" oninput="updatePreview()" style="font-size:11px"></div></div><div style="margin-bottom:5px"><span class="inv-set-lbl">ШАПКА (ВЕРХНИЙ ТЕКСТ)</span><textarea id="isTop" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraTop||''}</textarea></div><div><span class="inv-set-lbl">ПОДВАЛ (НИЖНИЙ ТЕКСТ)</span><textarea id="isBot" style="width:100%;height:100px;border-radius:6px;border:1px solid #ccc;padding:5px;font-size:11px" oninput="updatePreview()">${curS.xtraBot||''}</textarea></div><div style="margin-top:5px;font-size:10px;color:#0369a1;font-weight:700">Умные теги: [НОМЕР], [ДАТА], [ПОСТАВЩИК], [КЛИЕНТ], [СДЕЛКА], [АДРЕСА], [КОЛ_ВО_ПОЗИЦИЙ], [ОБЩАЯ_СУММА], [СУММА_ПДВ_ПРОПИСЬЮ], [СУММА_ПРОПИСЬЮ].</div></div><div style="text-align:center;font-weight:900;color:var(--p);margin-top:10px">ЖИВОЙ ПРЕДПРОСМОТР:</div><div id="invPreview" class="inv-preview-box"></div><button class="btn-main" onclick="save()">СОХРАНИТЬ ШАБЛОН</button>`;
       setTimeout(updatePreview, 100);
      }
     }
@@ -2271,7 +2269,7 @@ window.execInventory=async function(){const cat=gID('invCat').value,d=gID('invDa
     };
 
     window.updatePreview = function() {
-     const isBN = window.curEditingSet === 'invSetBN';
+     const isBN = window.curEditingSet === 'BN';
      const bT=gID('isBrd').checked?'2px solid #000':'none', bI=gID('isBrd').checked?'1px solid #000':'none';
      const bV=gID('isV').checked?'1px solid #000':'none', bH=gID('isH').checked?'1px solid #000':'none';
      const fS=gID('isF').value, colW=gID('isColW').value.split(',').map(x=>x.trim()+'%'), rowH=gID('isRowH').value;
@@ -2283,10 +2281,10 @@ window.execInventory=async function(){const cat=gID('invCat').value,d=gID('invDa
      tbl+=`</tbody></table>`;
      gID('invPreview').innerHTML=style+`<div style="font-size:12px;color:#000;line-height:1.4;text-align:left;white-space:pre-wrap">`+parseTags(gID('isTop').value, dDummy)+`</div>`+tbl+`<div style="font-size:12px;color:#000;line-height:1.4;text-align:left;white-space:pre-wrap">`+parseTags(gID('isBot').value, dDummy)+`</div>`;
     };
-    window.saveInvSet=async function(){
-     const isBN = window.curEditingSet === 'invSetBN'; const dbKey = isBN ? 'InvoiceSettingsBN' : 'InvoiceSettings';
+    window.save=async function(){
+     const isBN = window.curEditingSet === 'BN'; const dbKey = isBN ? 'InvoiceSettingsBN' : 'InvoiceSettings';
      const u={tblBrd:gID('isBrd').checked, vLin:gID('isV').checked, hLin:gID('isH').checked, fSize:gID('isF').value, colW:gID('isColW').value, rowH:gID('isRowH').value, xtraTop:gID('isTop').value, xtraBot:gID('isBot').value};
-     try{ await db.child(dbKey).set(u); if(isBN) invSetBN=u; else invSet=u; closeModal(); alert('Шаблон сохранен'); }catch(e){alert(e);}
+     try{ await db.child(dbKey).set(u); if(isBN) BN=u; else =u; closeModal(); alert('Шаблон сохранен'); }catch(e){alert(e);}
     };
 window.loadBulk=function(c){D.querySelectorAll('.bulk-q').forEach(i=>{const n=i.dataset.n,ct=i.dataset.cat,v=parseFloat(i.value),k=n+'::'+ct;if(v>0){const pInp=i.parentElement.querySelector('.bulk-p');let customPrice=pInp?parseFloat(pInp.value):undefined;if(isNaN(customPrice))customPrice=0;if(priceMode==='bn'&&customPrice>0){customPrice=Math.round((customPrice*1.2)*100)/100;}shipBasket[k]={w:v,c:ct,n:n,p:customPrice};}else{delete shipBasket[k]}});const bs=D.querySelectorAll('#shipBtns button');bs.forEach(b=>{let t=b.innerText,a=!1;if(c==='Готовая'&&t.includes('ФАСОВАННАЯ'))a=!0;if(c==='WeightStock'&&t.includes('ПОКУПНАЯ'))a=!0;if(c==='Stock_DV'&&t.includes('ДВ ВЕС'))a=!0;if(c==='Stock_Feed'&&t.includes('ОТХОДЫ'))a=!0;b.className='btn-sel '+(a?'active':'')});const s={};if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s[v.name]=(s[v.name]||0)+v.amount});let h=`<div class="item-grid">`;Object.keys(s).sort().forEach(n=>{const v=s[n];if(v>0){const k=n+'::'+c,sv=shipBasket[k]?shipBasket[k].w:'';const isFilled=sv>0?'tile-filled':'';let prVal=0;if(data.PriceList){const pObj=Object.values(data.PriceList).find(x=>x.name===n);if(pObj){if(priceMode==='opt')prVal=pObj.priceOpt!==undefined?pObj.priceOpt:(pObj.price||0);else if(priceMode==='roz')prVal=pObj.priceRoz!==undefined?pObj.priceRoz:0;else if(priceMode==='bn')prVal=pObj.priceBN!==undefined?pObj.priceBN:(pObj.priceOpt||0);}}let savedPrice=(shipBasket[k]&&shipBasket[k].p!==undefined)?shipBasket[k].p:prVal;if(priceMode==='bn'&&savedPrice>0){savedPrice=Math.round((savedPrice/1.2)*100)/100;}let prcHtml=`<input type="number" class="bulk-p" data-n="${esc(n)}" data-cat="${c}" value="${savedPrice}" step="0.01" style="width:100%;height:22px;text-align:center;font-weight:900;color:#16a34a;background:#f0fdf4;border:1px solid #86efac;border-radius:4px;margin-bottom:2px;font-size:11px;" placeholder="Цена" oninput="saveShipDraft()">`;h+=`<div class="item-card ${isFilled}"><div class="item-title">${esc(n)}</div>${prcHtml}<div style="font-size:10px;color:#888;margin-bottom:2px">Ост:${Number.isInteger(v) ? v : v.toFixed(1)}</div><input type="number" class="bulk-q" data-n="${esc(n)}" data-cat="${c}" style="width:100%;height:25px;text-align:center;font-weight:900" value="${sv}" oninput="if(this.value>0)this.parentElement.classList.add('tile-filled');else this.parentElement.classList.remove('tile-filled'); updShipTotal();"></div>`}});gID('shpR').innerHTML=h+`</div>`}
 
@@ -2326,7 +2324,7 @@ window.printShipInvoice=function(d){
     let tw=0;
     const isBN=d.mode==='bn';
     const cur = d.currency || 'UAH';
-    const curSet=isBN?invSetBN:invSet;
+    const curSet=isBN?BN:;
     const bT=curSet.tblBrd?'2px solid #000':'none',bI=curSet.tblBrd?'1px solid #000':'none';
     const bV=curSet.vLin?'1px solid #000':'none',bH=curSet.hLin?'1px solid #000':'none';
     const fS=curSet.fSize||'11px',colW=(curSet.colW||'5,55,10,5,10,15').split(',').map(x=>x.trim()+'%'),rowH=curSet.rowH||'14px';
@@ -2363,6 +2361,7 @@ window.printShipInvoice=function(d){
     }
     h+=`</tbody></table>`;
     h+=`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraBot,dData)+`</div>`;
+    h+=`<style>#print-view .pr-table { border: none !important; } #print-view .pr-table tr:last-child td { border-bottom: none !important; } #print-view * { -webkit-print-color-adjust: exact !important; color: #000 !important; }</style>`;
     gID('print-view').innerHTML=h;
     window.print();
 };
