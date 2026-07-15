@@ -6354,17 +6354,14 @@ window.printMassAdvances = function() {
     let dObj = new Date();
     let dateStr = String(dObj.getDate()).padStart(2, '0') + '.' + String(dObj.getMonth() + 1).padStart(2, '0') + '.' + dObj.getFullYear();
     
-    let win = window.open('', '', 'height=800,width=600');
-    win.document.write('<html><head><title>Авансы</title>');
-    win.document.write('<style>body{font-family:sans-serif;} .fas-row-out{display:flex; justify-content:space-between; font-size:18px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:5px;} input{border:none; text-align:right; font-weight:bold; font-size:18px;} button{display:none;}</style>');
-    win.document.write('</head><body>');
-    win.document.write('<h2>Список авансов (' + dateStr + ')</h2>');
-    win.document.write(content);
-    win.document.write('<h3 style="text-align:right;">ОБЩАЯ СУММА: ' + total + ' грн</h3>');
-    win.document.write('</body></html>');
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 500);
+    let html = '<style>#print-view .fas-row-out{display:flex; justify-content:space-between; font-size:18px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:5px;} #print-view input{border:none; text-align:right; font-weight:bold; font-size:18px;} #print-view button{display:none;}</style>';
+    html += '<h2>Список авансов (' + dateStr + ')</h2>';
+    html += content;
+    html += '<h3 style="text-align:right;">ОБЩАЯ СУММА: ' + total + ' грн</h3>';
+    
+    let pv = document.getElementById('print-view') || window.gID('print-view');
+    pv.innerHTML = html;
+    window.print();
 };
 
 window.renderPrintExport = function() {
