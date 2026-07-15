@@ -1774,7 +1774,7 @@ window.viewIncomingInvoice=function(id){
 };
 
 window.reprintIncInv = function() {
-    const style = '<style>#print-view table{border:none!important} #print-view th, #print-view tr:not(:last-child) td{border:1px solid #000!important} #print-view tr:last-child td{border:none!important; border-top:1px solid #000!important} #print-view tr:last-child td[style*="border"]{border:2px solid #000!important} #print-view *{-webkit-print-color-adjust:exact!important; color:#000!important}</style>';
+    const style = '<style>#print-view table{border-collapse:collapse!important; border:none!important} #print-view tr:not(:last-child) td, #print-view th{border:1px solid #000!important} #print-view *{-webkit-print-color-adjust:exact!important; color:#000!important}</style>';
     gID('print-view').innerHTML = style + gID('shipPrev').innerHTML;
     setTimeout(() => window.print(), 100);
 };
