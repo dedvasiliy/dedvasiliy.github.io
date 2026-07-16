@@ -4073,8 +4073,9 @@ window.renderTsList = function(c, forceYear, forceMonth){
         <button class="btn-main" onclick="openWorkersMgmt()" style="background:#2563eb;margin:0;font-size:10px;padding:10px 5px">👥 СОТРУДНИКИ</button>
         <button class="btn-main" onclick="openMassAdvance()" style="background:#10b981;margin:0;font-size:10px;padding:10px 5px">💸 АВАНС ВСЕМ</button>
         <button class="btn-main" onclick="openGoodsReport()" style="background:#d97706;margin:0;font-size:10px;padding:10px 5px">🛒 ТОВАРЫ ПОД З/П</button>
-    </div>
-    
+    <button class="btn-main" onclick="openRationsReport()" style="background:#0d9488;margin:0;font-size:10px;padding:10px 5px">📦 ПАЙКИ</button>
+</div>
+
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
         <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="renderTsList(window.mainContainer, ${prevY}, ${prevM})">◀</button>
         <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
@@ -4279,6 +4280,8 @@ window.renderTsList = function(c, forceYear, forceMonth){
         actionsHtml += `<button class="btn-main" style="flex:1;background:#10b981;font-size:10px;margin:0;" onclick="issuePayout('${esc(name)}', '${monthKey}', 'Зарплата', ${remZp})">💰 ЗАРПЛАТА (${remZp}₴)</button>`;
     }
     actionsHtml += `<button class="btn-main" style="flex:1;background:#d97706;font-size:10px;margin:0;" onclick="openGoodsPayout('${esc(name)}', '${monthKey}')">🛒 ТОВАР В СЧЕТ ЗП</button>`;
+        actionsHtml += `<button class="btn-main" style="flex:1;background:#0d9488;font-size:10px;margin:0;margin-left:5px;" onclick="openRationPayout('${esc(name)}', '${monthKey}')">📦 ПАЁК</button>`;
+
     actionsHtml += `</div>`;
 
             h += `<div style="margin-top:10px;background:#f8fafc;border:1px solid #cbd5e1;padding:10px;border-radius:8px;text-align:center;font-weight:900;font-size:12px;">
@@ -4478,6 +4481,266 @@ itemsList.push(n + ' — ' + qty + ' ' + unit + ' по ' + +(sum/qty).toFixed(2)
                 alert(e.message);
             }
         };
+window.openRationPayout = function(name, monthKey) {
+    window.gpCatOptions = '<option value="">Выбрать...</option>';
+    const cats = {'Готовая': 'ФАСОВКА', 'WeightStock': 'ПОКУПНАЯ ПРОДУКЦИЯ', 'Stock_DV': 'ДВ ВЕС', 'Stock_Feed': 'КОРМА И ОТХОДЫ'};
+    
+    for(let c in cats) {
+        let items = [];
+        if(data[c]) Object.values(data[c]).forEach(v => { if(v.name && !items.includes(v.name)) items.push(v.name); });
+        if(items.length > 0) {
+            window.gpCatOptions += `<optgroup label="${cats[c]}">`;
+            items.sort().forEach(p => window.gpCatOptions += `<option value="${c}::${esc(p)}">${esc(p)}</option>`);
+            window.gpCatOptions += `</optgroup>`;
+        }
+    }
+
+    let h = `
+    <div style="text-align:center;font-weight:900;margin-bottom:10px;font-size:14px;color:var(--p);">${esc(name)}</div>
+    <div style="margin-bottom:10px;"><span class="lbl-small">ДАТА СПИСАНИЯ</span><input type="date" id="ratDate" class="fas-inp" value="${getLocalDateStr()}"></div>
+    
+    <div id="ratRows"></div>
+    <button class="btn-main" style="background:#3b82f6;font-size:11px;margin-bottom:10px;padding:6px;width:140px;" onclick="addRatRow()">+ ДОБАВИТЬ ТОВАР</button>
+    
+    <div style="text-align:right;font-weight:900;font-size:14px;color:var(--p);margin-top:10px;padding-top:10px;border-top:1px solid #cbd5e1;">
+        ИТОГО СУММА: <span id="ratTotalSum">0</span> ₴
+    </div>
+    <div style="font-size:10px;color:#64748b;margin-top:5px;">* Сумма пайка нигде не учитывается, только для отчета.</div>
+    <button class="btn-main" style="margin-top:15px;background:#0d9488;" onclick="execRationPayout('${esc(name)}', '${monthKey}')">ВЫДАТЬ ПАЁК</button>`;
+    
+    gID('mT').innerText = 'ВЫДАЧА ПАЙКА (БЕЗ СПИСАНИЯ З/П)';
+    gID('mB').innerHTML = h;
+    gID('mdl').style.display = 'flex';
+    
+    setTimeout(() => addRatRow(), 50);
+};
+
+window.addRatRow = function() {
+    let html = `
+    <div class="rat-row" style="display:grid;grid-template-columns:1fr 50px 65px 30px;gap:3px;margin-bottom:5px;align-items:center;">
+        <select class="rat-item fas-inp" style="margin:0;height:32px;font-size:11px;padding:0 2px;" onchange="calcRatRow(this)">${window.gpCatOptions}</select>
+        <input type="number" class="rat-qty fas-inp" style="margin:0;height:32px;font-size:11px;text-align:center;" placeholder="Кол" oninput="calcRatRow(this)">
+        <input type="number" class="rat-sum fas-inp" style="margin:0;height:32px;font-size:11px;background:#eef2ff;font-weight:bold;text-align:center;" placeholder="Сумма ₴" oninput="calcRatTotal()">
+        <button class="btn-main" style="margin:0;height:32px;background:#ef4444;padding:0;" onclick="this.parentElement.remove();calcRatTotal()">✕</button>
+    </div>`;
+    gID('ratRows').insertAdjacentHTML('beforeend', html);
+};
+
+window.calcRatRow = function(el) {
+    let row = el.parentElement;
+    let itemVal = row.querySelector('.rat-item').value;
+    let qty = parseFloat(row.querySelector('.rat-qty').value) || 0;
+    let sumInput = row.querySelector('.rat-sum');
+    
+    if(itemVal && qty > 0) {
+        let n = itemVal.split('::')[1];
+        let price = 0;
+        if(data.PriceList) {
+            let pObj = Object.values(data.PriceList).find(x => x.name === n);
+            if(pObj) price = parseFloat(pObj.priceRoz) || 0; 
+        }
+        if(price > 0) sumInput.value = Math.round(price * qty);
+    }
+    calcRatTotal();
+};
+
+window.calcRatTotal = function() {
+    let total = 0;
+    document.querySelectorAll('.rat-sum').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
+    gID('ratTotalSum').innerText = total;
+};
+
+window.execRationPayout = async function(name, monthKey) {
+    let dStr = gID('ratDate').value;
+    let rows = document.getElementById('ratRows').children;
+    if(!dStr || rows.length === 0) return alert('Заполните дату и добавьте товары!');
+    
+    let totalSum = 0;
+    let itemsList = [];
+    let stockUpdates = {};
+    const dIso = dStr + "T12:00:00Z";
+    const tsStr = new Date().toISOString();
+    
+    for(let row of rows) {
+        let itemVal = row.querySelector('.rat-item').value;
+        let qty = parseFloat(row.querySelector('.rat-qty').value);
+        let sum = parseFloat(row.querySelector('.rat-sum').value);
+        
+        if(!itemVal || !qty || qty <= 0 || !sum || sum < 0) {
+            return alert('Заполните все поля добавленных товаров!');
+        }
+        
+        let cat = itemVal.split('::')[0];
+        let n = itemVal.split('::')[1];
+        
+        totalSum += sum;
+        let sel = row.querySelector('.rat-item');
+        let optGroup = sel.options[sel.selectedIndex].parentNode;
+        let unit = (optGroup && optGroup.label && optGroup.label.toUpperCase().includes('ФАСОВКА')) ? 'шт' : 'кг';
+        itemsList.push(n + ' — ' + qty + ' ' + unit + ' по ' + +(sum/qty).toFixed(2) + ' ₴ (' + sum + ' ₴)');
+        
+        stockUpdates['/' + cat + '/' + db.child(cat).push().key] = {
+            name: n,
+            amount: -qty,
+            date: dIso,
+            note: 'Паёк: ' + name,
+            ts: tsStr
+        };
+    }
+    
+    if(!confirm('Списать ПАЁК со склада (позиций: ' + rows.length + ')?\\nНа общую сумму: ' + totalSum + ' ₴\\n\\nБаланс З/П затронут НЕ БУДЕТ.\\nПодтверждаете?')) return;
+    
+    showLoad();
+    try {
+        let u = { ...stockUpdates };
+        
+        u['/Timesheet/' + db.child('Timesheet').push().key] = {
+            date: dStr,
+            name: name,
+            isPayout: true,
+            payoutType: 'Паёк',
+            goodsDetails: itemsList.join('<br>'),
+            rationTotal: totalSum,
+            payoutAmount: 0, 
+            forMonth: monthKey,
+            ts: tsStr
+        };
+        
+        await db.update(u);
+        hideLoad();
+        closeModal();
+        alert('Паёк успешно выдан!');
+    } catch(e) {
+        hideLoad();
+        alert(e.message);
+    }
+};
+
+window.openRationsReport = function(forceYear, forceMonth) {
+    const dObj = new Date();
+    let year = forceYear !== undefined ? forceYear : dObj.getFullYear();
+    let month = forceMonth !== undefined ? forceMonth : dObj.getMonth();
+    
+    const daysToRender = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+
+    const ts = data.Timesheet || {};
+    let list = [];
+    
+    Object.values(ts).forEach(v => {
+        if (v.isPayout && v.payoutType === 'Паёк' && daysToRender.includes(v.date)) {
+            list.push(v);
+        }
+    });
+    
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    let prevM = month - 1, prevY = year;
+    if (prevM < 0) { prevM = 11; prevY--; }
+    let nextM = month + 1, nextY = year;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let titleText = `${monthNames[month]} ${year}`;
+
+    let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;background:#f8fafc;padding:5px;border-radius:8px;border:1px solid #cbd5e1">
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openRationsReport(${prevY}, ${prevM})">◀</button>
+        <div style="font-weight:900;color:var(--p);font-size:12px;text-transform:uppercase;text-align:center;line-height:1">${titleText}</div>
+        <button class="btn-main" style="width:auto;margin:0;padding:5px 15px;background:#64748b" onclick="openRationsReport(${nextY}, ${nextM})">▶</button>
+    </div>`;
+
+    if (list.length > 0) {
+        h += `<button class="btn-main" style="margin-bottom:15px;background:#0f172a;width:100%;" onclick="printRationsReport(${year}, ${month})">🖨 ПЕЧАТЬ СПИСКА</button>`;
+    }
+    
+    if (list.length === 0) {
+        h += '<div style="text-align:center;padding:20px;color:#64748b;font-weight:900;">В этом месяце пайки не выдавались</div>';
+    } else {
+        list.forEach(v => {
+            let dArr = v.date.split('-'); 
+            let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
+            let details = v.goodsDetails || 'Нет данных';
+            let amt = v.rationTotal || 0;
+            
+            h += `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px;margin-bottom:5px;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:4px;border-bottom:1px dashed #cbd5e1;padding-bottom:2px;">
+                    <span>${dFormat}</span>
+                    <span style="font-weight:900;color:#0f172a;font-size:12px;">${esc(v.name)}</span>
+                </div>
+                <div style="font-size:11px;font-weight:bold;color:#0d9488;margin-bottom:4px;line-height:1.5;">${details}</div>
+                <div style="text-align:right;font-size:12px;font-weight:900;color:#0d9488;border-top:1px dashed #cbd5e1;padding-top:4px;">Сумма пайка: ${amt} ₴</div>
+            </div>`;
+        });
+    }
+    
+    gID('mT').innerText = 'ВЫДАННЫЕ ПАЙКИ';
+    gID('mB').innerHTML = h;
+    gID('mdl').querySelector('.modal-box').style.maxWidth = '400px';
+    gID('mdl').style.display = 'flex';
+};
+
+window.printRationsReport = function(year, month) {
+    const daysToRender = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for(let i=1; i<=daysInMonth; i++) daysToRender.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+
+    const ts = data.Timesheet || {};
+    let list = [];
+    
+    Object.values(ts).forEach(v => {
+        if (v.isPayout && v.payoutType === 'Паёк' && daysToRender.includes(v.date)) {
+            list.push(v);
+        }
+    });
+    
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let titleText = `${monthNames[month]} ${year}`;
+
+    let html = `
+    <style>
+        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-family: Arial, sans-serif; font-size: 12px; }
+        .print-table th, .print-table td { border: 1px solid #000; padding: 6px; text-align: left; vertical-align: top; color: #000; }
+        .print-table th { background-color: #f0f0f0; font-weight: bold; }
+        .print-total { font-weight: bold; text-align: right; }
+    </style>
+    <h2 style="text-align: center; font-size: 16px; margin-bottom: 20px; text-transform: uppercase; color: #000;">Выданные пайки: ${titleText}</h2>
+    <table class="print-table">
+        <tr>
+            <th style="width:10%">Дата</th>
+            <th style="width:20%">Сотрудник</th>
+            <th style="width:55%">Выданные товары</th>
+            <th style="width:15%">Сумма (₴)</th>
+        </tr>`;
+    
+    let totalSum = 0;
+    list.forEach(v => {
+        let dArr = v.date.split('-'); 
+        let dFormat = `${dArr[2]}.${dArr[1]}.${dArr[0]}`; 
+        let details = v.goodsDetails || 'Нет данных';
+        let amount = parseFloat(v.rationTotal) || 0;
+        totalSum += amount;
+        
+        html += `<tr>
+            <td>${dFormat}</td>
+            <td><b>${esc(v.name)}</b></td>
+            <td>${details}</td>
+            <td>${amount}</td>
+        </tr>`;
+    });
+
+    html += `<tr><td colspan="3" class="print-total">ИТОГО ВЫДАНО:</td><td><b>${totalSum}</b></td></tr>
+    </table>`;
+
+    let pv = document.getElementById('print-view') || window.gID('print-view');
+    pv.innerHTML = html;
+    window.print();
+};
+
 window.openGoodsReport = function(forceYear, forceMonth) {
     const dObj = new Date();
     let year = forceYear !== undefined ? forceYear : dObj.getFullYear();
