@@ -4369,7 +4369,7 @@ window.calcGpRow = function(el) {
             // Берем правильную колонку розницы: priceRoz
             if(pObj) price = parseFloat(pObj.priceRoz) || 0; 
         }
-        if(price > 0) sumInput.value = Math.round(price * qty);
+                if(price > 0) sumInput.value = +(price * qty).toFixed(2);
     }
     calcGpTotal();
 };
@@ -4539,7 +4539,7 @@ window.calcRatRow = function(el) {
             let pObj = Object.values(data.PriceList).find(x => x.name === n);
             if(pObj) price = parseFloat(pObj.priceRoz) || 0; 
         }
-        if(price > 0) sumInput.value = Math.round(price * qty);
+                if(price > 0) sumInput.value = +(price * qty).toFixed(2);
     }
     calcRatTotal();
 };
