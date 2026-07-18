@@ -3268,7 +3268,8 @@ function genDayReport(){
                     else if(cat==='Stock_DV')addV(rOutVes,n+'::ДВ вес',amt,defUnit,n,'ДВ вес');
                     else if(cat==='Stock_Feed')addV(rOutFeed,n,amt,defUnit,n);
                 }else if(isPack){
-                    addV(rAuto,n,amt,defUnit,n);
+                    let prefix = (cat === 'Пленка' || cat === 'Пакеты' || cat === 'Мешки' || cat === 'Этикетка' || cat === 'Нитки') ? (cat + ' ') : '';
+                    addV(rAuto, prefix+n, amt, defUnit, prefix+n);
                 }else if(note.includes('Паёк')){
                     addV(rPai,n+'::'+note,amt,defUnit,n,'Паёк',note);
                 }else if(note.includes('В счет ЗП')){
@@ -3288,7 +3289,6 @@ function genDayReport(){
         });
     });
 
-    // Блок: Считывание зарплаты за смену из табеля
     if(data.Timesheet){
         Object.values(data.Timesheet).forEach(v=>{
             if(v.date === d && !v.isPayout && v.name){
