@@ -2890,15 +2890,13 @@ window.previewWorkshop=function(k){
         const i=x.id.split('_')[1],s=gID('was_'+i).value,n=gID('wan_'+i).value,q=parseFloat(gID('waq_'+i).value);
         if(n&&q>0){add.push({s,n,q});tAdd+=q;}
     }
+    
+    // ИСПРАВЛЕННЫЙ БЛОК: Берем тег из сырья строго как он есть, без подмены даты
     let batchTag = '';
     if (main.length > 0 && main[0].n) {
         let match = main[0].n.match(/\[.*?\]/);
-        let rawDate = main[0].n.match(/\d{2}\.\d{2}(\.\d{2,4})?/);
-        let dStr = rawDate ? rawDate[0] : ds;
         if (match) {
-            batchTag = match[0].includes(dStr) ? match[0] : match[0].replace(']', ' ' + dStr + ']');
-        } else {
-            batchTag = '[' + dStr + ']';
+            batchTag = match[0];
         }
     }
 
