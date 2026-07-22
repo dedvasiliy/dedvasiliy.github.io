@@ -4789,7 +4789,7 @@ window.openRationsReport = function(forceYear, forceMonth) {
                     <span style="font-weight:900;color:#0f172a;font-size:12px;">${esc(v.name)}</span>
                 </div>
                 <div style="font-size:11px;font-weight:bold;color:#0d9488;margin-bottom:4px;line-height:1.5;">${details}</div>
-                <div style="text-align:right;font-size:12px;font-weight:900;color:#0d9488;border-top:1px dashed #cbd5e1;padding-top:4px;">Сумма пайка: ${amt} ₴</div>
+                <div style="text-align:right;font-size:12px;font-weight:900;color:#0d9488;border-top:1px dashed #cbd5e1;padding-top:4px;">Сумма пайка: ${Number(amt).toFixed(2)} ₴</div>
             </div>`;
         });
     }
