@@ -3055,7 +3055,7 @@ window.previewWorkshop=function(k){
     let opClean = String(op || '').trim();
     let asClean = String(as || '').trim();
     
-    let operatorBonus = (tRaw / 1000) * 75; // 75 грн за тонну переработанного сырья
+        let opProdRate = 75;      if (data.Workers) {         let opWorker = Object.values(data.Workers).find(w => String(w.name || '').trim() === opClean);         if (opWorker && opWorker.prodRate !== undefined) {             opProdRate = parseFloat(opWorker.prodRate) || 0;         }     }     let operatorBonus = (tRaw / 1000) * opProdRate;
 
     if (data.Timesheet) {
         let baseAs = asClean.replace(/\s*2$/, '');
