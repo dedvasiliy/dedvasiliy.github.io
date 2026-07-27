@@ -3475,17 +3475,17 @@ window.delRec=async(c,i)=>{
     const u={};
     u[`/${c}/${i}`]=null;
     
-    // Поиск и удаление связанных записей (в т.ч. товаров выданных в счет ЗП)
+    // Поиск и удаление связанных записей (в т.ч. товаров выданных в счет ЗП и пайков)
     stockCatsAll.forEach(cat=>{
         if(data[cat]){
             Object.entries(data[cat]).forEach(([key,val])=>{
-                if(val.fLink===i || (r.ts && val.ts===r.ts && val.note && val.note.includes('В счет ЗП:'))){
+                if(val.fLink===i || (r.ts && val.ts===r.ts && val.note && (val.note.includes('В счет ЗП') || val.note.includes('Паёк')))){
                     u[`/${cat}/${key}`]=null;
                 }
             });
         }
     });
-    
+
     if(data['ArchIncoming']){ Object.entries(data['ArchIncoming']).forEach(([key,val])=>{ if(val.fLink===i) u[`/ArchIncoming/${key}`]=null; }); }
 
     try{
