@@ -384,18 +384,7 @@ auth.onAuthStateChanged(u => {
             return;
         }
 
-        const today = getLocalDateStr();
-        const authDate = localStorage.getItem('authDate');
-
-        if (authDate && authDate !== today) {
-            firebase.auth().signOut();
-            localStorage.removeItem('authDate');
-            return; 
-        }
-
-        if (!authDate) {
-            localStorage.setItem('authDate', today);
-        }
+        // Проверка даты удалена. Сессия больше не сбрасывается по ночам.
 
         gID('lockScreen').classList.add('lock-hidden');
         D.body.classList.add('nav-active');
@@ -413,6 +402,7 @@ auth.onAuthStateChanged(u => {
         cancelMfa();
     }
 });
+
 function initAppData(){
   renderHome();
   stockCatsAll.forEach(p=>{
