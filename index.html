@@ -209,9 +209,8 @@ body.dark-theme .toast-msg {
           // Используем innerHTML для переноса строки (<br>)
           el.innerHTML = `⏳ ОГРАНИЧЕНИЕ ДОСТУПА ЧЕРЕЗ:<br>${days} дн. ${hours} ч. ${minutes} мин. ${seconds} сек.`;
         }
-        
+          const intervalId = setInterval(updateTimer, 1000);
         updateTimer();
-        const intervalId = setInterval(updateTimer, 1000);
       })();
     </script>
 
@@ -374,6 +373,7 @@ function cancelMfa() {
         gID('recaptcha-container').innerHTML = '';
     }
 }
+
 auth.onAuthStateChanged(u => {
     if (u) {
         if (u.multiFactor && u.multiFactor.enrolledFactors.length === 0) {
@@ -384,7 +384,20 @@ auth.onAuthStateChanged(u => {
             return;
         }
 
-        // Проверка даты удалена. Сессия больше не сбрасывается по ночам.
+        const today = getLocalDateStr();
+        const authDate = localStorage.getItem('authDate');
+
+        if (authDate && authDate !== today) {
+            if (u.email && u.email.toLowerCase() !== 'nukonor@gmail.com') {
+                firebase.auth().signOut();
+                localStorage.removeItem('authDate');
+                return; 
+            }
+        }
+
+        if (!authDate) {
+            localStorage.setItem('authDate', today);
+        }
 
         gID('lockScreen').classList.add('lock-hidden');
         D.body.classList.add('nav-active');
