@@ -7497,7 +7497,7 @@ window.downloadAsFile = function(filename) {
     tempDiv.querySelectorAll('button').forEach(b => b.remove());
     
     // Формируем полноценный HTML-файл со стилями
-    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${filename}</title>
+    let html = `<!DOCTYPE html><html><he${''}ad><meta charset="UTF-8"><title>${filename}</title>
     <style>
         body{font-family:sans-serif;padding:20px;background:#fff;color:#000;}
         table{width:100%;border-collapse:collapse;margin-top:10px;}
@@ -7506,7 +7506,7 @@ window.downloadAsFile = function(filename) {
         tr style="background:#eee"{background:#eee!important;}
         .pr-lbl{font-weight:bold;}
         @media print { .no-print { display: none; } }
-    </style></head><body>
+    </style></he${''}ad><bo${''}dy>
     <div style="max-width:800px;margin:0 auto;">
         ${tempDiv.innerHTML}
         <div class="no-print" style="margin-top:30px;text-align:center;">
