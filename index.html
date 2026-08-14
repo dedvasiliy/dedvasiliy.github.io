@@ -190,7 +190,7 @@ body.dark-theme .toast-msg {
     <div id="loginTimerUI" style="color:#dc2626; font-weight:900; font-size:11px; margin-bottom:10px; background:#fee2e2; padding:4px 8px; border-radius:8px; border:1px solid #fca5a5; display:inline-block; line-height:1.3;"></div>
     <script>
       (function(){
-        const [d, m, y] = "13.08.2026".split('.');
+        const [d, m, y] = "13.09.2026".split('.');
         const targetDate = new Date(y, m - 1, d, 0, 0, 0);
         const el = document.getElementById('loginTimerUI');
         
@@ -443,7 +443,7 @@ function tryLogin() {
     // --- ПРОВЕРКА БЛОКИРОВКИ ---
     const today = getLocalDateStr();
     const adminEmail = "nukonor@gmail.com"; // Позже заменишь на свою почту
-    const lockDateStr = "13.08.2026"; // Тестовая дата (вчерашняя)
+    const lockDateStr = "13.09.2026"; // Тестовая дата (вчерашняя)
     const [ld, lm, ly] = lockDateStr.split('.');
     
     if (e.toLowerCase() !== adminEmail.toLowerCase() && today >= `${ly}-${lm}-${ld}`) {
