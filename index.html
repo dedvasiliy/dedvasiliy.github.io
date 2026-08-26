@@ -3443,7 +3443,10 @@ window.calcAvgPrice = function(itemName, category) {
             if (inv.items) {
                 inv.items.forEach(it => {
                     if (it.n === itemName && it.a > 0 && it.p > 0) {
-                        incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
+                        let price = parseFloat(it.p);
+                        // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ payType (как на скриншоте накладной)
+                        if (inv.payType === 'bn') price = price * 1.2;
+                        incs.push({ d: inv.date, p: price, a: parseFloat(it.a) });
                     }
                 });
             }
@@ -3463,13 +3466,19 @@ window.calcAvgPrice = function(itemName, category) {
                 inv.items.forEach(it => {
                     let isMatch = (category === 'Пленка') ? filmNames.includes(it.n) : (it.n === itemName);
                     if (isMatch && it.a > 0 && it.p > 0) {
-                        incs.push({ d: inv.date, p: parseFloat(it.p), a: parseFloat(it.a) });
+                        let price = parseFloat(it.p);
+                        // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ pt (как на скриншоте упаковки)
+                        if (inv.pt === 'bn') price = price * 1.2;
+                        incs.push({ d: inv.date, p: price, a: parseFloat(it.a) });
                     }
                 });
             } else {
                 let isMatch = (category === 'Пленка') ? filmNames.includes(inv.name) : (inv.name === itemName);
                 if (isMatch && inv.amount > 0 && inv.price > 0) {
-                    incs.push({ d: inv.date, p: parseFloat(inv.price), a: parseFloat(inv.amount) });
+                    let price = parseFloat(inv.price);
+                    // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ pt (как на скриншоте упаковки)
+                    if (inv.pt === 'bn') price = price * 1.2;
+                    incs.push({ d: inv.date, p: price, a: parseFloat(inv.amount) });
                 }
             }
         });
@@ -3479,8 +3488,8 @@ window.calcAvgPrice = function(itemName, category) {
     incs.sort((a, b) => b.d.localeCompare(a.d));
     if (incs.length === 0) return 0;
 
-    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (только для производства и фасовки)
-    if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая') {
+    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (для производства, фасовки и ПОКУПНОЙ ПРОДУКЦИИ)
+    if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая' || category === 'WeightStock') {
         let remStock = curStock;
         let totalValue = 0;
         let countedStock = 0;
@@ -3497,7 +3506,7 @@ window.calcAvgPrice = function(itemName, category) {
         return countedStock > 0 ? (totalValue / countedStock) : incs[0].p;
     }
 
-    // ПОСЛЕДНЯЯ ЦЕНА (для сырья, упаковки и покупной продукции)
+    // ПОСЛЕДНЯЯ ЦЕНА (для сырья и упаковки)
     return incs[0].p;
 };
 
