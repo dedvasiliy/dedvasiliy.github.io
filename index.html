@@ -2611,7 +2611,7 @@ async function sRawInc(){showLoad();const d=window.tempRawData;if(!d){hideLoad()
         else if(c==='Скотч 360 грамм')l=["Скотч 360 грамм"];
         
         const s=new Set(l);
-        if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s.add(v.name.replace(/х/gi,'x'))});
+        if(data[c])Object.values(data[c]).forEach(v=>{if(v.name)s.add(v.name.replace(/(\d)\s*[хХ]\s*(\d)/g, '$1x$2'))});
         
         gID('pn_cont_'+i).innerHTML = makeSmart('pn_'+i, Array.from(s).sort(), 'Товар');
     };
@@ -2647,7 +2647,7 @@ async function sCorr(){
     window.calcFilm=function(){const vz=gID('fVz').value.split('+').reduce((a,b)=>a+parseFloat(b)||0,0);const os=parseFloat(gID('fOs').value)||0;const u=Math.max(0,vz-os);gID('fUsed').value=u.toFixed(2)+' кг';};
     window.addFasRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);gID('fasRows').insertAdjacentHTML('beforeend',`<div class="fas-row" id="fr_${i}"><select id="fs_${i}" class="fas-inp" onchange="updFasRawList('${i}')"><option value="WeightStock">Покупная</option><option value="Stock_DV">ДВ вес</option></select><select id="fn_${i}" class="fas-inp"><option value="">Выберите...</option></select><input type="number" id="fq_${i}" class="fas-inp" placeholder="кг"><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);setTimeout(()=>updFasRawList(i),50);};
     window.updFasRawList=function(i){const src=gID('fs_'+i).value,sel=gID('fn_'+i),m={};if(data[src])Object.values(data[src]).forEach(v=>{if(v.name)m[v.name]=(m[v.name]||0)+v.amount});let h='<option value="">Выберите...</option>';Object.keys(m).sort().forEach(k=>{if(Math.round(m[k])>0)h+=`<option value="${esc(k)}">${esc(k)} [${Math.round(m[k])} кг]</option>`;});sel.innerHTML=h;};
-    window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/х/gi,'x'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
+    window.addFasOutRow=function(){const i=Date.now()+Math.random().toString().slice(2,7);let opts='<option value="">Продукт...</option>';gP('Готовая').forEach(p=>opts+=`<option value="${esc(p)}">${esc(p)}</option>`);let pkOpts='<option value="">Пакет...</option>';const pkSet=new Set(["300x400","370x500","400x500","420x550"]);if(data['Пакеты'])Object.values(data['Пакеты']).forEach(v=>{if(v.name)pkSet.add(v.name.replace(/(\d)\s*[хХ]\s*(\d)/g, '$1x$2'))});Array.from(pkSet).sort().forEach(p=>pkOpts+=`<option value="${esc(p)}">${esc(p)}</option>`);gID('fasOutRows').insertAdjacentHTML('beforeend',`<div class="fas-row-out" id="fo_${i}"><select id="on_${i}" class="fas-inp">${opts}</select><input type="number" id="oq_${i}" class="fas-inp" placeholder="шт"><select id="os_${i}" class="fas-inp">${pkOpts}</select><button onclick="this.parentElement.remove()" style="background:red;color:white;border:none;border-radius:6px;height:32px;font-weight:900">✕</button></div>`);};
 
 window.previewFas=function(){
     const dEl=gID('fD');
@@ -3452,31 +3452,28 @@ window.calcAvgPrice = function(itemName, category) {
             }
         });
     }
-
     // ПОИСК СТРОГО ДЛЯ УПАКОВКИ (игнорируем архив обычных товаров)
     if (isPack && data.ArchPackIn) {
-        // Для категории Пленка собираем список всех существующих названий пленок
-        let filmNames = [];
-        if (category === 'Пленка' && data['Пленка']) {
-            filmNames = Array.from(new Set(Object.values(data['Пленка']).map(p => p.name).filter(Boolean)));
-        }
+        // Очищаем названия от лишних пробелов по краям и приводим к нижнему регистру
+        const cleanName = (str) => str ? str.trim().toLowerCase() : '';
+        const cleanItemName = cleanName(itemName);
 
         Object.values(data.ArchPackIn).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    let isMatch = (category === 'Пленка') ? filmNames.includes(it.n) : (it.n === itemName);
+                    // Проверяем строго по очищенному названию
+                    let isMatch = (cleanName(it.n) === cleanItemName);
                     if (isMatch && it.a > 0 && it.p > 0) {
                         let price = parseFloat(it.p);
-                        // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ pt (как на скриншоте упаковки)
                         if (inv.pt === 'bn') price = price * 1.2;
                         incs.push({ d: inv.date, p: price, a: parseFloat(it.a) });
                     }
                 });
             } else {
-                let isMatch = (category === 'Пленка') ? filmNames.includes(inv.name) : (inv.name === itemName);
+                // Проверяем строго по очищенному названию
+                let isMatch = (cleanName(inv.name) === cleanItemName);
                 if (isMatch && inv.amount > 0 && inv.price > 0) {
                     let price = parseFloat(inv.price);
-                    // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ pt (как на скриншоте упаковки)
                     if (inv.pt === 'bn') price = price * 1.2;
                     incs.push({ d: inv.date, p: price, a: parseFloat(inv.amount) });
                 }
@@ -3488,8 +3485,8 @@ window.calcAvgPrice = function(itemName, category) {
     incs.sort((a, b) => b.d.localeCompare(a.d));
     if (incs.length === 0) return 0;
 
-    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (для производства, фасовки и ПОКУПНОЙ ПРОДУКЦИИ)
-    if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая' || category === 'WeightStock') {
+    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (для производства, фасовки, покупной продукции И ПЛЕНКИ)
+    if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая' || category === 'WeightStock' || category === 'Пленка') {
         let remStock = curStock;
         let totalValue = 0;
         let countedStock = 0;
@@ -3506,7 +3503,7 @@ window.calcAvgPrice = function(itemName, category) {
         return countedStock > 0 ? (totalValue / countedStock) : incs[0].p;
     }
 
-    // ПОСЛЕДНЯЯ ЦЕНА (для сырья и упаковки)
+    // ПОСЛЕДНЯЯ ЦЕНА (для остального сырья и упаковки)
     return incs[0].p;
 };
 
