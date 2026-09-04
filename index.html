@@ -4382,7 +4382,7 @@ window.renderTsList = function(c, forceYear, forceMonth){
             
             let totalShifts = uniqueDays.size;
             totalZp = parseFloat(totalZp.toFixed(2));
-            let calcAdv = Math.round((earned1to15 * 0.8) / 1000) * 1000;
+            let calcAdv = Math.round((earned1to15 * 0.7) / 1000) * 1000;
             let remZp = parseFloat((totalZp + mRt - advanceAmt - salaryAmt - goodsAmt).toFixed(2));
 
             const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -6700,7 +6700,7 @@ window.openMassAdvance = function() {
     
     Object.keys(earnings).sort().forEach(name => {
         let earned = earnings[name];
-        let adv = Math.round((earned * 0.8) / 1000) * 1000;
+        let adv = Math.round((earned * 0.7) / 1000) * 1000;
         if (adv > 0) {
             rowsHtml += `<div class="fas-row-out" style="display:grid; grid-template-columns: 2fr 100px 40px; margin-bottom:5px; align-items:center;" id="mAdvRow_${name.replace(/\s/g, '_')}">
                 <div style="font-weight:900; font-size:13px; color:#0f172a">${esc(name)}</div>
@@ -6715,7 +6715,7 @@ window.openMassAdvance = function() {
     
     let h = `<div style="margin-bottom:15px; font-size:11px; color:#64748b; background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid #cbd5e1;">
         <b>Период:</b> 01.${monthStr}.${y} — ${String(targetDate).padStart(2,'0')}.${monthStr}.${y}<br>
-        <b>Алгоритм:</b> 80% от заработанного, округление до тысяч.
+        <b>Алгоритм:</b> 70% от заработанного, округление до тысяч.
     </div>
     <div id="mAdvRows" style="max-height:50vh; overflow-y:auto; margin-bottom:10px; padding-right:5px;">${rowsHtml}</div>
     <div style="font-weight:900; font-size:16px; text-align:right; margin-bottom:15px; border-top:2px solid #e2e8f0; padding-top:10px;">
