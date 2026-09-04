@@ -3720,10 +3720,13 @@ window.saveTimesheetBatch = function() {
                 let loadPay = 0;
                 
                 if (fRt > 0 || dRt > 0) {
-                    if (fasCount > 0 && fRt > 0) {
-                        pay = parseFloat((fasCount * fRt).toFixed(2));
-                        calcDet = `Фас: ${fasCount}шт × ${fRt}₴`;
-                    } else if (dRt > 0) {
+                                  if (fasCount > 0 && fRt > 0) {
+                    let fasPay = parseFloat((fasCount * fRt).toFixed(2));
+                    let hourPay = Math.round(hrs * rt);
+                    pay = fasPay + hourPay;
+                    calcDet = `Фас: ${fasCount}шт × ${fRt}₴`;
+                    if (hourPay > 0) calcDet += `<br>Часы: ${hrs.toFixed(1)}ч × ${rt}₴`;
+                }  else if (dRt > 0) {
                         pay = dRt;
                         calcDet = `Ставка: ${dRt}₴/день`;
                     } else { pay = Math.round(hrs * rt); }
