@@ -3209,10 +3209,14 @@ window.previewWorkshop=function(k){
     if (asFound) salHtmlStr += ` | Пом:${asHours.toFixed(1)}ч`;
     salHtmlStr += `):`;
 
-    const netCost = rawCost + packCost + energyCost + salCost - wasteRev;
+    let lossPct = parseFloat(costSet.lossPercent);
+    if (isNaN(lossPct)) lossPct = 1; 
+    let lossCost = (rawCost * lossPct) / 100; 
+
+    const netCost = rawCost + packCost + energyCost + salCost - wasteRev + lossCost;
     const usefulWeight = tDV + tSemi;
     const costPerKg = usefulWeight > 0 ? (netCost / usefulWeight).toFixed(2) : 0;
-    
+
     const html=`<div style="text-align:center;font-weight:900;color:var(--p);font-size:14px;margin-bottom:5px">${c.title}</div>
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #e2e8f0;padding-bottom:5px;margin-bottom:5px"><span style="font-weight:900">${ds}</span><span>${ts}-${te}</span></div>
     <div style="text-align:center;margin-bottom:5px">${esc(op)} | ${esc(as)}</div>
@@ -3224,7 +3228,7 @@ window.previewWorkshop=function(k){
     <div style="font-weight:900;display:flex;justify-content:space-between;color:var(--s)"><span>Выход готовой:</span><span>${pct}%</span></div>
     <div class="conf-sec" style="background:#fefce8; border:1px dashed #ca8a04; padding:5px; border-radius:8px;">
         <div style="text-align:center; font-weight:900; color:#a16207; margin-bottom:4px;">ФИНАНСЫ (СЕБЕСТОИМОСТЬ):</div>
-        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>
+        <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Сырье:</span><span>${rawCost.toFixed(2)} грн</span></div>         ${lossCost > 0 ? `<div style="font-size:11px; display:flex; justify-content:space-between; color:#dc2626"><span>Потеря сырья (${lossPct}%):</span><span>+ ${lossCost.toFixed(2)} грн</span></div>` : ''}
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Упаковка:</span><span>${packCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>Свет (${hours.toFixed(1)}ч):</span><span>${energyCost.toFixed(2)} грн</span></div>
         <div style="font-size:11px; display:flex; justify-content:space-between;"><span>${salHtmlStr}</span><span>${salCost.toFixed(2)} грн</span></div>
