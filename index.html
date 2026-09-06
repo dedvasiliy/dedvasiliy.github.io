@@ -3209,8 +3209,11 @@ window.previewWorkshop=function(k){
     if (asFound) salHtmlStr += ` | Пом:${asHours.toFixed(1)}ч`;
     salHtmlStr += `):`;
 
-    let lossPct = parseFloat(costSet.lossPercent);
-    if (isNaN(lossPct)) lossPct = 1; 
+    let lossPct = 0;
+    if (k === 'KRUP' || k === 'ZSHM') {
+        lossPct = parseFloat(costSet.lossPercent);
+        if (isNaN(lossPct)) lossPct = 1; 
+    }
     let lossCost = (rawCost * lossPct) / 100; 
 
     const netCost = rawCost + packCost + energyCost + salCost - wasteRev + lossCost;
