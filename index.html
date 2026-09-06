@@ -3215,6 +3215,7 @@ window.previewWorkshop=function(k){
         if (isNaN(lossPct)) lossPct = 1; 
     }
     let lossCost = (rawCost * lossPct) / 100; 
+    if (lossCost > 0) rawDet += `<div style="font-size:11px; display:flex; justify-content:space-between; color:#dc2626;"><span>Потеря сырья (${lossPct}%):</span><span>+ ${lossCost.toFixed(2)} грн</span></div>`;
 
     const netCost = rawCost + packCost + energyCost + salCost - wasteRev + lossCost;
     const usefulWeight = tDV + tSemi;
