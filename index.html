@@ -3144,6 +3144,7 @@ window.previewWorkshop=function(k){
         let timesheetMatches = {};
 
         Object.values(data.Timesheet).forEach(t => {
+          if (t.isPayout) return;
             let tNameClean = String(t.name || '').trim();
             
             if (t.date === d) {
@@ -3414,9 +3415,10 @@ function genDayReport(){
     }
 
     const fmt=(x)=>{
-        let r=`<div class="dr-row"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:center;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v%1===0?x.v:x.v.toFixed(2)}${x.u}</span></div>`;
+        let r=`<div class="dr-row" style="padding-bottom:2px;"><div class="dr-left" style="width:100%; display:flex; justify-content:space-between; align-items:flex-end;"><span class="dr-name">${esc(x.n)}</span><span class="dr-qty">${x.v%1===0?x.v:x.v.toFixed(2)}${x.u}</span></div>`;
         if(x.info && x.info.length > 0){
-            r+=`<div style="width:100%; font-size:10px; color:#059669; margin-top:-2px;">${esc(x.info.join(', '))}</div>`;
+            let fInfo = x.info.map(i => typeof i === 'string' ? i.replace(/(\d+\.\d{3,})(?=\s*грн)/, m => parseFloat(m).toFixed(2)) : i);
+            r+=`<div style="width:100%; font-size:10px; color:#059669; margin-top:2px;">${esc(fInfo.join(', '))}</div>`;
         }
         if(x.src&&x.dest&&x.dest!=='Авто'&&x.dest!=='Фас'&&!x.dest.startsWith('(авто)'))r+=`<div class="dr-hint" style="width:100%; text-align:right; margin-top:-2px; font-size:10px; color:#64748b;">(${x.src} -> ${x.dest})</div>`;
         r+=`</div>`;
