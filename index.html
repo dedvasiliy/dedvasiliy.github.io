@@ -3320,17 +3320,23 @@ function genDayReport(){
     if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{
         if(v.date&&v.date.startsWith(d)){
             let sup = v.supplier || '';
+            let isBN = (v.payType === 'bn' || v.pt === 'bn');
+            let bnTag = isBN ? ' (Б/Н)' : '';
             if(v.items)v.items.forEach(it=>{
                 addV(rInc,it.n,it.a,'кг',it.n);
                 if(!rInc[it.n].info) rInc[it.n].info = [];
-                let pr = it.p ? it.p + ' грн' : '';
+                let pVal = parseFloat(it.p);
+                if(isBN) pVal *= 1.2;
+                let pr = it.p ? pVal.toFixed(2) + ' грн' + bnTag : '';
                 let txt = [sup, pr].filter(Boolean).join(' | ');
                 if(txt && !rInc[it.n].info.includes(txt)) rInc[it.n].info.push(txt);
             });
             else if(v.name){
                 addV(rInc,v.name,v.amount,'кг',v.name);
                 if(!rInc[v.name].info) rInc[v.name].info = [];
-                let pr = v.price ? v.price + ' грн' : '';
+                let pVal = parseFloat(v.price);
+                if(isBN) pVal *= 1.2;
+                let pr = v.price ? pVal.toFixed(2) + ' грн' + bnTag : '';
                 let txt = [sup, pr].filter(Boolean).join(' | ');
                 if(txt && !rInc[v.name].info.includes(txt)) rInc[v.name].info.push(txt);
             }
