@@ -6306,6 +6306,7 @@ window.getRegInHTML = function(isPrint) {
                 
                 let invMatchItem = false;
                 let tempItems = [];
+                const isBN = v.payType === 'bn';
                 
                 if (v.items) {
                     let itemsList = Array.isArray(v.items) 
@@ -6321,12 +6322,25 @@ window.getRegInHTML = function(isPrint) {
                             const p = it.split('|');
                             iName = p[0]; qty = parseFloat(p[1]) || 0; unit = p[2] || ''; 
                             price = parseFloat(p[4]) || 0; sum = parseFloat(p[5]) || 0;
+                            // Если это старый строковый формат и накладная Б/Н, на всякий случай умножаем на 1.2
+                            if (isBN) { price = price * 1.2; sum = sum * 1.2; }
                         } else if (typeof it === 'number') {
                             iName = k || 'Неизвестно'; qty = it;
                         } else if (typeof it === 'object' && it !== null) {
                             iName = it.name || it.n || it.item || (k && isNaN(k) ? k : 'Неизвестно');
-                            price = parseFloat(it.price || it.p) || 0;
-                            sum = parseFloat(it.sum || it.s) || 0;
+                            
+                            // Берем цену и сумму. Если безнал (Б/Н), пытаемся взять pVat/sVat. Если их нет, умножаем обычную цену на 1.2.
+                            let basePrice = parseFloat(it.price || it.p) || 0;
+                            let baseSum = parseFloat(it.sum || it.s) || 0;
+                            
+                            if (isBN) {
+                                price = parseFloat(it.pVat) || (basePrice * 1.2);
+                                sum = parseFloat(it.sVat) || (baseSum * 1.2);
+                            } else {
+                                price = basePrice;
+                                sum = baseSum;
+                            }
+                            
                             unit = it.cat === 'Пленка' ? 'кг' : (it.unit || it.u || (supplierName === 'Фасовка' ? 'шт' : 'кг'));
                             
                             let calcQty = ((parseFloat(it.q)||0) * (parseFloat(it.w)||0)) + (parseFloat(it.l)||0);
@@ -6349,8 +6363,12 @@ window.getRegInHTML = function(isPrint) {
                 } else if (v.name || v.amount) {
                      let iName = v.name || 'Неизвестно';
                      let qty = parseFloat(v.amount) || 0;
-                     let price = parseFloat(v.price) || 0;
-                     let sum = parseFloat(v.totalSum) || (qty * price) || 0;
+                     let basePrice = parseFloat(v.price) || 0;
+                     let baseSum = parseFloat(v.totalSum) || (qty * basePrice) || 0;
+                     
+                     let price = isBN ? (basePrice * 1.2) : basePrice;
+                     let sum = isBN ? (baseSum * 1.2) : baseSum;
+                     
                      let unit = v.category === 'Пленка' ? 'кг' : 'шт';
                      
                      const printName = window.getPrintName ? (window.getPrintName(iName) || iName) : iName;
@@ -6366,6 +6384,12 @@ window.getRegInHTML = function(isPrint) {
                 if (fItem === 'ALL' || invMatchItem) {
                     let invCopy = Object.assign({}, v);
                     invCopy.computedSupplier = supplierName;
+                    
+                    // Общая сумма накладной. Берем totalSum. Если это Б/Н и totalSum не содержит НДС (что вряд ли, но на всякий случай)
+                    let tSum = parseFloat(v.totalSum || 0);
+                    // В функции viewIncomingInvoice у вас v.totalSum используется как "Усього з ПДВ", так что просто берем его
+                    invCopy.displaySum = tSum;
+                    
                     invoices.push(invCopy);
                     allItems.push(...tempItems);
                 }
@@ -6389,7 +6413,7 @@ window.getRegInHTML = function(isPrint) {
             const dtObj = new Date(v.date);
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
             const num = esc(v.num) || '---';
-            const sum = parseFloat(v.totalSum || 0).toFixed(2);
+            const sum = parseFloat(v.displaySum || 0).toFixed(2);
             const cli = esc(v.computedSupplier) || '-';
             h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
                     <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
