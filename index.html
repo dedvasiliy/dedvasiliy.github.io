@@ -341,8 +341,6 @@ let cur='Home',data={},aId=null,archSub='',corrMode=!1,isLogged=!1,isAdmin=!1,co
 const stockCatsAll=['Готовая','WeightStock','Stock_DV','Stock_Feed','Stock_Raw','Stock_Semi','Пленка','Пакеты','Скотч 360 грамм','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента','ArchInvoices','ArchIncoming','ArchPackIn','Suppliers','PriceList','InvoiceSettings','InvoiceSettingsBN'];
 let invSet = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,5,10,15', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ] на суму: [ОБЩАЯ_СУММА]\\n<b>Всього до сплати: [СУММА_ПРОПИСЬЮ]</b>\\n\\nВідвантажив: __________________          Прийняв: __________________' }; 
 let invSetBN = { tblBrd: true, vLin: true, hLin: true, fSize: '11px', colW: '5,55,10,10,10,10', rowH: '14px', xtraTop: '<b>Видаткова накладна № [НОМЕР] від [ДАТА] р.</b>\\n\\nПостачальник: [ПОСТАВЩИК]\\nПокупець: [КЛИЕНТ]\\nДоговір: [СДЕЛКА]\\nАдреса доставки: [АДРЕСА]', xtraBot: 'Всього найменувань: [КОЛ_ВО_ПОЗИЦИЙ], на суму [ОБЩАЯ_СУММА]\\n<b>В т.ч. ПДВ: [СУММА_ПДВ_ПРОПИСЬЮ]</b>\\n<b>Всього до сплати з ПДВ: [СУММА_ПРОПИСЬЮ]</b>\\n\\nМісце складання: __________________          Прийняв: __________________' };
-let voiceSynonyms = {};
-let stressDictData = '';
 let autoSet = { bagsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', bagsWeight: '25', labelsNames: 'Арнаутка 1, Арнаутка 2, Пшеничка, Перловка, Ячка', labelsWeight: '25', threadsRate: '600', threadsExclude: '40', tapeRate: '3000', tapeWeight: '360', thermalRate: '34000', thermalWidth: '', packK1: '9.9', packK2: '19.8', packK2Name: 'Кутя', stretchRate: '5000' };
 let costSet = { lossPercent: '1', powerPrice: '', salaryShift: '', wastePrices: 'мучк=3, отруб=4, солом=1, полов=0.5, корм=2', powerKrup: '', powerZshm: '', powerVibro: '', powerFas: '' };
 
@@ -432,9 +430,6 @@ function initAppData(){
 
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
     db.child('CostSettings').on('value',s=>{ if(s.val()) costSet = {...costSet, ...s.val()}; runAutoBackup();});
-
-  db.child('VoiceSynonyms').on('value',s=>{ if(s.val()) voiceSynonyms = s.val(); runAutoBackup();});
-  db.child('StressDict').on('value',s=>{ if(s.val()) stressDictData = s.val(); runAutoBackup();});
 }
 function tryLogin() {
     const e = gID('appEmail').value, p = gID('appPass').value;
@@ -630,7 +625,7 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
   if(['ProdSub','Фасовка','Kruporushka','Vibro','ZSHM','Analytics','Timesheet'].includes(c))ensureData(['Фасовка','Krup_Report','Vibro_Report','ZSHM_Report']);
 
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
-  if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('costSet')">⚙️ СЕБЕСТОИМОСТЬ</div><div class="dash-item" onclick="openModal('voiceSet')">🎤 СЛОВАРЬ ГОЛОСА</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
+  if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('costSet')">⚙️ СЕБЕСТОИМОСТЬ</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
 <div style="margin-top:20px; text-align:center;"><input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreDB(event)"><button class="btn-main" style="background:var(--d);" onclick="document.getElementById('restoreFile').click()">⚠️ ВОССТАНОВИТЬ БАЗУ</button></div>`;}
 
  else if(c==='Contractors'){ct.innerHTML='<div class="z-head">👥 КОНТРАГЕНТЫ</div><div id="contractorsList">Загрузка...</div>'; ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Suppliers']);}
@@ -2001,7 +1996,7 @@ m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;bo
 </div>
 
 </div><div style="margin-top:5px"><span class="lbl-small">АДРЕСА ДОСТАВКИ (ДЛЯ Б/Н)</span>
-<input type="text" id="hAddr" value="${esc(dAddr)}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button><button id="vBtn" class="btn-sel" onclick="startVoiceInput()" style="flex:1; background:#eef2ff; border-color:var(--p); color:var(--p)">🎤 ГОЛОС</button><button id="vTestBtn" class="btn-sel" onclick="testClientVoice()" style="flex:1; background:#fef08a; border-color:#ca8a04; color:#854d0e; font-weight:900;">ТЕСТ КЛ.</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px"><button class="btn-main" style="background:#e2e8f0;color:#334155;margin:0;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 ШАПКА</button><button class="btn-main" style="background:#fee2e2;color:#dc2626;margin:0;padding:8px" onclick="clearShipBasket()">🗑️ ОЧИСТИТЬ</button></div></div><div id="shipBtns" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-top:5px">
+<input type="text" id="hAddr" value="${esc(dAddr)}" oninput="saveShipDraft()" placeholder="Одеса, вул. Моторна, будинок № 8"></div><div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"><button id="btnOpt" style="flex:1" class="btn-sel ${priceMode==='opt'?'active':''}" onclick="setPriceMode('opt'); saveShipDraft();">ОПТ</button><button id="btnRoz" style="flex:1" class="btn-sel ${priceMode==='roz'?'active':''}" onclick="setPriceMode('roz'); saveShipDraft();">РОЗНИЦА</button><button id="btnBN" style="flex:1" class="btn-sel ${priceMode==='bn'?'active':''}" onclick="setPriceMode('bn'); saveShipDraft();">Б/Н</button><button id="btnStr" style="flex:1" class="btn-sel ${useStretch?'active':''}" onclick="toggleStr(this); saveShipDraft();">СТРЕЙЧ: ${useStretch?'ДА':'НЕТ'}</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px"><button class="btn-main" style="background:#e2e8f0;color:#334155;margin:0;padding:8px" onclick="gID('shipHead').classList.toggle('collapsed')">🔽 ШАПКА</button><button class="btn-main" style="background:#fee2e2;color:#dc2626;margin:0;padding:8px" onclick="clearShipBasket()">🗑️ ОЧИСТИТЬ</button></div></div><div id="shipBtns" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-top:5px">
 <button class="btn-sel active" onclick="loadBulk('Готовая')">ФАСОВАННАЯ</button><button class="btn-sel" onclick="loadBulk('WeightStock')">ПОКУПНАЯ</button><button class="btn-sel" onclick="loadBulk('Stock_DV')">ДВ ВЕС</button><button class="btn-sel" onclick="loadBulk('Stock_Feed')">ОТХОДЫ</button></div><div id="shpR" style="max-height:50vh;overflow-y:auto;border:1px solid #eee;margin-bottom:5px;border-radius:8px;padding:5px"></div><button class="btn-main" onclick="sShip()">ДАЛЕЕ</button></div><div id="shipPreview" style="display:none"></div>`;
 
       setTimeout(()=>{
@@ -2130,20 +2125,6 @@ else if(t==='regIn'){
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
           else if(t==='invCheck'){h.innerText='ФИКСАЦИЯ ПЕРЕУЧЕТА';m.innerHTML=`<div>ДАТА <input type="date" id="invCheckDate" value="${d}"></div><button class="btn-main" onclick="runInvCheck()" style="background:#dc2626">ЗАФИКСИРОВАТЬ</button>`}
-     else if(t==='voiceSet'){
-      h.innerText='СЛОВАРЬ ГОЛОСА';
-      let txt = '';
-      if(typeof voiceSynonyms !== 'undefined'){
-       Object.entries(voiceSynonyms).forEach(([bad, good]) => { txt += bad + '=' + good + '\n'; });
-      }
-      m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">СЛОВА ДЛЯ ЗАМЕНЫ (каждое с новой строки)</div>
-      <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>как слышит=как надо</b>. Например:<br>иванов=ФОП Иванов И.И.<br>гречко=гречка</div>
-      <textarea id="vsTxt" style="width:100%;height:300px;font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:8px">${txt}</textarea>
-      <div class="z-head" style="margin-top:15px; margin-bottom:0;">СЛОВАРЬ УДАРЕНИЙ</div>
-      <div style="font-size:10px;color:#64748b;margin-bottom:5px">Формат: <b>слово=сл+ово</b>. Например:<br>кордонська=корд+онська</div>
-      <textarea id="stressDict" style="width:100%; height:80px; padding:5px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom: 10px;">${stressDictData}</textarea>
-      </div><button class="btn-main" onclick="saveVoiceSet()">СОХРАНИТЬ</button>`;
-     }
      else if(t==='costSet'){
       h.innerText='СЕБЕСТОИМОСТЬ (ТАРИФЫ)';
             m.innerHTML=`<div class="inv-set-card"><div class="z-head" style="margin-top:0">ОБЩИЕ ЗАТРАТЫ</div><div class="grid-2"><div><span class="inv-set-lbl">Усушка/Пыль (%)</span><input type="number" id="csLoss" value="${esc(costSet.lossPercent)}"></div><div><span class="inv-set-lbl">Электричество (грн/кВт)</span><input type="number" id="csPowerP" value="${esc(costSet.powerPrice)}"></div><div><span class="inv-set-lbl">Зарплата цех (смена)</span><input type="number" id="csSal" value="${esc(costSet.salaryShift)}"></div><div><span class="inv-set-lbl">ЗП Фасовка (за пачку)</span><input type="number" id="csSalFas" value="${esc(costSet.salaryFas||'')}"></div></div><div class="z-head" style="margin-top:10px">ЦЕНЫ ОТХОДОВ (грн/кг)</div><div><span class="inv-set-lbl">Формат: часть_слова=цена (через запятую)</span><input type="text" id="csWaste" value="${esc(costSet.wastePrices)}" placeholder="мучк=3, отруб=4"></div><div class="z-head" style="margin-top:10px">РАСХОД ЭЛЕКТРОЭНЕРГИИ (кВт/ч)</div><div class="grid-2"><div><span class="inv-set-lbl">Крупорушка</span><input type="number" id="csPKrup" value="${esc(costSet.powerKrup)}"></div><div><span class="inv-set-lbl">ЗШМ</span><input type="number" id="csPZshm" value="${esc(costSet.powerZshm)}"></div><div><span class="inv-set-lbl">Вибростол</span><input type="number" id="csPVibro" value="${esc(costSet.powerVibro)}"></div><div><span class="inv-set-lbl">Фасовка (на 1000шт)</span><input type="number" id="csPFas" value="${esc(costSet.powerFas)}"></div></div><div class="z-head" style="margin-top:10px">РАСХОД СТРЕЙЧ ПЛЕНКИ (ПРОИЗВОДСТВО)</div><div><span class="inv-set-lbl">Выход продукции на 1 рулон (шт/кг)</span><input type="number" id="csStretch" value="${esc(costSet.stretchNorm||'')}"></div></div><button class="btn-main" onclick="saveCostSet()">СОХРАНИТЬ</button>`;
@@ -2223,31 +2204,6 @@ window.execInventory=async function(){const cat=gID('invCat').value,d=gID('invDa
         closeModal();
         alert('Настройки окна отгрузки применены.');
     };
-    window.saveVoiceSet = async function() {
-        const lines = gID('vsTxt').value.split('\n');
-        const u = {};
-        lines.forEach(l => {
-            const idx = l.indexOf('=');
-            if(idx > 0) {
-                // Берем то, что до первого '=', чистим от запрещенных для Firebase символов
-                let k = l.substring(0, idx).trim().toLowerCase().replace(/[.#$\[\]\/]/g, '');
-                let v = l.substring(idx + 1).trim();
-                if(k && v) u[k] = v;
-            }
-        });
-        const stressVal = gID('stressDict').value;
-        try { 
-            await db.child('VoiceSynonyms').set(u); 
-            await db.child('StressDict').set(stressVal);
-            voiceSynonyms = u; 
-            stressDictData = stressVal;
-            closeModal(); 
-            alert('Словари сохранены в базу!'); 
-        } catch(e) { 
-            alert('Ошибка сохранения: ' + e.message); 
-        }
-    };
-
     window.saveAutoSet = async function() {
         const u = {
             bagsNames: gID('asBagsN').value, bagsWeight: gID('asBagsW').value,
