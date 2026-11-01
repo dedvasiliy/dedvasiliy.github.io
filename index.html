@@ -7529,7 +7529,7 @@ window.saveEditWorkshop = async function() {
 // ------------------------------------
 // --- ОПОВЕЩЕНИЕ ОБ ОКОНЧАНИИ ДОСТУПА (ЗА 3 ДНЯ) ---
 (function() {
-    const EXP_DATE_STR = '02.11.2026'; // Дата окончания (день.месяц.год)
+    const EXP_DATE_STR = '03.11.2026'; // Дата окончания (день.месяц.год)
     const WARN_DAYS = 3; // За сколько дней предупреждать
 
     function playAlertSound() {
@@ -7547,9 +7547,9 @@ window.saveEditWorkshop = async function() {
                 osc.start(ctx.currentTime + start);
                 osc.stop(ctx.currentTime + start + duration);
             };
-            playBeep(880, 0, 0.2);
-            playBeep(660, 0.22, 0.2);
-            playBeep(880, 0.44, 0.35);
+            playBeep(1180, 0, 0.2);
+            playBeep(960, 0.22, 0.2);
+            playBeep(1180, 0.44, 0.35);
         } catch (e) {}
     }
 
