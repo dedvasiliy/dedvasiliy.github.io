@@ -175,7 +175,6 @@ body.dark-theme .toast-msg {
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4338ca">
 <link rel="apple-touch-icon" href="https://i.ibb.co/Gv0xDqnt/file-00000000ff1471f4b6d9f9d2c686ef67.png">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div id="loader" class="modal" style="z-index:100000;"><div class="spinner"></div></div>
@@ -281,22 +280,6 @@ window.appConfirm = function(msg) {
         document.getElementById('dialogBtnNo').onclick = () => { modal.style.display = 'none'; resolve(false); };
     });
 };
-
-window.appPrompt = function(msg, defaultVal = '') {
-    return new Promise(resolve => {
-        const modal = document.getElementById('customDialog');
-        const inp = document.getElementById('dialogInp');
-        document.getElementById('dialogMsg').innerText = msg;
-        inp.style.display = 'block';
-        inp.value = defaultVal;
-        modal.style.display = 'flex';
-        inp.focus();
-
-        document.getElementById('dialogBtnYes').onclick = () => { modal.style.display = 'none'; resolve(inp.value); };
-        document.getElementById('dialogBtnNo').onclick = () => { modal.style.display = 'none'; resolve(null); };
-    });
-};
-
 let shadowTimer = null;
 function runAutoBackup() {
   clearTimeout(shadowTimer);
@@ -635,7 +618,7 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
  else if(c==='TsCal'){ct.innerHTML=`<div class="z-head">ВЫБЕРИТЕ</div><div id="tsList" class="item-grid"></div>`;loadData()}
   else if(c==='StockRoot'){
   let b=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХОД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ОТГРУЗКА</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:5px">🔧 КОРРЕКЦИЯ</button><button class="btn-main" onclick="openModal('inventory')" style="background:#8b5cf6;margin-bottom:15px">📋 ИНВЕНТАРИЗАЦИЯ</button>`:'';
-    ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('PriceList')">💰 ПРАЙС</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div></div><div id="corrCtls" style="margin-top:15px;display:flex;gap:5px;justify-content:center"></div>`
+    ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('PriceList')">💰 ПРАЙС</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div></div>`
  }
 
  else if(c==='Stock_Raw'){ct.innerHTML=(isAdmin?`<button class="btn-main" style="background:#e0f2fe;color:#0369a1;margin-bottom:10px" onclick="setCat('StockArchive')">🗄️ АРХИВ</button>`:'')+`<div class="z-head">СЫРЬЕ</div><div id="rawList">...</div>`;if(isAdmin&&!corrMode)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s);padding:8px" onclick="openModal('addRaw')">ПРИХОД</button>`}
@@ -763,18 +746,14 @@ const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInv
 const gPackS=()=>{const s=new Set();if(data.ArchPackIn)Object.values(data.ArchPackIn).forEach(v=>{if(v.supplier)s.add(v.supplier)});return Array.from(s).filter(x=>x).sort()};
 const gBuyS=()=>{const s=new Set();if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier&&v.type==='GOODS')s.add(v.supplier)});return Array.from(s).filter(x=>x).sort()};
 const gRawS=()=>{const s=new Set();if(data.ArchIncoming)Object.values(data.ArchIncoming).forEach(v=>{if(v.supplier&&v.type==='RAW')s.add(v.supplier)});return Array.from(s).filter(x=>x).sort()};
-
 const toggleCorr=()=>{if(!isAdmin)return;corrMode=!corrMode;updCorrBtn();loadData()};
-const updCorrBtn=()=>{const t=gID('corrTile');if(t){t.innerText=corrMode?'КОРРЕКЦИЯ: ВКЛ':'🔧 КОРРЕКЦИЯ';t.style.background=corrMode?'#fef3c7':'#fff';t.style.color=corrMode?'#d97706':'var(--p)'}const c=gID('corrCtls');if(c)c.innerHTML=''};
-
+const updCorrBtn=()=>{const t=gID('corrTile');if(t){t.innerText=corrMode?'КОРРЕКЦИЯ: ВКЛ':'🔧 КОРРЕКЦИЯ';t.style.background=corrMode?'#fef3c7':'#fff';t.style.color=corrMode?'#d97706':'var(--p)'}};
 function getPrintName(n){if(data.PriceList){const p=Object.values(data.PriceList).find(x=>x.name===n);if(p&&p.printName)return p.printName}return n}
-
 function rMonthGroup(list, renderRowFn, calcStats=false) {
  if(!list.length) return '<div style="text-align:center;color:#999;padding:20px">Пусто</div>';
  const groups = {};
  const curM = new Date().toISOString().substring(0,7);
  let rT = {};
- 
  if(calcStats) {
   let cL = [...list].sort((a,b)=>a._date.localeCompare(b._date));
   let cTot = 0, mS = {};
@@ -2112,8 +2091,6 @@ else if(t==='regIn'){
         <button class="btn-main" onclick="printRegIn()" style="margin:0;">ПЕЧАТЬ</button>
     </div>`;
 }
-
-     else if(t==='fix'){h.innerText='ФИКСАЦИЯ';m.innerHTML=`<div>ДАТА <input type="date" id="fixDate" value="${d}"></div><button class="btn-main" id="btnFix" onclick="sFixBal()">OK</button>`}
      else if(t==='arch'){h.innerText='СВЕРТЫВАНИЕ';m.innerHTML=`<div>ДАТА <input type="date" id="archDate"></div><button class="btn-main" id="btnArch" onclick="runArchive()" style="background:red">OK</button>`}
      else if(t==='closeMonth'){h.innerText='ЗАКРЫТИЕ МЕСЯЦА';m.innerHTML=`<div>КОНЕЦ МЕСЯЦА <input type="date" id="cmDate"></div><button class="btn-main" id="btnCM" onclick="runCloseMonth()">OK</button>`}
           else if(t==='invCheck'){h.innerText='ФИКСАЦИЯ ПЕРЕУЧЕТА';m.innerHTML=`<div>ДАТА <input type="date" id="invCheckDate" value="${d}"></div><button class="btn-main" onclick="runInvCheck()" style="background:#dc2626">ЗАФИКСИРОВАТЬ</button>`}
@@ -5184,80 +5161,6 @@ window.restoreDB = function(event) {
     };
     reader.readAsText(file);
 };
-let wsChartInstance = null;
-window.showWsChart = function(k) {
-    const c = WS_CFG[k];
-    const dbN = c.db;
-    const d = data[dbN] || {};
-    
-    const byDate = {};
-    Object.values(d).forEach(v => {
-        const dt = (v.date || '2000-01-01').split('T')[0];
-        if (!byDate[dt]) byDate[dt] = { raw: 0, dv: 0 };
-        
-        let tr = 0;
-        if (v.rawBase) tr += v.rawBase.w;
-        if (v.rawAdd) v.rawAdd.forEach(x => tr += x.w);
-        if (v.rawMix) {
-            let m = String(v.rawMix).match(/\d+(?:\.\d+)?/g);
-            if (m) m.forEach(num => tr += parseFloat(num));
-        }
-        byDate[dt].raw += tr;
-        
-        let tdv = 0;
-        if (v.items) {
-            v.items.forEach(x => {
-                let wght = ((x.q || 0) * (x.w || 0)) + (x.l || 0);
-                if (!wght && x.amount) wght = parseFloat(x.amount) || 0;
-                let nm = x.n || x.name || '';
-                let isDV = x.type === 'DV' || (!x.type && !/(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm));
-                if (isDV) tdv += wght;
-            });
-        }
-        byDate[dt].dv += tdv;
-    });
-    
-    const sortedDates = Object.keys(byDate).sort().slice(-14);
-    const labels = sortedDates.map(dt => dt.split('-').slice(1).reverse().join('.'));
-    const dataRaw = sortedDates.map(dt => byDate[dt].raw);
-    const dataDV = sortedDates.map(dt => byDate[dt].dv);
-    
-    gID('mdl').style.display = 'flex';
-    gID('mT').innerText = 'ГРАФИК ВЫРАБОТКИ: ' + c.title;
-    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="wsChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Показаны последние 14 рабочих дней.<br>Сравнивается затраченное сырье и полученная ДВ.</div>`;
-    
-    setTimeout(() => {
-        const ctx = document.getElementById('wsChartCanvas').getContext('2d');
-        if (wsChartInstance) wsChartInstance.destroy();
-        wsChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Сырье (кг)', data: dataRaw, backgroundColor: '#cbd5e1', borderRadius: 4 },
-                    { label: 'Готовая ДВ (кг)', data: dataDV, backgroundColor: '#10b981', borderRadius: 4 }
-                ]
-            },
-                        options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    x: { 
-                        ticks: { 
-                            autoSkip: false, 
-                            maxRotation: 45, 
-                            minRotation: 45,
-                            font: { size: 9 }
-                        } 
-                    },
-                    y: { beginAtZero: true } 
-                },
-                plugins: { legend: { position: 'bottom' } }
-            }
-
-        });
-    }, 100);
-};
 window.renderAdvancedAnalytics = function(container) {
     const dObj = new Date();
     dObj.setDate(dObj.getDate() - 365);
@@ -5507,95 +5410,6 @@ window.printAdvancedAnalytics = function() {
     document.getElementById('print-view').innerHTML = h;
     window.print();
 };
-
-let shipChartInstance = null;
-window.showShipChart = function() {
-    const d = data['ArchInvoices'] || {};
-    const byDate = {};
-    
-    Object.values(d).forEach(v => {
-        if(!v.date) return;
-        const dt = v.date.split('T')[0];
-        if(!byDate[dt]) byDate[dt] = { fas: 0, ves: 0, korm: 0 };
-        
-        if(v.items) {
-            v.items.forEach(it => {
-                const p = it.split('|');
-                const w = parseFloat(p[1]) || 0;
-                const cat = p[3]; // Категория товара в накладной
-                
-                if (cat === 'Готовая') {
-                    byDate[dt].fas += w;
-                } else if (cat === 'WeightStock' || cat === 'Stock_DV') {
-                    byDate[dt].ves += w;
-                } else if (cat === 'Stock_Feed') {
-                    byDate[dt].korm += w;
-                }
-            });
-        }
-    });
-    
-    const sortedDates = Object.keys(byDate).sort().slice(-14);
-    const labels = sortedDates.map(dt => dt.split('-').slice(1).reverse().join('.'));
-    
-    const dataFas = sortedDates.map(dt => byDate[dt].fas);
-    const dataVes = sortedDates.map(dt => byDate[dt].ves);
-    const dataKorm = sortedDates.map(dt => byDate[dt].korm);
-    
-    gID('mdl').style.display = 'flex';
-    gID('mT').innerText = 'ГРАФИК ОТГРУЗОК';
-    gID('mB').innerHTML = `<div style="width:100%;height:300px;position:relative;margin-top:10px;"><canvas id="shipChartCanvas"></canvas></div><div style="text-align:center;font-size:11px;color:#64748b;margin-top:15px;line-height:1.3">Динамика продаж по категориям за последние 14 рабочих дней.</div>`;
-    
-    setTimeout(() => {
-        const ctx = document.getElementById('shipChartCanvas').getContext('2d');
-        if (shipChartInstance) shipChartInstance.destroy();
-        shipChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Фасовка (шт)',
-                        data: dataFas,
-                        borderColor: '#3b82f6', // Синий
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    },
-                    {
-                        label: 'Весовая (кг)',
-                        data: dataVes,
-                        borderColor: '#10b981', // Зеленый
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    },
-                    {
-                        label: 'Корма (кг)',
-                        data: dataKorm,
-                        borderColor: '#f59e0b', // Оранжевый
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 9 } } },
-                    y: { beginAtZero: true } 
-                },
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
-            }
-        });
-    }, 100);
-};
-
         </script>
         <script>
   if ('serviceWorker' in navigator) {
@@ -7678,41 +7492,38 @@ window.saveEditWorkshop = async function() {
         alert('Ошибка: ' + e.message);
     }
 };
-
-// --- АВТОМАТИЧЕСКИЙ СБРОС В 00:00 ---
+// --- АВТОМАТИЧЕСКИЙ СБРОС В 00:00 (БЕЗ УДАЛЕНИЯ ДАННЫХ) ---
 (function() {
-    // Запоминаем текущую дату при загрузке (формат день.месяц.год)
     let today = new Date().toLocaleDateString('ru-RU');
-    localStorage.setItem('app_last_date', today);
+    if (!localStorage.getItem('app_last_date')) {
+        localStorage.setItem('app_last_date', today);
+    }
 
     function checkNewDay() {
         let savedDate = localStorage.getItem('app_last_date');
         let currentDate = new Date().toLocaleDateString('ru-RU');
         
-        // Если наступил новый день
         if (savedDate && savedDate !== currentDate) {
-            // Удаляем все данные сессии
-            localStorage.clear();
-            sessionStorage.clear();
+            localStorage.setItem('app_last_date', currentDate);
             
-            // Если у тебя Firebase, выходим из аккаунта
+            // Если залогинен не ты, выходим из аккаунта (память не трогаем)
             if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().signOut();
+                let user = firebase.auth().currentUser;
+                if (user && user.email && user.email.toLowerCase() !== 'nukonor@gmail.com') {
+                    firebase.auth().signOut().then(() => {
+                        window.location.reload(true);
+                    });
+                }
             }
-            
-            // Принудительно перезагружаем страницу
-            window.location.reload(true);
         }
     }
 
-    // Проверяем каждый раз, когда вкладка снова становится активной
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === 'visible') {
             checkNewDay();
         }
     });
 
-    // Проверяем каждую минуту (если ты сидишь на сайте прямо в 00:00)
     setInterval(checkNewDay, 60000);
 })();
 // ------------------------------------
@@ -7734,7 +7545,6 @@ window.printFullInventoryCheck = function() {
         { id: 'Стрейч пленка', n: 'СТРЕЙЧ' },
         { id: 'Термо лента', n: 'ТЕРМО' }
     ];
-    
     let dateInput = document.getElementById('invDate');
     let selDate = dateInput ? dateInput.value : '';
     let dt = selDate ? selDate.split('-').reverse().join('.') : '';
@@ -7756,7 +7566,6 @@ window.printFullInventoryCheck = function() {
         <h4 style="text-align:center; margin-top:0; font-size: 11px; color:#444;">Дата: ${dt}</h4>
         
         <div class="inv-col-wrap">`;
-        
     cats.forEach(c => {
         let bals = {};
         if(data[c.id]) {
@@ -7768,7 +7577,6 @@ window.printFullInventoryCheck = function() {
             });
         }
         let items = Object.keys(bals).sort().filter(n => Math.abs(bals[n]) >= 0.001);
-        
         if (items.length > 0) {
             h += `<div class="inv-cat-block">
                 <div class="inv-cat-title">${c.n}</div>
@@ -7789,18 +7597,15 @@ window.printFullInventoryCheck = function() {
             h += `</div>`;
         }
     });
-            
     h += `</div>
     <div style="margin-top:20px; display:flex; justify-content:space-between; font-size:12px; font-weight:bold;">
         <div>Сдал: ________________________</div>
         <div>Принял (Переучет): ________________________</div>
     </div>
     </div>`;
-    
     document.getElementById('print-view').innerHTML = h;
     window.print();
 };
-
 function toggleDropdown(id) {
     let drop = document.getElementById(id + 'Drop');
     if (drop) {
@@ -7816,7 +7621,6 @@ function toggleDropdown(id) {
         }
     }
 }
-
 function updateCount(id) {
     let chks = document.querySelectorAll('.' + id + '-chk:checked');
     let btn = document.getElementById(id + 'Btn');
@@ -7826,7 +7630,6 @@ function updateCount(id) {
     if (id === 'hLoader' && typeof saveShipDraft === 'function') saveShipDraft();
     if (id === 'iLoader' && typeof saveIncDraft === 'function') saveIncDraft();
 }
-
 document.addEventListener('click', function(e) {
     ['hLoader', 'iLoader'].forEach(id => {
         let btn = document.getElementById(id + 'Btn');
