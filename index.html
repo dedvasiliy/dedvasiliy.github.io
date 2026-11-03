@@ -5302,9 +5302,8 @@ window.renderAdvancedAnalytics = function(container) {
             if (isFilm && filmYieldData[r.name] && filmYieldData[r.name].kgUsed > 0) {
                 const ppk = filmYieldData[r.name].pieces / filmYieldData[r.name].kgUsed;
                 const est = Math.round(r.stock * ppk);
-                pcsStr = `<div style="font-size:10px; color:#8b5cf6; margin-top:2px;">≈ ${est} шт</div>`;
+                pcsStr = ` <span style="font-size:10px; color:#8b5cf6; margin-top:2px;">≈ ${est} шт</span>`;
             }
-
             html += `<div class="rep-card" style="background:${bg};border:1px solid ${brd};padding:8px;margin-bottom:6px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;align-items:center;">
                 <div style="font-weight:900;font-size:11px;line-height:1.1;color:${textColor}">${esc(r.name)}${pcsStr}</div>
                 <div style="text-align:center;font-size:12px;font-weight:bold">${st}</div>
@@ -5381,7 +5380,7 @@ window.printAdvancedAnalytics = function() {
                 const yd = d.filmYieldData[r.name];
                 if (yd.kgUsed > 0) {
                     const est = Math.round(r.stock * (yd.pieces / yd.kgUsed));
-                    pcsStr = `<br><span style="font-size:8px; color:#555;">≈ ${est} шт</span>`;
+                    pcsStr = ` <span style="font-size:8px; color:#555;">≈ ${est} шт </span>`;
                 }
             }
 
