@@ -5885,7 +5885,7 @@ window.getRegOutHTML = function(isPrint) {
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
             const cur = v.currency || 'UAH';
             const isUSD = (cur === 'USD' || cur === '$');
-            const isBN = (v.priceMode === 'bn');
+            const isBN = Boolean(v.isBN || v.priceMode === 'bn' || v.payType === 'bn');
             
             let invMatchItem = false;
             let tempItems = [];
@@ -5937,7 +5937,7 @@ window.getRegOutHTML = function(isPrint) {
     let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
 
-    const renderSection = (title, invoices, allItems, isBnSection) => {
+    const renderSection = (title, invoices, allItems) => {
         if (!invoices.length && !allItems.length) return '';
         
         let secHtml = `<div style="margin-top: 15px; margin-bottom: 10px; font-size: 12px; font-weight: bold; background: ${isPrint ? '#e2e8f0' : '#f1f5f9'}; padding: 5px; border-left: 4px solid #0f172a;">${title}</div>`;
@@ -6088,8 +6088,8 @@ window.getRegOutHTML = function(isPrint) {
         return secHtml;
     };
 
-    h += renderSection('НАЛИЧНЫЕ (НАЛ)', invoicesCash, itemsCash, false);
-    h += renderSection('БЕЗНАЛИЧНЫЕ (Б/Н)', invoicesBN, itemsBN, true);
+    h += renderSection('НАЛИЧНЫЕ (НАЛ)', invoicesCash, itemsCash);
+    h += renderSection('БЕЗНАЛИЧНЫЕ (Б/Н)', invoicesBN, itemsBN);
     
     h += `</div>`;
     return h;
