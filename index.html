@@ -5871,8 +5871,10 @@ window.getRegOutHTML = function(isPrint) {
     if (!dFrom || !dTo) { alert('Выберите обе даты'); return null; }
 
     const d = data.ArchInvoices || {};
-    let invoices = [];
-    let allItems = [];
+    let invoicesCash = [];
+    let invoicesBN = [];
+    let itemsCash = [];
+    let itemsBN = [];
     
     Object.values(d).forEach(v => {
         const dt = (v.date || '').split('T')[0];
@@ -5883,6 +5885,7 @@ window.getRegOutHTML = function(isPrint) {
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
             const cur = v.currency || 'UAH';
             const isUSD = (cur === 'USD' || cur === '$');
+            const isBN = (v.priceMode === 'bn');
             
             let invMatchItem = false;
             let tempItems = [];
@@ -5907,168 +5910,186 @@ window.getRegOutHTML = function(isPrint) {
                         price: parseFloat(p[4]) || 0,
                         sum: parseFloat(p[5]) || 0,
                         currency: cur,
-                        isUSD: isUSD
+                        isUSD: isUSD,
+                        isBN: isBN
                     });
                 });
             }
             
             if (fItem === 'ALL' || invMatchItem) {
-                invoices.push(v);
-                allItems.push(...tempItems);
+                if (isBN) {
+                    invoicesBN.push(v);
+                    itemsBN.push(...tempItems);
+                } else {
+                    invoicesCash.push(v);
+                    itemsCash.push(...tempItems);
+                }
             }
         }
     });
 
-    if (!invoices.length && !allItems.length) { alert('Нет данных по этим фильтрам'); return null; }
+    if (!invoicesCash.length && !invoicesBN.length && !itemsCash.length && !itemsBN.length) { 
+        alert('Нет данных по этим фильтрам'); 
+        return null; 
+    }
 
     let textColor = isPrint ? '#000' : 'inherit';
     let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
 
-    if (type === 'standard') {
-        invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
-        h += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
-        invoices.forEach(v => {
-            const dtObj = new Date(v.date);
-            const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
-            const num = esc(v.num) || '---';
-            const cur = v.currency || 'UAH';
-            const curSymbol = (cur === 'USD' || cur === '$') ? '$' : 'грн';
-            const sum = parseFloat(v.totalSum || 0).toFixed(2) + ' ' + curSymbol;
-            const cli = esc(v.client) || '-';
-            h += `<div style="display: grid; grid-template-columns: 55px 45px 70px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
-                    <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
-                    <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
-                  </div>`;
-        });
-        h += `</div>`;
-    } else {
-        const groups = {};
-        let totalSumUAH = 0;
-        let totalSumUSD = 0;
+    const renderSection = (title, invoices, allItems, isBnSection) => {
+        if (!invoices.length && !allItems.length) return '';
+        
+        let secHtml = `<div style="margin-top: 15px; margin-bottom: 10px; font-size: 12px; font-weight: bold; background: ${isPrint ? '#e2e8f0' : '#f1f5f9'}; padding: 5px; border-left: 4px solid #0f172a;">${title}</div>`;
 
-        allItems.forEach(item => {
-            let key = '';
-            if (type === 'byClient') key = item.client;
-            else if (type === 'byItem') key = item.name;
-            else if (type === 'byDate') key = item.dateStr;
-
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(item);
-            if (item.isUSD) {
-                totalSumUSD += item.sum;
-            } else {
-                totalSumUAH += item.sum;
-            }
-        });
-
-        let sortedKeys = Object.keys(groups);
-        if (type === 'byDate') {
-            sortedKeys.sort((a, b) => {
-               let da = a.split('.').reverse().join('');
-               let db = b.split('.').reverse().join('');
-               return db.localeCompare(da); 
+        if (type === 'standard') {
+            invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
+            secHtml += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
+            invoices.forEach(v => {
+                const dtObj = new Date(v.date);
+                const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+                const num = esc(v.num) || '---';
+                const cur = v.currency || 'UAH';
+                const curSymbol = (cur === 'USD' || cur === '$') ? '$' : 'грн';
+                const sum = parseFloat(v.totalSum || 0).toFixed(2) + ' ' + curSymbol;
+                const cli = esc(v.client) || '-';
+                secHtml += `<div style="display: grid; grid-template-columns: 55px 45px 70px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+                        <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
+                        <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+                      </div>`;
             });
+            secHtml += `</div>`;
         } else {
-            sortedKeys.sort(); 
-        }
+            const groups = {};
+            let totalSumUAH = 0;
+            let totalSumUSD = 0;
 
-        h += `<div style="overflow-x: auto;"><table style="width: 100%; min-width: 300px; border-collapse: collapse; font-size: 10px;">`;
-        
-        let borderColor = isPrint ? '#000' : '#cbd5e1';
-        
-        sortedKeys.forEach(key => {
-            const itemsInGroup = groups[key];
-            let grpQty = 0;
-            let grpSumUAH = 0;
-            let grpSumUSD = 0;
-            
-            h += `<tr><td colspan="6" style="background: ${isPrint ? '#e2e8f0' : 'rgba(226,232,240,0.5)'}; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
-            h += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
-                    <td style="padding: 2px; border-left: 1px solid ${borderColor}; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
-                    <td style="padding: 2px; width: 35%;">${type === 'byItem' ? 'Клиент' : 'Наименование'}</td>
-                    <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
-                    <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
-                    <td style="padding: 2px; text-align: right; width: 10%;">Цена</td>
-                    <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; width: 15%;">Сумма</td>
-                  </tr>`;
+            allItems.forEach(item => {
+                let key = '';
+                if (type === 'byClient') key = item.client;
+                else if (type === 'byItem') key = item.name;
+                else if (type === 'byDate') key = item.dateStr;
 
-            let invoicesInGroup = {};
-            let invKeysOrder = [];
-            itemsInGroup.forEach(it => {
-                let iKey = it.dateStr + '|' + it.invNum;
-                if (!invoicesInGroup[iKey]) {
-                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date, isUSD: it.isUSD };
-                    invKeysOrder.push(iKey);
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+                if (item.isUSD) {
+                    totalSumUSD += item.sum;
+                } else {
+                    totalSumUAH += item.sum;
                 }
-                invoicesInGroup[iKey].items.push(it);
-                invoicesInGroup[iKey].sum += it.sum;
             });
 
-            invKeysOrder.sort((a, b) => invoicesInGroup[b].rawDate.localeCompare(invoicesInGroup[a].rawDate));
+            let sortedKeys = Object.keys(groups);
+            if (type === 'byDate') {
+                sortedKeys.sort((a, b) => {
+                   let da = a.split('.').reverse().join('');
+                   let db = b.split('.').reverse().join('');
+                   return db.localeCompare(da); 
+                });
+            } else {
+                sortedKeys.sort(); 
+            }
 
-            invKeysOrder.forEach(ik => {
-                let invData = invoicesInGroup[ik];
-                let showSeparator = (invData.items.length > 1 && type !== 'byItem');
+            secHtml += `<div style="overflow-x: auto;"><table style="width: 100%; min-width: 300px; border-collapse: collapse; font-size: 10px;">`;
+            let borderColor = isPrint ? '#000' : '#cbd5e1';
+            
+            sortedKeys.forEach(key => {
+                const itemsInGroup = groups[key];
+                let grpQty = 0;
+                let grpSumUAH = 0;
+                let grpSumUSD = 0;
                 
-                if (showSeparator) {
-                    h += `<tr style="background: ${isPrint ? '#f1f5f9' : 'rgba(241,245,249,0.2)'}; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
-                            <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: ${isPrint ? '#334155' : 'inherit'}; border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor};">
-                                Накладная № ${esc(invData.inv)} от ${invData.date}
-                            </td>
-                          </tr>`;
-                }
+                secHtml += `<tr><td colspan="6" style="background: ${isPrint ? '#edf2f7' : 'rgba(226,232,240,0.3)'}; font-weight: bold; font-size: 11px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
+                secHtml += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
+                        <td style="padding: 2px; border-left: 1px solid ${borderColor}; width: 15%;">${type === 'byDate' ? 'Клиент' : 'Дата'}</td>
+                        <td style="padding: 2px; width: 35%;">${type === 'byItem' ? 'Клиент' : 'Наименование'}</td>
+                        <td style="padding: 2px; text-align: center; width: 10%;">Накл.</td>
+                        <td style="padding: 2px; text-align: right; width: 15%;">Кол-во</td>
+                        <td style="padding: 2px; text-align: right; width: 10%;">Цена</td>
+                        <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; width: 15%;">Сумма</td>
+                      </tr>`;
 
-                invData.items.forEach((it, idx) => {
-                    grpQty += it.qty;
-                    if (it.isUSD) {
-                        grpSumUSD += it.sum;
-                    } else {
-                        grpSumUAH += it.sum;
+                let invoicesInGroup = {};
+                let invKeysOrder = [];
+                itemsInGroup.forEach(it => {
+                    let iKey = it.dateStr + '|' + it.invNum;
+                    if (!invoicesInGroup[iKey]) {
+                        invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date, isUSD: it.isUSD };
+                        invKeysOrder.push(iKey);
                     }
-                    let col1 = type === 'byDate' ? it.client : it.dateStr;
-                    let col2 = type === 'byItem' ? it.client : it.name;
+                    invoicesInGroup[iKey].items.push(it);
+                    invoicesInGroup[iKey].sum += it.sum;
+                });
+
+                invKeysOrder.sort((a, b) => invoicesInGroup[b].rawDate.localeCompare(invoicesInGroup[a].rawDate));
+
+                invKeysOrder.forEach(ik => {
+                    let invData = invoicesInGroup[ik];
+                    let showSeparator = (invData.items.length > 1 && type !== 'byItem');
                     
-                    let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
+                    if (showSeparator) {
+                        secHtml += `<tr style="background: ${isPrint ? '#f1f5f9' : 'rgba(241,245,249,0.2)'}; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8;">
+                                <td colspan="6" style="padding: 2px 5px; font-weight: bold; color: ${isPrint ? '#334155' : 'inherit'}; border-left: 1px solid ${borderColor}; border-right: 1px solid ${borderColor};">
+                                    Накладная № ${esc(invData.inv)} от ${invData.date}
+                                </td>
+                              </tr>`;
+                    }
+
+                    invData.items.forEach((it, idx) => {
+                        grpQty += it.qty;
+                        if (it.isUSD) {
+                            grpSumUSD += it.sum;
+                        } else {
+                            grpSumUAH += it.sum;
+                        }
+                        let col1 = type === 'byDate' ? it.client : it.dateStr;
+                        let col2 = type === 'byItem' ? it.client : it.name;
+                        
+                        let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
+                        
+                        secHtml += `<tr style="border-bottom: ${btmBorder};">
+                                <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
+                                <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
+                                <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
+                                <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
+                                <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
+                                <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; vertical-align: top;">${it.sum.toFixed(2)}</td>
+                              </tr>`;
+                    });
                     
-                    h += `<tr style="border-bottom: ${btmBorder};">
-                            <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
-                            <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
-                            <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
-                            <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
-                            <td style="padding: 2px; text-align: right; border-right: 1px solid ${borderColor}; vertical-align: top;">${it.sum.toFixed(2)}</td>
-                          </tr>`;
+                    if (showSeparator) {
+                        let curSign = invData.isUSD ? '$' : 'грн';
+                        secHtml += `<tr>
+                                <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
+                                <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)} ${curSign}</td>
+                              </tr>`;
+                    }
                 });
                 
-                if (showSeparator) {
-                    let curSign = invData.isUSD ? '$' : 'грн';
-                    h += `<tr>
-                            <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)} ${curSign}</td>
-                          </tr>`;
-                }
+                let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
+                let grpSumStr = [];
+                if (grpSumUAH > 0) grpSumStr.push(`${grpSumUAH.toFixed(2)} грн`);
+                if (grpSumUSD > 0) grpSumStr.push(`${grpSumUSD.toFixed(2)} $`);
+                
+                secHtml += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
+                        <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ГРУППЕ:</td>
+                        <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
+                        <td style="text-align: right; padding: 2px;"></td>
+                        <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSumStr.join(' / ')}</td>
+                      </tr><tr><td colspan="6" style="height: 8px; border: none;"></td></tr>`;
             });
             
-            let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
-            let grpSumStr = [];
-            if (grpSumUAH > 0) grpSumStr.push(`${grpSumUAH.toFixed(2)} грн`);
-            if (grpSumUSD > 0) grpSumStr.push(`${grpSumUSD.toFixed(2)} $`);
-            
-            h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
-                    <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
-                    <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
-                    <td style="text-align: right; padding: 2px;"></td>
-                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSumStr.join(' / ')}</td>
-                  </tr><tr><td colspan="6" style="height: 10px; border: none;"></td></tr>`;
-        });
-        
-        h += `</table></div>`;
-        let totalStrs = [];
-        if (totalSumUAH > 0) totalStrs.push(`${totalSumUAH.toFixed(2)} грн`);
-        if (totalSumUSD > 0) totalStrs.push(`${totalSumUSD.toFixed(2)} $`);
-        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalStrs.join(' / ')}</div>`;
-    }
+            secHtml += `</table></div>`;
+            let totalStrs = [];
+            if (totalSumUAH > 0) totalStrs.push(`${totalSumUAH.toFixed(2)} грн`);
+            if (totalSumUSD > 0) totalStrs.push(`${totalSumUSD.toFixed(2)} $`);
+            secHtml += `<div style="text-align: right; font-weight: bold; font-size: 12px; margin-top: 5px; margin-bottom: 10px;">ИТОГО ПО БЛОКУ (${title}): ${totalStrs.join(' / ')}</div>`;
+        }
+        return secHtml;
+    };
+
+    h += renderSection('НАЛИЧНЫЕ (НАЛ)', invoicesCash, itemsCash, false);
+    h += renderSection('БЕЗНАЛИЧНЫЕ (Б/Н)', invoicesBN, itemsBN, true);
     
     h += `</div>`;
     return h;
