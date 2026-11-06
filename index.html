@@ -5881,6 +5881,8 @@ window.getRegOutHTML = function(isPrint) {
             
             const dtObj = new Date(v.date);
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
+            const cur = v.currency || 'UAH';
+            const isUSD = (cur === 'USD' || cur === '$');
             
             let invMatchItem = false;
             let tempItems = [];
@@ -5903,7 +5905,9 @@ window.getRegOutHTML = function(isPrint) {
                         qty: parseFloat(p[1]) || 0,
                         unit: p[2] || 'шт',
                         price: parseFloat(p[4]) || 0,
-                        sum: parseFloat(p[5]) || 0
+                        sum: parseFloat(p[5]) || 0,
+                        currency: cur,
+                        isUSD: isUSD
                     });
                 });
             }
@@ -5928,9 +5932,11 @@ window.getRegOutHTML = function(isPrint) {
             const dtObj = new Date(v.date);
             const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
             const num = esc(v.num) || '---';
-            const sum = parseFloat(v.totalSum || 0).toFixed(2);
+            const cur = v.currency || 'UAH';
+            const curSymbol = (cur === 'USD' || cur === '$') ? '$' : 'грн';
+            const sum = parseFloat(v.totalSum || 0).toFixed(2) + ' ' + curSymbol;
             const cli = esc(v.client) || '-';
-            h += `<div style="display: grid; grid-template-columns: 55px 45px 60px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+            h += `<div style="display: grid; grid-template-columns: 55px 45px 70px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
                     <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
                     <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
                   </div>`;
@@ -5938,7 +5944,8 @@ window.getRegOutHTML = function(isPrint) {
         h += `</div>`;
     } else {
         const groups = {};
-        let totalSum = 0;
+        let totalSumUAH = 0;
+        let totalSumUSD = 0;
 
         allItems.forEach(item => {
             let key = '';
@@ -5948,7 +5955,11 @@ window.getRegOutHTML = function(isPrint) {
 
             if (!groups[key]) groups[key] = [];
             groups[key].push(item);
-            totalSum += item.sum;
+            if (item.isUSD) {
+                totalSumUSD += item.sum;
+            } else {
+                totalSumUAH += item.sum;
+            }
         });
 
         let sortedKeys = Object.keys(groups);
@@ -5969,7 +5980,8 @@ window.getRegOutHTML = function(isPrint) {
         sortedKeys.forEach(key => {
             const itemsInGroup = groups[key];
             let grpQty = 0;
-            let grpSum = 0;
+            let grpSumUAH = 0;
+            let grpSumUSD = 0;
             
             h += `<tr><td colspan="6" style="background: ${isPrint ? '#e2e8f0' : 'rgba(226,232,240,0.5)'}; font-weight: bold; font-size: 12px; padding: 4px; border: 1px solid ${borderColor}; text-align: left; margin-top: 5px;">${esc(key)}</td></tr>`;
             h += `<tr style="font-weight: bold; background: ${isPrint ? '#f8fafc' : 'rgba(248,250,252,0.1)'}; border-bottom: 1px solid ${borderColor};">
@@ -5986,7 +5998,7 @@ window.getRegOutHTML = function(isPrint) {
             itemsInGroup.forEach(it => {
                 let iKey = it.dateStr + '|' + it.invNum;
                 if (!invoicesInGroup[iKey]) {
-                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date };
+                    invoicesInGroup[iKey] = { items: [], sum: 0, date: it.dateStr, inv: it.invNum, rawDate: it.date, isUSD: it.isUSD };
                     invKeysOrder.push(iKey);
                 }
                 invoicesInGroup[iKey].items.push(it);
@@ -6009,7 +6021,11 @@ window.getRegOutHTML = function(isPrint) {
 
                 invData.items.forEach((it, idx) => {
                     grpQty += it.qty;
-                    grpSum += it.sum;
+                    if (it.isUSD) {
+                        grpSumUSD += it.sum;
+                    } else {
+                        grpSumUAH += it.sum;
+                    }
                     let col1 = type === 'byDate' ? it.client : it.dateStr;
                     let col2 = type === 'byItem' ? it.client : it.name;
                     
@@ -6026,25 +6042,32 @@ window.getRegOutHTML = function(isPrint) {
                 });
                 
                 if (showSeparator) {
+                    let curSign = invData.isUSD ? '$' : 'грн';
                     h += `<tr>
                             <td colspan="5" style="padding: 2px; text-align: right; font-style: italic; color: #475569; border-left: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">Итого по накл. № ${esc(invData.inv)}:</td>
-                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)}</td>
+                            <td style="padding: 2px; text-align: right; font-weight: bold; color: #475569; border-right: 1px solid ${borderColor}; border-bottom: 1px solid ${borderColor};">${invData.sum.toFixed(2)} ${curSign}</td>
                           </tr>`;
                 }
             });
             
             let totalQtyStr = type === 'byItem' ? `${grpQty} <span style="font-size: 8px; font-weight: normal;">${itemsInGroup[0].unit}</span>` : '-';
+            let grpSumStr = [];
+            if (grpSumUAH > 0) grpSumStr.push(`${grpSumUAH.toFixed(2)} грн`);
+            if (grpSumUSD > 0) grpSumStr.push(`${grpSumUSD.toFixed(2)} $`);
             
             h += `<tr style="font-weight: bold; border-top: 2px solid ${borderColor}; border-bottom: 2px solid ${borderColor};">
                     <td colspan="3" style="text-align: right; padding: 2px; border-left: 1px solid ${borderColor};">ИТОГО ПО ${type === 'byClient' ? 'КЛИЕНТУ' : (type === 'byItem' ? 'ПОЗИЦИИ' : 'ДНЮ')}:</td>
                     <td style="text-align: right; padding: 2px;">${totalQtyStr}</td>
                     <td style="text-align: right; padding: 2px;"></td>
-                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSum.toFixed(2)}</td>
+                    <td style="text-align: right; padding: 2px; border-right: 1px solid ${borderColor};">${grpSumStr.join(' / ')}</td>
                   </tr><tr><td colspan="6" style="height: 10px; border: none;"></td></tr>`;
         });
         
         h += `</table></div>`;
-        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalSum.toFixed(2)} грн</div>`;
+        let totalStrs = [];
+        if (totalSumUAH > 0) totalStrs.push(`${totalSumUAH.toFixed(2)} грн`);
+        if (totalSumUSD > 0) totalStrs.push(`${totalSumUSD.toFixed(2)} $`);
+        h += `<div style="text-align: right; font-weight: 900; font-size: 14px; margin-top: 10px;">ОБЩАЯ СУММА ЗА ПЕРИОД: ${totalStrs.join(' / ')}</div>`;
     }
     
     h += `</div>`;
