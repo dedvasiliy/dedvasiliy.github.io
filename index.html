@@ -1698,14 +1698,15 @@ window.viewInvoice=function(id){
         let prc=parseFloat(p[4]),sum=parseFloat(p[5]);
         if(isBN&&!isUSD){
             prc=Math.round((prc/1.2)*100)/100;
-            sum=prc*w;
+            sum=Math.round((prc*w)*100)/100;
         }
-        if(isBN)totalNoVat+=sum;
+        if(isBN)totalNoVat=Math.round((totalNoVat+sum)*100)/100;
         h+=`<tr><td style="text-align:center">${idx+1}</td><td>${esc(getPrintName(p[0]))}</td><td style="text-align:center">${p[1]}</td><td style="text-align:center">${p[2]}</td><td style="text-align:center">${prc.toFixed(2)}</td><td style="text-align:center">${sum.toFixed(2)}</td></tr>`;
     });
     let total=parseFloat(v.totalSum||0);
     if(isBN){
-        let vat=isUSD?0:(total-totalNoVat);
+        let vat=isUSD?0:Math.round((totalNoVat*0.2)*100)/100;
+        if(!isUSD)total=Math.round((totalNoVat+vat)*100)/100;
         h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${Math.round((v.loadWeight||0)*1000)/1000} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
     }else{
         h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${Math.round((v.loadWeight||0)*1000)/1000} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${total.toFixed(2)}</td></tr>`;
@@ -1799,13 +1800,15 @@ window.reprintInv=function(id){
             const p=it.split('|');
             const w=parseFloat(p[1])||0;
             let prc=isUSD?parseFloat(p[4]):Math.round((parseFloat(p[4])/1.2)*100)/100;
-            totalNoVat+=prc*w;
+            let sum=Math.round((prc*w)*100)/100;
+            totalNoVat=Math.round((totalNoVat+sum)*100)/100;
         });
     }
     
     let sumVATCalc=0;
     if(isBN&&!isUSD){
-        sumVATCalc=tSum-totalNoVat;
+        sumVATCalc=Math.round((totalNoVat*0.2)*100)/100;
+        tSum=Math.round((totalNoVat+sumVATCalc)*100)/100;
     }
     
     let dData={num:v.num,dateStr:dStr,sup:v.supplierName,cli:v.client,agr:v.agreement,addr:v.address,cnt:(v.items?v.items.length:0),sum:tSum,sumVAT:sumVATCalc,currency:cur};
@@ -1824,7 +1827,7 @@ window.reprintInv=function(id){
             let printNm = esc(getPrintName(p[0]));
             if(isBN&&!isUSD){
                 prc=Math.round((prc/1.2)*100)/100;
-                sum=prc*w;
+                sum=Math.round((prc*w)*100)/100;
             }
             h+=`<tr><td>${idx+1}</td><td style="text-align:left">${printNm}</td><td>${p[1]}</td><td>${p[2]}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
         });
@@ -1834,7 +1837,7 @@ window.reprintInv=function(id){
     h+=`<table style="width:100%; border-collapse:collapse; font-size:${fS} !important; table-layout:fixed; margin-top:0;">`;
     h+=`<colgroup><col style="width:${colW[0]||'5%'}"><col style="width:${colW[1]||'55%'}"><col style="width:${colW[2]||'10%'}"><col style="width:${colW[3]||'5%'}"><col style="width:${colW[4]||'10%'}"><col style="width:${colW[5]||'15%'}"></colgroup><tbody>`;
     if(isBN){
-        let vat=isUSD?0:(tSum-totalNoVat);
+        let vat=isUSD?0:sumVATCalc;
         let noVatStr=isUSD?tSum.toFixed(2):totalNoVat.toFixed(2);
         h+=`<tr><td colspan="2" style="text-align:right;font-weight:bold;padding-right:5px;border:none"><span style="float:left; font-weight:normal;">Загальна вага: ${Math.round((v.loadWeight||0)*1000)/1000} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${noVatStr}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${isUSD?'0.00':vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
     }else{
@@ -2309,12 +2312,13 @@ async function sShip(){
     let totalNoVat=0;
     it.forEach(x=>{
         let prc=(isBN&&!isUSD)?Math.round((x.p/1.2)*100)/100:x.p;
-        let sum=(isBN&&!isUSD)?prc*x.w:x.s;
-        if(isBN)totalNoVat+=sum;
+        let sum=(isBN&&!isUSD)?Math.round((prc*x.w)*100)/100:x.s;
+        if(isBN)totalNoVat=Math.round((totalNoVat+sum)*100)/100;
         h+=`<tr><td style="border:1px solid #ccc;padding:2px">${esc(getPrintName(x.n))}</td><td style="text-align:center;border:1px solid #ccc">${x.w}</td><td style="text-align:center;border:1px solid #ccc">${prc.toFixed(2)}</td><td style="text-align:center;border:1px solid #ccc">${sum.toFixed(2)}</td></tr>`;
     });
     if(isBN){
-        let vat=isUSD?0:(tm-totalNoVat);
+        let vat=isUSD?0:Math.round((totalNoVat*0.2)*100)/100;
+        if(!isUSD)tm=Math.round((totalNoVat+vat)*100)/100;
         h+=`<tr><td style="text-align:right;border:none;font-weight:bold;padding-right:5px;padding-top:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${totalNoVat.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сумма ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Итого с ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tm.toFixed(2)}</td></tr></table>`;
     }else{
         h+=`<tr><td style="text-align:right;border:none;font-weight:bold;padding-right:5px;padding-top:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Итого:</td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold;padding-top:5px">${tm.toFixed(2)}</td></tr></table>`;
@@ -2324,7 +2328,7 @@ async function sShip(){
     gID('shipBuilder').style.display='none';gID('shipPreview').innerHTML=h;gID('shipPreview').style.display='block';gID('mT').innerText='ПРОВЕРКА';
 }
 
-    window.backToShipBuilder=function(){gID('shipPreview').style.display='none';gID('shipBuilder').style.display='block';gID('mT').innerText='ОТГРУЗКА';}
+window.backToShipBuilder=function(){gID('shipPreview').style.display='none';gID('shipBuilder').style.display='block';gID('mT').innerText='ОТГРУЗКА';}
 window.printShipInvoice=function(d){
     if(!d)return;
     const dt=new Date(d.dv),dStr=dt.getDate().toString().padStart(2,'0')+'.'+(dt.getMonth()+1).toString().padStart(2,'0')+'.'+dt.getFullYear();
@@ -2339,11 +2343,16 @@ window.printShipInvoice=function(d){
     let tSum=parseFloat(d.tm||0);
     
     let sumVATCalc = 0;
-    let printTotalNoVat = tSum;
+    let printTotalNoVat = 0;
     if (isBN) {
+        d.it.forEach(x=>{
+            let prc=(!isUSD)?Math.round((x.p/1.2)*100)/100:x.p;
+            let sum=(!isUSD)?Math.round((prc*x.w)*100)/100:x.s;
+            printTotalNoVat=Math.round((printTotalNoVat+sum)*100)/100;
+        });
         if (!isUSD) {
-            printTotalNoVat = d.totalNoVat || Math.round((tSum / 1.2) * 100) / 100;
-            sumVATCalc = tSum - printTotalNoVat;
+            sumVATCalc = Math.round((printTotalNoVat * 0.2) * 100) / 100;
+            tSum = Math.round((printTotalNoVat + sumVATCalc) * 100) / 100;
         } else {
             printTotalNoVat = tSum;
             sumVATCalc = 0;
@@ -2359,11 +2368,9 @@ window.printShipInvoice=function(d){
     let h=styleBlock+`<div style="font-size:12px;color:#000;line-height:1.4;white-space:pre-wrap;text-align:left">`+parseTags(curSet.xtraTop,dData)+`</div>`;
     h+=`<table class="pr-table"><thead><tr><th>№</th><th>Товар</th><th>К-ть</th><th>Од.</th><th>${thPriceName}</th><th>${thSumName}</th></tr></thead><tbody>`;
     
-    printTotalNoVat=0;
     d.it.forEach((x,idx)=>{
         let prc=(isBN && !isUSD)?Math.round((x.p/1.2)*100)/100:x.p;
-        let sum=(isBN && !isUSD)?prc*x.w:x.s;
-        if(isBN)printTotalNoVat+=sum;
+        let sum=(isBN && !isUSD)?Math.round((prc*x.w)*100)/100:x.s;
         let printNm = esc(getPrintName(x.n));
         h+=`<tr><td>${idx+1}</td><td style="text-align:left">${printNm}</td><td>${x.w}</td><td>${x.c==='Готовая'||['Скотч 360 грамм','Пакеты','Мешки','Нитки','Этикетка','Стрейч пленка','Термо лента'].includes(x.c)?'шт':'кг'}</td><td>${prc.toFixed(2)}</td><td>${sum.toFixed(2)}</td></tr>`;
         tw+=x.w;
@@ -2373,7 +2380,7 @@ window.printShipInvoice=function(d){
     h+=`<colgroup><col style="width:${colW[0]||'5%'}"><col style="width:${colW[1]||'55%'}"><col style="width:${colW[2]||'10%'}"><col style="width:${colW[3]||'5%'}"><col style="width:${colW[4]||'10%'}"><col style="width:${colW[5]||'15%'}"></colgroup><tbody>`;
     
     if(isBN){
-        let vat = isUSD ? 0 : (tSum - printTotalNoVat);
+        let vat = isUSD ? 0 : sumVATCalc;
         let noVatStr = isUSD ? tSum.toFixed(2) : printTotalNoVat.toFixed(2);
         h+=`<tr><td colspan="2" style="text-align:right;font-weight:bold;padding-right:5px;border:none"><span style="float:left; font-weight:normal;">Загальна вага: ${Math.round((d.loadWeight||0)*1000)/1000} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:center;border:2px solid #000;font-weight:bold">${noVatStr}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${isUSD ? '0.00' : vat.toFixed(2)}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tSum.toFixed(2)}</td></tr>`;
     }else{
