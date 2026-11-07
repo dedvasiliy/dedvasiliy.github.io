@@ -5944,25 +5944,42 @@ window.getRegOutHTML = function(isPrint) {
     let h = `<div style="font-family: sans-serif; color: ${textColor}; font-size: 10px;">`;
     h += `<h3 style="text-align: center; margin-bottom: 15px; font-size: 14px;">РЕЕСТР ОТГРУЗОК (${dFrom.split('-').reverse().join('.')} - ${dTo.split('-').reverse().join('.')})</h3>`;
 
-    const renderSection = (title, invoices, allItems) => {
+    let grandTotalUAH = 0;
+    let grandTotalUSD = 0;
+
+    const renderSection = (title, invoices, allItems, isPageBreak) => {
         if (!invoices.length && !allItems.length) return '';
         
-        let secHtml = `<div style="margin-top: 15px; margin-bottom: 10px; font-size: 12px; font-weight: bold; background: ${isPrint ? '#e2e8f0' : '#f1f5f9'}; padding: 5px; border-left: 4px solid #0f172a;">${title}</div>`;
+        let secStyle = isPageBreak ? 'margin-top: 25px; page-break-before: always;' : 'margin-top: 15px;';
+        let secHtml = `<div style="${secStyle} margin-bottom: 10px; font-size: 12px; font-weight: bold; background: ${isPrint ? '#e2e8f0' : '#f1f5f9'}; padding: 5px; border-left: 4px solid #0f172a;">${title}</div>`;
 
         if (type === 'standard') {
-            invoices.sort((a, b) => (b.date || '').localeCompare(a.date || '')); 
-            secHtml += `<div style="${isPrint ? 'column-count: 2; column-gap: 15px;' : ''}">`;
+            // Сортировка от начала к концу месяца (по дате, затем по номеру накладной)
+            invoices.sort((a, b) => {
+                let dateComp = (a.date || '').localeCompare(b.date || '');
+                if (dateComp !== 0) return dateComp;
+                let numA = parseInt(a.num) || 0;
+                let numB = parseInt(b.num) || 0;
+                return numA - numB;
+            }); 
+
+            secHtml += `<div>`;
             invoices.forEach(v => {
                 const dtObj = new Date(v.date);
                 const dStr = dtObj.getDate().toString().padStart(2, '0') + '.' + (dtObj.getMonth() + 1).toString().padStart(2, '0') + '.' + dtObj.getFullYear();
                 const num = esc(v.num) || '---';
                 const cur = v.currency || 'UAH';
                 const curSymbol = (cur === 'USD' || cur === '$') ? '$' : 'грн';
-                const sum = parseFloat(v.totalSum || 0).toFixed(2) + ' ' + curSymbol;
+                const sumVal = parseFloat(v.totalSum || 0);
+                const sum = sumVal.toFixed(2) + ' ' + curSymbol;
                 const cli = esc(v.client) || '-';
-                secHtml += `<div style="display: grid; grid-template-columns: 55px 45px 70px 1fr; gap: 4px; border-bottom: 1px dashed #ccc; padding: 2px 0; break-inside: avoid; align-items: center; white-space: nowrap; overflow: hidden;">
+
+                if (cur === 'USD' || cur === '$') grandTotalUSD += sumVal;
+                else grandTotalUAH += sumVal;
+
+                secHtml += `<div style="display: grid; grid-template-columns: 65px 50px 85px 1fr; gap: 6px; border-bottom: 1px dashed #ccc; padding: 4px 0; break-inside: avoid; align-items: center;">
                         <div>${dStr}</div><div>${num}</div><div style="text-align: right; font-weight: bold;">${sum}</div>
-                        <div style="padding-left: 5px; overflow: hidden; text-overflow: ellipsis;">${cli}</div>
+                        <div style="padding-left: 5px; word-break: break-word;">${cli}</div>
                       </div>`;
             });
             secHtml += `</div>`;
@@ -5981,8 +5998,10 @@ window.getRegOutHTML = function(isPrint) {
                 groups[key].push(item);
                 if (item.isUSD) {
                     totalSumUSD += item.sum;
+                    grandTotalUSD += item.sum;
                 } else {
                     totalSumUAH += item.sum;
+                    grandTotalUAH += item.sum;
                 }
             });
 
@@ -5991,7 +6010,7 @@ window.getRegOutHTML = function(isPrint) {
                 sortedKeys.sort((a, b) => {
                    let da = a.split('.').reverse().join('');
                    let db = b.split('.').reverse().join('');
-                   return db.localeCompare(da); 
+                   return da.localeCompare(db); 
                 });
             } else {
                 sortedKeys.sort(); 
@@ -6028,7 +6047,14 @@ window.getRegOutHTML = function(isPrint) {
                     invoicesInGroup[iKey].sum += it.sum;
                 });
 
-                invKeysOrder.sort((a, b) => invoicesInGroup[b].rawDate.localeCompare(invoicesInGroup[a].rawDate));
+                // Сортировка накладных в группе от ранних к поздним
+                invKeysOrder.sort((a, b) => {
+                    let dateComp = invoicesInGroup[a].rawDate.localeCompare(invoicesInGroup[b].rawDate);
+                    if (dateComp !== 0) return dateComp;
+                    let numA = parseInt(invoicesInGroup[a].inv) || 0;
+                    let numB = parseInt(invoicesInGroup[b].inv) || 0;
+                    return numA - numB;
+                });
 
                 invKeysOrder.forEach(ik => {
                     let invData = invoicesInGroup[ik];
@@ -6055,8 +6081,8 @@ window.getRegOutHTML = function(isPrint) {
                         let btmBorder = (!showSeparator && idx === invData.items.length - 1) ? `1px solid ${borderColor}` : '1px dashed #ccc';
                         
                         secHtml += `<tr style="border-bottom: ${btmBorder};">
-                                <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top;">${esc(col1)}</td>
-                                <td style="padding: 2px; vertical-align: top;">${esc(col2)}</td>
+                                <td style="padding: 2px; border-left: 1px solid ${borderColor}; vertical-align: top; word-break: break-word;">${esc(col1)}</td>
+                                <td style="padding: 2px; vertical-align: top; word-break: break-word;">${esc(col2)}</td>
                                 <td style="padding: 2px; text-align: center; vertical-align: top;">${esc(it.invNum)}</td>
                                 <td style="padding: 2px; text-align: right; font-weight: bold; vertical-align: top;">${it.qty} <span style="font-size: 8px; font-weight: normal;">${it.unit}</span></td>
                                 <td style="padding: 2px; text-align: right; vertical-align: top;">${it.price.toFixed(2)}</td>
@@ -6095,8 +6121,17 @@ window.getRegOutHTML = function(isPrint) {
         return secHtml;
     };
 
-    h += renderSection('НАЛИЧНЫЕ (НАЛ)', invoicesCash, itemsCash);
-    h += renderSection('БЕЗНАЛИЧНЫЕ (Б/Н)', invoicesBN, itemsBN);
+    h += renderSection('НАЛИЧНЫЕ (НАЛ)', invoicesCash, itemsCash, false);
+    h += renderSection('БЕЗНАЛИЧНЫЕ (Б/Н)', invoicesBN, itemsBN, true);
+    
+    // Общая сумма за период в самом конце
+    let grandTotalStrs = [];
+    if (grandTotalUAH > 0) grandTotalStrs.push(`${grandTotalUAH.toFixed(2)} грн`);
+    if (grandTotalUSD > 0) grandTotalStrs.push(`${grandTotalUSD.toFixed(2)} $`);
+    
+    h += `<div style="margin-top: 25px; border-top: 2px solid #0f172a; padding-top: 10px; text-align: right; font-weight: 900; font-size: 14px;">
+            ОБЩАЯ СУММА ЗА ПЕРИОД: ${grandTotalStrs.join(' / ')}
+          </div>`;
     
     h += `</div>`;
     return h;
