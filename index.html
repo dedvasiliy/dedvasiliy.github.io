@@ -565,7 +565,7 @@ function renderHome(){
 }
 
 function goBack() {
- const m={'Finances':'Home','PrintExport':'Home','Analytics':'Home','StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'StockRoot','PrintSettings':'Home','Contractors':'PrintSettings'};
+ const m={'BnStock':'StockRoot','Finances':'Home','PrintExport':'Home','Analytics':'Home','StockArchive':'Stock_Raw','TsCal':'Timesheet','Timesheet':'Home','StockList':'StockRoot','WeightStock':'StockRoot','Stock_DV':'StockRoot','Stock_Feed':'StockRoot','Stock_Semi':'StockRoot','Stock_Raw':'StockRoot','Invoices':'StockRoot','PackSub':'StockRoot','ArchSubIn':'Invoices','ArchSubOut':'Invoices','InvoicesDate':'ArchSub','InvoicesClient':'ArchSub','Фасовка':'ProdSub','Kruporushka':'ProdSub','ZSHM':'ProdSub','Vibro':'ProdSub','Пленка':'PackSub','Пакеты':'PackSub','Скотч 360 грамм':'PackSub','Мешки':'PackSub','Нитки':'PackSub','Этикетка':'PackSub','Стрейч пленка':'PackSub','Термо лента':'PackSub','ArchPackIn':'PackSub','Consolidated':'Home','PriceList':'StockRoot','PrintSettings':'Home','Contractors':'PrintSettings'};
  let n=m[cur]||'Home';
  if(cur==='InvoicesDate'||cur==='InvoicesClient')n=archSub==='In'?'ArchSubIn':'ArchSubOut';
  setCat(n);
@@ -618,7 +618,7 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
  else if(c==='TsCal'){ct.innerHTML=`<div class="z-head">ВЫБЕРИТЕ</div><div id="tsList" class="item-grid"></div>`;loadData()}
   else if(c==='StockRoot'){
   let b=isAdmin?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"><button class="btn-main" style="background:var(--s);margin:0" onclick="openModal('inc')">📥 ПРИХОД</button><button class="btn-main" style="background:var(--d);margin:0" onclick="openModal('ship')">🚚 ОТГРУЗКА</button></div><button class="btn-main" id="corrTile" onclick="toggleCorr()" style="background:#fff;color:var(--p);border:1px solid var(--p);margin-bottom:5px">🔧 КОРРЕКЦИЯ</button><button class="btn-main" onclick="openModal('inventory')" style="background:#8b5cf6;margin-bottom:15px">📋 ИНВЕНТАРИЗАЦИЯ</button>`:'';
-    ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('PriceList')">💰 ПРАЙС</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div></div>`
+    ct.innerHTML=`${b}<div class="dash-grid"><div class="dash-item" onclick="setCat('StockList')">ФАСОВАННАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('WeightStock')">ПОКУПНАЯ ПРОДУКЦИЯ</div><div class="dash-item" onclick="setCat('Stock_DV')">ДВ ВЕС</div><div class="dash-item" onclick="setCat('Stock_Feed')">ОТХОДЫ ПРОИЗВОДСТВА</div><div class="dash-item" onclick="setCat('Stock_Raw')">СЫРЬЕ</div><div class="dash-item" onclick="setCat('Stock_Semi')">П/Ф</div><div class="dash-item" onclick="setCat('PackSub')">УПАКОВКА</div><div class="dash-item" onclick="setCat('PriceList')">💰 ПРАЙС</div><div class="dash-item" onclick="setCat('Invoices')">АРХИВ</div><div class="dash-item" onclick="setCat('BnStock')">УЧЁТ ПО ДОКУМЕНТАМ (Б/Н)</div></div>`
  }
 
  else if(c==='Stock_Raw'){ct.innerHTML=(isAdmin?`<button class="btn-main" style="background:#e0f2fe;color:#0369a1;margin-bottom:10px" onclick="setCat('StockArchive')">🗄️ АРХИВ</button>`:'')+`<div class="z-head">СЫРЬЕ</div><div id="rawList">...</div>`;if(isAdmin&&!corrMode)gID('act').innerHTML=`<button class="btn-main" style="background:var(--s);padding:8px" onclick="openModal('addRaw')">ПРИХОД</button>`}
@@ -649,12 +649,14 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
      ct.innerHTML='<div class="z-head">ЦЕНТР ПЕЧАТИ И ЭКСПОРТА</div><div id="peList" style="padding-top:20px;text-align:center;font-weight:bold;color:var(--p)">Сбор данных...</div>';
      setTimeout(window.renderPrintExport, 800);
  }
-
+ else if(c==='BnStock'){
+   ct.innerHTML=`<div class="z-head">УЧЁТ ПО ДОКУМЕНТАМ (Б/Н) - ОСТАТКИ ПО ДОКУМЕНТАМ</div><div id="bnStockCont" style="padding:5px;">Загрузка остатков...</div>`;
+ }
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
 }
 
-function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances','PrintExport'].includes(cur))return;
+function loadData(){const c=gID('cnt');if(['Home','StockRoot','BnStock','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances','PrintExport'].includes(cur))return;
 
  if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
 
