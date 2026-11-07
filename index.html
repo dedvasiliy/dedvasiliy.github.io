@@ -650,7 +650,7 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
      setTimeout(window.renderPrintExport, 800);
  }
  else if(c==='BnStock'){
-   ct.innerHTML=`<div class="z-head">УЧЁТ ПО ДОКУМЕНТАМ (Б/Н) - ОСТАТКИ ПО ДОКУМЕНТАМ</div><div id="bnStockCont" style="padding:5px;">Загрузка остатков...</div>`;
+   ct.innerHTML=`<div class="z-head">ОСТАТКИ ТОВАРОВ ПО БЕЗНАЛУ</div><div id="bnStockCont" style="padding:5px;">Раздел в разработке...</div>`;
  }
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
