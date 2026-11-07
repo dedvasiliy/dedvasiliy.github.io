@@ -2520,27 +2520,29 @@ window.previewRaw = async function() {
     let tsVat = 0;
     let tsTotal = 0;
 
-    let h = `<div style="text-align:center"><b>ПРИХОД СЫРЬЯ ${pt === 'bn' ? '(Б/Н)' : ''}</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}<br><b>Доп. расходы:</b> ${dop.toFixed(2)} грн (размазано по +${dopPerKg.toFixed(2)} грн/кг)</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ (ПАПКА)</td><td style="text-align:center">ВЕС</td><td style="text-align:center">${pt === 'bn' ? 'ЦЕНА<br>БЕЗ ПДВ' : 'ИТОГ. ЦЕНА'}</td><td style="text-align:center">${pt === 'bn' ? 'СУММА<br>БЕЗ ПДВ' : 'СУММА'}</td>${pt === 'bn' ? '<td style="text-align:center">ЦЕНА<br>З ПДВ</td><td style="text-align:center">СУММА<br>З ПДВ</td>' : ''}</tr>`;
+    let h = `<div style="text-align:center"><b>ПРИХОД СЫРЬЯ ${pt === 'bn' ? '(Б/Н)' : ''}</b><br><span style="font-size:12px;color:#64748b;font-weight:900">від ${dStr} р.</span></div><div style="font-size:12px;margin-top:5px"><b>Поставщик:</b> ${esc(s)}<br><b>Накладная:</b> ${esc(nm)}<br><b>Доп. расходы на выгрузку:</b> ${dop.toFixed(2)} грн (+${dopPerKg.toFixed(2)} грн/кг в себестоимость на складе)</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-top:5px"><tr style="background:#eee"><td>СЫРЬЕ (ПАПКА)</td><td style="text-align:center">ВЕС</td><td style="text-align:center">${pt === 'bn' ? 'ЦЕНА<br>БЕЗ ПДВ' : 'ЦЕНА'}</td><td style="text-align:center">${pt === 'bn' ? 'СУММА<br>БЕЗ ПДВ' : 'СУММА'}</td>${pt === 'bn' ? '<td style="text-align:center">ЦЕНА<br>З ПДВ</td><td style="text-align:center">СУММА<br>З ПДВ</td>' : ''}</tr>`;
 
     itms.forEach(x => {
         if (pt === 'bn') {
-            x.pNoVat = x.pBase + (dopPerKg / 1.2);
+            x.pNoVat = x.pBase;
             x.sNoVat = Math.round((x.a * x.pBase) * 100) / 100;
-            x.pVat = Math.round((x.pBase * 1.2 + dopPerKg) * 100) / 100;
-            x.sVat = Math.round((x.sNoVat * 1.2 + x.a * dopPerKg) * 100) / 100;
+            x.pVat = Math.round((x.pBase * 1.2) * 100) / 100;
+            x.sVat = Math.round((x.sNoVat * 1.2) * 100) / 100;
+            x.costPrice = Math.round(((x.pBase * 1.2) + dopPerKg) * 100) / 100;
             tsNoVat = Math.round((tsNoVat + x.sNoVat) * 100) / 100;
-            h += `<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.pBase.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.sNoVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pVat > 0 ? x.pVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.sVat > 0 ? x.sVat.toFixed(2) : '-'}</td></tr>`;
+            h += `<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}<div style="font-size:9px;color:#059669">Себест. на складе: ~${x.costPrice.toFixed(2)} грн/кг</div></td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.pBase.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.sNoVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pVat > 0 ? x.pVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.sVat > 0 ? x.sVat.toFixed(2) : '-'}</td></tr>`;
         } else {
-            x.p = x.pBase + dopPerKg;
-            x.s = x.a * x.p;
-            tsTotal += x.s;
-            h += `<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p > 0 ? x.p.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p > 0 ? x.s.toFixed(2) : '-'}</td></tr>`;
+            x.p = x.pBase;
+            x.s = Math.round((x.a * x.pBase) * 100) / 100;
+            x.costPrice = Math.round((x.pBase + dopPerKg) * 100) / 100;
+            tsTotal = Math.round((tsTotal + x.s) * 100) / 100;
+            h += `<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}<div style="font-size:9px;color:#059669">Себест. на складе: ~${x.costPrice.toFixed(2)} грн/кг</div></td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p > 0 ? x.p.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.p > 0 ? x.s.toFixed(2) : '-'}</td></tr>`;
         }
     });
 
     if (pt === 'bn') {
         tsVat = Math.round((tsNoVat * 0.2) * 100) / 100;
-        tsTotal = Math.round((tsNoVat + tsVat + dop) * 100) / 100;
+        tsTotal = Math.round((tsNoVat + tsVat) * 100) / 100;
         h += `<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Разом:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума без ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsNoVat > 0 ? tsNoVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsVat > 0 ? tsVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Усього з ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal > 0 ? tsTotal.toFixed(2) : ''}</td></tr></table>`;
     } else {
         h += `<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal > 0 ? tsTotal.toFixed(2) : ''}</td></tr></table>`;
@@ -2569,13 +2571,14 @@ async function sRawInc(){
             num: d.nm,
             type: 'RAW',
             payType: d.pt || 'cash',
+            dopCost: d.dop || 0,
             ts: ts,
             totalSum: d.tsTotal || 0,
             items: d.itms.map(x => {
                 if (d.pt === 'bn') {
-                    return { n: x.n, a: x.a, p: x.pNoVat || x.pBase || 0, s: x.sNoVat || 0, pVat: x.pVat || 0, sVat: x.sVat || 0 };
+                    return { n: x.n, a: x.a, p: x.pNoVat || 0, s: x.sNoVat || 0, pVat: x.pVat || 0, sVat: x.sVat || 0, costPrice: x.costPrice || 0 };
                 } else {
-                    return { n: x.n, a: x.a, p: x.p || 0, s: x.s || 0 };
+                    return { n: x.n, a: x.a, p: x.p || 0, s: x.s || 0, costPrice: x.costPrice || 0 };
                 }
             })
         };
@@ -2587,10 +2590,8 @@ async function sRawInc(){
 
         d.itms.forEach(x=>{
             let noteStr = 'Приход сырья';
-            if (d.pt === 'bn' && x.pBase > 0) {
-                noteStr = `Приход сырья (по ${parseFloat(x.pBase).toFixed(2)} грн без ПДВ)`;
-            } else if (x.p > 0) {
-                noteStr = `Приход сырья (по ${parseFloat(x.p).toFixed(2)} грн)`;
+            if (x.costPrice > 0) {
+                noteStr = `Приход сырья (себест. ${parseFloat(x.costPrice).toFixed(2)} грн/кг)`;
             }
             u['/Stock_Raw/'+db.child('Stock_Raw').push().key]={
                 name: x.n,
@@ -3585,10 +3586,8 @@ function genDayReport(){
         function makeSmart(id,l,p){let o=`<option value="">${p}</option>`;l.forEach(x=>o+=`<option value="${esc(x)}">${esc(x)}</option>`);o+=`<option value="NEW" style="color:blue">NEW...</option>`;return `<select id="s_${id}" class="smart-sel" onchange="checkSmart('${id}')">${o}</select><input type="text" id="i_${id}" class="smart-inp" style="display:none" placeholder="${p}">`;}
 function checkSmart(id){const s=gID('s_'+id),i=gID('i_'+id);if(!s||!i)return;if(s.value==='NEW'){s.style.display='none';i.style.display='block';i.focus()}else{i.style.display='none';i.value=''}}
 function getSmartVal(id){const s=gID('s_'+id),i=gID('i_'+id);if(!s)return'';return s.style.display==='none'?(i?i.value:''):s.value}
-
 window.calcAvgPrice = function(itemName, category) {
     let curStock = 0;
-    // Узнаем текущий остаток на складе
     if (data[category]) {
         Object.values(data[category]).forEach(v => { 
             if (v.name === itemName) curStock += (parseFloat(v.amount) || 0); 
@@ -3597,35 +3596,33 @@ window.calcAvgPrice = function(itemName, category) {
     if (curStock <= 0.01) return 0; 
 
     let incs = [];
-    
-    // Определяем, относится ли запрашиваемая категория к упаковке
     const isPack = ['Пленка', 'Пакеты', 'Этикетка', 'Скотч', 'Скотч 360 грамм', 'Термо лента', 'Стрейч пленка', 'Гофротара', 'Мешки', 'Нитки'].includes(category);
 
-    // ПОИСК ДЛЯ ГОТОВОЙ ПРОДУКЦИИ И СЫРЬЯ (игнорируем архив упаковки)
     if (!isPack && data.ArchIncoming) {
         Object.values(data.ArchIncoming).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    if (it.n === itemName && it.a > 0 && it.p > 0) {
-                        let price = parseFloat(it.p);
-                        // ИСПОЛЬЗУЕМ ТОЧНУЮ ПЕРЕМЕННУЮ payType (как на скриншоте накладной)
-                        if (inv.payType === 'bn') price = price * 1.2;
+                    if (it.n === itemName && it.a > 0 && (it.p > 0 || it.costPrice > 0)) {
+                        let price = 0;
+                        if (it.costPrice !== undefined && it.costPrice > 0) {
+                            price = parseFloat(it.costPrice);
+                        } else {
+                            price = parseFloat(it.p);
+                            if (inv.payType === 'bn') price = price * 1.2;
+                        }
                         incs.push({ d: inv.date, p: price, a: parseFloat(it.a) });
                     }
                 });
             }
         });
     }
-    // ПОИСК СТРОГО ДЛЯ УПАКОВКИ (игнорируем архив обычных товаров)
     if (isPack && data.ArchPackIn) {
-        // Очищаем названия от лишних пробелов по краям и приводим к нижнему регистру
         const cleanName = (str) => str ? str.trim().toLowerCase() : '';
         const cleanItemName = cleanName(itemName);
 
         Object.values(data.ArchPackIn).forEach(inv => {
             if (inv.items) {
                 inv.items.forEach(it => {
-                    // Проверяем строго по очищенному названию
                     let isMatch = (cleanName(it.n) === cleanItemName);
                     if (isMatch && it.a > 0 && it.p > 0) {
                         let price = parseFloat(it.p);
@@ -3634,7 +3631,6 @@ window.calcAvgPrice = function(itemName, category) {
                     }
                 });
             } else {
-                // Проверяем строго по очищенному названию
                 let isMatch = (cleanName(inv.name) === cleanItemName);
                 if (isMatch && inv.amount > 0 && inv.price > 0) {
                     let price = parseFloat(inv.price);
@@ -3645,17 +3641,14 @@ window.calcAvgPrice = function(itemName, category) {
         });
     }
 
-    // Сортируем от новых к старым
     incs.sort((a, b) => b.d.localeCompare(a.d));
     if (incs.length === 0) return 0;
 
-    // СРЕДНЕВЗВЕШЕННАЯ ЦЕНА (для производства, фасовки, покупной продукции И ПЛЕНКИ)
     if (category === 'Stock_DV' || category === 'Stock_Semi' || category === 'Готовая' || category === 'WeightStock' || category === 'Пленка') {
         let remStock = curStock;
         let totalValue = 0;
         let countedStock = 0;
         
-        // Набираем партии с конца, пока не покроем текущий остаток
         for (let inc of incs) {
             let take = Math.min(remStock, inc.a);
             totalValue += take * inc.p;
@@ -3667,7 +3660,6 @@ window.calcAvgPrice = function(itemName, category) {
         return countedStock > 0 ? (totalValue / countedStock) : incs[0].p;
     }
 
-    // ПОСЛЕДНЯЯ ЦЕНА (для остального сырья и упаковки)
     return incs[0].p;
 };
 
