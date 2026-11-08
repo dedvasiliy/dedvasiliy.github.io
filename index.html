@@ -651,16 +651,112 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
      ct.innerHTML='<div class="z-head">ЦЕНТР ПЕЧАТИ И ЭКСПОРТА</div><div id="peList" style="padding-top:20px;text-align:center;font-weight:bold;color:var(--p)">Сбор данных...</div>';
      setTimeout(window.renderPrintExport, 800);
  }
- else if(c==='BnStock'){
-   ct.innerHTML=`<div class="z-head">ОСТАТКИ ТОВАРОВ ПО БЕЗНАЛУ</div><div id="bnStockCont" style="padding:5px;">Раздел в разработке...</div>`;
+  else if(c==='BnStock'){
+   ensureData(['ArchIncoming','ArchInvoices']);
+   ct.innerHTML=`<div class="z-head">ОСТАТКИ ТОВАРОВ ПО БЕЗНАЛУ</div><div id="bnStockCont" style="padding:5px;">Загрузка...</div>`;
  }
  else if(c==='StockArchive'){ct.innerHTML='<div class="z-head">АРХИВ СЫРЬЯ</div><div id="archRawList">...</div>';loadData()}
  loadData();updCorrBtn();updNav()
 }
 
-function loadData(){const c=gID('cnt');if(['Home','StockRoot','BnStock','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances','PrintExport'].includes(cur))return;
+function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances','PrintExport'].includes(cur))return;
 
- if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
+ if(cur==='BnStock')rBnStock(gID('bnStockCont'));else if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
+
+function rBnStock(c){
+ if(!c)return;
+ const packInfo={};
+ gP('Готовая').forEach(p=>{
+  const m=p.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
+  if(m) packInfo[m[1].trim()]={tag:m[2],w:parseFloat(m[3])};
+ });
+
+ const items={};
+ const ensureItem=(base)=>{
+  if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0};
+ };
+
+ if(data.ArchIncoming){
+  Object.values(data.ArchIncoming).forEach(v=>{
+   if(v.payType==='bn' && v.type!=='RAW'){
+    const list=v.items||((v.name&&v.amount)?[{n:v.name,a:v.amount}]:[]);
+    list.forEach(it=>{
+     const n=(it.n||'').trim(), a=parseFloat(it.a)||0;
+     if(!n||a<=0)return;
+     const m=n.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
+     if(m){
+      const base=m[1].trim();
+      if(!packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
+      ensureItem(base);
+      items[base].inPcs+=a;
+     }else{
+      const base=n.replace(/\s*\[.*?\]/g,'').trim();
+      ensureItem(base);
+      items[base].inKg+=a;
+     }
+    });
+   }
+  });
+ }
+
+ if(data.ArchInvoices){
+  Object.values(data.ArchInvoices).forEach(v=>{
+   if(v.priceMode==='bn' && Array.isArray(v.items)){
+    v.items.forEach(str=>{
+     const p=String(str).split('|');
+     const n=(p[0]||'').trim(), q=parseFloat(p[1])||0, u=p[2]||'', cat=p[3]||'';
+     if(!n||q<=0)return;
+     const m=n.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
+     if(m || cat==='Готовая' || u==='шт'){
+      const base=m?m[1].trim():n.replace(/\s*\[.*?\]/g,'').trim();
+      if(m && !packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
+      ensureItem(base);
+      items[base].outPcs+=q;
+     }else{
+      const base=n.replace(/\s*\[.*?\]/g,'').trim();
+      ensureItem(base);
+      items[base].outKg+=q;
+     }
+    });
+   }
+  });
+ }
+
+ let h='';
+ Object.keys(items).sort().forEach(base=>{
+  const d=items[base];
+  const pk=packInfo[base];
+  const wRatio=pk?pk.w:0;
+  const kgAfterW=d.inKg-d.outKg;
+  let remKg=0, remPcs=0;
+
+  if(d.inPcs>=d.outPcs){
+   const remPurePcs=d.inPcs-d.outPcs;
+   remKg=kgAfterW;
+   remPcs=remPurePcs+(wRatio>0?(remKg/wRatio):0);
+  }else{
+   const neededPcs=d.outPcs-d.inPcs;
+   remKg=kgAfterW-(neededPcs*wRatio);
+   remPcs=wRatio>0?(remKg/wRatio):0;
+  }
+
+  remKg=parseFloat(remKg.toFixed(2));
+  remPcs=Math.round(remPcs);
+
+  if(Math.abs(remKg)<0.01 && Math.abs(remPcs)<1) return;
+
+  const isNeg=(remKg<0 || remPcs<0);
+  const valCls=isNeg?'val-neg':'val-pos';
+  const rightTxt=pk?`${remKg} кг / ${remPcs} шт <span style="color:#64748b;font-size:11px">${pk.tag}</span>`:`${remKg} кг`;
+
+  h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;">
+   <div style="font-weight:900;font-size:13px;">${esc(base)}</div>
+   <div class="${valCls}" style="font-weight:900;font-size:13px;text-align:right;">${rightTxt}</div>
+  </div>`;
+ });
+
+ c.innerHTML=h||'<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
+}
 
 function rContractors(c){
  const clients=new Set(), suppliers=new Set();
