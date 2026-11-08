@@ -407,6 +407,7 @@ function initAppData(){
   db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; if(cur==='Home') renderHome(); runAutoBackup();});
   db.child('Workers').on('value',s=>{data.Workers=s.val()||{}; if(cur==='Timesheet' || cur==='TsCal') loadData(); runAutoBackup();});
   db.child('BnStockCorr').on('value',s=>{data.BnStockCorr=s.val()||{}; if(cur==='BnStock') loadData();});
+  ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{ db.child(rk).on('value',s=>{data[rk]=s.val()||{}; if(cur!=='Home') loadData();}); });
 
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
     db.child('CostSettings').on('value',s=>{ if(s.val()) costSet = {...costSet, ...s.val()}; runAutoBackup();});
@@ -754,6 +755,48 @@ function rBnStock(c){
    }
   });
  }
+
+ // --- Выпуск готовой продукции из сырья, пришедшего по безналу (смены цехов) ---
+ const bnRawShare = {};
+ if(data.ArchIncoming){
+  const tot = {};
+  Object.values(data.ArchIncoming).forEach(v=>{
+   if(!v || v.type!=='RAW' || !Array.isArray(v.items)) return;
+   v.items.forEach(it=>{
+    const n = (it && it.n) || '', a = parseFloat(it && it.a) || 0;
+    if(!n || a<=0) return;
+    if(!tot[n]) tot[n] = {bn:0, all:0};
+    tot[n].all += a;
+    if(v.payType==='bn') tot[n].bn += a;
+   });
+  });
+  Object.keys(tot).forEach(n=>{ bnRawShare[n] = tot[n].all>0 ? tot[n].bn/tot[n].all : 0; });
+ }
+ ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{
+  Object.values(data[rk]||{}).forEach(v=>{
+   if(!v) return;
+   const raws = [];
+   if(v.rawBase) raws.push(v.rawBase);
+   if(Array.isArray(v.rawAdd)) v.rawAdd.forEach(x=>raws.push(x));
+   let totQ = 0, bnQ = 0;
+   raws.forEach(x=>{ const q = parseFloat(x && x.w) || 0; totQ += q; bnQ += q * (bnRawShare[x && x.n] || 0); });
+   if(totQ<=0 || bnQ<=0) return;
+   const share = bnQ/totQ;
+   (v.items||[]).forEach(x=>{
+    const nm = x.n || x.name || '';
+    if(!nm) return;
+    const typ = x.type || 'DV';
+    if(!x.type && /(отруби|мучк|корм|солом|отход|сечк|полуфабрикат)/i.test(nm)) return;
+    if(typ!=='DV' && typ!=='Semi') return;
+    let wght = ((x.q||0)*(x.w||0)) + (x.l||0);
+    if(!wght && x.amount) wght = parseFloat(x.amount) || 0;
+    if(wght<=0) return;
+    const base = cleanBaseName(nm);
+    ensureItem(base);
+    if(!skipDoc(base, v.date)) items[base].inKg += wght*share;
+   });
+  });
+ });
 
  let screenHtml = `<div style="max-width:100%; margin:0 auto;">
   <div style="text-align:center; padding:12px; background:linear-gradient(135deg, #065f46, #047857); color:#fff; border-radius:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
