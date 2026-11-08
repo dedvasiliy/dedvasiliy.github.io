@@ -673,7 +673,12 @@ function rBnStock(c){
 
  const items={};
  const ensureItem=(base)=>{
-  if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0, corrKg:0, corrPcs:0, hasCorr:false};
+  if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0, corrKg:0, corrPcs:0, hasCorr:false, corrDate:''};
+ };
+ const skipDoc = (base, dt) => {
+  const cd = items[base] && items[base].corrDate;
+  const dd = String(dt||'').substring(0,10);
+  return !!(cd && dd && dd <= cd);
  };
 
  const normName = (x) => {
@@ -699,6 +704,8 @@ function rBnStock(c){
    items[base].hasCorr = true;
    items[base].corrKg += (parseFloat(v.kg) || 0);
    items[base].corrPcs += (parseFloat(v.pcs) || 0);
+   const cdt = String(v.date||'').substring(0,10);
+   if(cdt && cdt > (items[base].corrDate||'')) items[base].corrDate = cdt;
   }
  });
 
@@ -714,11 +721,11 @@ function rBnStock(c){
       const base=cleanBaseName(m[1]);
       if(!packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
-      items[base].inPcs+=a;
+      if(!skipDoc(base,v.date)) items[base].inPcs+=a;
      }else{
       const base=cleanBaseName(n);
       ensureItem(base);
-      items[base].inKg+=a;
+      if(!skipDoc(base,v.date)) items[base].inKg+=a;
      }
     });
    }
@@ -737,11 +744,11 @@ function rBnStock(c){
       const base=cleanBaseName(m?m[1]:n);
       if(m && !packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
-      items[base].outPcs+=q;
+      if(!skipDoc(base,v.date)) items[base].outPcs+=q;
      }else{
       const base=cleanBaseName(n);
       ensureItem(base);
-      items[base].outKg+=q;
+      if(!skipDoc(base,v.date)) items[base].outKg+=q;
      }
     });
    }
@@ -760,12 +767,14 @@ function rBnStock(c){
   const wRatio=pk?pk.w:0;
   
   let remKg=0, remPcs=0;
-  if(d.hasCorr){
+  if(d.hasCorr && !d.corrDate){
    remKg = d.corrKg;
    remPcs = d.corrPcs;
    if(!remPcs && remKg && wRatio>0) remPcs = remKg/wRatio;
   } else {
-   const kgAfterW=d.inKg-d.outKg;
+   let baseKg = 0;
+   if(d.hasCorr){ baseKg = d.corrKg; if(!baseKg && d.corrPcs && wRatio>0) baseKg = d.corrPcs*wRatio; }
+   const kgAfterW=baseKg+d.inKg-d.outKg;
    if(d.inPcs>=d.outPcs){
     const remPurePcs=d.inPcs-d.outPcs;
     remKg=kgAfterW;
@@ -883,8 +892,16 @@ window.openBnCorrModal = function() {
  gP('WeightStock').forEach(p => allNames.add(p));
  gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
+ let defCorrDate = '';
+ Object.values(data.BnStockCorr||{}).forEach(x => { const dt = String((x&&x.date)||'').substring(0,10); if(dt > defCorrDate) defCorrDate = dt; });
+ if(!defCorrDate){ const y = new Date(); y.setDate(y.getDate()-1); defCorrDate = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
  let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px;color:var(--p)">ВВОД АКТУАЛЬНЫХ ОСТАТКОВ ПО Б/Н</div>
- <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Укажите реальный вес (кг) и/или количество (шт) пачек, которые сейчас есть по документам.</div>`;
+ <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Укажите реальный вес (кг) и/или количество (шт) пачек, которые сейчас есть по документам.</div>
+  <div style="margin-bottom:12px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc">
+   <label class="lbl-small">ОСТАТКИ НА ДАТУ</label>
+   <input type="date" id="corrDate" value="${defCorrDate}">
+   <div style="font-size:10px;color:#64748b;margin-top:4px">Накладные Б/Н за эту дату и раньше не учитываются (считается, что они уже в остатках). Накладные позже этой даты прибавляются и вычитаются автоматически.</div>
+  </div>`;
  
  Array.from(allNames).sort().forEach(n => {
   const pk = packInfo[n];
@@ -905,7 +922,9 @@ window.openBnCorrModal = function() {
 };
 
 window.saveBnCorr = async function() {
- if(!confirm('Сохранить введенные остатки? Они станут базой для дальнейшего учета по безналу.')) return;
+ const cDate = ((gID('corrDate')||{}).value||'').trim();
+ if(!cDate) return alert('Укажите дату, на которую введены остатки');
+ if(!confirm('Сохранить остатки на '+cDate.split('-').reverse().join('.')+'? Накладные Б/Н после этой даты будут прибавляться и вычитаться автоматически.')) return;
  showLoad();
  try {
   const u = {};
@@ -926,13 +945,13 @@ window.saveBnCorr = async function() {
      let kg = parseFloat(kgRaw) || 0;
      let pcs = parseFloat(pcsRaw) || 0;
      let k = db.child('BnStockCorr').push().key;
-     newCorr[k] = { name: n, kg: kg, pcs: pcs };
+     newCorr[k] = { name: n, kg: kg, pcs: pcs, date: cDate };
     }
    }
   });
   Object.values(data.BnStockCorr||{}).forEach(x => {
    if(x && x.name && !allNames.has(x.name)) {
-    newCorr[db.child('BnStockCorr').push().key] = { name: x.name, kg: x.kg||0, pcs: x.pcs||0 };
+    newCorr[db.child('BnStockCorr').push().key] = { name: x.name, kg: x.kg||0, pcs: x.pcs||0, date: x.date||'' };
    }
   });
 
