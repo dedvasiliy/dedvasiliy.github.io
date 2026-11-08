@@ -849,32 +849,43 @@ window.runGlobalProductRename = async function() {
         const fullDb = snap.val() || {};
         const u = {};
         let cnt = 0;
-        const mapExact = {
-            "Арнаутка 1 фр": "Арнаутка 1",
-            "Арнаутка 2 фр": "Арнаутка 2",
-            "Басмати г": "Басмати голд",
-            "Басмати к": "Басмати",
-            "Кук.мука": "Кукурузная мука",
-            "Кукурузная.мука 1/0.5": "Кукурузная мука 1/0.5",
-            "Пшоно": "Пшено",
+        // Словарь всех старых названий (в нижнем регистре)
+        const mapLower = {
+            "арнаутка 1 фр": "Арнаутка 1",
+            "арнаутка 2 фр": "Арнаутка 2",
+            "басмати г": "Басмати голд",
+            "басмати к": "Басмати",
+            "кук.мука": "Кукурузная мука",
+            "кукурузная.мука 1/0.5": "Кукурузная мука 1/0.5",
             "пшоно": "Пшено",
             "перловка": "Перловка",
-            "Рис дл": "Рис длинный",
+            "рис дл": "Рис длинный",
             "Рис кр": "Рис круглый",
             "рис кр": "Рис круглый",
-            "Рис пр": "Рис пропаренный"
+            "рис пр": "Рис пропаренный"
         };
 
         const fixName = (str) => {
             if (!str || typeof str !== 'string') return str;
-            let res = str;
-            if (mapExact[res]) return mapExact[res];
-            for (const [oldN, newN] of Object.entries(mapExact)) {
-                if (res.startsWith(oldN + ' [')) {
-                    res = newN + res.substring(oldN.length);
-                }
+            
+            // Отделяем основное название от хвостика партии в скобках (например, " [Поставщик 01.01]")
+            let parts = str.split(' [');
+            // Убираем пробелы по краям и переводим в нижний регистр для точного поиска
+            let cleanKey = parts[0].trim().toLowerCase();
+            let suffix = parts[1] ? ' [' + parts[1] : '';
+
+            // Если нашли в словаре — возвращаем красивое имя + старый хвостик
+            if (mapLower[cleanKey]) {
+                return mapLower[cleanKey] + suffix;
             }
-            return res;
+            
+            // Если в словаре нет точного совпадения, но есть лишние пробелы по краям — просто очищаем их
+            let trimmedBase = parts[0].trim();
+            if (trimmedBase !== parts[0]) {
+                return trimmedBase + suffix;
+            }
+            
+            return str;
         };
 
         ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Feed', 'Stock_Raw', 'Stock_Semi', 'Stock_Archive', 'PriceList', 'Пленка'].forEach(cat => {
