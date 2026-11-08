@@ -662,7 +662,6 @@ else if(c==='Timesheet'){ensureData(['ArchIncoming','ArchInvoices']);const td=ge
 function loadData(){const c=gID('cnt');if(['Home','StockRoot','Invoices','ArchSubIn','ArchSubOut','ProdSub','PackSub','Timesheet','PrintSettings','Analytics','Finances','PrintExport'].includes(cur))return;
 
  if(cur==='BnStock')rBnStock(gID('bnStockCont'));else if(cur==='Stock_Raw')rRawWH(gID('rawList'));else if(cur==='InvoicesDate')rInvD(c);else if(cur==='InvoicesClient')rInvC(c);else if(cur==='ArchPackIn')rArchPack(c);else if(cur==='Фасовка')rFas(c);else if(['Kruporushka','Vibro','ZSHM'].includes(cur))rWorkshopList(c,{'Kruporushka':'KRUP','Vibro':'VIBRO','ZSHM':'ZSHM'}[cur]);else if(cur==='StockList')rWH(c);else if(cur==='WeightStock')rWgh(c);else if(cur==='Consolidated')rConsolidated(c);else if(cur==='TsCal')renderTsList(c);else if(cur==='PriceList')rPriceList(gID('priceListCont'));else if(cur==='StockArchive')rRawArch(gID('archRawList'));else if(cur==='Contractors')rContractors(gID('contractorsList'));else rGen(c)}
-
 function rBnStock(c){
  if(!c)return;
  const packInfo={};
@@ -673,8 +672,28 @@ function rBnStock(c){
 
  const items={};
  const ensureItem=(base)=>{
-  if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0};
+  if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0, corrKg:0, corrPcs:0, hasCorr:false};
  };
+
+ const cleanBaseName = (rawName) => {
+  if(!rawName) return '';
+  let clean = rawName.replace(/\s*\[.*?\]/g,'').trim();
+  let low = clean.toLowerCase();
+  if(low === 'пшоно') return 'Пшено';
+  if(low === 'рис кр') return 'Рис круглый';
+  return clean;
+ };
+
+ const bnCorr = data.BnStockCorr || {};
+ Object.values(bnCorr).forEach(v => {
+  if(v.name) {
+   const base = cleanBaseName(v.name);
+   ensureItem(base);
+   items[base].hasCorr = true;
+   items[base].corrKg += (parseFloat(v.kg) || 0);
+   items[base].corrPcs += (parseFloat(v.pcs) || 0);
+  }
+ });
 
  if(data.ArchIncoming){
   Object.values(data.ArchIncoming).forEach(v=>{
@@ -685,12 +704,12 @@ function rBnStock(c){
      if(!n||a<=0)return;
      const m=n.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
      if(m){
-      const base=m[1].trim();
+      const base=cleanBaseName(m[1]);
       if(!packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
       items[base].inPcs+=a;
      }else{
-      const base=n.replace(/\s*\[.*?\]/g,'').trim();
+      const base=cleanBaseName(n);
       ensureItem(base);
       items[base].inKg+=a;
      }
@@ -708,12 +727,12 @@ function rBnStock(c){
      if(!n||q<=0)return;
      const m=n.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
      if(m || cat==='Готовая' || u==='шт'){
-      const base=m?m[1].trim():n.replace(/\s*\[.*?\]/g,'').trim();
+      const base=cleanBaseName(m?m[1]:n);
       if(m && !packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
       items[base].outPcs+=q;
      }else{
-      const base=n.replace(/\s*\[.*?\]/g,'').trim();
+      const base=cleanBaseName(n);
       ensureItem(base);
       items[base].outKg+=q;
      }
@@ -722,28 +741,34 @@ function rBnStock(c){
   });
  }
 
- let h='';
+ let h=`<button class="btn-main" onclick="openBnCorrModal()" style="background:#8b5cf6;margin-bottom:10px;">📋 ВВЕСТИ РЕАЛЬНЫЕ ОСТАТКИ (Б/Н)</button>`;
+ 
  Object.keys(items).sort().forEach(base=>{
   const d=items[base];
   const pk=packInfo[base];
   const wRatio=pk?pk.w:0;
-  const kgAfterW=d.inKg-d.outKg;
+  
   let remKg=0, remPcs=0;
-
-  if(d.inPcs>=d.outPcs){
-   const remPurePcs=d.inPcs-d.outPcs;
-   remKg=kgAfterW;
-   remPcs=remPurePcs+(wRatio>0?(remKg/wRatio):0);
-  }else{
-   const neededPcs=d.outPcs-d.inPcs;
-   remKg=kgAfterW-(neededPcs*wRatio);
-   remPcs=wRatio>0?(remKg/wRatio):0;
+  if(d.hasCorr){
+   remKg = d.corrKg;
+   remPcs = d.corrPcs;
+  } else {
+   const kgAfterW=d.inKg-d.outKg;
+   if(d.inPcs>=d.outPcs){
+    const remPurePcs=d.inPcs-d.outPcs;
+    remKg=kgAfterW;
+    remPcs=remPurePcs+(wRatio>0?(remKg/wRatio):0);
+   }else{
+    const neededPcs=d.outPcs-d.inPcs;
+    remKg=kgAfterW-(neededPcs*wRatio);
+    remPcs=wRatio>0?(remKg/wRatio):0;
+   }
   }
 
   remKg=parseFloat(remKg.toFixed(2));
   remPcs=Math.round(remPcs);
 
-  if(Math.abs(remKg)<0.01 && Math.abs(remPcs)<1) return;
+  if(Math.abs(remKg)<0.01 && Math.abs(remPcs)<1 && !d.hasCorr) return;
 
   const isNeg=(remKg<0 || remPcs<0);
   const valCls=isNeg?'val-neg':'val-pos';
@@ -757,6 +782,79 @@ function rBnStock(c){
 
  c.innerHTML=h||'<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
 }
+
+window.openBnCorrModal = function() {
+ const packInfo={};
+ gP('Готовая').forEach(p=>{
+  const m=p.match(/^(.*?)\s+(1\/(\d+(?:\.\d+)?))$/);
+  if(m) packInfo[m[1].trim()]={tag:m[2],w:parseFloat(m[3])};
+ });
+ 
+ const allNames = new Set();
+ if(data.PriceList) Object.values(data.PriceList).forEach(x => { if(x.name) allNames.add(x.name.replace(/\s*1\/[\d\.]+$/, '').trim()); });
+ gP('WeightStock').forEach(p => allNames.add(p));
+ gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
+
+ let h=`<div style="font-weight:900;text-align:center;margin-bottom:10px;color:var(--p)">ВВОД АКТУАЛЬНЫХ ОСТАТКОВ ПО Б/Н</div>
+ <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Укажите реальный вес (кг) и/или количество (шт) пачек, которые сейчас есть по документам.</div>`;
+ 
+ Array.from(allNames).sort().forEach(n => {
+  const pk = packInfo[n];
+  h+=`<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:5px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
+       <div style="font-size:11px;font-weight:bold;">${esc(n)} ${pk?'('+pk.tag+')':''}</div>
+       <input type="number" id="corr_kg_${esc(n)}" placeholder="кг" class="fas-inp" style="text-align:center;font-weight:bold">
+       <input type="number" id="corr_pcs_${esc(n)}" placeholder="шт" class="fas-inp" style="text-align:center;font-weight:bold">
+      </div>`;
+ });
+
+ h+=`<button class="btn-main" style="margin-top:15px;background:var(--s)" onclick="saveBnCorr()">СОХРАНИТЬ ОСТАТКИ</button>`;
+ 
+ gID('mT').innerText = 'КОРРЕКЦИЯ Б/Н';
+ gID('mB').innerHTML = h;
+ gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
+ gID('mdl').style.display = 'flex';
+};
+
+window.saveBnCorr = async function() {
+ if(!confirm('Сохранить введенные остатки? Они станут базой для дальнейшего учета по безналу.')) return;
+ showLoad();
+ try {
+  const u = {};
+  const allNames = new Set();
+  if(data.PriceList) Object.values(data.PriceList).forEach(x => { if(x.name) allNames.add(x.name.replace(/\s*1\/[\d\.]+$/, '').trim()); });
+  gP('WeightStock').forEach(p => allNames.add(p));
+  gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
+
+  u['/BnStockCorr'] = null;
+  let newCorr = {};
+  
+  Array.from(allNames).forEach(n => {
+   const kgInp = document.getElementById('corr_kg_' + n);
+   const pcsInp = document.getElementById('corr_pcs_' + n);
+   if(kgInp && pcsInp) {
+    let kg = parseFloat(kgInp.value) || 0;
+    let pcs = parseFloat(pcsInp.value) || 0;
+    if(kg !== 0 || pcs !== 0) {
+     let k = db.child('BnStockCorr').push().key;
+     newCorr[k] = { name: n, kg: kg, pcs: pcs };
+    }
+   }
+  });
+
+  if(Object.keys(newCorr).length > 0) {
+   u['/BnStockCorr'] = newCorr;
+  }
+
+  await db.update(u);
+  hideLoad();
+  closeModal();
+  alert('Остатки успешно обновлены!');
+  loadData();
+ } catch(e) {
+  hideLoad();
+  alert(e.message);
+ }
+};
 
 function rContractors(c){
  const clients=new Set(), suppliers=new Set();
@@ -857,11 +955,11 @@ window.runGlobalProductRename = async function() {
             "басмати к": "Басмати",
             "кук.мука": "Кукурузная мука",
             "кукурузная.мука 1/0.5": "Кукурузная мука 1/0.5",
-            "пшоно": "Пшено",
+            "Пшоно ": "Пшено",
             "перловка": "Перловка",
             "рис дл": "Рис длинный",
-            "Рис кр": "Рис круглый",
-            "рис кр": "Рис круглый",
+            "Рис кр ": "Рис круглый",
+            "Рис кр ": "Рис круглый",
             "рис пр": "Рис пропаренный"
         };
 
