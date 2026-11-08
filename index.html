@@ -406,6 +406,7 @@ function initAppData(){
   });
   db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; if(cur==='Home') renderHome(); runAutoBackup();});
   db.child('Workers').on('value',s=>{data.Workers=s.val()||{}; if(cur==='Timesheet' || cur==='TsCal') loadData(); runAutoBackup();});
+  db.child('BnStockCorr').on('value',s=>{data.BnStockCorr=s.val()||{}; if(cur==='BnStock') loadData();});
 
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
     db.child('CostSettings').on('value',s=>{ if(s.val()) costSet = {...costSet, ...s.val()}; runAutoBackup();});
@@ -675,13 +676,19 @@ function rBnStock(c){
   if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0, corrKg:0, corrPcs:0, hasCorr:false};
  };
 
+ const normName = (x) => {
+  const hg={'a':'а','c':'с','e':'е','o':'о','p':'р','x':'х','y':'у','k':'к','m':'м','t':'т','b':'в','h':'н'};
+  return String(x||'').toLowerCase().replace(/ё/g,'е').replace(/[acepoxykmtbh]/g,ch=>hg[ch]).replace(/\s+/g,' ').trim();
+ };
+ const canonNames = {};
+ Object.keys(packInfo).forEach(k => { canonNames[normName(k)] = k; });
  const cleanBaseName = (rawName) => {
   if(!rawName) return '';
   let clean = rawName.replace(/\s*\[.*?\]/g,'').trim();
   let low = clean.toLowerCase();
-  if(low === 'пшоно') return 'Пшено';
-  if(low === 'рис кр') return 'Рис круглый';
-  return clean;
+  if(low === 'пшоно') clean = 'Пшено';
+  else if(low === 'рис кр') clean = 'Рис круглый';
+  return canonNames[normName(clean)] || clean;
  };
 
  const bnCorr = data.BnStockCorr || {};
@@ -756,6 +763,7 @@ function rBnStock(c){
   if(d.hasCorr){
    remKg = d.corrKg;
    remPcs = d.corrPcs;
+   if(!remPcs && remKg && wRatio>0) remPcs = remKg/wRatio;
   } else {
    const kgAfterW=d.inKg-d.outKg;
    if(d.inPcs>=d.outPcs){
@@ -822,7 +830,6 @@ window.printBnStockList = function() {
       }
 
       let fullName = title;
-      if (tagVal) fullName += ` (${tagVal})`;
 
       printRows += `<tr>
         <td>${esc(fullName)}</td>
@@ -844,7 +851,7 @@ window.printBnStockList = function() {
     .bn-print-table th { background: #eee !important; font-weight: bold; text-align: center; }
   }
   </style>
-  <div id="print-view">
+  <div>
    <div class="bn-print-title">Остатки товаров по безналу (Б/Н) на ${dStr}</div>
    <table class="bn-print-table">
     <thead>
@@ -881,10 +888,11 @@ window.openBnCorrModal = function() {
  
  Array.from(allNames).sort().forEach(n => {
   const pk = packInfo[n];
+  const cv = Object.values(data.BnStockCorr||{}).find(x=>x && x.name===n);
   h+=`<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:5px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
        <div style="font-size:11px;font-weight:bold;">${esc(n)} ${pk?'('+pk.tag+')':''}</div>
-       <input type="number" id="corr_kg_${esc(n)}" placeholder="кг" class="fas-inp" style="text-align:center;font-weight:bold">
-       <input type="number" id="corr_pcs_${esc(n)}" placeholder="шт" class="fas-inp" style="text-align:center;font-weight:bold">
+       <input type="number" id="corr_kg_${esc(n)}" value="${cv?cv.kg:''}" placeholder="кг" class="fas-inp" style="text-align:center;font-weight:bold">
+       <input type="number" id="corr_pcs_${esc(n)}" value="${cv?cv.pcs:''}" placeholder="шт" class="fas-inp" style="text-align:center;font-weight:bold">
       </div>`;
  });
 
@@ -913,12 +921,18 @@ window.saveBnCorr = async function() {
    const kgInp = document.getElementById('corr_kg_' + n);
    const pcsInp = document.getElementById('corr_pcs_' + n);
    if(kgInp && pcsInp) {
-    let kg = parseFloat(kgInp.value) || 0;
-    let pcs = parseFloat(pcsInp.value) || 0;
-    if(kg !== 0 || pcs !== 0) {
+    const kgRaw = kgInp.value.trim(), pcsRaw = pcsInp.value.trim();
+    if(kgRaw !== '' || pcsRaw !== '') {
+     let kg = parseFloat(kgRaw) || 0;
+     let pcs = parseFloat(pcsRaw) || 0;
      let k = db.child('BnStockCorr').push().key;
      newCorr[k] = { name: n, kg: kg, pcs: pcs };
     }
+   }
+  });
+  Object.values(data.BnStockCorr||{}).forEach(x => {
+   if(x && x.name && !allNames.has(x.name)) {
+    newCorr[db.child('BnStockCorr').push().key] = { name: x.name, kg: x.kg||0, pcs: x.pcs||0 };
    }
   });
 
@@ -7755,7 +7769,7 @@ window.saveEditFas = async function() {
         
         // --- БЛОК ОТПРАВКИ В ТЕЛЕГРАМ ---
         try {
-            let usr = document.getElementById('userDisplay') ? document.getElementById('userDisplay').innerText : 'Неизвестный';
+            let usr = (typeof firebase!=='undefined' && firebase.auth().currentUser && firebase.auth().currentUser.email) || 'Неизвестный';
             let dStr = newV.date.split('T')[0].split('-').reverse().join('.');
             let m = `⚠️ ИЗМЕНЕНИЕ СМЕНЫ!\n👤 Кто: ${usr}\n📅 Дата смены: ${dStr}\n📂 Раздел: Смена (Фасовка)\n`;
 
@@ -8159,7 +8173,7 @@ window.saveEditWorkshop = async function() {
         
         // --- БЛОК ОТПРАВКИ В ТЕЛЕГРАМ (ЦЕХА) ---
         try {
-            let usr = document.getElementById('userDisplay') ? document.getElementById('userDisplay').innerText : 'Неизвестный';
+            let usr = (typeof firebase!=='undefined' && firebase.auth().currentUser && firebase.auth().currentUser.email) || 'Неизвестный';
             let dStr = newV.date.split('T')[0].split('-').reverse().join('.');
             let repName = dbN === 'Krup_Report' ? 'Смена (Крупорушка)' : (dbN === 'Vibro_Report' ? 'Смена (Вибростол)' : (dbN === 'ZSHM_Report' ? 'Смена (ЗШМ)' : 'Отчет производства'));
             
