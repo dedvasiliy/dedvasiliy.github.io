@@ -605,7 +605,9 @@ function setCat(c, noPush){if(!noPush && c !== cur) history.pushState({cat: c}, 
 
  if(c==='StockArchive')ensureData('Stock_Archive');if(['PackSub','ArchPackIn'].includes(c))ensureData('ArchPackIn');
   if(c==='PrintSettings'){ ct.innerHTML=`<div class="dash-grid"><div class="dash-item" onclick="openModal('invSet')">НАКЛАДНАЯ НАЛ.</div><div class="dash-item" onclick="openModal('invSetBN')">НАКЛАДНАЯ Б/Н.</div><div class="dash-item" onclick="openModal('shipSet')">ОКНО ОТГРУЗКИ</div><div class="dash-item" onclick="setCat('Contractors')">⚙️ КЛИЕНТЫ</div><div class="dash-item" onclick="openModal('autoSet')">⚙️ АВТОСПИСАНИЕ</div><div class="dash-item" onclick="openModal('costSet')">⚙️ СЕБЕСТОИМОСТЬ</div><div class="dash-item" onclick="toggleTheme()">🌗 ТЕМА</div></div>
-<div style="margin-top:20px; text-align:center;"><input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreDB(event)"><button class="btn-main" style="background:var(--d);" onclick="document.getElementById('restoreFile').click()">⚠️ ВОССТАНОВИТЬ БАЗУ</button></div>`;}
+<div style="margin-top:20px; text-align:center;">
+<button class="btn-main" style="background:#059669;margin-bottom:10px;" onclick="runGlobalProductRename()">🔄 ОБНОВИТЬ НАЗВАНИЯ ТОВАРОВ В БАЗЕ</button>
+<input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreDB(event)"><button class="btn-main" style="background:var(--d);" onclick="document.getElementById('restoreFile').click()">⚠️ ВОССТАНОВИТЬ БАЗУ</button></div>`;}
 
  else if(c==='Contractors'){ct.innerHTML='<div class="z-head">👥 КОНТРАГЕНТЫ</div><div id="contractorsList">Загрузка...</div>'; ensureData(['ArchIncoming','ArchInvoices','ArchPackIn','Suppliers']);}
   
@@ -729,11 +731,10 @@ window.renameContractor = async function(oldEscaped, type) {
   alert('Записей для обновления не найдено.');
  }
 };
-
 const gP=c=>{
  let i=[];
- if(c==='WeightStock')i=["Арнаутка 1 фр","Арнаутка 2 фр","Артек","Басмати г","Басмати к","Булгур","Горох","Гречка","Кукуруза","Кук.мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшоно","Рис дл","Рис кр","Рис пр","Хлопья","Чечевица","Ячка"];
- else if(c==='Готовая')i=["Арнаутка 1 1/0.9","Арнаутка 2 1/0.9","Артек 1/0.9","Басмати голд 1/0.8","Басмати 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кукурузная.мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшено 1/0.9","Рис длинный 1/0.9","Рис Камолино 1/0.8","Рис круглый 1/0.9","Рис пропаренный 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
+ if(c==='WeightStock')i=["Арнаутка 1","Арнаутка 2","Артек","Басмати","Басмати голд","Булгур","Горох","Гречка","Кукуруза","Кукурузная мука","Кус кус","Кутя","Манка","Нут","Перловка","Пшеничка","Пшено","Рис длинный","Рис Камолино","Рис круглый","Рис пропаренный","Хлопья","Чечевица","Ячка"];
+ else if(c==='Готовая')i=["Арнаутка 1 1/0.9","Арнаутка 2 1/0.9","Артек 1/0.9","Басмати 1/0.8","Басмати голд 1/0.8","Булгур 1/0.4","Горох 1/0.9","Гречка 1/0.9","Кукуруза 1/0.9","Кукурузная мука 1/0.5","Кус кус 1/0.4","Кутя 1/0.5","Манка 1/0.8","Нут 1/0.4","Перловка 1/0.9","Пшеничка 1/0.9","Пшено 1/0.9","Рис длинный 1/0.9","Рис Камолино 1/0.8","Рис круглый 1/0.9","Рис пропаренный 1/0.9","Хлопья 1/0.5","Чечевица 1/0.4","Ячка 1/0.9"];
  const s=new Set(i),k=c==='WeightStock'?'WeightStock':(c==='Stock_DV'?'Stock_DV':(c==='Stock_Feed'?'Stock_Feed':(c==='Stock_Raw'?'Stock_Raw':(c==='Stock_Semi'?'Stock_Semi':'Готовая'))));
  if(data[k])Object.values(data[k]).forEach(v=>{
   if(v.name){
@@ -742,6 +743,172 @@ const gP=c=>{
   }
  });
  return Array.from(s).filter(x=>x).sort();
+};
+
+window.runGlobalProductRename = async function() {
+    if (!confirm('Переименовать старые названия товаров во всей базе данных (склады, прайс, фасовка, цеха, архивы)?')) return;
+    showLoad();
+    try {
+        const snap = await db.once('value');
+        const fullDb = snap.val() || {};
+        const u = {};
+        let cnt = 0;
+
+        const mapExact = {
+            "Арнаутка 1 фр": "Арнаутка 1",
+            "Арнаутка 2 фр": "Арнаутка 2",
+            "Басмати г": "Басмати голд",
+            "Басмати к": "Басмати",
+            "Кук.мука": "Кукурузная мука",
+            "Кукурузная.мука 1/0.5": "Кукурузная мука 1/0.5",
+            "Пшоно": "Пшено",
+            "Рис дл": "Рис длинный",
+            "Рис кр": "Рис круглый",
+            "Рис пр": "Рис пропаренный"
+        };
+
+        const fixName = (str) => {
+            if (!str || typeof str !== 'string') return str;
+            let res = str;
+            if (mapExact[res]) return mapExact[res];
+            for (const [oldN, newN] of Object.entries(mapExact)) {
+                if (res.startsWith(oldN + ' [')) {
+                    res = newN + res.substring(oldN.length);
+                }
+            }
+            return res;
+        };
+
+        ['Готовая', 'WeightStock', 'Stock_DV', 'Stock_Feed', 'Stock_Raw', 'Stock_Semi', 'Stock_Archive', 'PriceList', 'Пленка'].forEach(cat => {
+            if (fullDb[cat]) {
+                Object.entries(fullDb[cat]).forEach(([k, v]) => {
+                    if (v && v.name) {
+                        const nn = fixName(v.name);
+                        if (nn !== v.name) { u[`/${cat}/${k}/name`] = nn; cnt++; }
+                    }
+                });
+            }
+        });
+
+        if (fullDb.ArchIncoming) {
+            Object.entries(fullDb.ArchIncoming).forEach(([k, v]) => {
+                if (!v) return;
+                if (v.name) {
+                    const nn = fixName(v.name);
+                    if (nn !== v.name) { u[`/ArchIncoming/${k}/name`] = nn; cnt++; }
+                }
+                if (Array.isArray(v.items)) {
+                    let ch = false;
+                    const newItems = v.items.map(it => {
+                        if (it && it.n) {
+                            const nn = fixName(it.n);
+                            if (nn !== it.n) { ch = true; return { ...it, n: nn }; }
+                        }
+                        return it;
+                    });
+                    if (ch) { u[`/ArchIncoming/${k}/items`] = newItems; cnt++; }
+                }
+            });
+        }
+
+        if (fullDb.ArchInvoices) {
+            Object.entries(fullDb.ArchInvoices).forEach(([k, v]) => {
+                if (v && Array.isArray(v.items)) {
+                    let ch = false;
+                    const newItems = v.items.map(it => {
+                        if (typeof it === 'string') {
+                            const p = it.split('|');
+                            const nn = fixName(p[0]);
+                            if (nn !== p[0]) { p[0] = nn; ch = true; return p.join('|'); }
+                        }
+                        return it;
+                    });
+                    if (ch) { u[`/ArchInvoices/${k}/items`] = newItems; cnt++; }
+                }
+            });
+        }
+
+        if (fullDb['Фасовка']) {
+            Object.entries(fullDb['Фасовка']).forEach(([k, v]) => {
+                if (!v) return;
+                if (v.filmName) {
+                    const nn = fixName(v.filmName);
+                    if (nn !== v.filmName) { u[`/Фасовка/${k}/filmName`] = nn; cnt++; }
+                }
+                if (Array.isArray(v.items)) {
+                    let ch = false;
+                    const newItems = v.items.map(it => {
+                        if (it && it.name) {
+                            const nn = fixName(it.name);
+                            if (nn !== it.name) { ch = true; return { ...it, name: nn }; }
+                        }
+                        return it;
+                    });
+                    if (ch) { u[`/Фасовка/${k}/items`] = newItems; cnt++; }
+                }
+                if (Array.isArray(v.outputItems)) {
+                    let ch = false;
+                    const newOut = v.outputItems.map(it => {
+                        if (it && it.name) {
+                            const nn = fixName(it.name);
+                            if (nn !== it.name) { ch = true; return { ...it, name: nn }; }
+                        }
+                        return it;
+                    });
+                    if (ch) { u[`/Фасовка/${k}/outputItems`] = newOut; cnt++; }
+                }
+            });
+        }
+
+        ['Krup_Report', 'Vibro_Report', 'ZSHM_Report'].forEach(ws => {
+            if (fullDb[ws]) {
+                Object.entries(fullDb[ws]).forEach(([k, v]) => {
+                    if (!v) return;
+                    if (v.rawBase && v.rawBase.n) {
+                        const nn = fixName(v.rawBase.n);
+                        if (nn !== v.rawBase.n) { u[`/${ws}/${k}/rawBase/n`] = nn; cnt++; }
+                    }
+                    if (Array.isArray(v.rawAdd)) {
+                        let ch = false;
+                        const newAdd = v.rawAdd.map(it => {
+                            if (it && it.n) {
+                                const nn = fixName(it.n);
+                                if (nn !== it.n) { ch = true; return { ...it, n: nn }; }
+                            }
+                            return it;
+                        });
+                        if (ch) { u[`/${ws}/${k}/rawAdd`] = newAdd; cnt++; }
+                    }
+                    if (Array.isArray(v.items)) {
+                        let ch = false;
+                        const newIt = v.items.map(it => {
+                            if (!it) return it;
+                            let copy = { ...it };
+                            let mod = false;
+                            if (copy.n) { const nn = fixName(copy.n); if (nn !== copy.n) { copy.n = nn; mod = true; } }
+                            if (copy.name) { const nn = fixName(copy.name); if (nn !== copy.name) { copy.name = nn; mod = true; } }
+                            if (mod) ch = true;
+                            return copy;
+                        });
+                        if (ch) { u[`/${ws}/${k}/items`] = newIt; cnt++; }
+                    }
+                });
+            }
+        });
+
+        if (Object.keys(u).length > 0) {
+            await db.update(u);
+            hideLoad();
+            alert('Готово! Обновлено записей в базе: ' + cnt);
+            loadData();
+        } else {
+            hideLoad();
+            alert('Старых названий в базе не найдено (всё уже обновлено).');
+        }
+    } catch (e) {
+        hideLoad();
+        alert('Ошибка: ' + e.message);
+    }
 };
 
 const gCl=()=>{const s=new Set();if(data.ArchInvoices)Object.values(data.ArchInvoices).forEach(v=>s.add(v.client));return Array.from(s).filter(x=>x).sort()};
