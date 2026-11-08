@@ -741,7 +741,11 @@ function rBnStock(c){
   });
  }
 
- let h=`<button class="btn-main" onclick="openBnCorrModal()" style="background:#8b5cf6;margin-bottom:10px;">📋 ВВЕСТИ РЕАЛЬНЫЕ ОСТАТКИ (Б/Н)</button>`;
+ let screenHtml = `<div style="max-width:100%; margin:0 auto;">
+  <div style="text-align:center; padding:12px; background:linear-gradient(135deg, #065f46, #047857); color:#fff; border-radius:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+    <div style="font-size:15px; font-weight:900; letter-spacing:1px; text-transform:uppercase;">📦 Остатки товаров по безналу (Б/Н)</div>
+    <div style="font-size:10px; opacity:0.8; margin-top:2px;">Актуальный учет по документам</div>
+  </div>`;
  
  Object.keys(items).sort().forEach(base=>{
   const d=items[base];
@@ -774,14 +778,91 @@ function rBnStock(c){
   const valCls=isNeg?'val-neg':'val-pos';
   const rightTxt=pk?`${remKg} кг / ${remPcs} шт <span style="color:#64748b;font-size:11px">${pk.tag}</span>`:`${remKg} кг`;
 
-  h+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;">
-   <div style="font-weight:900;font-size:13px;">${esc(base)}</div>
+  screenHtml+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;">
+   <div style="font-weight:900;font-size:13px;" data-rawname="${esc(base)}">${esc(base)}</div>
    <div class="${valCls}" style="font-weight:900;font-size:13px;text-align:right;">${rightTxt}</div>
   </div>`;
  });
 
- c.innerHTML=h||'<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
+ screenHtml+=`<div class="no-print" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px;margin-bottom:20px;">
+  <button class="btn-main" onclick="openBnCorrModal()" style="background:#8b5cf6;margin:0;padding:12px 5px;font-size:11px;">📋 ВВОД ОСТАТКОВ</button>
+  <button class="btn-main" onclick="printBnStockList()" style="background:#0f172a;margin:0;padding:12px 5px;font-size:11px;">🖨️ ПЕЧАТЬ</button>
+ </div></div>`;
+
+ c.innerHTML = screenHtml || '<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
 }
+window.printBnStockList = function() {
+  const dStr = new Date().toLocaleDateString('ru-RU');
+  
+  let printRows = '';
+  const cards = document.querySelectorAll('#cnt .j-card');
+  if (cards.length > 0) {
+    cards.forEach(card => {
+      // Берем только текст названия и жестко вырезаем из него любые "(шт)" или "шт" в скобках
+      let titleElement = card.querySelector('div:first-child');
+      let title = titleElement ? titleElement.innerText : '';
+      title = title.replace(/\s*\(шт\)/gi, '').replace(/\s*шт/gi, '').trim();
+
+      const qtyText = card.querySelector('div:last-child')?.innerText || '';
+      
+      let kgVal = '';
+      let pcsVal = '';
+      let tagVal = '';
+      
+      if (qtyText.includes('/')) {
+        let parts = qtyText.split('/');
+        kgVal = parts[0].replace('кг', '').trim();
+        let rightPart = parts[1].trim();
+        let subParts = rightPart.split(' ');
+        pcsVal = subParts[0];
+        if (subParts[1]) tagVal = subParts[1];
+      } else if (qtyText.includes('кг')) {
+        kgVal = qtyText.replace('кг', '').trim();
+        pcsVal = '-';
+      }
+
+      let fullName = title;
+      if (tagVal) fullName += ` (${tagVal})`;
+
+      printRows += `<tr>
+        <td>${esc(fullName)}</td>
+        <td style="text-align: right; white-space: nowrap; padding-left: 20px; padding-right: 20px;">${kgVal ? kgVal + ' кг' : '-'}</td>
+        <td style="text-align: right; white-space: nowrap; padding-left: 20px;">${pcsVal && pcsVal !== '-' ? pcsVal + ' шт' : '-'}</td>
+      </tr>`;
+    });
+  }
+
+  let printHTML = `<style>
+  @media print {
+    @page { size: A4 portrait; margin: 10mm; }
+    body { background: #fff !important; color: #000 !important; font-size: 11px !important; margin: 0; padding: 0; }
+    #print-view { display: block !important; position: relative !important; width: auto !important; padding: 0; background: #fff; }
+    body > *:not(#print-view) { display: none !important; }
+    .bn-print-title { font-size: 14px; font-weight: bold; text-align: left; margin-bottom: 10px; text-transform: uppercase; color: #000; }
+    .bn-print-table { border-collapse: collapse; font-size: 11px; width: auto; }
+    .bn-print-table th, .bn-print-table td { border: 1px solid #000; padding: 4px 8px; color: #000; }
+    .bn-print-table th { background: #eee !important; font-weight: bold; text-align: center; }
+  }
+  </style>
+  <div id="print-view">
+   <div class="bn-print-title">Остатки товаров по безналу (Б/Н) на ${dStr}</div>
+   <table class="bn-print-table">
+    <thead>
+     <tr>
+      <th style="text-align: left;">Наименование товара</th>
+      <th>Килограммы (кг)</th>
+      <th>Штуки (шт)</th>
+     </tr>
+    </thead>
+    <tbody>
+     ${printRows || '<tr><td colspan="3" style="text-align:center">Нет данных</td></tr>'}
+    </tbody>
+   </table>
+  </div>`;
+  
+  document.getElementById('print-view').innerHTML = printHTML;
+  window.print();
+};
 
 window.openBnCorrModal = function() {
  const packInfo={};
