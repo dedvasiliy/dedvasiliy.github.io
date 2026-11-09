@@ -672,6 +672,8 @@ function rBnStock(c){
   if(m) packInfo[m[1].trim()]={tag:m[2],w:parseFloat(m[3])};
  });
 
+ window.bnAddRiceAlias(packInfo);
+
  const items={};
  const ensureItem=(base)=>{
   if(!items[base]) items[base]={inKg:0,inPcs:0,outKg:0,outPcs:0, corrKg:0, corrPcs:0, hasCorr:false, corrDate:''};
@@ -693,7 +695,7 @@ function rBnStock(c){
   let clean = rawName.replace(/\s*\[.*?\]/g,'').trim();
   let low = clean.toLowerCase();
   if(low === 'пшоно') clean = 'Пшено';
-  else if(low === 'рис кр') clean = 'Рис круглый';
+  else if(/^рис\s+(длинный|круглый|кр)$/.test(low)) clean = 'Рис покупной';
    else if(low === 'арнаутка 3') clean = 'Арнаутка 2';
   return canonNames[normName(clean)] || clean;
  };
@@ -926,6 +928,14 @@ window.printBnStockList = function() {
   window.print();
 };
 
+window.bnAliasName = function(n){
+ const t = String(n||'').replace(/\s*\[.*?\]/g,'').trim();
+ return /^рис\s+(длинный|круглый|кр)$/i.test(t) ? 'Рис покупной' : String(n||'').trim();
+};
+window.bnAddRiceAlias = function(packInfo){
+ const k = Object.keys(packInfo).find(x=>/^рис\s+(длинный|круглый)$/i.test(x));
+ if(k && !packInfo['Рис покупной']) packInfo['Рис покупной'] = {tag:packInfo[k].tag, w:packInfo[k].w};
+};
 window.openBnCorrModal = function() {
  const packInfo={};
  gP('Готовая').forEach(p=>{
@@ -938,6 +948,8 @@ window.openBnCorrModal = function() {
  gP('WeightStock').forEach(p => allNames.add(p));
  gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
+ window.bnAddRiceAlias(packInfo);
+ { const mapped = new Set(); allNames.forEach(n => mapped.add(window.bnAliasName(n))); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
  let defCorrDate = '';
  
  { const y = new Date(); y.setDate(y.getDate()-1); defCorrDate = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
@@ -951,7 +963,7 @@ window.openBnCorrModal = function() {
  
  Array.from(allNames).sort().forEach(n => {
   const pk = packInfo[n];
-  const cv = Object.values(data.BnStockCorr||{}).find(x=>x && x.name===n);
+  const cvs = Object.values(data.BnStockCorr||{}).filter(x=>x && window.bnAliasName(x.name)===n); const cv = cvs.length ? {kg: cvs.reduce((a,x)=>a+(parseFloat(x.kg)||0),0), pcs: cvs.reduce((a,x)=>a+(parseFloat(x.pcs)||0),0)} : null;
   h+=`<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:5px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
        <div style="font-size:11px;font-weight:bold;">${esc(n)} ${pk?'('+pk.tag+')':''}</div>
        <input type="number" id="corr_kg_${esc(n)}" value="${cv?cv.kg:''}" placeholder="кг" class="fas-inp" style="text-align:center;font-weight:bold">
@@ -979,6 +991,7 @@ window.saveBnCorr = async function() {
   gP('WeightStock').forEach(p => allNames.add(p));
   gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
+  { const mapped = new Set(); allNames.forEach(n => mapped.add(window.bnAliasName(n))); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
   u['/BnStockCorr'] = null;
   let newCorr = {};
   
@@ -991,14 +1004,16 @@ window.saveBnCorr = async function() {
      let kg = parseFloat(kgRaw) || 0;
      let pcs = parseFloat(pcsRaw) || 0;
      let k = db.child('BnStockCorr').push().key;
-     const old = (data.BnStockCorr ? Object.values(data.BnStockCorr) : []).find(x => x && x.name === n);
-     const same = old && Math.abs((parseFloat(old.kg)||0) - kg) < 1e-9 && Math.abs((parseFloat(old.pcs)||0) - pcs) < 1e-9;
-     newCorr[k] = { name: n, kg: kg, pcs: pcs, date: same ? (old.date||'') : cDate };
+     const olds = (data.BnStockCorr ? Object.values(data.BnStockCorr) : []).filter(x => x && window.bnAliasName(x.name) === n);
+     const oKg = olds.reduce((a,x)=>a+(parseFloat(x.kg)||0),0), oPcs = olds.reduce((a,x)=>a+(parseFloat(x.pcs)||0),0);
+     const same = olds.length>0 && Math.abs(oKg - kg) < 1e-9 && Math.abs(oPcs - pcs) < 1e-9;
+     const oDate = olds.map(x=>x.date||'').sort().pop() || '';
+     newCorr[k] = { name: n, kg: kg, pcs: pcs, date: same ? oDate : cDate };
     }
    }
   });
   Object.values(data.BnStockCorr||{}).forEach(x => {
-   if(x && x.name && !allNames.has(x.name)) {
+   if(x && x.name && !allNames.has(window.bnAliasName(x.name))) {
     newCorr[db.child('BnStockCorr').push().key] = { name: x.name, kg: x.kg||0, pcs: x.pcs||0, date: x.date||'' };
    }
   });
