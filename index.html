@@ -695,6 +695,7 @@ function rBnStock(c){
   let clean = rawName.replace(/\s*\[.*?\]/g,'').trim();
   let low = clean.toLowerCase();
   if(low === 'пшоно') clean = 'Пшено';
+  else if(/^пшениц/.test(low)) clean = 'Пшеница';
   else if(/^рис\s+(длинный|круглый|кр)$/.test(low)) clean = 'Рис покупной';
    else if(low === 'арнаутка 3') clean = 'Арнаутка 2';
   return canonNames[normName(clean)] || clean;
@@ -801,6 +802,36 @@ function rBnStock(c){
   });
  });
 
+ // --- Сырьё: Пшеница (приход по безналу минус расход в сменах) ---
+ const isWheat = (n) => /^\s*пшениц/i.test(String(n||'').replace(/\s*\[.*?\]/g,''));
+ if(data.ArchIncoming){
+  Object.values(data.ArchIncoming).forEach(v=>{
+   if(!v || v.type!=='RAW' || v.payType!=='bn' || !Array.isArray(v.items)) return;
+   v.items.forEach(it=>{
+    const n = (it && it.n) || '', a = parseFloat(it && it.a) || 0;
+    if(a<=0 || !isWheat(n)) return;
+    ensureItem('Пшеница');
+    if(!skipDoc('Пшеница', v.date)) items['Пшеница'].inKg += a;
+   });
+  });
+ }
+ ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{
+  Object.values(data[rk]||{}).forEach(v=>{
+   if(!v) return;
+   const raws = [];
+   if(v.rawBase) raws.push(v.rawBase);
+   if(Array.isArray(v.rawAdd)) v.rawAdd.forEach(x=>raws.push(x));
+   raws.forEach(x=>{
+    const n = x && x.n;
+    if(!isWheat(n)) return;
+    const q = parseFloat(x.w) || 0, share = bnRawShare[n] || 0;
+    if(q<=0 || share<=0) return;
+    ensureItem('Пшеница');
+    if(!skipDoc('Пшеница', v.date)) items['Пшеница'].outKg += q*share;
+   });
+  });
+ });
+
  let screenHtml = `<div style="max-width:100%; margin:0 auto;">
   <div style="text-align:center; padding:12px; background:linear-gradient(135deg, #065f46, #047857); color:#fff; border-radius:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     <div style="font-size:15px; font-weight:900; letter-spacing:1px; text-transform:uppercase;">📦 Остатки товаров по безналу (Б/Н)</div>
@@ -809,6 +840,7 @@ function rBnStock(c){
  
  window._bnRows = [];
  Object.keys(items).sort().forEach(base=>{
+  if(/(кормов|мучк|отруб)/i.test(base)) return;
   const d=items[base];
   const pk=packInfo[base];
   const wRatio=pk?pk.w:0;
@@ -949,7 +981,7 @@ window.openBnCorrModal = function() {
  gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
  window.bnAddRiceAlias(packInfo);
- { const mapped = new Set(); allNames.forEach(n => mapped.add(window.bnAliasName(n))); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
+ { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
  let defCorrDate = '';
  
  { const y = new Date(); y.setDate(y.getDate()-1); defCorrDate = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
@@ -991,7 +1023,7 @@ window.saveBnCorr = async function() {
   gP('WeightStock').forEach(p => allNames.add(p));
   gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
-  { const mapped = new Set(); allNames.forEach(n => mapped.add(window.bnAliasName(n))); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
+  { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
   u['/BnStockCorr'] = null;
   let newCorr = {};
   
