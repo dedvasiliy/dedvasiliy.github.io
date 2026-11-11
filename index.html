@@ -697,7 +697,7 @@ function rBnStock(c){
   if(low === 'пшоно') clean = 'Пшено';
   else if(/^пшениц/.test(low)) clean = 'Пшеница';
   else if(/^рис\s+(длинный|круглый|кр)$/.test(low)) clean = 'Рис покупной';
-   else if(low === 'арнаутка 3') clean = 'Арнаутка 2';
+   else if(/^арнаутка(\s*[123])?$/.test(normName(clean))) clean = 'Арнаутка';
   return canonNames[normName(clean)] || clean;
  };
 
@@ -962,11 +962,16 @@ window.printBnStockList = function() {
 
 window.bnAliasName = function(n){
  const t = String(n||'').replace(/\s*\[.*?\]/g,'').trim();
+ if(/^арнаутка(\s*[123])?$/i.test(t)) return 'Арнаутка';
  return /^рис\s+(длинный|круглый|кр)$/i.test(t) ? 'Рис покупной' : String(n||'').trim();
 };
 window.bnAddRiceAlias = function(packInfo){
  const k = Object.keys(packInfo).find(x=>/^рис\s+(длинный|круглый)$/i.test(x));
  if(k && !packInfo['Рис покупной']) packInfo['Рис покупной'] = {tag:packInfo[k].tag, w:packInfo[k].w};
+ if(!packInfo['Арнаутка']){
+  const a = Object.keys(packInfo).find(x=>/^арнаутка\s*[123]$/i.test(x));
+  if(a) packInfo['Арнаутка'] = {tag:packInfo[a].tag, w:packInfo[a].w};
+ }
 };
 window.openBnCorrModal = function() {
  const packInfo={};
