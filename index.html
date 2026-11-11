@@ -8283,6 +8283,90 @@ window.saveEditWorkshop = async function() {
                 }
             });
         });
+
+        // --- ПЕРЕСЧЕТ СЕБЕСТОИМОСТИ ПРИ РЕДАКТИРОВАНИИ (пропорционально изменению весов/времени) ---
+        const isUsefulIt = x => x.type === 'DV' || x.type === 'Semi';
+        const isFeedIt = x => x.type === 'Feed';
+        const sumWs = (arr, f) => (arr || []).reduce((s, x) => s + f(x), 0);
+        const newUseful = sumWs((newV.items || []).filter(isUsefulIt), calcW);
+        let newCostPerKg = null;
+
+        if (orig.costPerKg !== undefined && orig.totalCost !== undefined) {
+            const origUseful = sumWs((orig.items || []).filter(isUsefulIt), calcW);
+            const origFeed = sumWs((orig.items || []).filter(isFeedIt), calcW);
+            const newFeed = sumWs((newV.items || []).filter(isFeedIt), calcW);
+            const origRawW = (orig.rawBase ? (parseFloat(orig.rawBase.w) || 0) : 0) + sumWs(orig.rawAdd, x => parseFloat(x.w) || 0);
+            const newRawW = (newV.rawBase ? (parseFloat(newV.rawBase.w) || 0) : 0) + totalAdd;
+            const ratio = (a, b) => (b > 0.001 ? a / b : 1);
+            const hrs = (s, e) => {
+                const g = t => { const [h, m] = String(t || '00:00').split(':').map(Number); return (h || 0) + ((m || 0) / 60); };
+                let a = g(s), b = g(e); if (b < a) b += 24; return b - a;
+            };
+
+            const rawK = ratio(newRawW, origRawW);
+            const packK = ratio(newUseful, origUseful);
+            const feedK = ratio(newFeed, origFeed);
+            const lightK = ratio(hrs(newV.timeStart, newV.timeEnd), hrs(orig.timeStart, orig.timeEnd));
+
+            const oRaw = parseFloat(orig.rawCost) || 0;
+            const oPack = parseFloat(orig.packCost) || 0;
+            const oLight = parseFloat(orig.lightCost) || 0;
+            const oSal = parseFloat(orig.salCost) || 0;
+            const oWaste = parseFloat(orig.wasteRev) || 0;
+            const oTotal = parseFloat(orig.totalCost) || 0;
+            const oLoss = Math.max(0, oTotal - (oRaw + oPack + oLight + oSal - oWaste)); // потеря сырья
+
+            const nRaw = oRaw * rawK, nLoss = oLoss * rawK, nPack = oPack * packK;
+            const nLight = oLight * lightK, nSal = oSal, nWaste = oWaste * feedK;
+            const nTotal = nRaw + nPack + nLight + nSal - nWaste + nLoss;
+            newCostPerKg = newUseful > 0 ? Math.round((nTotal / newUseful) * 100) / 100 : 0;
+
+            u[`/${dbN}/${id}/rawCost`] = Math.round(nRaw * 100) / 100;
+            u[`/${dbN}/${id}/packCost`] = Math.round(nPack * 100) / 100;
+            u[`/${dbN}/${id}/lightCost`] = Math.round(nLight * 100) / 100;
+            u[`/${dbN}/${id}/salCost`] = Math.round(nSal * 100) / 100;
+            u[`/${dbN}/${id}/wasteRev`] = Math.round(nWaste * 100) / 100;
+            u[`/${dbN}/${id}/totalCost`] = Math.round(nTotal * 100) / 100;
+            u[`/${dbN}/${id}/costPerKg`] = newCostPerKg;
+        }
+
+        // --- СИНХРОНИЗАЦИЯ ПРИХОДНОЙ НАКЛАДНОЙ "СВОЕ ПРОИЗВОДСТВО" (ArchIncoming) ---
+        {
+            const prodMap = {};
+            (newV.items || []).filter(isUsefulIt).forEach(x => {
+                const nm = (x.n || x.name || '').trim();
+                const w = calcW(x);
+                if (nm && w > 0.001) prodMap[nm] = (prodMap[nm] || 0) + w;
+            });
+
+            const archSnap = await db.child('ArchIncoming').orderByChild('fLink').equalTo(id).once('value');
+            const archRecs = archSnap.val() || {};
+            const archKeys = Object.keys(archRecs);
+
+            const priceP = newCostPerKg !== null ? newCostPerKg : (parseFloat(orig.costPerKg) || 0);
+            const buildItems = (oldItems) => Object.keys(prodMap).map(nm => {
+                const old = (oldItems || []).find(o => (o.n || '').trim() === nm);
+                return { n: nm, a: Math.round(prodMap[nm] * 100) / 100, p: newCostPerKg !== null ? newCostPerKg : (old && old.p !== undefined ? old.p : priceP) };
+            });
+
+            if (archKeys.length) {
+                archKeys.forEach((key, idx) => {
+                    if (idx === 0 && Object.keys(prodMap).length) {
+                        u[`/ArchIncoming/${key}/items`] = buildItems(archRecs[key].items);
+                        u[`/ArchIncoming/${key}/date`] = newV.date;
+                    } else {
+                        u[`/ArchIncoming/${key}`] = null; // продукции больше нет или дубликат
+                    }
+                });
+            } else if (Object.keys(prodMap).length) {
+                const dsArch = String(newV.date).split('T')[0].split('-').reverse().join('.');
+                u[`/ArchIncoming/${db.child('ArchIncoming').push().key}`] = {
+                    date: newV.date, supplier: 'Свое производство', num: 'Смена ' + dsArch,
+                    type: 'GOODS', ts: tsStr, items: buildItems([]), fLink: id
+                };
+            }
+        }
+
         await db.update(u);
         
         // --- БЛОК ОТПРАВКИ В ТЕЛЕГРАМ (ЦЕХА) ---
