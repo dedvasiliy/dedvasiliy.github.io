@@ -2513,7 +2513,7 @@ window.viewIncomingInvoice=function(id){
     let totalSum=parseFloat(v.totalSum||ts||0);
     if(isBN){
         let noVat=parseFloat(v.totalNoVat||ts||0);
-        let vat=parseFloat(v.vatSum||(noVat*0.2)||0);
+        let vat=parseFloat(v.vatSum||(noVat*(v.vatRate||0.2))||0);
         h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума без ПДВ:</td><td colspan="2" style="text-align:center;border:2px solid #000;font-weight:bold">${noVat>0?noVat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Сума ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${vat>0?vat.toFixed(2):'-'}</td></tr><tr><td colspan="7" style="text-align:right;border:none;font-weight:bold;padding-right:5px">Усього з ПДВ:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
     }else{
         h+=`<tr><td colspan="2" style="text-align:right;border:none;font-weight:bold;padding-right:5px"><span style="float:left; font-weight:normal;">Загальна вага: ${totalLoadWeightKG} кг</span>Разом:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${tw}</td><td style="border:none"></td><td style="text-align:right;border:none;font-weight:bold;padding-right:5px">Всього:</td><td style="text-align:center;border:2px solid #000;font-weight:bold">${totalSum>0?totalSum.toFixed(2):'-'}</td></tr>`;
@@ -2727,7 +2727,7 @@ window.saveShipDraft=function(){
     window.saveIncDraft=function(){if(!gID('incBuilder')||gID('incBuilder').style.display==='none')return;const items=[];for(let x of gID('incRows').children){const i=x.id.split('_')[1],n=gID('iNn_'+i).value,a=parseFloat(gID('iNa_'+i).value),p=parseFloat(gID('iNp_'+i).value)||0;if(n||a)items.push({n,a,p});}localStorage.setItem('incDraft',JSON.stringify({d:gID('iD').value,num:gID('iNum').value,s:getSmartVal('iS'),c:gID('incCat')?gID('incCat').value:'WeightStock',pt:gID('incPayType')?gID('incPayType').value:'cash',items}));};
 
     window.updIncTotal=function(){let sum=0;if(gID('incRows')){for(let x of gID('incRows').children){const i=x.id.split('_')[1];sum+=parseFloat(gID('iNa_'+i).value)||0;}}const mq=gID('mQty');if(mq){const cat=gID('incCat')?gID('incCat').value:'WeightStock'; mq.innerText=sum+(cat==='Готовая'?' шт':' кг');mq.style.display=sum>0?'inline':'none';}};
-window.saveRawDraft=function(){if(!gID('rawBuilder')||gID('rawBuilder').style.display==='none')return;const items=[];for(let x of gID('rawRows').children){const i=x.id.split('_')[1],n=gID('rNn_'+i).value,a=parseFloat(gID('rNa_'+i).value),p=parseFloat(gID('rNp_'+i).value)||0;if(n||a)items.push({n,a,p});}localStorage.setItem('rawDraft',JSON.stringify({d:gID('rD').value,num:gID('rNum').value,s:getSmartVal('rSupp'),dop:parseFloat(gID('rDop').value)||0,pt:gID('rawPayType')?gID('rawPayType').value:'cash',items}));};
+window.saveRawDraft=function(){if(!gID('rawBuilder')||gID('rawBuilder').style.display==='none')return;const items=[];for(let x of gID('rawRows').children){const i=x.id.split('_')[1],n=gID('rNn_'+i).value,a=parseFloat(gID('rNa_'+i).value),p=parseFloat(gID('rNp_'+i).value)||0;if(n||a)items.push({n,a,p});}localStorage.setItem('rawDraft',JSON.stringify({d:gID('rD').value,num:gID('rNum').value,s:getSmartVal('rSupp'),dop:parseFloat(gID('rDop').value)||0,pt:gID('rawPayType')?gID('rawPayType').value:'cash',vat:gID('rawVat')?gID('rawVat').value:'14',items}));const vw=gID('rawVatWrap');if(vw)vw.style.display=(gID('rawPayType')&&gID('rawPayType').value==='bn')?'block':'none';};
 
     window.updRawTotal=function(){let sum=0;if(gID('rawRows')){for(let x of gID('rawRows').children){const i=x.id.split('_')[1];sum+=parseFloat(gID('rNa_'+i).value)||0;}}const mq=gID('mQty');if(mq){mq.innerText=sum+' кг';mq.style.display=sum>0?'inline':'none';}};
 function openModal(t,a,b){history.pushState({cat: cur, modal: true}, '', ''); gID('mdl').style.display='flex';const m=gID('mB'),h=gID('mT'),d=getLocalDateStr();m.innerHTML='';aId=a;const mBox=gID('mdl').querySelector('.modal-box');if(t==='fas'||t==='workshop'||t==='dayRep'||t==='monthRep'){mBox.style.maxWidth='450px';}else{mBox.style.maxWidth='';}
@@ -2796,10 +2796,10 @@ m.innerHTML=`<div id="shipBuilder"><div style="background:#f8fafc;padding:5px;bo
       </div>`;
      }
      else if(t==='addRaw'){
-      let dD=d, dNum='', dS='', dDop=0, dPay='cash'; let dr = localStorage.getItem('rawDraft'); let items=[];
-      if(dr){ try{ let p=JSON.parse(dr); if(p.d)dD=p.d; if(p.num)dNum=p.num; if(p.s)dS=p.s; if(p.dop)dDop=p.dop; if(p.pt)dPay=p.pt; if(p.items)items=p.items; }catch(e){} }
+      let dD=d, dNum='', dS='', dDop=0, dPay='cash', dVat='14'; let dr = localStorage.getItem('rawDraft'); let items=[];
+      if(dr){ try{ let p=JSON.parse(dr); if(p.d)dD=p.d; if(p.num)dNum=p.num; if(p.s)dS=p.s; if(p.dop)dDop=p.dop; if(p.pt)dPay=p.pt; if(p.vat)dVat=String(p.vat); if(p.items)items=p.items; }catch(e){} }
       h.innerText='ПРИХОД СЫРЬЯ';
-      m.innerHTML=`<div id="rawBuilder"><div style="margin-bottom:10px;"><span class="lbl-small">ОПЛАТА</span><select id="rawPayType" class="fas-inp" onchange="saveRawDraft()"><option value="cash" ${dPay==='cash'?'selected':''}>НАЛИЧНЫЕ</option><option value="bn" ${dPay==='bn'?'selected':''}>БЕЗНАЛ (ввод цены БЕЗ ПДВ)</option></select></div><div class="grid-2x2" style="margin-bottom:10px;align-items:end"><div><span class="lbl-small">ДАТА</span><input type="date" id="rD" value="${dD}" onchange="saveRawDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="rNum" value="${dNum}" oninput="saveRawDraft()"></div><div style="grid-column: span 2"><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('rSupp',gRawS(),'Выберите...')}</div><div style="grid-column: span 2"><span class="lbl-small">ДОП. РАСХОДЫ НА ВЫГРУЗКУ (ГРН)</span><input type="number" id="rDop" value="${dDop}" oninput="saveRawDraft()" placeholder="Оплата грузчикам, логистика..."></div></div><div class="z-head">СЫРЬЕ</div><div id="rawRows"></div><button class="btn-main" onclick="addIncRow('Stock_Raw','rawRows','rN','raw')" style="background:#fff;color:var(--p);border:1px dashed var(--p);margin-bottom:10px">+ ДОБАВИТЬ СЫРЬЕ</button><button class="btn-main" onclick="previewRaw()">ДАЛЕЕ</button></div><div id="rawPreview" style="display:none"></div>`;
+      m.innerHTML=`<div id="rawBuilder"><div style="margin-bottom:10px;"><span class="lbl-small">ОПЛАТА</span><select id="rawPayType" class="fas-inp" onchange="saveRawDraft()"><option value="cash" ${dPay==='cash'?'selected':''}>НАЛИЧНЫЕ</option><option value="bn" ${dPay==='bn'?'selected':''}>БЕЗНАЛ (ввод цены БЕЗ ПДВ)</option></select></div><div id="rawVatWrap" style="margin-bottom:10px;display:${dPay==='bn'?'block':'none'}"><span class="lbl-small">СТАВКА ПДВ</span><select id="rawVat" class="fas-inp" onchange="saveRawDraft()"><option value="14" ${dVat==='14'?'selected':''}>14% (зерно)</option><option value="20" ${dVat==='20'?'selected':''}>20% (обычная)</option></select></div><div class="grid-2x2" style="margin-bottom:10px;align-items:end"><div><span class="lbl-small">ДАТА</span><input type="date" id="rD" value="${dD}" onchange="saveRawDraft()"></div><div><span class="lbl-small">НАКЛ №</span><input type="text" id="rNum" value="${dNum}" oninput="saveRawDraft()"></div><div style="grid-column: span 2"><span class="lbl-small">ПОСТАВЩИК</span>${makeSmart('rSupp',gRawS(),'Выберите...')}</div><div style="grid-column: span 2"><span class="lbl-small">ДОП. РАСХОДЫ НА ВЫГРУЗКУ (ГРН)</span><input type="number" id="rDop" value="${dDop}" oninput="saveRawDraft()" placeholder="Оплата грузчикам, логистика..."></div></div><div class="z-head">СЫРЬЕ</div><div id="rawRows"></div><button class="btn-main" onclick="addIncRow('Stock_Raw','rawRows','rN','raw')" style="background:#fff;color:var(--p);border:1px dashed var(--p);margin-bottom:10px">+ ДОБАВИТЬ СЫРЬЕ</button><button class="btn-main" onclick="previewRaw()">ДАЛЕЕ</button></div><div id="rawPreview" style="display:none"></div>`;
       setTimeout(()=>{
           if(dS){ const ss=gID('s_rSupp'),is=gID('i_rSupp');let f=Array.from(ss.options).find(o=>o.value===dS);if(f)ss.value=dS;else{ss.value='NEW';ss.style.display='none';is.style.display='block';is.value=dS;} }
           ['s_rSupp','i_rSupp'].forEach(id=>{let el=gID(id);if(el){el.addEventListener('input',saveRawDraft);el.addEventListener('change',saveRawDraft);}});
@@ -3215,6 +3215,8 @@ if(!s||!nm)return alert('Заполните поставщика и номер �
     window.backToIncBuilder=function(){gID('incPreview').style.display='none';gID('incBuilder').style.display='block';gID('mT').innerText='ПРИХОД НА СКЛАД';};
 window.previewRaw = async function() {
     const d = gID('rD').value, s = getSmartVal('rSupp'), nm = gID('rNum').value, dop = parseFloat(gID('rDop').value) || 0, pt = gID('rawPayType') ? gID('rawPayType').value : 'cash';
+    const vatRate = pt === 'bn' ? ((gID('rawVat') ? parseFloat(gID('rawVat').value) : 20) / 100 || 0.2) : 0;
+    const vatPct = Math.round(vatRate * 100);
     if (!s || !nm) return alert('Заполните поставщика и номер накладной');
     saveRawDraft();
     const itms = [];
@@ -3280,9 +3282,9 @@ window.previewRaw = async function() {
         if (pt === 'bn') {
             x.pNoVat = x.pBase;
             x.sNoVat = Math.round((x.a * x.pBase) * 100) / 100;
-            x.pVat = Math.round((x.pBase * 1.2) * 100) / 100;
-            x.sVat = Math.round((x.sNoVat * 1.2) * 100) / 100;
-            x.costPrice = Math.round(((x.pBase * 1.2) + dopPerKg) * 100) / 100;
+            x.pVat = Math.round((x.pBase * (1 + vatRate)) * 100) / 100;
+            x.sVat = Math.round((x.sNoVat * (1 + vatRate)) * 100) / 100;
+            x.costPrice = Math.round(((x.pBase * (1 + vatRate)) + dopPerKg) * 100) / 100;
             tsNoVat = Math.round((tsNoVat + x.sNoVat) * 100) / 100;
             h += `<tr><td style="border:1px solid #ccc;padding:2px">${esc(x.n)}<div style="font-size:9px;color:#059669">Себест. на складе: ~${x.costPrice.toFixed(2)} грн/кг</div></td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.a}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.pBase.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pBase > 0 ? x.sNoVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.pVat > 0 ? x.pVat.toFixed(2) : '-'}</td><td style="text-align:center;border:1px solid #ccc;padding:2px">${x.sVat > 0 ? x.sVat.toFixed(2) : '-'}</td></tr>`;
         } else {
@@ -3295,16 +3297,16 @@ window.previewRaw = async function() {
     });
 
     if (pt === 'bn') {
-        tsVat = Math.round((tsNoVat * 0.2) * 100) / 100;
+        tsVat = Math.round((tsNoVat * vatRate) * 100) / 100;
         tsTotal = Math.round((tsNoVat + tsVat) * 100) / 100;
-        h += `<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Разом:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума без ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsNoVat > 0 ? tsNoVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsVat > 0 ? tsVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Усього з ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal > 0 ? tsTotal.toFixed(2) : ''}</td></tr></table>`;
+        h += `<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Разом:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td colspan="2" style="border:none"></td><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума без ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsNoVat > 0 ? tsNoVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Сума ПДВ (${vatPct}%):</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsVat > 0 ? tsVat.toFixed(2) : ''}</td></tr><tr><td colspan="5" style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Усього з ПДВ:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal > 0 ? tsTotal.toFixed(2) : ''}</td></tr></table>`;
     } else {
         h += `<tr><td style="text-align:right;font-weight:bold;padding-right:5px;border:none;padding-top:5px">Итого:</td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tw}</td><td style="border:none"></td><td style="text-align:center;font-weight:bold;border:2px solid #000;padding-top:5px">${tsTotal > 0 ? tsTotal.toFixed(2) : ''}</td></tr></table>`;
     }
 
     h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px"><button class="btn-main" onclick="backToRawBuilder()" style="background:#64748b;margin:0">⬅ НАЗАД</button><button class="btn-main" onclick="sRawInc()" style="margin:0">СОХРАНИТЬ</button></div>`;
     
-    window.tempRawData = { d, s, nm, itms, dop, pt, tsNoVat, tsVat, tsTotal };
+    window.tempRawData = { d, s, nm, itms, dop, pt, tsNoVat, tsVat, tsTotal, vatRate };
     gID('rawBuilder').style.display = 'none';
     gID('rawPreview').innerHTML = h;
     gID('rawPreview').style.display = 'block';
@@ -3339,6 +3341,7 @@ async function sRawInc(){
         if (d.pt === 'bn') {
             invData.totalNoVat = d.tsNoVat;
             invData.vatSum = d.tsVat;
+            invData.vatRate = d.vatRate || 0.2;
         }
         u['/ArchIncoming/'+k] = invData;
 
@@ -4165,7 +4168,7 @@ function genDayReport(){
                 addV(rInc,it.n,it.a,'кг',it.n);
                 if(!rInc[it.n].info) rInc[it.n].info = [];
                 let pVal = parseFloat(it.p);
-                if(isBN) pVal *= 1.2;
+                if(isBN) pVal = (parseFloat(it.pVat) > 0) ? parseFloat(it.pVat) : pVal * 1.2;
                 let pr = it.p ? pVal.toFixed(2) + ' грн' + bnTag : '';
                 let txt = [sup, pr].filter(Boolean).join(' | ');
                 if(txt && !rInc[it.n].info.includes(txt)) rInc[it.n].info.push(txt);
