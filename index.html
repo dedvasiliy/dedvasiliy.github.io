@@ -407,6 +407,7 @@ function initAppData(){
   db.child('Timesheet').on('value',s=>{data.Timesheet=s.val()||{}; if(cur==='Home') renderHome(); runAutoBackup();});
   db.child('Workers').on('value',s=>{data.Workers=s.val()||{}; if(cur==='Timesheet' || cur==='TsCal') loadData(); runAutoBackup();});
   db.child('BnStockCorr').on('value',s=>{data.BnStockCorr=s.val()||{}; if(cur==='BnStock') loadData();});
+  db.child('BnYieldSettings').on('value',s=>{data.BnYieldSettings=s.val()||{}; if(cur==='BnStock') loadData();});
   ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{ db.child(rk).on('value',s=>{data[rk]=s.val()||{}; if(cur!=='Home') loadData();}); });
 
   db.child('AutoSettings').on('value',s=>{ if(s.val()) autoSet = {...autoSet, ...s.val()}; runAutoBackup();});
@@ -701,6 +702,25 @@ function rBnStock(c){
   return canonNames[normName(clean)] || clean;
  };
 
+ const ySet = data.BnYieldSettings || {};
+ const shipMode = ySet.mode === 'ship';   // true = пшеница списывается при отгрузке по нормам выхода
+ const yNorms = {};
+ Object.keys(ySet.norms || {}).forEach(k => { const pc = parseFloat(ySet.norms[k]); if(pc > 0 && pc <= 100) yNorms[normName(cleanBaseName(k))] = pc; });
+ const wheatBreak = {};
+ const noShiftProd = ySet.shiftOut === 'off';   // true = выпуск из смен НЕ добавляется в остатки "пшеничных" позиций
+ const wheatProdSet = {};
+ (window.BN_YIELD_PRODUCTS || []).forEach(pn => { wheatProdSet[normName(cleanBaseName(pn))] = 1; });
+ const wheatOut = (base, kgEq, dt) => {
+  if(!shipMode || !(kgEq > 0)) return;
+  const pc = yNorms[normName(base)];
+  if(!pc) return;
+  ensureItem('Пшеница');
+  if(skipDoc('Пшеница', dt)) return;
+  const w = kgEq / (pc / 100);
+  items['Пшеница'].outKg += w;
+  wheatBreak[base] = (wheatBreak[base] || 0) + w;
+ };
+
  const bnCorr = data.BnStockCorr || {};
  Object.values(bnCorr).forEach(v => {
   if(v.name) {
@@ -750,10 +770,12 @@ function rBnStock(c){
       if(m && !packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
       if(!skipDoc(base,v.date)) items[base].outPcs+=q;
+      wheatOut(base, q*((packInfo[base]&&packInfo[base].w)||0), v.date);
      }else{
       const base=cleanBaseName(n);
       ensureItem(base);
       if(!skipDoc(base,v.date)) items[base].outKg+=q;
+      wheatOut(base, q, v.date);
      }
     });
    }
@@ -797,7 +819,7 @@ function rBnStock(c){
     if(wght<=0) return;
     const base = cleanBaseName(nm);
     ensureItem(base);
-    if(!skipDoc(base, v.date)) items[base].inKg += wght*share;
+    if(!skipDoc(base, v.date) && !(noShiftProd && wheatProdSet[normName(base)])) items[base].inKg += wght*share;
    });
   });
  });
@@ -827,7 +849,7 @@ function rBnStock(c){
     const q = parseFloat(x.w) || 0, share = bnRawShare[n] || 0;
     if(q<=0 || share<=0) return;
     ensureItem('Пшеница');
-    if(!skipDoc('Пшеница', v.date)) items['Пшеница'].outKg += q*share;
+    if(!shipMode && !skipDoc('Пшеница', v.date)) items['Пшеница'].outKg += q*share;
    });
   });
  });
@@ -881,9 +903,14 @@ function rBnStock(c){
   </div>`;
  });
 
+ if(shipMode && Object.keys(wheatBreak).length){
+  const wb = Object.keys(wheatBreak).sort().map(k=>`${esc(k)}: ${Math.round(wheatBreak[k])} кг`).join(' · ');
+  screenHtml += `<div class="no-print" style="font-size:10px;color:#475569;background:#f1f5f9;border-radius:8px;padding:6px 8px;margin-top:4px;line-height:1.4"><b>Пшеница списана по нормам выхода (при отгрузке):</b><br>${wb}</div>`;
+ }
  screenHtml+=`<div class="no-print" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px;margin-bottom:20px;">
   <button class="btn-main" onclick="openBnCorrModal()" style="background:#8b5cf6;margin:0;padding:12px 5px;font-size:11px;">📋 ВВОД ОСТАТКОВ</button>
   <button class="btn-main" onclick="printBnStockList()" style="background:#0f172a;margin:0;padding:12px 5px;font-size:11px;">🖨️ ПЕЧАТЬ</button>
+  <button class="btn-main" onclick="openBnYieldModal()" style="grid-column:1/-1;background:#0ea5e9;margin:0;padding:12px 5px;font-size:11px;">⚙️ НОРМЫ ВЫХОДА ИЗ ПШЕНИЦЫ</button>
  </div></div>`;
 
  c.innerHTML = screenHtml || '<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
@@ -1014,6 +1041,123 @@ window.openBnCorrModal = function() {
  gID('mB').innerHTML = h;
  gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
  gID('mdl').style.display = 'flex';
+};
+
+window.BN_YIELD_PRODUCTS = ['Арнаутка','Пшеничка','Кутя','Артек','Манка'];
+
+// Подсказка: средний фактический выход по сменам, где из пшеницы делали ровно один из этих продуктов
+window.bnYieldHints = function(){
+ const prods = window.BN_YIELD_PRODUCTS;
+ const norm = x => String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+ const mapName = n => { const t = norm(String(n||'').replace(/\s*\[.*?\]/g,'')); return /^арнаутка(\s*[123])?$/.test(t) ? 'арнаутка' : t; };
+ const keyOf = {}; prods.forEach(p => keyOf[norm(p)] = p);
+ const sums = {};
+ ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{
+  Object.values(data[rk]||{}).forEach(v=>{
+   if(!v) return;
+   const raws = [];
+   if(v.rawBase) raws.push(v.rawBase);
+   if(Array.isArray(v.rawAdd)) v.rawAdd.forEach(x=>raws.push(x));
+   let tot = 0, ok = raws.length > 0;
+   raws.forEach(x=>{
+    const q = parseFloat(x && x.w) || 0; if(q <= 0) return;
+    if(!/^\s*пшениц/i.test(String((x && x.n) || '').replace(/\s*\[.*?\]/g,''))) ok = false;
+    tot += q;
+   });
+   if(!ok || tot <= 0) return;
+   const outs = {};
+   (v.items||[]).forEach(x=>{
+    const typ = x.type || 'DV'; if(typ!=='DV' && typ!=='Semi') return;
+    const nm = x.n || x.name || '';
+    let w = ((x.q||0)*(x.w||0)) + (x.l||0);
+    if(!w && x.amount) w = parseFloat(x.amount) || 0;
+    if(w <= 0) return;
+    const key = keyOf[mapName(nm)];
+    if(key) outs[key] = (outs[key]||0) + w;
+   });
+   const ks = Object.keys(outs);
+   if(ks.length !== 1) return;
+   const p = ks[0];
+   if(!sums[p]) sums[p] = {out:0, wheat:0, n:0};
+   sums[p].out += outs[p]; sums[p].wheat += tot; sums[p].n++;
+  });
+ });
+ const res = {};
+ Object.keys(sums).forEach(p=>{ if(sums[p].wheat > 0) res[p] = {pct: Math.round(sums[p].out/sums[p].wheat*1000)/10, n: sums[p].n}; });
+ return res;
+};
+
+window.openBnYieldModal = function(){
+ const ys = data.BnYieldSettings || {};
+ const norms = ys.norms || {};
+ const hints = window.bnYieldHints();
+ window._bnYHints = hints;
+ let h = `<div style="font-weight:900;text-align:center;margin-bottom:8px;color:var(--p)">НОРМЫ ВЫХОДА ИЗ ПШЕНИЦЫ</div>
+ <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Выход готовой продукции в % от веса пшеницы. При отгрузке по безналу пшеница списывается с остатка: кг продукции ÷ выход.</div>
+ <div style="margin-bottom:12px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc">
+  <label class="lbl-small">СПИСАНИЕ ПШЕНИЦЫ С ОСТАТКА Б/Н</label>
+  <select id="bnYMode" class="fas-inp" style="font-weight:bold">
+   <option value="shift" ${ys.mode==='ship'?'':'selected'}>По сменам (как раньше)</option>
+   <option value="ship" ${ys.mode==='ship'?'selected':''}>По отгрузкам, по нормам выхода</option>
+  </select>
+  <div style="font-size:10px;color:#64748b;margin-top:4px">Работает один способ, чтобы пшеница не списалась дважды.</div>
+  <label class="lbl-small" style="margin-top:10px;display:block">ВЫПУСК ИЗ СМЕН В ОСТАТКАХ ЭТИХ ПОЗИЦИЙ</label>
+  <select id="bnYShift" class="fas-inp" style="font-weight:bold">
+   <option value="on" ${ys.shiftOut==='off'?'':'selected'}>Учитывать (приход + смены − отгрузки)</option>
+   <option value="off" ${ys.shiftOut==='off'?'selected':''}>Не учитывать (только приход − отгрузки)</option>
+  </select>
+  <div style="font-size:10px;color:#64748b;margin-top:4px">Касается позиций из списка ниже. Остальные товары считаются как раньше.</div>
+ </div>`;
+ window.BN_YIELD_PRODUCTS.forEach((nm,i)=>{
+  const hv = hints[nm];
+  h += `<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:6px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
+   <div><div style="font-size:12px;font-weight:bold;">${esc(nm)}</div>
+   <div style="font-size:10px;color:#059669">${hv ? 'по сменам: '+hv.pct+'% ('+hv.n+' см.)' : 'нет данных по сменам'}</div></div>
+   <input type="number" step="0.1" min="1" max="100" id="bnY_${i}" value="${norms[nm]!==undefined?esc(String(norms[nm])):''}" placeholder="% выхода" class="fas-inp" style="text-align:center;font-weight:bold">
+  </div>`;
+ });
+ h += `<button class="btn-main" style="margin-top:8px;background:#64748b" onclick="bnYieldFill()">ПОДСТАВИТЬ СРЕДНЕЕ ПО СМЕНАМ</button>
+ <button class="btn-main" style="margin-top:8px;background:var(--s)" onclick="saveBnYield()">СОХРАНИТЬ</button>`;
+ gID('mT').innerText = 'НОРМЫ ВЫХОДА';
+ gID('mB').innerHTML = h;
+ gID('mdl').querySelector('.modal-box').style.maxWidth = '450px';
+ gID('mdl').style.display = 'flex';
+};
+
+window.bnYieldFill = function(){
+ const hints = window._bnYHints || {};
+ window.BN_YIELD_PRODUCTS.forEach((nm,i)=>{
+  const el = gID('bnY_'+i);
+  if(el && hints[nm] && el.value.trim()==='') el.value = hints[nm].pct;
+ });
+};
+
+window.saveBnYield = async function(){
+ const mode = ((gID('bnYMode')||{}).value === 'ship') ? 'ship' : 'shift';
+ const norms = {};
+ for(let i=0;i<window.BN_YIELD_PRODUCTS.length;i++){
+  const nm = window.BN_YIELD_PRODUCTS[i];
+  const raw = ((gID('bnY_'+i)||{}).value||'').trim().replace(',','.');
+  if(raw==='') continue;
+  const pc = parseFloat(raw);
+  if(!(pc>0 && pc<=100)) return alert('Выход для «'+nm+'» должен быть от 1 до 100%');
+  norms[nm] = pc;
+ }
+ if(mode==='ship'){
+  const miss = window.BN_YIELD_PRODUCTS.filter(p=>!norms[p]);
+  if(miss.length && !confirm('Не заданы нормы для: '+miss.join(', ')+'. Отгрузки этих позиций пшеницу списывать не будут. Продолжить?')) return;
+ }
+ showLoad();
+ try{
+  const shiftOut = ((gID('bnYShift')||{}).value === 'off') ? 'off' : 'on';
+  await db.child('BnYieldSettings').set({mode:mode, shiftOut:shiftOut, norms:norms, upd:new Date().toISOString()});
+  hideLoad(); closeModal();
+  alert('Нормы выхода сохранены');
+  loadData();
+ }catch(e){
+  hideLoad();
+  alert('Ошибка сохранения: '+(e && e.message ? e.message : e));
+ }
 };
 
 window.saveBnCorr = async function() {
