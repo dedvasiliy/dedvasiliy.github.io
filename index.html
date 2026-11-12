@@ -709,17 +709,32 @@ function rBnStock(c){
  const wheatBreak = {};
  const noShiftProd = ySet.shiftOut === 'off';   // true = выпуск из смен НЕ добавляется в остатки "пшеничных" позиций
  const wheatProdSet = {};
- (window.BN_YIELD_PRODUCTS || []).forEach(pn => { wheatProdSet[normName(cleanBaseName(pn))] = 1; });
+ const yRaw = {};
+ (window.BN_YIELD_PRODUCTS || []).forEach(pn => {
+  const rk = (window.BN_YIELD_RAW || {})[pn] || 'Пшеница';
+  yRaw[normName(cleanBaseName(pn))] = rk;
+  if(rk === 'Пшеница') wheatProdSet[normName(cleanBaseName(pn))] = 1;
+ });
  const wheatOut = (base, kgEq, dt) => {
   if(!shipMode || !(kgEq > 0)) return;
   const pc = yNorms[normName(base)];
   if(!pc) return;
-  ensureItem('Пшеница');
-  if(skipDoc('Пшеница', dt)) return;
+  const rawKey = yRaw[normName(base)] || 'Пшеница';
+  ensureItem(rawKey);
+  if(skipDoc(rawKey, dt)) return;
   const w = kgEq / (pc / 100);
-  items['Пшеница'].outKg += w;
-  wheatBreak[base] = (wheatBreak[base] || 0) + w;
+  items[rawKey].outKg += w;
+  wheatBreak[base] = {raw: rawKey, kg: ((wheatBreak[base] && wheatBreak[base].kg) || 0) + w};
  };
+ // Позиции, привязанные к пшенице (есть норма): считаются по датам — сначала остаток купленного товара, нехватка списывается с пшеницы
+ const isLinked = (base) => !!(shipMode && yNorms[normName(base)]);
+ const linkedEv = {};
+ const linkedStock = {};
+ let evSeq = 0;
+ const addEv = (base, ev) => { if(!linkedEv[base]) linkedEv[base] = []; ev.i = evSeq++; linkedEv[base].push(ev); };
+ const rawEv = {};
+ const rawLinkedSet = {};
+ Object.keys(yNorms).forEach(k => { const rk = yRaw[k]; if(shipMode && rk) rawLinkedSet[rk] = 1; });
 
  const bnCorr = data.BnStockCorr || {};
  Object.values(bnCorr).forEach(v => {
@@ -746,11 +761,11 @@ function rBnStock(c){
       const base=cleanBaseName(m[1]);
       if(!packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
-      if(!skipDoc(base,v.date)) items[base].inPcs+=a;
+      if(!skipDoc(base,v.date)){ if(isLinked(base)) addEv(base,{d:String(v.date||'').substring(0,10),t:'in',pcs:true,q:a}); else items[base].inPcs+=a; }
      }else{
       const base=cleanBaseName(n);
       ensureItem(base);
-      if(!skipDoc(base,v.date)) items[base].inKg+=a;
+      if(!skipDoc(base,v.date)){ if(isLinked(base)) addEv(base,{d:String(v.date||'').substring(0,10),t:'in',pcs:false,q:a}); else items[base].inKg+=a; }
      }
     });
    }
@@ -769,13 +784,13 @@ function rBnStock(c){
       const base=cleanBaseName(m?m[1]:n);
       if(m && !packInfo[base]) packInfo[base]={tag:m[2],w:parseFloat(m[3])};
       ensureItem(base);
-      if(!skipDoc(base,v.date)) items[base].outPcs+=q;
-      wheatOut(base, q*((packInfo[base]&&packInfo[base].w)||0), v.date);
+      if(!skipDoc(base,v.date)){ if(isLinked(base)) addEv(base,{d:String(v.date||'').substring(0,10),t:'out',pcs:true,q:q}); else items[base].outPcs+=q; }
+      if(!isLinked(base)) wheatOut(base, q*((packInfo[base]&&packInfo[base].w)||0), v.date);
      }else{
       const base=cleanBaseName(n);
       ensureItem(base);
-      if(!skipDoc(base,v.date)) items[base].outKg+=q;
-      wheatOut(base, q, v.date);
+      if(!skipDoc(base,v.date)){ if(isLinked(base)) addEv(base,{d:String(v.date||'').substring(0,10),t:'out',pcs:false,q:q}); else items[base].outKg+=q; }
+      if(!isLinked(base)) wheatOut(base, q, v.date);
      }
     });
    }
@@ -819,7 +834,7 @@ function rBnStock(c){
     if(wght<=0) return;
     const base = cleanBaseName(nm);
     ensureItem(base);
-    if(!skipDoc(base, v.date) && !(noShiftProd && wheatProdSet[normName(base)])) items[base].inKg += wght*share;
+    if(!skipDoc(base, v.date) && !isLinked(base) && !(noShiftProd && wheatProdSet[normName(base)])) items[base].inKg += wght*share;
    });
   });
  });
@@ -831,9 +846,22 @@ function rBnStock(c){
    if(!v || v.type!=='RAW' || v.payType!=='bn' || !Array.isArray(v.items)) return;
    v.items.forEach(it=>{
     const n = (it && it.n) || '', a = parseFloat(it && it.a) || 0;
-    if(a<=0 || !isWheat(n)) return;
+    if(a<=0) return;
+    if(!isWheat(n)){
+     const lbl = window.bnRawLabel(n);
+     if(!lbl) return;
+     ensureItem(lbl);
+     if(!skipDoc(lbl, v.date)){
+      if(rawLinkedSet[lbl]){ if(!rawEv[lbl]) rawEv[lbl] = []; rawEv[lbl].push({d:String(v.date||'').substring(0,10),t:'in',q:a,raw:true,i:evSeq++}); }
+      else items[lbl].inKg += a;
+     }
+     return;
+    }
     ensureItem('Пшеница');
-    if(!skipDoc('Пшеница', v.date)) items['Пшеница'].inKg += a;
+    if(!skipDoc('Пшеница', v.date)){
+     if(rawLinkedSet['Пшеница']){ if(!rawEv['Пшеница']) rawEv['Пшеница'] = []; rawEv['Пшеница'].push({d:String(v.date||'').substring(0,10),t:'in',q:a,raw:true,i:evSeq++}); }
+     else items['Пшеница'].inKg += a;
+    }
    });
   });
  }
@@ -854,6 +882,46 @@ function rBnStock(c){
   });
  });
 
+ // --- Позиции с нормой выхода: строго по датам ---
+ Object.keys(items).forEach(b => { if(isLinked(b) && !linkedEv[b]) linkedEv[b] = []; });
+ const startStock = (base, w) => { ensureItem(base); const dd = items[base]; let st0 = 0; if(dd.hasCorr){ st0 = dd.corrKg; if(!st0 && dd.corrPcs && w>0) st0 = dd.corrPcs*w; } return st0; };
+ const sortEv = (a,b) => a.d < b.d ? -1 : a.d > b.d ? 1 : (a.t === b.t ? a.i - b.i : (a.t === 'in' ? -1 : 1));
+ // Все позиции с нормой выхода: сначала купленный товар, потом сырьё; если нет и сырья, товар уходит в минус
+ const otherRaws = {};
+ Object.keys(linkedEv).forEach(base => { const rk = yRaw[normName(base)] || 'Пшеница'; { if(!otherRaws[rk]) otherRaws[rk] = []; otherRaws[rk].push(base); } });
+ Object.keys(rawEv).forEach(rk => { if(!otherRaws[rk]) otherRaws[rk] = []; });
+ Object.keys(otherRaws).forEach(rk => {
+  const evs = [];
+  otherRaws[rk].forEach(base => linkedEv[base].forEach(ev => evs.push(Object.assign({base:base}, ev))));
+  (rawEv[rk] || []).forEach(ev => evs.push(ev));
+  evs.sort(sortEv);
+  let rawStock = Math.max(0, startStock(rk, 0));
+  let rIn = 0, rOut = 0;
+  const pStock = {};
+  otherRaws[rk].forEach(base => { pStock[base] = startStock(base, (packInfo[base] && packInfo[base].w) || 0); });
+  evs.forEach(ev => {
+   if(ev.raw){ rawStock += ev.q; rIn += ev.q; return; }
+   const base = ev.base;
+   const w = (packInfo[base] && packInfo[base].w) || 0;
+   const kg = ev.pcs ? ev.q * w : ev.q;
+   if(!(kg > 0)) return;
+   if(ev.t === 'in'){ pStock[base] += kg; return; }
+   const take = Math.min(Math.max(pStock[base], 0), kg);
+   pStock[base] -= take;
+   const rest = kg - take;
+   if(rest <= 0.0001) return;
+   const frac = (yNorms[normName(base)] || 100) / 100;
+   const need = rest / frac;
+   const used = Math.min(rawStock, need);
+   rawStock -= used; rOut += used;
+   pStock[base] -= (rest - used * frac);
+   if(used > 0) wheatBreak[base] = {raw: rk, kg: ((wheatBreak[base] && wheatBreak[base].kg) || 0) + used};
+  });
+  ensureItem(rk);
+  items[rk].inKg = rIn; items[rk].outKg = rOut;
+  otherRaws[rk].forEach(base => { linkedStock[base] = pStock[base]; });
+ });
+
  let screenHtml = `<div style="max-width:100%; margin:0 auto;">
   <div style="text-align:center; padding:12px; background:linear-gradient(135deg, #065f46, #047857); color:#fff; border-radius:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     <div style="font-size:15px; font-weight:900; letter-spacing:1px; text-transform:uppercase;">📦 Остатки товаров по безналу (Б/Н)</div>
@@ -861,6 +929,7 @@ function rBnStock(c){
   </div>`;
  
  window._bnRows = [];
+ let rawHtml = '', prodHtml = '';
  Object.keys(items).sort().forEach(base=>{
   if(/(кормов|мучк|отруб)/i.test(base)) return;
   const d=items[base];
@@ -868,7 +937,10 @@ function rBnStock(c){
   const wRatio=pk?pk.w:0;
   
   let remKg=0, remPcs=0;
-  if(d.hasCorr && !d.corrDate){
+  if(linkedStock[base] !== undefined){
+   remKg = linkedStock[base];
+   remPcs = wRatio>0 ? remKg/wRatio : 0;
+  } else if(d.hasCorr && !d.corrDate){
    remKg = d.corrKg;
    remPcs = d.corrPcs;
    if(!remPcs && remKg && wRatio>0) remPcs = remKg/wRatio;
@@ -897,20 +969,25 @@ function rBnStock(c){
   const valCls=isNeg?'val-neg':'val-pos';
   const rightTxt=pk?`${remKg} кг / ${remPcs} шт <span style="color:#64748b;font-size:11px">${pk.tag}</span>`:`${remKg} кг`;
 
-  screenHtml+=`<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;">
-   <div style="font-weight:900;font-size:13px;" data-rawname="${esc(base)}">${esc(base)}</div>
+  const isRawRow = (base === 'Пшеница' || /\(сырьё\)$/.test(base));
+  const cardHtml = `<div class="j-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;">
+   <div style="font-weight:900;font-size:13px;" data-rawname="${esc(base)}">${esc(isRawRow ? base.replace(/\s*\(сырьё\)$/,'') : base)}</div>
    <div class="${valCls}" style="font-weight:900;font-size:13px;text-align:right;">${rightTxt}</div>
   </div>`;
+  if(isRawRow) rawHtml += cardHtml; else prodHtml += cardHtml;
  });
+ const secHead = (t, c) => `<div style="text-align:center;font-weight:900;font-size:11px;letter-spacing:1px;color:${c};background:#f1f5f9;border-radius:8px;padding:6px;margin:10px 0 6px;">${t}</div>`;
+ if(prodHtml) screenHtml += secHead('ГОТОВАЯ ПРОДУКЦИЯ', '#065f46') + prodHtml;
+ if(rawHtml) screenHtml += secHead('СЫРЬЁ', '#92400e') + rawHtml;
 
  if(shipMode && Object.keys(wheatBreak).length){
-  const wb = Object.keys(wheatBreak).sort().map(k=>`${esc(k)}: ${Math.round(wheatBreak[k])} кг`).join(' · ');
-  screenHtml += `<div class="no-print" style="font-size:10px;color:#475569;background:#f1f5f9;border-radius:8px;padding:6px 8px;margin-top:4px;line-height:1.4"><b>Пшеница списана по нормам выхода (при отгрузке):</b><br>${wb}</div>`;
+  const wb = Object.keys(wheatBreak).sort().map(k=>`${esc(k)} (${esc(String(wheatBreak[k].raw).replace(/\s*\(сырьё\)$/,'').toLowerCase())}): ${Math.round(wheatBreak[k].kg)} кг`).join(' · ');
+  screenHtml += `<div class="no-print" style="font-size:10px;color:#475569;background:#f1f5f9;border-radius:8px;padding:6px 8px;margin-top:4px;line-height:1.4"><b>Сырьё списано по нормам выхода (при отгрузке):</b><br>${wb}</div>`;
  }
  screenHtml+=`<div class="no-print" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px;margin-bottom:20px;">
   <button class="btn-main" onclick="openBnCorrModal()" style="background:#8b5cf6;margin:0;padding:12px 5px;font-size:11px;">📋 ВВОД ОСТАТКОВ</button>
   <button class="btn-main" onclick="printBnStockList()" style="background:#0f172a;margin:0;padding:12px 5px;font-size:11px;">🖨️ ПЕЧАТЬ</button>
-  <button class="btn-main" onclick="openBnYieldModal()" style="grid-column:1/-1;background:#0ea5e9;margin:0;padding:12px 5px;font-size:11px;">⚙️ НОРМЫ ВЫХОДА ИЗ ПШЕНИЦЫ</button>
+  <button class="btn-main" onclick="openBnYieldModal()" style="grid-column:1/-1;background:#0ea5e9;margin:0;padding:12px 5px;font-size:11px;">⚙️ НОРМЫ ВЫХОДА ИЗ СЫРЬЯ</button>
  </div></div>`;
 
  c.innerHTML = screenHtml || '<div style="text-align:center;color:#94a3b8;padding:20px;font-weight:900">Нет остатков по документам (Б/Н)</div>';
@@ -1000,6 +1077,16 @@ window.bnAddRiceAlias = function(packInfo){
   if(a) packInfo['Арнаутка'] = {tag:packInfo[a].tag, w:packInfo[a].w};
  }
 };
+window.bnRawLabel = function(n){
+ const t = String(n||'').replace(/\s*\[.*?\]/g,'').trim();
+ if(!t || /^пшениц/i.test(t)) return '';
+ if(/^просо/i.test(t)) return 'Просо (сырьё)';
+ if(/^кукуруз/i.test(t)) return 'Кукуруза (сырьё)';
+ if(/^ячмен/i.test(t)) return 'Ячмень (сырьё)';
+ const nm = t.charAt(0).toUpperCase() + t.slice(1);
+ return nm + ' (сырьё)';
+};
+
 window.openBnCorrModal = function() {
  const packInfo={};
  gP('Готовая').forEach(p=>{
@@ -1013,7 +1100,7 @@ window.openBnCorrModal = function() {
  gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
  window.bnAddRiceAlias(packInfo);
- { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
+ { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); Object.values(data.ArchIncoming||{}).forEach(v=>{ if(v && v.type==='RAW' && v.payType==='bn' && Array.isArray(v.items)) v.items.forEach(it=>{ const l=window.bnRawLabel(it && it.n); if(l) mapped.add(l); }); }); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
  let defCorrDate = '';
  
  { const y = new Date(); y.setDate(y.getDate()-1); defCorrDate = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
@@ -1043,16 +1130,17 @@ window.openBnCorrModal = function() {
  gID('mdl').style.display = 'flex';
 };
 
-window.BN_YIELD_PRODUCTS = ['Арнаутка','Пшеничка','Кутя','Артек','Манка'];
+window.BN_YIELD_RAW = {'Арнаутка':'Пшеница','Пшеничка':'Пшеница','Кутя':'Пшеница','Артек':'Пшеница','Манка':'Пшеница','Пшено':'Просо (сырьё)','Кукуруза':'Кукуруза (сырьё)','Кукурузная мука':'Кукуруза (сырьё)','Ячка':'Ячмень (сырьё)','Перловка':'Ячмень (сырьё)'};
+window.BN_YIELD_PRODUCTS = Object.keys(window.BN_YIELD_RAW);
 
 // Подсказка: средний фактический выход по сменам, где из пшеницы делали ровно один из этих продуктов
 window.bnYieldHints = function(){
  const prods = window.BN_YIELD_PRODUCTS;
+ const RAWRE = {'Пшеница':/^\s*пшениц/i,'Просо (сырьё)':/^\s*просо/i,'Кукуруза (сырьё)':/^\s*кукуруз/i,'Ячмень (сырьё)':/^\s*ячмен/i};
  const norm = x => String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
  const mapName = n => { const t = norm(String(n||'').replace(/\s*\[.*?\]/g,'')); return /^арнаутка(\s*[123])?$/.test(t) ? 'арнаутка' : t; };
  const clean = n => String(n||'').replace(/\s*\[.*?\]/g,'').trim();
- const isWheatN = n => /^\s*пшениц/i.test(clean(n));
- const isMilledN = n => /помол/i.test(clean(n));   // «На помол» — очищенная пшеница (полуфабрикат), считаем 1:1 как пшеницу
+ const isMilledN = n => /помол/i.test(clean(n));
  const keyOf = {}; prods.forEach(p => keyOf[norm(p)] = p);
  const st = {};
  prods.forEach(p => st[p] = {out:0, wheat:0, n:0, total:0, other:{}, multi:0, noraw:0, milled:0});
@@ -1062,14 +1150,6 @@ window.bnYieldHints = function(){
    const raws = [];
    if(v.rawBase) raws.push(v.rawBase);
    if(Array.isArray(v.rawAdd)) v.rawAdd.forEach(x=>raws.push(x));
-   let tot = 0, hasMilled = false; const bad = {};
-   raws.forEach(x=>{
-    const q = parseFloat(x && x.w) || 0; if(q <= 0) return;
-    const nm = clean(x && x.n);
-    if(isWheatN(nm)) tot += q;
-    else if(isMilledN(nm)){ tot += q; hasMilled = true; }
-    else { const k = nm || '?'; bad[k] = (bad[k]||0) + 1; }
-   });
    const outs = {};
    (v.items||[]).forEach(x=>{
     const typ = x.type || 'DV'; if(typ!=='DV' && typ!=='Semi') return;
@@ -1082,12 +1162,23 @@ window.bnYieldHints = function(){
    });
    const ks = Object.keys(outs);
    if(!ks.length) return;
-   ks.forEach(p => st[p].total++);
-   if(tot <= 0){ ks.forEach(p => st[p].noraw++); return; }
-   if(Object.keys(bad).length){ ks.forEach(p => Object.keys(bad).forEach(b => { st[p].other[b] = (st[p].other[b]||0) + 1; })); return; }
-   if(ks.length > 1){ ks.forEach(p => st[p].multi++); return; }
-   const p = ks[0];
-   st[p].out += outs[p]; st[p].wheat += tot; st[p].n++; if(hasMilled) st[p].milled++;
+   ks.forEach(p=>{
+    const rawKey = window.BN_YIELD_RAW[p] || 'Пшеница';
+    const re = RAWRE[rawKey];
+    let tot = 0, hasMilled = false; const bad = {};
+    raws.forEach(x=>{
+     const q = parseFloat(x && x.w) || 0; if(q <= 0) return;
+     const nm = clean(x && x.n);
+     if(re.test(nm)) tot += q;
+     else if(rawKey==='Пшеница' && isMilledN(nm)){ tot += q; hasMilled = true; }
+     else { const k = nm || '?'; bad[k] = (bad[k]||0) + 1; }
+    });
+    st[p].total++;
+    if(tot <= 0){ st[p].noraw++; return; }
+    if(Object.keys(bad).length){ Object.keys(bad).forEach(b => { st[p].other[b] = (st[p].other[b]||0) + 1; }); return; }
+    if(ks.length > 1){ st[p].multi++; return; }
+    st[p].out += outs[p]; st[p].wheat += tot; st[p].n++; if(hasMilled) st[p].milled++;
+   });
   });
  });
  const res = {};
@@ -1103,15 +1194,15 @@ window.openBnYieldModal = function(){
  const norms = ys.norms || {};
  const hints = window.bnYieldHints();
  window._bnYHints = hints;
- let h = `<div style="font-weight:900;text-align:center;margin-bottom:8px;color:var(--p)">НОРМЫ ВЫХОДА ИЗ ПШЕНИЦЫ</div>
- <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Выход готовой продукции в % от веса пшеницы. При отгрузке по безналу пшеница списывается с остатка: кг продукции ÷ выход.</div>
+ let h = `<div style="font-weight:900;text-align:center;margin-bottom:8px;color:var(--p)">НОРМЫ ВЫХОДА ИЗ СЫРЬЯ</div>
+ <div style="font-size:10px;color:#64748b;margin-bottom:10px;text-align:center;">Выход готовой продукции в % от веса сырья. При отгрузке по безналу сначала уходит купленный товар, затем сырьё списывается по выходу (кг продукции ÷ выход). Если нет ни товара, ни сырья, остаток товара уходит в минус: это то, что нужно перекрыть документами.</div>
  <div style="margin-bottom:12px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc">
   <label class="lbl-small">СПИСАНИЕ ПШЕНИЦЫ С ОСТАТКА Б/Н</label>
   <select id="bnYMode" class="fas-inp" style="font-weight:bold">
    <option value="shift" ${ys.mode==='ship'?'':'selected'}>По сменам (как раньше)</option>
    <option value="ship" ${ys.mode==='ship'?'selected':''}>По отгрузкам, по нормам выхода</option>
   </select>
-  <div style="font-size:10px;color:#64748b;margin-top:4px">Работает один способ, чтобы пшеница не списалась дважды.</div>
+  <div style="font-size:10px;color:#64748b;margin-top:4px">Для позиций с нормой выхода: отгрузка сначала уходит с остатка купленного товара (приход Б/Н), нехватка списывается с пшеницы по % выхода. Остаток товара не уходит ниже нуля.</div>
   <label class="lbl-small" style="margin-top:10px;display:block">ВЫПУСК ИЗ СМЕН В ОСТАТКАХ ЭТИХ ПОЗИЦИЙ</label>
   <select id="bnYShift" class="fas-inp" style="font-weight:bold">
    <option value="on" ${ys.shiftOut==='off'?'':'selected'}>Учитывать (приход + смены − отгрузки)</option>
@@ -1122,7 +1213,7 @@ window.openBnYieldModal = function(){
  window.BN_YIELD_PRODUCTS.forEach((nm,i)=>{
   const hv = hints[nm];
   h += `<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:6px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
-   <div><div style="font-size:12px;font-weight:bold;">${esc(nm)}</div>
+   <div><div style="font-size:12px;font-weight:bold;">${esc(nm)}</div><div style="font-size:10px;color:#64748b">из: ${esc(String(window.BN_YIELD_RAW[nm]||'Пшеница').replace(/\s*\(сырьё\)$/,'').toLowerCase())}</div>
    ${(()=>{
      if(!hv) return '<div style="font-size:10px;color:#059669">нет смен с этим продуктом</div>';
      let l1 = hv.pct!==null ? 'по сменам: '+hv.pct+'% (учтено '+hv.n+' из '+hv.total+' см.'+(hv.milled?', с «На помол»: '+hv.milled:'')+')' : 'смен с продуктом: '+hv.total+', ни одна не подошла';
@@ -1164,8 +1255,6 @@ window.saveBnYield = async function(){
   norms[nm] = pc;
  }
  if(mode==='ship'){
-  const miss = window.BN_YIELD_PRODUCTS.filter(p=>!norms[p]);
-  if(miss.length && !confirm('Не заданы нормы для: '+miss.join(', ')+'. Отгрузки этих позиций пшеницу списывать не будут. Продолжить?')) return;
  }
  showLoad();
  try{
@@ -1192,7 +1281,7 @@ window.saveBnCorr = async function() {
   gP('WeightStock').forEach(p => allNames.add(p));
   gP('Готовая').forEach(p => { let m=p.match(/^(.*?)\s+1\//); if(m) allNames.add(m[1].trim()); });
 
-  { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
+  { const mapped = new Set(); allNames.forEach(n => { if(!/(кормов|мучк|отруб)/i.test(n)) mapped.add(window.bnAliasName(n)); }); mapped.add('Пшеница'); Object.values(data.ArchIncoming||{}).forEach(v=>{ if(v && v.type==='RAW' && v.payType==='bn' && Array.isArray(v.items)) v.items.forEach(it=>{ const l=window.bnRawLabel(it && it.n); if(l) mapped.add(l); }); }); allNames.clear(); mapped.forEach(n => allNames.add(n)); }
   u['/BnStockCorr'] = null;
   let newCorr = {};
   
