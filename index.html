@@ -1050,21 +1050,26 @@ window.bnYieldHints = function(){
  const prods = window.BN_YIELD_PRODUCTS;
  const norm = x => String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
  const mapName = n => { const t = norm(String(n||'').replace(/\s*\[.*?\]/g,'')); return /^арнаутка(\s*[123])?$/.test(t) ? 'арнаутка' : t; };
+ const clean = n => String(n||'').replace(/\s*\[.*?\]/g,'').trim();
+ const isWheatN = n => /^\s*пшениц/i.test(clean(n));
+ const isMilledN = n => /помол/i.test(clean(n));   // «На помол» — очищенная пшеница (полуфабрикат), считаем 1:1 как пшеницу
  const keyOf = {}; prods.forEach(p => keyOf[norm(p)] = p);
- const sums = {};
+ const st = {};
+ prods.forEach(p => st[p] = {out:0, wheat:0, n:0, total:0, other:{}, multi:0, noraw:0, milled:0});
  ['Krup_Report','Vibro_Report','ZSHM_Report'].forEach(rk=>{
   Object.values(data[rk]||{}).forEach(v=>{
    if(!v) return;
    const raws = [];
    if(v.rawBase) raws.push(v.rawBase);
    if(Array.isArray(v.rawAdd)) v.rawAdd.forEach(x=>raws.push(x));
-   let tot = 0, ok = raws.length > 0;
+   let tot = 0, hasMilled = false; const bad = {};
    raws.forEach(x=>{
     const q = parseFloat(x && x.w) || 0; if(q <= 0) return;
-    if(!/^\s*пшениц/i.test(String((x && x.n) || '').replace(/\s*\[.*?\]/g,''))) ok = false;
-    tot += q;
+    const nm = clean(x && x.n);
+    if(isWheatN(nm)) tot += q;
+    else if(isMilledN(nm)){ tot += q; hasMilled = true; }
+    else { const k = nm || '?'; bad[k] = (bad[k]||0) + 1; }
    });
-   if(!ok || tot <= 0) return;
    const outs = {};
    (v.items||[]).forEach(x=>{
     const typ = x.type || 'DV'; if(typ!=='DV' && typ!=='Semi') return;
@@ -1076,14 +1081,20 @@ window.bnYieldHints = function(){
     if(key) outs[key] = (outs[key]||0) + w;
    });
    const ks = Object.keys(outs);
-   if(ks.length !== 1) return;
+   if(!ks.length) return;
+   ks.forEach(p => st[p].total++);
+   if(tot <= 0){ ks.forEach(p => st[p].noraw++); return; }
+   if(Object.keys(bad).length){ ks.forEach(p => Object.keys(bad).forEach(b => { st[p].other[b] = (st[p].other[b]||0) + 1; })); return; }
+   if(ks.length > 1){ ks.forEach(p => st[p].multi++); return; }
    const p = ks[0];
-   if(!sums[p]) sums[p] = {out:0, wheat:0, n:0};
-   sums[p].out += outs[p]; sums[p].wheat += tot; sums[p].n++;
+   st[p].out += outs[p]; st[p].wheat += tot; st[p].n++; if(hasMilled) st[p].milled++;
   });
  });
  const res = {};
- Object.keys(sums).forEach(p=>{ if(sums[p].wheat > 0) res[p] = {pct: Math.round(sums[p].out/sums[p].wheat*1000)/10, n: sums[p].n}; });
+ prods.forEach(p=>{
+  const x = st[p]; if(!x.total) return;
+  res[p] = {pct: x.wheat > 0 ? Math.round(x.out/x.wheat*1000)/10 : null, n:x.n, total:x.total, other:x.other, multi:x.multi, noraw:x.noraw, milled:x.milled};
+ });
  return res;
 };
 
@@ -1112,7 +1123,16 @@ window.openBnYieldModal = function(){
   const hv = hints[nm];
   h += `<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:6px;margin-bottom:8px;align-items:center;border-bottom:1px dashed #cbd5e1;padding-bottom:4px;">
    <div><div style="font-size:12px;font-weight:bold;">${esc(nm)}</div>
-   <div style="font-size:10px;color:#059669">${hv ? 'по сменам: '+hv.pct+'% ('+hv.n+' см.)' : 'нет данных по сменам'}</div></div>
+   ${(()=>{
+     if(!hv) return '<div style="font-size:10px;color:#059669">нет смен с этим продуктом</div>';
+     let l1 = hv.pct!==null ? 'по сменам: '+hv.pct+'% (учтено '+hv.n+' из '+hv.total+' см.'+(hv.milled?', с «На помол»: '+hv.milled:'')+')' : 'смен с продуктом: '+hv.total+', ни одна не подошла';
+     const sk = [];
+     const o = Object.keys(hv.other).sort((a,b)=>hv.other[b]-hv.other[a]).slice(0,3).map(k=>esc(k)+' ('+hv.other[k]+')');
+     if(o.length) sk.push('другое сырьё: '+o.join(', '));
+     if(hv.multi) sk.push('несколько продуктов в смене: '+hv.multi);
+     if(hv.noraw) sk.push('нет сырья в смене: '+hv.noraw);
+     return '<div style="font-size:10px;color:#059669">'+l1+'</div>'+(sk.length?'<div style="font-size:10px;color:#b45309">пропущено — '+sk.join('; ')+'</div>':'');
+   })()}</div>
    <input type="number" step="0.1" min="1" max="100" id="bnY_${i}" value="${norms[nm]!==undefined?esc(String(norms[nm])):''}" placeholder="% выхода" class="fas-inp" style="text-align:center;font-weight:bold">
   </div>`;
  });
@@ -1128,7 +1148,7 @@ window.bnYieldFill = function(){
  const hints = window._bnYHints || {};
  window.BN_YIELD_PRODUCTS.forEach((nm,i)=>{
   const el = gID('bnY_'+i);
-  if(el && hints[nm] && el.value.trim()==='') el.value = hints[nm].pct;
+  if(el && hints[nm] && hints[nm].pct!==null && el.value.trim()==='') el.value = hints[nm].pct;
  });
 };
 
